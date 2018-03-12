@@ -859,8 +859,8 @@ ApplySphereDecals(MrcSimple &tomo_in,
     float Rssqr_min = 0.0;
     if (shell_thicknesses[i] > 0.0)
       Rssqr_min = floor(SQR(radii[i] - shell_thicknesses[i]));
-    //Normalize the brightness of each sphere?
-    //(ie by dividing the intensity by the number of voxels in the sphere)
+    // Normalize the brightness of each sphere?
+    // (ie by dividing the intensity by the number of voxels in the sphere)
     float imultiplier = 1.0;
     long nvoxelspersphere = 1;
     if (normalize_occupied_instensities) {

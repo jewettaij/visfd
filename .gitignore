@@ -2,6 +2,13 @@
 *.so
 *.o
 
+combine_mrc
+convert_to_float
+crop_mrc
+filter_mrc
+print_mrc_stats
+sum_voxels
+
 # text-editor temporary files:
 *~
 
