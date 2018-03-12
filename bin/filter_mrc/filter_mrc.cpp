@@ -718,7 +718,10 @@ BlobDog3D(int const image_size[3], //source image size
           RealNum maxima_threshold,
           RealNum filter_truncate_ratio,     //how many sigma before truncating?
           RealNum filter_truncate_threshold, //decay in filter before truncating
-          ostream *pReportProgress = NULL)
+          ostream *pReportProgress = NULL,
+          RealNum ****aaaafI = NULL, //preallocated memory for filtered images
+          RealNum **aafI = NULL)     //preallocated memory for filtered images
+                                     //(sometimes the caller wants to access)
 {
   
   if (filter_truncate_ratio <= 0) {
@@ -742,7 +745,9 @@ BlobDog3D(int const image_size[3], //source image size
             minima_threshold,
             maxima_threshold,
             filter_truncate_ratio,
-            pReportProgress);
+            pReportProgress,
+            aaaafI,
+            aafI);
 
 } //BlobDog3D(...,filter_truncate_ratio,filter_truncate_threshold,...)
 
@@ -1067,7 +1072,10 @@ HandleBlobDetector(Settings settings,
             settings.blob_maxima_threshold,
             settings.filter_truncate_ratio,
             settings.filter_truncate_threshold,
-            &cerr);
+            &cerr,
+            aaaafI,
+            aafI);
+
 
   long n_minima = minima_crds_int.size();
   long n_maxima = maxima_crds_int.size();

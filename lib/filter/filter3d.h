@@ -1514,7 +1514,7 @@ BlobDog3D(int const image_size[3], //source image size
                   if ((Ix < 0) || (Ix >= image_size[0]) ||
                       (Iy < 0) || (Iy >= image_size[1]) ||
                       (Iz < 0) || (Iz >= image_size[2]) ||
-                      ((! aaafMask) && (aaafMask[Iz][Iy][Ix] == 0))) {
+                      (aaafMask && (aaafMask[Iz][Iy][Ix] == 0))) {
                     is_minima = false;
                     is_maxima = false;
                     continue;

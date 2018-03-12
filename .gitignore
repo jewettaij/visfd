@@ -29,6 +29,7 @@ dist/
 downloads/
 eggs/
 .eggs/
+#lib/   <-- I use this subdirectory
 lib64/
 parts/
 sdist/
