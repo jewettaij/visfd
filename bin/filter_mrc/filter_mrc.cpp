@@ -651,22 +651,25 @@ HandleDogScaleFree(Settings settings,
                       &B,
                       &cerr);
 
-  for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
-    for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
-      for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
-        // Note: the DOG filter we used above is (in this case)
-        // approximation of the LOG filter, (Laplacian-of-Gaussian),
-        // which is the second derivative of the image intensity
-        // after convolution with a Gaussian.
-        // The ApplyDogScaleFree3D() function is not aware of the physical
-        // size of each voxel, so it measures distance in voxels.
-        // To report the 2nd derivative (with respect to position) in physical 
-        // units (instead of voxels) we need to divide by voxel_width^2
 
-        tomo_out.aaafI[iz][iy][ix] /= SQR(voxel_width[0]);
+  // REMOVE THIS CRUFT EVENTUALLY:
+  //for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
+  //  for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
+  //    for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
+  //      // Note: the DOG filter we used above is (in this case)
+  //      // approximation of the LOG filter, (Laplacian-of-Gaussian),
+  //      // which is the second derivative of the image intensity
+  //      // after convolution with a Gaussian.
+  //      // The ApplyDogScaleFree3D() function is not aware of the physical
+  //      // size of each voxel, so it measures distance in voxels.
+  //      // To report the 2nd derivative (with respect to position) in physical
+  //      // units (instead of voxels) we need to divide by voxel_width^2
+  //
+  //     tomo_out.aaafI[iz][iy][ix] /= SQR(voxel_width[0]);
+  //
+  //      // Here we assume the voxel width is the same in x,y,z directions
+  //      // and equals voxel_width[0].
 
-        // Here we assume the voxel width is the same in x,y,z directions
-        // and equals voxel_width[0].
 
   cerr << " Filter Used:\n"
     " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
@@ -1056,7 +1059,6 @@ HandleBlobDetector(Settings settings,
   // This way we can save memory and also save the 
   // filtered image to a file which we can view using IMOD.
 
-
   BlobDog3D(tomo_in.header.nvoxels,
             tomo_in.aaafI,
             mask.aaafI,
@@ -1089,14 +1091,16 @@ HandleBlobDetector(Settings settings,
     minima_crds[i][1] = minima_crds_int[i][1] * voxel_width[1];
     minima_crds[i][2] = minima_crds_int[i][2] * voxel_width[2];
     minima_sigma[i] *= voxel_width[0];      //Gaussian width has units of length
-    minima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
+    // REMOVE THIS CRUFT EVENTUALLY:
+    //minima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
   }
   for (int i = 0; i < n_maxima; i++) {
     maxima_crds[i][0] = maxima_crds_int[i][0] * voxel_width[0];
     maxima_crds[i][1] = maxima_crds_int[i][1] * voxel_width[1];
     maxima_crds[i][2] = maxima_crds_int[i][2] * voxel_width[2];
     maxima_sigma[i] *= voxel_width[0];      //Gaussian width has units of length
-    maxima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
+    // REMOVE THIS CRUFT EVENTUALLY:
+    //maxima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
   }
 
   //string out_file_name_base = settings.out_file_name;
@@ -1198,12 +1202,14 @@ HandleBlobDetector(Settings settings,
             &aafI[2],
             &aaaafI[2]);
 
-  for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
-    for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
-      for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
-        // Here we assume the voxel width is the same in x,y,z directions
-        // and equals voxel_width[0].
-        tomo_out.aaafI[iz][iy][ix] /= SQR(voxel_width[0]);
+
+  // REMOVE THIS CRUFT EVENTUALLY:
+  //for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
+  //  for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
+  //    for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
+  //      // Here we assume the voxel width is the same in x,y,z directions
+  //      // and equals voxel_width[0].
+  //      tomo_out.aaafI[iz][iy][ix] /= SQR(voxel_width[0]);
 
 } //HandleBlobDetector()
 
@@ -2643,8 +2649,9 @@ int main(int argc, char **argv) {
     // down the next step considerably, so I just assume cube-shaped voxels:
     assert((voxel_width[0] == voxel_width[1]) &&
            (voxel_width[1] == voxel_width[2]));
-    settings.blob_minima_threshold *= SQR(voxel_width[0]);
-    settings.blob_maxima_threshold *= SQR(voxel_width[0]);
+    // REMOVE THIS CRUFT EVENTUALLY:
+    //settings.blob_minima_threshold *= SQR(voxel_width[0]);
+    //settings.blob_maxima_threshold *= SQR(voxel_width[0]);
     for (int ir = 0; ir < settings.blob_widths.size(); ir++)
       settings.blob_widths[ir] /= voxel_width[0];
     settings.sphere_decals_radius /= voxel_width[0];

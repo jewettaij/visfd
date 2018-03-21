@@ -474,9 +474,11 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         float blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blobr1") || (vArgs[i] == "-blob1r") )
-          blob_width_multiplier = 1.0/sqrt(2.0);
+          //blob_width_multiplier = 1.0/sqrt(2.0);
+          blob_width_multiplier = 0.6;  // (for a solid uniform sphere)
         if ((vArgs[i] == "-blobd1") || (vArgs[i] == "-blob1d") )
-          blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
+          //blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
+          blob_width_multiplier = 0.3;  // (for a solid uniform sphere)
         dogsf_width[0] = stof(vArgs[i+1]) * blob_width_multiplier;
         dogsf_width[1] = dogsf_width[0];
         dogsf_width[2] = dogsf_width[0];
@@ -532,13 +534,19 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+4] == "") || (vArgs[i+3][0] == '-'))
           throw invalid_argument("");
 
-        string blob_file_name_base = out_file_name;
-        if (EndsWith(out_file_name, ".txt"))
+        string blob_file_name_base = vArgs[i+1];
+        if (EndsWith(blob_file_name_base, ".txt"))
           blob_file_name_base =
-            out_file_name.substr(0,
-                                 out_file_name.length()-4);
+            blob_file_name_base.substr(0,
+                                       blob_file_name_base.length()-4);
         blob_minima_file_name = blob_file_name_base + string(".minima.txt");
         blob_maxima_file_name = blob_file_name_base + string(".maxima.txt");
+
+        cerr << "settings.blob_minima_file_name = \""
+             << blob_minima_file_name << "\"" << endl;
+        cerr << "settings.blob_maxima_file_name = \""
+             << blob_maxima_file_name << "\"" << endl;
+
 
         float blob_width_min = stof(vArgs[i+2]);
         float blob_width_max = stof(vArgs[i+3]);
@@ -560,9 +568,11 @@ Settings::ParseArgs(vector<string>& vArgs)
 
         blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blobr"))
-          blob_width_multiplier = 1.0/sqrt(2.0);
+          //blob_width_multiplier = 1.0/sqrt(2.0);
+          blob_width_multiplier = 0.6;  // (for a solid uniform sphere)
         else if ((vArgs[i] == "-blob-diameters") || (vArgs[i] == "-blobd"))
-          blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
+          //blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
+          blob_width_multiplier = 0.3;  // (for a solid uniform sphere)
         blob_widths[0] = blob_width_min * blob_width_multiplier;
         for (int n = 1; n < N; n++) {
           blob_widths[n] = blob_widths[n-1] * ratio;
