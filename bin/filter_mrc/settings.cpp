@@ -460,28 +460,6 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-doggxy")
 
 
-    else if (vArgs[i] == "-dogsf-aniso")
-    {
-      try {
-        if ((i+3 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
-            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
-          throw invalid_argument("");
-        dogsf_width[0] = stof(vArgs[i+1]);
-        dogsf_width[1] = stof(vArgs[i+2]);
-        dogsf_width[2] = stof(vArgs[i+3]);
-        filter_type = DOG_SCALE_FREE;
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by 3 positive numbers:\n"
-                       "       the approximate widths of the objects of interest in the XYZ directions\n"
-                       "       (Due to the missing-wedge artifact they might differ.\n");
-      }
-      num_arguments_deleted = 4;
-    } //if (vArgs[i] == "-dogsf-aniso")
-
 
     else if ((vArgs[i] == "-blob-single") ||
              (vArgs[i] == "-blob1") ||
@@ -515,6 +493,31 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob-single")
 
 
+    else if (vArgs[i] == "-blob1-aniso")
+    {
+      try {
+        if ((i+3 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
+          throw invalid_argument("");
+        dogsf_width[0] = stof(vArgs[i+1]);
+        dogsf_width[1] = stof(vArgs[i+2]);
+        dogsf_width[2] = stof(vArgs[i+3]);
+        m_exp = 2.0;
+        n_exp = 2.0;
+        filter_type = DOG_SCALE_FREE;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 3 positive numbers:\n"
+                       "       the approximate widths of the objects of interest in the XYZ directions\n"
+                       "       (Due to the missing-wedge artifact they might differ.\n");
+      }
+      num_arguments_deleted = 4;
+    } //if (vArgs[i] == "-blob1-aniso")
+
+
     else if ((vArgs[i] == "-blob") ||
              (vArgs[i] == "-blob-radii") ||
              (vArgs[i] == "-blobr") ||
@@ -546,9 +549,14 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw InputErr("The 3rd parameter to the \"" + vArgs[i] + "\" argument must be >= 3.");
         blob_widths.resize(N);
         float ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
-        // later I may remove this: 
-        if ((ratio-1.0)/3 < delta_sigma_over_sigma)  // later I may remove this
-          delta_sigma_over_sigma = (ratio-1.0)/3;    // later I may remove this
+
+        // Make sure the difference between the width of the Gaussians used
+        // to approximate the Laplacian-of-Gaussian (delta_sigma_over_sigma), 
+        // is no larger than the difference between the successive widths
+        // in the list of Gaussian blurs we will apply to our source image.
+        // (Actually, I make sure it is no larger than 1/3 this difference.)
+        if ((ratio-1.0)/3 < delta_sigma_over_sigma)
+          delta_sigma_over_sigma = (ratio-1.0)/3;
 
         blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blobr"))
@@ -748,7 +756,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-clip") || (vArgs[i] == "-clip-sigma")) {
+    else if ((vArgs[i] == "-clip") ||
+             (vArgs[i] == "-cl")) {
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
@@ -757,7 +766,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_threshold_01_a = stof(vArgs[i+1]);
         out_threshold_01_b = stof(vArgs[i+2]);
         out_thresh2_use_clipping = true;
-        if (vArgs[i] == "-clip-sigma")
+        if (vArgs[i] == "-cl")
           out_thresh2_use_clipping_sigma = true;
         else
           out_thresh2_use_clipping_sigma = false;

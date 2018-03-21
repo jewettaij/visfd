@@ -14,15 +14,15 @@ RealNum AverageArr(Integer const array_size[3],
                    RealNum ***aaafH,
                    RealNum ***aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  double total = 0.0;
+  double denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        double h = aaafH[iz][iy][ix];
         if (aaafW) {
-          RealNum w = aaafW[iz][iy][ix];
+          double w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -32,8 +32,9 @@ RealNum AverageArr(Integer const array_size[3],
       }
     }
   }
-  return total / denom;
+  return static_cast<RealNum>(total / denom);
 } //void AverageArr()
+
 
 
 template<class RealNum, class Integer>
@@ -41,17 +42,17 @@ RealNum AveSqrArr(Integer const array_size[3],
                   RealNum ***aaafH,
                   RealNum ***aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  double total = 0.0;
+  double denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        double h = aaafH[iz][iy][ix];
         h *= h;
 
         if (aaafW) {
-          RealNum w = aaafW[iz][iy][ix];
+          double w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -61,7 +62,7 @@ RealNum AveSqrArr(Integer const array_size[3],
       }
     }
   }
-  return sqrt(total / denom);
+  return static_cast<RealNum>(sqrt(total / denom));
 } //void AveSqrArr()
 
 
@@ -70,18 +71,18 @@ RealNum StdDevArr(Integer const array_size[3],
                   RealNum ***aaafH,
                   RealNum ***aaafW = NULL) 
 {
-  RealNum ave = AverageArr(array_size, aaafH, aaafW);
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  double ave = AverageArr(array_size, aaafH, aaafW);
+  double total = 0.0;
+  double denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = (aaafH[iz][iy][ix] - ave);
+        double h = (aaafH[iz][iy][ix] - ave);
         h *= h;
 
         if (aaafW) {
-          RealNum w = aaafW[iz][iy][ix];
+          double w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -91,7 +92,7 @@ RealNum StdDevArr(Integer const array_size[3],
       }
     }
   }
-  return sqrt(total / denom);
+  return static_cast<RealNum>(sqrt(total / denom));
 } //void StdDev()
 
 
@@ -101,13 +102,13 @@ RealNum SumSqrArr(Integer const array_size[3],
                   RealNum ***aaafH,
                   RealNum ***aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  double total = 0.0;
+  double denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        double h = aaafH[iz][iy][ix];
         h *= h;
         if (aaafW)
           h *= aaafW[iz][iy][ix];
@@ -115,7 +116,7 @@ RealNum SumSqrArr(Integer const array_size[3],
       }
     }
   }
-  return total;
+  return static_cast<RealNum>(total);
 } //void SumSqrArr()
 
 
@@ -125,20 +126,20 @@ RealNum SumArr(Integer const array_size[3],
                RealNum ***aaafH,
                RealNum ***aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  double total = 0.0;
+  double denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        double h = aaafH[iz][iy][ix];
         total += h;
         if (aaafW)
           h *= aaafW[iz][iy][ix];
       }
     }
   }
-  return total;
+  return static_cast<RealNum>(total);
 } //void SumArr()
 
 
@@ -155,6 +156,7 @@ void AddScalarArr(RealNum offset,
 }
 
 
+
 template<class RealNum, class Integer>
 void MultiplyScalarArr(RealNum scale,
                        Integer const array_size[3],
@@ -165,6 +167,7 @@ void MultiplyScalarArr(RealNum scale,
       for (Integer ix = 0; ix < array_size[0]; ix++)
         aaafH[iz][iy][ix] *= scale;
 }
+
 
 
 template<class RealNum, class Integer>
@@ -192,6 +195,65 @@ void MinMaxArr(RealNum& min,
 
 
 
+
+template<class RealNum, class Integer>
+void
+IntensityHistogramArr(RealNum **paHistX, //pointer to an array of intensities
+                      long long **paHistY,//number of voxels with that intensity
+                      Integer &nbins,     //specify number of bins (if positive)
+                      RealNum &bin_width, //alternatively, suggest bin_width
+                      Integer const array_size[3],
+                      RealNum ***aaafI,
+                      RealNum ***aaafW = NULL) 
+{
+  RealNum hmin = 0.0;
+  RealNum hmax = -1.0;
+
+  for (Integer iz = 0; iz < array_size[2]; iz++) {
+    for (Integer iy = 0; iy < array_size[1]; iy++) {
+      for (Integer ix = 0; ix < array_size[0]; ix++) {
+        if (hmin > hmax) {
+          hmin = aaafI[iz][iy][ix];
+          hmax = aaafI[iz][iy][ix];
+        }
+        if (aaafI[iz][iy][ix] < hmin)
+          hmin = aaafI[iz][iy][ix];
+        if (aaafI[iz][iy][ix] > hmax)
+          hmax = aaafI[iz][iy][ix];
+      }
+    }
+  }
+
+  if (nbins > 1) {
+    bin_width = (hmax - hmin) / (nbins - 1);
+  }
+  else if (bin_width > 0) {
+    nbins = 1 + ceil((hmax - hmin)/bin_width);
+  }
+
+  assert(paHistX);
+  *paHistX = new RealNum [nbins];
+  for (int i=0; i<nbins; i++)
+    (*paHistX)[i] = hmin + i*bin_width;
+
+  assert(paHistY);
+  *paHistY = new long long [nbins];
+  for (int i=0; i < nbins; i++)
+    (*paHistY)[i] = 0;
+  for (Integer iz = 0; iz < array_size[2]; iz++) {
+    for (Integer iy = 0; iy < array_size[1]; iy++) {
+      for (Integer ix = 0; ix < array_size[0]; ix++) {
+        RealNum h = aaafI[iz][iy][ix];
+        if ((! aaafW) || (aaafW[iz][iy][ix] != 0.0)) {
+          RealNum h = aaafI[iz][iy][ix];
+          Integer i = floor( (h - hmin)/bin_width );
+          assert((0 <= i) && (i < nbins));
+          (*paHistY)[i]++;
+        }
+      }
+    }
+  }
+} //void IntensityHistogramArr()
 
 
 

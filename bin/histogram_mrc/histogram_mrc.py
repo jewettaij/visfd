@@ -24,6 +24,7 @@ def main():
     try:
         rescale01 = False
         nbins = -1
+        mask_name = ''
 
         argv = [arg for arg in sys.argv]
 
@@ -42,6 +43,9 @@ def main():
             elif (argv[i] == '-rescale'):
                 rescale01 = True
                 del argv[i:i + 1]
+            elif (argv[i] == '-mask') or (argv[i] == '-m'):
+                mask_name = argv[i+1]
+                del argv[i:i + 2]
             else:
                 i += 1
 
@@ -55,12 +59,28 @@ def main():
 
         try:
             hdata = []
+            sys.stderr.write('Reading MRC file "'+file_name+'"\n')
             with mrcfile.open(file_name, 'r') as mrc:
                 #sys.stdout.write('mrc.data.shape = '+str(mrc.data.shape)+'\n')
-
                 hdata = mrc.data.flatten()
+                if mask_name != '':
+                    sys.stderr.write('Reading MRC file "'+mask_name+'" (mask)\n')
+                    with mrcfile.open(mask_name, 'r') as mask:
+                        if mask.data.shape != mrc.data.shape:
+                            raise InputError('Error: The MRC files ("'+
+                                             file_name+'" and "'+mask_name+'")\n'
+                                             '       must have the same number of voxels in the x,y,z directions.\n'
+                                             '       (Currently: '+str(mrc.data.shape)+' and '+str(mask.data.shape)+', respectively)\n')
+                        mdata = map(mask.data.flatten())
+                        # Each entry in mdata is assumed to be either 0 or 1
+                        # (or rarely, a number between 0 and 1).
+                        # We can restrict the entries to entries in the original
+                        # hdata array whose corresponding mask value is non-zero
+                        # by multiplying each entry in the two arrays together.
+                        hdata *= mdata
                 hmin = min(hdata)
                 hmax = max(hdata)
+                
                 if hmin == hmax:
                     raise InputError('Error: The image has only one intensity value: '+str(hmin)+'\n')
                 if rescale01:

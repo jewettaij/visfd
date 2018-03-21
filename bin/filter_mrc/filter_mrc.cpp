@@ -1176,15 +1176,16 @@ HandleBlobDetector(Settings settings,
   // OPTIONAL: Now render the final image with all of the spherical shells
   //           superimposed on top of the original image:
   //
-  //ApplySphereDecals(tomo_in,
-  //                  tomo_out,
-  //                  mask,
-  //                  display_crds_int,
-  //                  display_radii,
-  //                  display_shell_thicknesses,
-  //                  display_scores,
-  //                  0.0,
-  //                  true);
+  tomo_out = tomo_in;
+  ApplySphereDecals(tomo_in,
+                    tomo_out,
+                    mask,
+                    display_crds_int,
+                    display_radii,
+                    display_shell_thicknesses,
+                    display_scores,
+                    0.0,
+                    true);
 
 
   Dealloc3D(tomo_in.header.nvoxels,
@@ -1224,8 +1225,35 @@ HandleThresholds(Settings settings,
     float stddev_intensity = StdDevArr(tomo_out.header.nvoxels,
                                        tomo_out.aaafI,
                                        mask.aaafI);
-    settings.out_threshold_01_a *= stddev_intensity;
-    settings.out_threshold_01_b *= stddev_intensity;
+    float ave_intensity = AverageArr(tomo_out.header.nvoxels,
+                                     tomo_out.aaafI,
+                                     mask.aaafI);
+
+    // REMOVE THIS CRUFT LATER:
+    //long long *histY;
+    //float *histX;
+    //int nbins = -1;
+    //float hist_bin_width = 1.0;
+    //IntensityHistogramArr(&histX,
+    //                      &histY,
+    //                      nbins,
+    //                      hist_bin_width,
+    //                      tomo_out.header.nvoxels,
+    //                      tomo_out.aaafI,
+    //                      mask.aaafI);
+    //for (int i=0; i < nbins; i++)
+    //  cerr << histX[i] << " " << histY[i] << endl;
+    //delete [] histX;
+    //delete [] histY;
+
+    settings.out_threshold_01_a = ave_intensity +
+      settings.out_threshold_01_a * stddev_intensity;
+    settings.out_threshold_01_b = ave_intensity +
+      settings.out_threshold_01_b * stddev_intensity;
+    cerr << "ave="<< ave_intensity <<", stddev="<<stddev_intensity << endl;
+    cerr << "  Clipping intensities between ["
+         << settings.out_threshold_01_a << ", "
+         << settings.out_threshold_01_b << "]" << endl;
   }
   for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
     for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {

@@ -55,7 +55,7 @@ using the "-out" argument:
 are assumed to be in **physical units**.  (Eg. *Angstroms*, not *voxels*.)
 This makes it more convenient to apply the software
 to images at different magnifications.
-(This includes all of the gaussian "sigma" parameters, specifically the "-gauss", "-dog", "-dog", and "-template-gauss" arguments.)
+(This includes all of the width parameters used with the "-gauss", "-blob", "-dog", and "-template-gauss" filters.)
 
 Consequently, this program needs to know the physical width of each voxel.
 By default it will attempt to infer that from the MRC file
@@ -101,8 +101,7 @@ filter.
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
 
-The "**-dog**" filter can be used for [blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be emphasized or selected using this filter.  (This filter can be customized using the "-dog", and "-exponents" arguments.)
-
+The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be emphasized or selected using this filter.  This filter is useful when the size of the objects in the image is not known in advance.  Unfortunately, the computation is slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
 
 The "**-dog**"" filter uses a (band-pass)
 [Difference-Of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
@@ -137,31 +136,31 @@ in the source image.  (See below for details.)
 ### -gauss and -ggauss
 The **-gauss** and **-gauss-aniso** arguments must be followed by one or more numbers specifying the width of the Gaussian filter to apply to your image:
 ```
-   -gauss  s
+   -gauss  σ
 ```
 or
 ```
-   -gauss-aniso  s_x  s_y  s_z
+   -gauss-aniso  σ_x  σ_y  σ_z
 ```
 In either case, the original image is convolved with:
 ```
-   h(x,y,z) = A*exp(-0.5 * ((x/s_x)^2 + (y/s_y)^2 + (z/s_z)^2))
+   h(x,y,z) = A*exp(-0.5 * ((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
 ```
-When *-gauss* is used, *s_x = s_y = s_z = s*
+When *-gauss* is used, *σ_x = σ_y = σ_z = σ*
 
 If **-ggauss** or **-ggauss-aniso** is used, 
 then the image is instead convolved with
 [a generalized gaussian function](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1):
 ```
    h(x,y,z) = A*exp(-r^m)
-    where r = sqrt((x/s_x)^2 + (y/s_y)^2 + (z/s_z)^2))
+    where r = √((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
 ```
-The width of the Gaussian (ie, the s_x, s_y, s_z arguments) should be specified in units of physical distance, not in voxels.
+The width of the Gaussian (ie, the σ_x, σ_y, σ_z arguments) should be specified in units of physical distance, not in voxels.
 (The A coefficient will be determined automatically by normalization.)
 By default **m** *= 2*,
 however this can be overridden using the optional "**-exponent m**"
-*Note:* that these *s*, *s_x*, *s_y*, *s_z*, parameters are a factor 
-of *sqrt(2) times larger* than the corresponding *sigma* parameter
+*Note:* that these *σ*, *σ_x*, *σ_y*, *σ_z*, parameters are a factor 
+of *√2 times larger* than the corresponding *σ* ("sigma") parameter
 traditionally used in the 
 [Gaussian function](https://en.wikipedia.org/wiki/Normal_distribution).
 (For your convenience, you can plot these functions for various parameters using
@@ -172,7 +171,7 @@ In this case, the "s" parameter is specified in voxels, not physical distance.)
 if you use the default exponent of 2.
 *Changing the exponent will slow down the filter considerably.*
 
-The width of the filter-window is chosen automatically according the s, s_x, s_y, s_z parameters selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
+The filter is truncated far away from the central peak at a point which is chosen automatically according the σ, σ_x, σ_y, σ_z parameters selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
 
 
 ### -dog
@@ -203,15 +202,15 @@ If the **-dogg** or **-dogg-aniso* arguments are selected,
 then the image will instead be convolved with the following function:
 ```
   h(x,y,z) = A*exp(-r_a^m) - B*exp(-r_b^n)
-   where r_a = sqrt((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
-     and r_b = sqrt((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+   where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+     and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
 ```
 The width of the Gaussian (the a_x, a_y, a_z, b_x, b_y, b_z arguments) should be specified in units of physical distance, not in voxels.
 The A and B coefficients will be automatically chosen 
 so that each Gaussian is normalized.
 (The sum of h(x,y,z) over x,y,z is 0.
  The sum of the A and B terms over x,y,z is 1.)
-The width of the filter-window is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "**-cutoff**" and "**-window-ratio**" arguments if necessary (see below).
+The filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "**-cutoff**" and "**-window-ratio**" arguments if necessary (see below).
 ![A comparison of Difference-of-Gaussians Difference-of-Generalized-Gaussians filter weights](./images/example_dogxy_w=2.516nm_a=13nm_b=20nm_m=2_n=2__vs__m=6_n=16.svg)
 ```
    filter_mrc -w 25.16 -dog 130 200 -exponents 2 2
@@ -225,7 +224,7 @@ located in the same directory.
 In this case, the "a" and "b" parameters should be specified in voxels, not physical distance.)
 *Note:* that these *a*, *a_x*, *a_y*, *a_z*,
 and *b*, *b_x*, *b_y*, and *b_z* parameters are a factor 
-of *sqrt(2) times larger* than the corresponding *sigma* parameter
+of *√2 times larger* than the corresponding *σ* ("sigma") parameter
 traditionally used in the 
 [Gaussian function](https://en.wikipedia.org/wiki/Normal_distribution).
 *Note:* The calculation is
@@ -247,7 +246,7 @@ the original image is convolved with the following function:
  In the XY plane, the filter used is:
 ```
    h_xy(x,y) = A*exp(-(|r|/a)^m) - B*exp(-(|r|/b)^n)
-           r = sqrt(x^2 + y^2)
+           r = √(x^2 + y^2)
  and A,B coefficients are chosen so that each Gaussian is normalized
 
 ```
@@ -261,75 +260,74 @@ the original image is convolved with the following function:
 ```
 (The "C" constant is determined by normalization.)
 
-The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
+The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
 
-### -dog
-The **-dog** filter performs the 
+
+### -blob1, -blobr1, -blobd1
+The "**-blob1**", "**-blobr1**", and "**-blobd1**" filters perform the 
 [Laplacian-of-a-Gaussian](https://en.wikipedia.org/wiki/Blob_detection)
-operation on the source image.
-It applies a Gaussian blur to the image
+filter on the source image.
+(See implementation details below.)
+The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
 (whose width is specified by the user), 
-and then calculates the Laplacian of the result 
-to find local maxima or minima.
-It is used for [blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).
+and then calculates the Laplacian of the result.
 Objects in the image of various sizes can be emphasized or selected 
 using this filter.
-The **-dog** and **-dog-aniso** argument must be followed by a number(s) specifying the *approximate* radius of the objects that you wish to emphasize in the image.
-
+The "**-blob1**", "**-blob1-aniso**" filters are followed by the the Gaussian 
+width (σ, "sigma" parameter) that you want to use (see implementation details):
 ```
-  -dog-aniso  s_x  s_y  s_z
+  -blob1-aniso  σ_x  σ_y  σ_z
 ```
 or:
 ```
-  -dog  s         (isotropic version.  This means s = s_x = s_y = s_z)
+  -blob1  σ         (isotropic version.  This means σ = σ_x = σ_y = σ_z)
 ```
-When the "**-dog**" or "**-dog-aniso**" filter is selected,
-a ["laplacian-of-gaussians"](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian)
- filter will be used.
+The "**-blobr1**" and "**-blobd1**" filters are variants of the
+"**-blob1**" filter, whose parameters are (more conveniently)
+specified by the radius(r≈σ/√2) or diameter(d≈σ√2) of the objects that
+you wish to emphasize in the image.
 
-*Note:* The argument(s) following the **-dog** and **-dog-aniso** 
-(named *s*, *s_x*, *s_y*, and *s_z* below)
+*Note:* The Gaussian "σ" arguments (*σ*, *σ_x*, *σ_y*, and *σ_z*)
 are the related to the *t* parameter traditionally used 
 to describe the Laplacian-of-a-Gaussian filter according to:
 ```
-   s^2 = 2 * t
+   σ^2 = t
 ```
-This means that these *s*, *s_x*, *s_y*, and *s_z* parameters are a factor 
-of sqrt(2) times larger than the corresponding *sigma* parameter
-traditionally used in the
-[Gaussian function](https://en.wikipedia.org/wiki/Normal_distribution).
 See implementation details below:
 
 *Implementation*
 
 To speed up the calculation, 
 an approximation to the Laplacian-of-Gaussian filter us used.
-The original image is convolved with a Difference-of-Gaussians ("DOG") function:
+The original image is convolved with a 
+[Difference-of-Gaussians (DOG)](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach)
+filter.
 ```
    h(x,y,z) = scale * ( A*exp(-r_a^2) - B*exp(-r_b^2) )
-  where r_a = sqrt((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
-    and r_b = sqrt((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
-      a_x = s_x*(1-0.5*delta), a_y = s_y*(1-0.5*delta), a_z = s_z*(1-0.5*delta)
-      b_x = s_x*(1+0.5*delta), b_y = s_y*(1+0.5*delta), b_z = s_z*(1+0.5*delta)
+  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+      a_x = σ_x*(1-0.5*delta), a_y = σ_y*(1-0.5*delta), a_z = σ_z*(1-0.5*delta)
+      b_x = σ_x*(1+0.5*delta), b_y = σ_y*(1+0.5*delta), b_z = σ_z*(1+0.5*delta)
     scale = (1.0 / delta^2)  *  (1.0 / voxel_width^2)
 ```
 The A and B parameters are determined automatically by normalization.
 The "*delta*" parameter is *0.01* by default.
 (This can be overridden using the "-dog-delta delta" argument.
 A smaller "delta" value may improve the approximation.)
-The width of the Gaussian (the s_x, s_y, s_z arguments) should be specified in units of physical distance, not in voxels.
+The width of the Gaussian (the σ_x, σ_y, σ_z arguments) should be specified in units of physical distance, not in voxels.
 The A and B coefficients will be automatically chosen so that the discrete sums
 of exp(-r_a^2) and exp(-r_b^2) values are both 1.
+The results are rescaled (using the "scale" variable) to achieve
+"scale invariance".
+*(This way, an object of width W filtered with a Gaussian of width σ,
+receives the same score as an
+object of width 2W filtered with a Gaussian of width 2σ (for example).
+Consequently the "**-blob1**",  "**-blobr1**", and "**-blobd1**" filters
+can be used to perform scale free blob detection manually, one Gaussian-width 
+at a time, in exactly the same way it is done automatically using
+"**-blob**", "**-blobr**", and "**-blob**", respectively.)*
 
-*(Note: This scaled variant of the LOG filter is sometimes called the 
-  "scale-normalized Laplacian of a Gaussian".
-  Multiplying the resulting voxel intensities by the *scale* parameter 
-  as we did above means that the resulting brightnesses should not 
-  depend on the resolution of the image.
-  It also makes it easier to compare the results of using the
-  "-dog" filter using different s (or s_x, s_y, and s_z) parameters.)
-
-The width of the filter-window is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
+The filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
 *Note:* A more general version of this filter can be obtained using the 
 "-gdog" argument which allows the user 
 to specify the a_x, a_y, a_z, b_x, b_y, b_z parameters directly,
@@ -354,7 +352,7 @@ original image compared with
 [a generalized Gaussian function](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1):
 ```
    h(x,y,z) = A*exp(-r^m)
-    where r = sqrt((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+    where r = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
 ```
 The width of the Gaussian (ie, the *a_x*, *a_y*, *a_z* parameters)
 should be specified in units of physical distance, not in voxels.
@@ -370,7 +368,7 @@ nearby voxels is calculated (by convolvution)
 using the following weights:
 ```
    w(x,y,z) = B*exp(-r^n)
-    where r = sqrt((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+    where r = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
 ```
 The *b_x*, *b_y*, *b_z* arguments define an ellipse over which this average
 is calculated. (They should be specified in physical units, not voxels.
@@ -423,7 +421,7 @@ files together using the "combine_mrc" program
 which is documented [here](doc_combine_mrc.md).)*
 
 
-(Details: The width of the filter-window is chosen automatically according the a_x, a_y, a_z, b_x, b_y, b_z parameters selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary.)
+(Details: The filter is truncated far away from the central peak at a point which is chosen automatically according the a_x, a_y, a_z, b_x, b_y, b_z parameters selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary.)
 
 
 
@@ -701,7 +699,7 @@ If unspecified, this parameter is set to 0.02.
 If you prefer to specify the size of the filter window manually, you can
 use the "-window-ratio" argument.
 This argument specifies the size of the 3-D filter box in x,y, directions
-(in units of the **a** and **b** distance parameters, or **s**(sigma)
+(in units of the **a** and **b** distance parameters, or **σ** ("sigma")
  parameters which appear in the formulas above).
 This overrides the "-cutoff threshold" argument.
 
