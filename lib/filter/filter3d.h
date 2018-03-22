@@ -1458,8 +1458,8 @@ BlobDog3D(int const image_size[3], //source image size
           vector<array<int,3> >& maxima_crds, // store maxima x,y,z coords here
           vector<RealNum>& minima_sigma, // corresponding width for that minima
           vector<RealNum>& maxima_sigma, // corresponding width for that maxima
-          vector<RealNum>& minima_score, // what was the blob's score?
-          vector<RealNum>& maxima_score, // (score = intensity after filtering)
+          vector<RealNum>& minima_scores, // what was the blob's score?
+          vector<RealNum>& maxima_scores, // (score = intensity after filtering)
           RealNum delta_sigma_over_sigma,// param for approximating LOG with DOG
           RealNum minima_threshold,    // discard blobs with unremarkable scores
           RealNum maxima_threshold,    // discard blobs with unremarkable scores
@@ -1606,7 +1606,7 @@ BlobDog3D(int const image_size[3], //source image size
               ixiyiz[2] = iz;
               minima_crds.push_back(ixiyiz);
               minima_sigma.push_back(blob_widths[ir-1]);
-              minima_score.push_back(score);
+              minima_scores.push_back(score);
             }
             if (is_maxima &&
                 ((score > maxima_threshold) ||
@@ -1618,7 +1618,7 @@ BlobDog3D(int const image_size[3], //source image size
               ixiyiz[2] = iz;
               maxima_crds.push_back(ixiyiz);
               maxima_sigma.push_back(blob_widths[ir-1]);
-              maxima_score.push_back(score);
+              maxima_scores.push_back(score);
             }
           }
           assert(! (is_minima && is_maxima));
@@ -1631,9 +1631,9 @@ BlobDog3D(int const image_size[3], //source image size
          << " local minima and maxima, respectively ---\n" << endl;
 
     assert((minima_crds.size() == minima_sigma.size()) &&
-           (minima_crds.size() == minima_score.size()));
+           (minima_crds.size() == minima_scores.size()));
     assert((maxima_crds.size() == maxima_sigma.size()) &&
-           (maxima_crds.size() == maxima_score.size()));
+           (maxima_crds.size() == maxima_scores.size()));
 
   } //for (ir = 0; ir < blob_widths.size(); ir++)
 
@@ -1651,6 +1651,200 @@ BlobDog3D(int const image_size[3], //source image size
               &aaaafI[2]);
     delete [] aaaafI;
     delete [] aafI;
+  }
+
+} //BlobDog3D()
+
+
+//apply permutation in-place, credit: Raymond Chen
+template<typename T>
+void
+apply_permutation(vector<T>& v,
+                  vector<int>& indices)
+{
+  using swap;
+  for (size_t i = 0; i < indices.size(); i++) {
+    auto current = i;
+    while (i != indices[current]) {
+      auto next = indices[current];
+      swap(v[current], v[next]);
+      indices[current] = current;
+      current = next;
+    }
+    indices[current] = current;
+  }
+} //apply_permutation()
+
+
+          
+          
+template<class RealNum>
+void
+DiscardOverlappingBlobs3D(vector<array<int,3> >& blob_crds,
+                          vector<RealNum>& blob_sigma, 
+                          vector<RealNum>& blob_scores,
+                          occupancy_table_size) {
+  cerr << "     -- Attempting to allocate space for one more image map --\n"
+       << "     -- (If this crashes your computer, find a computer     --\n"
+       << "     --  with more RAM and use \"ulimit\")                    --\n";
+
+  bool *abOccupied;
+  bool *aaabOccupied;
+  Alloc3D(occupancy_table_size,
+          &abOccupied,
+          &aaabOccupied);
+  for(int iz = 0; iz < occupancy_table_size[2]; iz++)
+    for(int iy = 0; iy < occupancy_table_size[1]; iy++)
+      for(int ix = 0; ix < occupancy_table_size[0]; ix++)
+        aaabOccupied[iz][iy][ix] = false;
+
+  vector<long long> i_keep_blob;
+  for (long long i=0; i < nmin; i++) {
+    bool discard = false;
+    float reff = (1.0-nonmax_suppression_max_overlap)*blob_sigma[i]*sqrt(2.0);
+    int Reff = ceil(reff);
+    int Reffsq = ceil(reff*reff);
+    ix = blob_crds[i][0];
+    iy = blob_crds[i][1];
+    iz = blob_crds[i][2];
+    for(int jz = -Reff; jz <= Reff && (! discard); jz++) {
+      for(int jy = -Reff; jy <= Reff && (! discard); jy++) {
+        for(int jx = -Reff; jx <= Reff && (! discard); jx++) {
+          rsq = jx*jx + jy*jy + jz*jz;
+          if (rsq > Reffsq)
+            continue;
+          if (aaabOccupied[iz+jz][iy+jy][ix+jx])
+            discard = true;
+          aaabOccupied[iz+jz][iy+jy][ix+jx] = true;
+        }
+      }
+    }
+    if (discard) {
+
+
+    }
+  }
+
+  Dealloc3D(occupancy_table_size,
+            &abOccupied,
+            &aaabOccupied);
+} //DiscardOverlappingBlobs3D()
+
+
+
+
+// Find all scale-invariant blobs in the image,
+// This version can discard blobs which overlap with existing blobs
+// using the "max_overlap" parameter (which varies between 0 and 1).
+// (This is sometimes called "non-max suppression")
+// If two blobs lie within a distance of
+//     max_overlap * (R1 + R2)
+// from each other, then the blob with the lower score is discarded.
+template<class RealNum>
+void
+BlobDog3D(int const image_size[3], //source image size
+          RealNum ***aaafSource,   //source image
+          RealNum ***aaafMask,     //ignore voxels where mask==0
+          const vector<RealNum>& blob_widths, // blob widths to try, ordered
+          vector<array<int,3> >& minima_crds, // store minima x,y,z coords here
+          vector<array<int,3> >& maxima_crds, // store maxima x,y,z coords here
+          vector<RealNum>& minima_sigma, // corresponding width for that minima
+          vector<RealNum>& maxima_sigma, // corresponding width for that maxima
+          vector<RealNum>& minima_scores, // what was the blob's score?
+          vector<RealNum>& maxima_scores, // (score = intensity after filtering)
+          RealNum delta_sigma_over_sigma,// param for approximating LOG with DOG
+          RealNum minima_threshold,    // discard blobs with unremarkable scores
+          RealNum maxima_threshold,    // discard blobs with unremarkable scores
+          RealNum truncate_ratio,      // how many sigma before truncating?
+          RealNum max_overlap,
+          // optional arguments
+          ostream *pReportProgress = NULL, // report progress to the user?
+          RealNum ****aaaafI = NULL, //preallocated memory for filtered images
+          RealNum **aafI = NULL)     //preallocated memory for filtered images
+                                     //(sometimes the caller wants to access)
+{
+
+  BlobDog3D(image_size,
+            aaafSource,   //source image
+            aaafMask,     //ignore voxels where mask==0
+            blob_widths, // blob widths to try, ordered
+            minima_crds, // store minima x,y,z coords here
+            maxima_crds, // store maxima x,y,z coords here
+            minima_sigma, // corresponding width for that minima
+            maxima_sigma, // corresponding width for that maxima
+            minima_scores, // what was the blob's score?
+            maxima_scores, // (score = intensity after filtering)
+            delta_sigma_over_sigma,// param for approximating LOG with DOG
+            minima_threshold,    // discard blobs with unremarkable scores
+            maxima_threshold,    // discard blobs with unremarkable scores
+            truncate_ratio,      // how many sigma before truncating?
+            // optional arguments
+            pReportProgress, // report progress to the user?
+            aaaafI, //preallocated memory for filtered images
+            aafI);     //preallocated memory for filtered images
+
+  cerr << "--- Removing overlapping blobs ---" << endl;
+
+  long long n_min = minima_crds.size();
+  assert(n_min == minima_sigma.size());
+  assert(n_min == minima_scores.size());
+  long long n_max = maxima_crds.size();
+  assert(n_max == maxima_sigma.size());
+  assert(n_max == maxima_scores.size());
+  vector<tuple<float, long long> > score_index_minima(n_min);
+  vector<tuple<float, long long> > score_index_maxima(n_max);
+  for (long long i = 0; i < n_min; i++)
+    score_index_minima[i] = tuple<float, long>(minima_scores[i], i);
+  for (long long i = 0; i < n_max; i++)
+    score_index_maxima[i] = tuple<float, long>(maxima_scores[i], i);
+
+  if (n_min > 0) {
+    cerr << "-- Sorting minima blobs according to their scores in descending order...";
+    sort(score_index_minima.rbegin(),
+         score_index_minima.rend(),
+         lessthan());
+    vector<long long> permute_min;
+    for (i = 0; i < score_index_minima.size(); i++)
+      permute_min[i] = score_index_minima[i];
+    score_index_minima.clear();
+    apply_permutation(minima_crds,  permute_min);
+    apply_permutation(minima_sigma, permute_min);
+    apply_permutation(minima_scores, permute_min);
+    cerr << "done --" << endl;
+  }
+  if (n_max > 0) {
+    cerr << "-- Sorting maxima blobs according to their scores in ascending order...";
+    sort(score_index_maxima.begin(),
+         score_index_maxima.end(),
+         lessthan());
+    vector<long long> permute_max;
+    for (i = 0; i < score_index_maxima.size(); i++)
+      permute_max[i] = score_index_maxima[i];
+    score_index_maxima.clear();
+    apply_permutation(maxima_crds,  permute_max);
+    apply_permutation(maxima_sigma, permute_max);
+    apply_permutation(maxima_scores, permute_max);
+    cerr << "done --" << endl;
+  }
+
+  
+  if (max_overlap < 1.0) {
+    cerr << "-- Discarding overlapping minima blobs (volume overlap > "
+         << max_overlap << ")...";
+
+    DiscardOverlappingBlobs3D(minima_crds,
+                              minima_sigma,
+                              minima_scores,
+                              image_size);
+
+    cerr << "done --" << endl;
+    cerr << "-- Discarding overlapping maxima blobs (volume overlap > "
+         << max_overlap << ")...";
+    DiscardOverlappingBlobs3D(maxima_crds,
+                              maxima_sigma,
+                              maxima_scores,
+                              image_size);
+    cerr << "done --" << endl;
   }
 
 } //BlobDog3D()

@@ -110,6 +110,9 @@ Settings::Settings() {
   blob_width_multiplier = 1.0;
   blob_minima_threshold = 1.0;    // (maxima < minima disables this feature)
   blob_maxima_threshold = -1.0;   // (maxima < minima disables this feature)
+  blob_minima_threshold_ratio = 0.5;
+  blob_maxima_threshold_ratio = 0.5;
+  nonmax_suppresion_maxoverlap = 0.8;
 
   use_thresholds = false;
   use_dual_thresholds = false;
@@ -474,11 +477,11 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         float blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blobr1") || (vArgs[i] == "-blob1r") )
-          //blob_width_multiplier = 1.0/sqrt(2.0);
-          blob_width_multiplier = 0.6;  // (for a solid uniform sphere)
+          //blob_width_multiplier = 0.5;
+          blob_width_multiplier = 1.0/sqrt(2.0);
         if ((vArgs[i] == "-blobd1") || (vArgs[i] == "-blob1d") )
-          //blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
-          blob_width_multiplier = 0.3;  // (for a solid uniform sphere)
+          //blob_width_multiplier = 0.25;
+          blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
         dogsf_width[0] = stof(vArgs[i+1]) * blob_width_multiplier;
         dogsf_width[1] = dogsf_width[0];
         dogsf_width[2] = dogsf_width[0];
@@ -520,6 +523,24 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob1-aniso")
 
 
+    else if (vArgs[i] == "-max-overlap")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        nonmax_suppression_max_overlap = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a positive number:\n"
+                       "       the maximum overlap between to detected blobs\n"
+                       "       (as a percentage of either blob's volume).");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-max-overlap")
+
+
     else if ((vArgs[i] == "-blob") ||
              (vArgs[i] == "-blob-radii") ||
              (vArgs[i] == "-blobr") ||
@@ -531,7 +552,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
             (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
-            (vArgs[i+4] == "") || (vArgs[i+3][0] == '-'))
+            (vArgs[i+4] == "") || (vArgs[i+4][0] == '-'))
           throw invalid_argument("");
 
         string blob_file_name_base = vArgs[i+1];
@@ -539,8 +560,8 @@ Settings::ParseArgs(vector<string>& vArgs)
           blob_file_name_base =
             blob_file_name_base.substr(0,
                                        blob_file_name_base.length()-4);
-        blob_minima_file_name = blob_file_name_base + string(".minima.txt");
-        blob_maxima_file_name = blob_file_name_base + string(".maxima.txt");
+        blob_minima_file_name = blob_file_name_base + string("_minima.txt");
+        blob_maxima_file_name = blob_file_name_base + string("_maxima.txt");
 
         cerr << "settings.blob_minima_file_name = \""
              << blob_minima_file_name << "\"" << endl;
@@ -568,11 +589,11 @@ Settings::ParseArgs(vector<string>& vArgs)
 
         blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blobr"))
-          //blob_width_multiplier = 1.0/sqrt(2.0);
-          blob_width_multiplier = 0.6;  // (for a solid uniform sphere)
+          //blob_width_multiplier = 0.5;  // (for a solid uniform sphere)
+          blob_width_multiplier = 1.0/sqrt(2.0);
         else if ((vArgs[i] == "-blob-diameters") || (vArgs[i] == "-blobd"))
-          //blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
-          blob_width_multiplier = 0.3;  // (for a solid uniform sphere)
+          //blob_width_multiplier = 0.25;  // (for a solid uniform sphere)
+          blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
         blob_widths[0] = blob_width_min * blob_width_multiplier;
         for (int n = 1; n < N; n++) {
           blob_widths[n] = blob_widths[n-1] * ratio;
@@ -617,6 +638,34 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-blob-maxima-threshold")
              
+
+    else if (vArgs[i] == "-blob-minima-ratio") {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        blob_minima_threshold-ratio = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number number.\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-blob-minima-ratio")
+
+
+    else if (vArgs[i] == "-blob-maxima-ratio") {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        blob_maxima_threshold-ratio = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number number.\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-blob-maxima-ratio")
+
 
     else if (vArgs[i] == "-dog-delta") {
       try {

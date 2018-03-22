@@ -198,7 +198,7 @@ When *-dog* is used,
 and
 *b_x = b_y = b_z = b*
 
-If the **-dogg** or **-dogg-aniso* arguments are selected, 
+Alternatively, if the **-dogg** or **-dogg-aniso* arguments are selected, 
 then the image will instead be convolved with the following function:
 ```
   h(x,y,z) = A*exp(-r_a^m) - B*exp(-r_b^n)
@@ -256,86 +256,192 @@ the original image is convolved with the following function:
 
  Along the Z direction, the filter used is a simple Gaussian:
 ```
-   h_z(r) = C * exp(-(z/c)^2)
+   h_z(r) = C * exp(-0.5*(z/c)^2)
 ```
 (The "C" constant is determined by normalization.)
 
 The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
 
 
-### -blob1, -blobr1, -blobd1
-The "**-blob1**", "**-blobr1**", and "**-blobd1**" filters perform the 
-[Laplacian-of-a-Gaussian](https://en.wikipedia.org/wiki/Blob_detection)
-filter on the source image.
+### -blob, -blobr, -blobd, -blob1, -blobr1, -blobd1, -blob1-aniso
+
+When the "**-blob1**", "**-blobr1**", and "**-blobd1**" arguments are selected a
+[Laplacian-of-a-Gaussian (LOG)](https://en.wikipedia.org/wiki/Blob_detection)
+filter is applied on the source image.
 (See implementation details below.)
 The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
 (whose width is specified by the user), 
 and then calculates the Laplacian of the result.
-Objects in the image of various sizes can be emphasized or selected 
-using this filter.
-The "**-blob1**", "**-blob1-aniso**" filters are followed by the the Gaussian 
-width (σ, "sigma" parameter) that you want to use (see implementation details):
+Features in the image of various sizes can be emphasized 
+using this kind of filter.
+
+The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
+arguments is typically chosen when the user already knows the approximate
+size of the objects or features they want to detect in the image.
+When these arguments are selected, an LOG filter will be applied
+to the image only once using a Gaussian width (σ) specified by the user,
+and the resulting filtered image will be saved as a file.
+(The local minima and maxima of this image can then be extracted later using
+ the "**-find-minima**", "**-find-maxima**" and "**-max-overlap**" arguments.)
+```
+  -blob1  σ
+```
+There is also an anisotropic version of this filter.
 ```
   -blob1-aniso  σ_x  σ_y  σ_z
 ```
-or:
+
+####  -blob, -blobr, -blobd
+
+The "**-blob**", "**-blobr**", and "**-blobd**" arguments are used when the user
+*does not* know the exact size of the objects of interest within the image.
+In this case, the program will apply a LOG filter to the image multiple times
+using a range of Gaussian widths (σ) (specified by the user)
+in an attempt to determine the correct size (scale) for the relevant objects
+in the image automatically.  (As such, this operation is comparatively slow.)
+A list of local minima and maxima in *X,Y,Z* space (and scale-space, "*t*")
+will generated and saved in a file, using the method described in:
+Lindeberg,T., Int. J. Comput. Vision.(1998)
+
+The "**-blob**", "**-blobr**" and "**-blobd**" arguments
+filters are followed by 4 arguments:
 ```
-  -blob1  σ         (isotropic version.  This means σ = σ_x = σ_y = σ_z)
+  -blob   file_name.txt  σ_min  σ_max  N
+  -blobr  file_name.txt  r_min  r_max  N
+  -blobd  file_name.txt  d_min  d_max  N
 ```
-The "**-blobr1**" and "**-blobd1**" filters are variants of the
-"**-blob1**" filter, whose parameters are (more conveniently)
-specified by the radius(r≈σ/√2) or diameter(d≈σ√2) of the objects that
-you wish to emphasize in the image.
+
+"file_name.txt" is the name of a file which will store the 
+location of all the blobs detected in the image.
+These blobs are either local minima or maxima in X,Y,Z,scale space.
+Actually, two files will be created, named
+*file_name_minima.txt* (for storing local minima), and 
+*file_name_maxima.txt* (for storing local maxima).
+Each file is a 5-column ascii text file with the following format:
+```
+x1 y1 z1 size1 score1
+x2 y2 z2 size2 score2
+ :  :  :   :     :
+xM yM zM sizeM scoreM
+```
+...where
+"**M**" is the number of blobs (maxima or minima) which were detected,
+On each line of that file,
+**x,y,z** are the coordinates for the blob's center,
+**size** is the size of the blob, 
+(characterized either using either σ, radius, or diameter, as explained below),
+and **score** is the intensity of that voxel after 
+a LOG filter of that size was applied to it.
+The list is ordered from high score to low score
+(for maxima, or low score to high score for minima).
+
+#### automatic disposal of poor scoring blobs
+
+There are an enormous number of local minima in X,Y,Z,scale space.
+By default, local maxima whose score is less than 80% of the global maxima
+are discarded.  A similar rule is used for discarding local minima.
+You can override these rules by supplying the following arguments:
+```
+   -blob-minima-ratio  ratio_min
+   -blob-maxima-ratio  ratio_max
+```
+...where "ratio_min" and "ratio_max" are fractions between 0 and 1.
+If you prefer, you can alternately specify the exact threshold used
+to discard local minima and maxima (instead of specifying ratios).
+You can do this using the following arguments:
+```
+   -blob-minima-threshold  thresh_min
+   -blob-maxima-threshold  thresh_max
+```
+...where "thresh_min" and "thresh_max" are the thresholds below which,
+and above which, the blob score must lie in order not to be discarded,
+respectively.
+
+
+#### automatic disposal of overlapping blobs (non-max suppression)
+
+Whenever two blobs overlap, the one with the better score
+(ie. higher score for maxima, and lower score for minima)
+is superimposed upon the one with a poorer score.
+By default, if the distance between the blobs is less than 0.8 times
+the sum of their radii, then the poorer-scoring blob is discarded.
+This can be overridden using the "**-max-overlap fraction**" argument
+```
+   -max-overlap fraction
+```
+where "**fraction**" is a number between 0 and 1.
+(A larger number means less overlap is permitted.
+ Setting fraction = 0.0 disables this feature.)
+
+#### Specifying the radius or diameter of the objects of interest:
+
+The "**-blobr**", "**-blobd**", (and "**-blobr1**" "**-blobd1**") arguments
+are all variants of the
+"**-blob**" (and "**-blob1**") argument whose parameters are (more conveniently)
+specified by the approximate radius(r≈σ√2) or diameter(d≈σ2√2) of the objects 
+that you wish to detect within the image (instead of the Gaussian width, σ).
+
+
+####  Implementation:
+
+To speed up the calculation, 
+the Difference-of-Gaussian approximation to the Laplacian-of-Gaussian 
+filter us used.
+Specifically, the original image is convolved with a 
+[Difference-of-Gaussians (DOG)](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach)
+filter, *h(x,y,z)*
+```
+   h(x,y,z) = scale * ( A*exp(-0.5*r_a^2) - B*exp(-0.5*r_b^2) )
+  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+      a_x = σ_x*(1-0.5*δ), a_y = σ_y*(1-0.5*δ), a_z = σ_z*(1-0.5*δ)
+      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
+    scale = (1.0 / δ^2)
+```
+The A and B parameters are determined automatically by normalization.
+The "*δ*" parameter is *0.01* by default.
+(This can be overridden using the "-dog-delta δ" argument.
+A smaller "*δ*" value may improve the approximation.)
+The width of the Gaussian (the *σ_x*, *σ_y*, *σ_z* arguments) should be specified in units of physical distance, not in voxels.
+The *A* and *B* coefficients will be automatically chosen using normalization
+(so that the discrete integral sums of *exp(-0.5*r_a^2)* and *exp(-0.5*r_b^2)*
+functions are both 1).
+The filter is multiplied by (1.0 / δ^2) to achieve *scale invariance*.
+*("Scale invariance" means an object of width W filtered with a Gaussian 
+of width σ, receives the same score as an
+object of width 2W filtered with a Gaussian of width *2σ*, for example.)
+This also means that you can use the
+"**-blob1**",  "**-blobr1**", and "**-blobd1**" arguments 
+to perform scale-free-blob-detection, *one Gaussian-width at a time,*
+in such a way that that you can directly compare
+the results of using different Gaussian-widths 
+(the same way they are compared when using
+"**-blob**", "**-blobr**", and "**-blob**").
+
+In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
 
 *Note:* The Gaussian "σ" arguments (*σ*, *σ_x*, *σ_y*, and *σ_z*)
-are the related to the *t* parameter traditionally used 
-to describe the Laplacian-of-a-Gaussian filter according to:
+are the related to the *t* ("time") scaling parameter traditionally used 
+in the scale-space literature according to:
 ```
    σ^2 = t
 ```
-See implementation details below:
+(See implementation details above)
 
-*Implementation*
 
-To speed up the calculation, 
-an approximation to the Laplacian-of-Gaussian filter us used.
-The original image is convolved with a 
-[Difference-of-Gaussians (DOG)](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach)
-filter.
-```
-   h(x,y,z) = scale * ( A*exp(-r_a^2) - B*exp(-r_b^2) )
-  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
-    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
-      a_x = σ_x*(1-0.5*delta), a_y = σ_y*(1-0.5*delta), a_z = σ_z*(1-0.5*delta)
-      b_x = σ_x*(1+0.5*delta), b_y = σ_y*(1+0.5*delta), b_z = σ_z*(1+0.5*delta)
-    scale = (1.0 / delta^2)  *  (1.0 / voxel_width^2)
-```
-The A and B parameters are determined automatically by normalization.
-The "*delta*" parameter is *0.01* by default.
-(This can be overridden using the "-dog-delta delta" argument.
-A smaller "delta" value may improve the approximation.)
-The width of the Gaussian (the σ_x, σ_y, σ_z arguments) should be specified in units of physical distance, not in voxels.
-The A and B coefficients will be automatically chosen so that the discrete sums
-of exp(-r_a^2) and exp(-r_b^2) values are both 1.
-The results are rescaled (using the "scale" variable) to achieve
-"scale invariance".
-*(This way, an object of width W filtered with a Gaussian of width σ,
-receives the same score as an
-object of width 2W filtered with a Gaussian of width 2σ (for example).
-Consequently the "**-blob1**",  "**-blobr1**", and "**-blobd1**" filters
-can be used to perform scale free blob detection manually, one Gaussian-width 
-at a time, in exactly the same way it is done automatically using
-"**-blob**", "**-blobr**", and "**-blob**", respectively.)*
-
-The filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
-*Note:* A more general version of this filter can be obtained using the 
-"-gdog" argument which allows the user 
-to specify the a_x, a_y, a_z, b_x, b_y, b_z parameters directly,
-and enables the user to use 
+*Note:* As a reminder, 
+a more general version of the the DOG filter used above can be 
+applied to the image by using the "-dog" and "-dogg" arguments,
+(although it's not clear whether this would be useful for blob detection).
+These alternate versions of the DOG filter allow the user 
+to specify the *a_x, a_y, a_z, b_x, b_y, b_z* parameters  directly,
+and use
 [generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
 instead of
 [ordinary Gaussians](https://en.wikipedia.org/wiki/Normal_distribution)
-(by using the "-exponents m n" arguments).
+(by using the "-exponents m n" argument).
+
+
 
 
 ### -template-gauss

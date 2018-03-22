@@ -714,13 +714,14 @@ BlobDog3D(int const image_size[3], //source image size
           vector<array<int,3> >& maxima_crds, // store maxima x,y,z coords here
           vector<RealNum>& minima_sigma, // corresponding radius for that minima
           vector<RealNum>& maxima_sigma, // corresponding radius for that maxima
-          vector<RealNum>& minima_score, // what was the blobs score?
-          vector<RealNum>& maxima_score, // (score = intensity after filtering)
+          vector<RealNum>& minima_scores, // what was the blobs score?
+          vector<RealNum>& maxima_scores, // (score = intensity after filtering)
           RealNum delta_sigma_over_sigma, //difference in Gauss widths parameter
           RealNum minima_threshold,
           RealNum maxima_threshold,
           RealNum filter_truncate_ratio,     //how many sigma before truncating?
           RealNum filter_truncate_threshold, //decay in filter before truncating
+          RealNum nonmax_suppression_max_overlap,
           ostream *pReportProgress = NULL,
           RealNum ****aaaafI = NULL, //preallocated memory for filtered images
           RealNum **aafI = NULL)     //preallocated memory for filtered images
@@ -742,12 +743,13 @@ BlobDog3D(int const image_size[3], //source image size
             maxima_crds,
             minima_sigma,
             maxima_sigma,
-            minima_score,
-            maxima_score,
+            minima_scores,
+            maxima_scores,
             delta_sigma_over_sigma,
             minima_threshold,
             maxima_threshold,
             filter_truncate_ratio,
+            nonmax_suppression_max_overlap,
             pReportProgress,
             aaaafI,
             aafI);
@@ -1074,6 +1076,7 @@ HandleBlobDetector(Settings settings,
             settings.blob_maxima_threshold,
             settings.filter_truncate_ratio,
             settings.filter_truncate_threshold,
+            settings.nonmax_suppression_max_overlap,
             &cerr,
             aaaafI,
             aafI);
@@ -1368,6 +1371,18 @@ HandleExtrema(Settings settings,
       } //for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
     } //for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
   } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
+
+  if (settings.nonmax_suppression_max_overlap < 1.0) {
+    DiscardOverlappingBlobs3D(minima_crds,
+                              minima_sigma, 
+                              minima_scores,
+                              tomo_in.header.nvoxels);
+    DiscardOverlappingBlobs3D(maxima_crds,
+                              maxima_sigma, 
+                              maxima_scores,
+                              tomo_in.header.nvoxels);
+  }
+
   //string out_file_name_base = settings.out_file_name;
   //if ((EndsWith(settings.out_file_name, ".rec")) ||
   //    (EndsWith(settings.out_file_name, ".mrc")))
