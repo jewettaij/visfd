@@ -119,8 +119,7 @@ class Settings {
   float blob_maxima_threshold;
   string blob_minima_file_name;
   string blob_maxima_file_name;
-  float blob_minima_threshold_ratio;
-  float blob_maxima_threshold_ratio;
+  float blob_use_threshold_ratios;
   float blob_max_overlap;
 
   float filter_truncate_threshold;

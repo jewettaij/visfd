@@ -108,10 +108,9 @@ Settings::Settings() {
   sphere_decals_shell_thickness = -1.0;
   sphere_decals_shell_thickness_min = -1.0;
   blob_width_multiplier = 1.0;
-  blob_minima_threshold = 1.0;    // (maxima < minima disables this feature)
-  blob_maxima_threshold = -1.0;   // (maxima < minima disables this feature)
-  blob_minima_threshold_ratio = 0.5;
-  blob_maxima_threshold_ratio = 0.5;
+  blob_use_threshold_ratios = true;
+  blob_minima_threshold = 0.5;
+  blob_maxima_threshold = 0.5;
   blob_max_overlap = 0.2;
 
   use_thresholds = false;
@@ -154,6 +153,7 @@ void
 Settings::ParseArgs(vector<string>& vArgs)
 {
   bool exponents_set_by_user = false;
+  bool delta_set_by_user = false;
   for (int i=1; i < vArgs.size(); ++i)
   {
 
@@ -579,12 +579,15 @@ Settings::ParseArgs(vector<string>& vArgs)
         blob_widths.resize(N);
         float ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
 
+        // Optional:
         // Make sure the difference between the width of the Gaussians used
         // to approximate the Laplacian-of-Gaussian (delta_sigma_over_sigma), 
         // is no larger than the difference between the successive widths
         // in the list of Gaussian blurs we will apply to our source image.
         // (Actually, I make sure it is no larger than 1/3 this difference.)
-        if ((ratio-1.0)/3 < delta_sigma_over_sigma)
+        if (((ratio-1.0)/3 < delta_sigma_over_sigma)
+            &&
+            (! delta_set_by_user))
           delta_sigma_over_sigma = (ratio-1.0)/3;
 
         blob_width_multiplier = 1.0;
@@ -616,6 +619,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         blob_minima_threshold = stof(vArgs[i+1]);
+        blob_use_threshold_ratios = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -630,6 +634,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         blob_maxima_threshold = stof(vArgs[i+1]);
+        blob_use_threshold_ratios = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -643,7 +648,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_minima_threshold_ratio = stof(vArgs[i+1]);
+        blob_minima_threshold = stof(vArgs[i+1]);
+        blob_use_threshold_ratios = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -657,7 +663,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_maxima_threshold_ratio = stof(vArgs[i+1]);
+        blob_maxima_threshold = stof(vArgs[i+1]);
+        blob_use_threshold_ratios = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -673,6 +680,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         delta_sigma_over_sigma = stof(vArgs[i+1]);
+        delta_set_by_user = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 

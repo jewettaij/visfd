@@ -717,11 +717,12 @@ BlobDog3D(int const image_size[3], //source image size
           vector<RealNum>& minima_scores, // what was the blobs score?
           vector<RealNum>& maxima_scores, // (score = intensity after filtering)
           RealNum delta_sigma_over_sigma, //difference in Gauss widths parameter
-          RealNum minima_threshold,
-          RealNum maxima_threshold,
           RealNum filter_truncate_ratio,     //how many sigma before truncating?
           RealNum filter_truncate_threshold, //decay in filter before truncating
-          RealNum max_overlap,
+          RealNum minima_threshold,       // discard unremarkable minima
+          RealNum maxima_threshold,       // discard unremarkable maxima
+          bool use_threshold_ratios=true, // threshold=ratio*best_score ?
+          RealNum max_overlap = 0.0,
           ostream *pReportProgress = NULL,
           RealNum ****aaaafI = NULL, //preallocated memory for filtered images
           RealNum **aafI = NULL)     //preallocated memory for filtered images
@@ -746,9 +747,10 @@ BlobDog3D(int const image_size[3], //source image size
             minima_scores,
             maxima_scores,
             delta_sigma_over_sigma,
+            filter_truncate_ratio,
             minima_threshold,
             maxima_threshold,
-            filter_truncate_ratio,
+            use_threshold_ratios,
             max_overlap,
             pReportProgress,
             aaaafI,
@@ -1072,10 +1074,11 @@ HandleBlobDetector(Settings settings,
             minima_scores, // what was the blob's score?
             maxima_scores, // ("score" = intensity after filtering)
             settings.delta_sigma_over_sigma, //difference in Gauss widths parameter
-            settings.blob_minima_threshold,
-            settings.blob_maxima_threshold,
             settings.filter_truncate_ratio,
             settings.filter_truncate_threshold,
+            settings.blob_minima_threshold,
+            settings.blob_maxima_threshold,
+            settings.blob_use_threshold_ratios,
             settings.blob_max_overlap,
             &cerr,
             aaaafI,

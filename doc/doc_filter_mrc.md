@@ -338,7 +338,7 @@ The list is ordered from high score to low score
 #### automatic disposal of poor scoring blobs
 
 There are an enormous number of local minima in X,Y,Z,scale space.
-By default, local maxima whose score is less than 80% of the global maxima
+By default, local maxima whose score is less than 50% of the global maxima
 are discarded.  A similar rule is used for discarding local minima.
 You can override these rules by supplying the following arguments:
 ```
@@ -356,6 +356,7 @@ You can do this using the following arguments:
 ...where "thresh_min" and "thresh_max" are the thresholds below which,
 and above which, the blob score must lie in order not to be discarded,
 respectively.
+*(Note: You can either use thresolds or ratios, but you cannot mix both.)*
 
 
 #### automatic disposal of overlapping blobs (non-max suppression)
@@ -365,6 +366,8 @@ Whenever two blobs overlap, the one with the better score
 is superimposed upon the one with a poorer score.
 By default, if the distance between the blobs is less than 0.8 times
 the sum of their radii, then the poorer-scoring blob is discarded.
+(Equivalently if the overlap between them is more than 0.2 times 
+ the sum of their radii, then the poorer-scoring blow will be discarded.)
 This can be overridden using the "**-max-overlap fraction**" argument
 ```
    -max-overlap fraction

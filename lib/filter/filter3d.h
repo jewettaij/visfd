@@ -1462,9 +1462,10 @@ BlobDog3D(int const image_size[3], //source image size
           vector<RealNum>& minima_scores, // what was the blob's score?
           vector<RealNum>& maxima_scores, // (score = intensity after filtering)
           RealNum delta_sigma_over_sigma,// param for approximating LOG with DOG
+          RealNum truncate_ratio,      // how many sigma before truncating?
           RealNum minima_threshold,    // discard blobs with unremarkable scores
           RealNum maxima_threshold,    // discard blobs with unremarkable scores
-          RealNum truncate_ratio,      // how many sigma before truncating?
+          bool use_threshold_ratios=true, // threshold=ratio*best_score ?
           // optional arguments
           ostream *pReportProgress = NULL, // report progress to the user?
           RealNum ****aaaafI = NULL, //preallocated memory for filtered images
@@ -1496,6 +1497,12 @@ BlobDog3D(int const image_size[3], //source image size
             &(aafI[2]),
             &(aaaafI[2]));
   }
+
+
+  float global_minima_score = 1.0;  //impossible, minima < 0
+  float global_maxima_score = -1.0; //impossible, maxima > 0
+  bool disable_thresholds = (minima_threshold > maxima_threshold); //(unwise)
+
 
   for (int ir = 0; ir < blob_widths.size(); ir++) {
 
@@ -1556,6 +1563,20 @@ BlobDog3D(int const image_size[3], //source image size
     cerr << "--- searching for local minima & maxima at sigma[" << ir-1 << "] = "
          << blob_widths[ir-1] << " ---\n";
 
+    // As we are looking for local minima and maxima we need to
+    // 
+    // Keep track of the best scores so far
+    // and discard blobs with weak scores as early as possible.
+    // If use_threshold_ratios=true (default), then any
+    // local maxima which are not > maxima_threshold * highest_score_so_far
+    // will be discarded as are minima which are not
+    // < maxima_threshold * lowest_score_so_far, which should be < 0.
+    // In practice this keep the list of minima and maxima of manageable size.
+    // (Otherwise a significant fraction of the voxels in the image could end
+    // up being a minima or maxima at some scale, and this could easily use up
+    // an enormous amout of memory and be difficult to deal with later.
+    // It's better to prevent this list from growing too large at any point.
+    
     for (int iz = 0; iz < image_size[2]; iz++) {
       cerr << "  " << iz+1 << " / " << image_size[2] << "\n";
       for (int iy = 0; iy < image_size[1]; iy++) {
@@ -1597,9 +1618,12 @@ BlobDog3D(int const image_size[3], //source image size
 
           if ((! aaafMask) || (aaafMask[iz][iy][ix] != 0))
           {
+            float minima_threshold_so_far = minima_threshold;
+            if (use_threshold_ratios)
+              minima_threshold_so_far = minima_threshold*global_minima_score;
             if (is_minima &&
-                ((score < minima_threshold) ||
-                 (minima_threshold > maxima_threshold)))
+                (score < 0.0) &&
+                ((score <= minima_threshold) || disable_thresholds))
             {
               array<int, 3> ixiyiz;
               ixiyiz[0] = ix;
@@ -1608,10 +1632,16 @@ BlobDog3D(int const image_size[3], //source image size
               minima_crds.push_back(ixiyiz);
               minima_sigma.push_back(blob_widths[ir-1]);
               minima_scores.push_back(score);
+              if (score < global_minima_score)
+                global_minima_score = score;
             }
+
+            float maxima_threshold_so_far = maxima_threshold;
+            if (use_threshold_ratios)
+              maxima_threshold_so_far = maxima_threshold*global_maxima_score;
             if (is_maxima &&
-                ((score > maxima_threshold) ||
-                 (minima_threshold > maxima_threshold)))
+                (score > 0.0) &&
+                ((score >= maxima_threshold) || disable_thresholds))
             {
               array<int, 3> ixiyiz;
               ixiyiz[0] = ix;
@@ -1620,6 +1650,8 @@ BlobDog3D(int const image_size[3], //source image size
               maxima_crds.push_back(ixiyiz);
               maxima_sigma.push_back(blob_widths[ir-1]);
               maxima_scores.push_back(score);
+              if (score > global_maxima_score)
+                global_maxima_score = score;
             }
           }
           assert(! (is_minima && is_maxima));
@@ -1637,6 +1669,37 @@ BlobDog3D(int const image_size[3], //source image size
            (maxima_crds.size() == maxima_scores.size()));
 
   } //for (ir = 0; ir < blob_widths.size(); ir++)
+
+  if (use_threshold_ratios) {
+    // Now that we know what the true global minima and maxima are,
+    // go back and discard maxima whose scores are not higher than
+    // maxima_threshold * global_maxima_score.
+    // (Do the same for local minima as well.)
+    for (int i = 0; i < minima_scores.size(); i++) {
+      assert(minima_scores[i] < 0.0);
+      if (minima_scores[i] > minima_threshold * global_minima_score) {
+        // delete this blob
+        minima_crds.erase(minima_crds.begin() + i,
+                          minima_crds.begin() + i + 1);
+        minima_sigma.erase(minima_sigma.begin() + i,
+                           minima_sigma.begin() + i + 1);
+        minima_scores.erase(minima_scores.begin() + i,
+                            minima_scores.begin() + i + 1);
+      }
+    }
+    for (int i = 0; i < maxima_scores.size(); i++) {
+      assert(maxima_scores[i] > 0.0);
+      if (maxima_scores[i] < maxima_threshold * global_maxima_score) {
+        // delete this blob
+        maxima_crds.erase(maxima_crds.begin() + i,
+                          maxima_crds.begin() + i + 1);
+        maxima_sigma.erase(maxima_sigma.begin() + i,
+                           maxima_sigma.begin() + i + 1);
+        maxima_scores.erase(maxima_scores.begin() + i,
+                            maxima_scores.begin() + i + 1);
+      }
+    }
+  } // if (use_threshold_ratios)
 
 
   if (! preallocated) {
@@ -1827,10 +1890,11 @@ BlobDog3D(int const image_size[3], //source image size
           vector<RealNum>& minima_scores, // what was the blob's score?
           vector<RealNum>& maxima_scores, // (score = intensity after filtering)
           RealNum delta_sigma_over_sigma,// param for approximating LOG with DOG
+          RealNum truncate_ratio,      // how many sigma before truncating?
           RealNum minima_threshold,    // discard blobs with unremarkable scores
           RealNum maxima_threshold,    // discard blobs with unremarkable scores
-          RealNum truncate_ratio,      // how many sigma before truncating?
-          RealNum max_overlap,
+          bool    use_threshold_ratios=true, // threshold=ratio*best_score?
+          RealNum max_overlap=0.0,            // maximum overlap between blobs
           // optional arguments
           ostream *pReportProgress = NULL, // report progress to the user?
           RealNum ****aaaafI = NULL, //preallocated memory for filtered images
@@ -1839,31 +1903,32 @@ BlobDog3D(int const image_size[3], //source image size
 {
 
   BlobDog3D(image_size,
-            aaafSource,   //source image
-            aaafMask,     //ignore voxels where mask==0
-            blob_widths, // blob widths to try, ordered
-            minima_crds, // store minima x,y,z coords here
-            maxima_crds, // store maxima x,y,z coords here
-            minima_sigma, // corresponding width for that minima
-            maxima_sigma, // corresponding width for that maxima
-            minima_scores, // what was the blob's score?
-            maxima_scores, // (score = intensity after filtering)
-            delta_sigma_over_sigma,// param for approximating LOG with DOG
-            minima_threshold,    // discard blobs with unremarkable scores
-            maxima_threshold,    // discard blobs with unremarkable scores
-            truncate_ratio,      // how many sigma before truncating?
-            // optional arguments
-            pReportProgress, // report progress to the user?
-            aaaafI, //preallocated memory for filtered images
-            aafI);     //preallocated memory for filtered images
+            aaafSource,
+            aaafMask,
+            blob_widths,
+            minima_crds,
+            maxima_crds,
+            minima_sigma,
+            maxima_sigma,
+            minima_scores,
+            maxima_scores,
+            delta_sigma_over_sigma,
+            truncate_ratio,
+            minima_threshold,
+            maxima_threshold,
+            use_threshold_ratios,
+            pReportProgress,
+            aaaafI,
+            aafI);
 
   if (pReportProgress)
     *pReportProgress << "--- Removing overlapping blobs ---" << endl;
 
   if (max_overlap < 1.0) {
     if (pReportProgress)
-      *pReportProgress << "-- Discarding overlapping minima blobs (volume overlap > "
-                       << max_overlap << ")...";
+      *pReportProgress << "done --\n"
+                       << "--- Discarding overlapping minima blobs \n"
+                       << "(max_overlap = " << max_overlap << ") ---\n";
 
     DiscardOverlappingBlobs(minima_crds,
                             minima_sigma,
@@ -1875,7 +1940,7 @@ BlobDog3D(int const image_size[3], //source image size
 
     if (pReportProgress)
       *pReportProgress << "done --\n"
-                       << "--- Discarding overlapping blobs \n"
+                       << "--- Discarding overlapping maxima blobs \n"
                        << "(max_overlap = " << max_overlap << ") ---\n";
 
     DiscardOverlappingBlobs(maxima_crds,
@@ -1885,7 +1950,7 @@ BlobDog3D(int const image_size[3], //source image size
                             max_overlap,
                             image_size,
                             pReportProgress);
-  }
+  } //if (max_overlap < 1.0)
 
 } //BlobDog3D()
 
