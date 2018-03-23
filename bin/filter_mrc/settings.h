@@ -121,7 +121,7 @@ class Settings {
   string blob_maxima_file_name;
   float blob_minima_threshold_ratio;
   float blob_maxima_threshold_ratio;
-  float nonmax_suppresion_maxoverlap;
+  float blob_max_overlap;
 
   float filter_truncate_threshold;
   float filter_truncate_ratio;
@@ -164,6 +164,8 @@ class Settings {
   string find_maxima_file_name;
   float find_minima_threshold;
   float find_maxima_threshold;
+  float find_minima_occlusion_radius;
+  float find_maxima_occlusion_radius;
 
   string in_coords_file_name;
   float sphere_decals_radius;

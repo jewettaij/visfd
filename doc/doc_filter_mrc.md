@@ -370,8 +370,8 @@ This can be overridden using the "**-max-overlap fraction**" argument
    -max-overlap fraction
 ```
 where "**fraction**" is a number between 0 and 1.
-(A larger number means less overlap is permitted.
- Setting fraction = 0.0 disables this feature.)
+(A smaller number means less overlap is permitted.
+ Setting fraction = 1.0 disables this feature.)
 
 #### Specifying the radius or diameter of the objects of interest:
 

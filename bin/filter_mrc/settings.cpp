@@ -112,7 +112,7 @@ Settings::Settings() {
   blob_maxima_threshold = -1.0;   // (maxima < minima disables this feature)
   blob_minima_threshold_ratio = 0.5;
   blob_maxima_threshold_ratio = 0.5;
-  nonmax_suppresion_maxoverlap = 0.8;
+  blob_max_overlap = 0.2;
 
   use_thresholds = false;
   use_dual_thresholds = false;
@@ -529,7 +529,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        nonmax_suppression_max_overlap = stof(vArgs[i+1]);
+        blob_max_overlap = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -643,21 +643,21 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_minima_threshold-ratio = stof(vArgs[i+1]);
+        blob_minima_threshold_ratio = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-minima-ratio")
+    } //if (vArgs[i] == "-blob-minima_ratio")
 
 
     else if (vArgs[i] == "-blob-maxima-ratio") {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_maxima_threshold-ratio = stof(vArgs[i+1]);
+        blob_maxima_threshold_ratio = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 

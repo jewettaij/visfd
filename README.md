@@ -71,7 +71,7 @@ and the sum can be restricted to certain regions
 (by using the "-mask" and "-mask-select" arguments). 
 
 
-## Development Status: *beta*
+## Development Status: *pre-alpha*
 As of 2018-2-12, this code has been lightly tested.
 Program names and command line
 arguments may change in the future.

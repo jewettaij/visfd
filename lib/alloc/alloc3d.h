@@ -31,7 +31,7 @@ void Alloc3D(Integer const size[3],
   // (The aaafX[][] pointers should point to to the 
   //  appropriate locations within the afX array.)
   for(Integer iz=0; iz<size[2]; iz++) {
-    (*paaaX)[iz] = new float* [size[1]];
+    (*paaaX)[iz] = new Entry* [size[1]];
     for(Integer iy=0; iy<size[1]; iy++) {
       (*paaaX)[iz][iy] = &((*paX)[iz*size[0]
                                     *size[1] + 

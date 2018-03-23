@@ -721,7 +721,7 @@ BlobDog3D(int const image_size[3], //source image size
           RealNum maxima_threshold,
           RealNum filter_truncate_ratio,     //how many sigma before truncating?
           RealNum filter_truncate_threshold, //decay in filter before truncating
-          RealNum nonmax_suppression_max_overlap,
+          RealNum max_overlap,
           ostream *pReportProgress = NULL,
           RealNum ****aaaafI = NULL, //preallocated memory for filtered images
           RealNum **aafI = NULL)     //preallocated memory for filtered images
@@ -749,7 +749,7 @@ BlobDog3D(int const image_size[3], //source image size
             minima_threshold,
             maxima_threshold,
             filter_truncate_ratio,
-            nonmax_suppression_max_overlap,
+            max_overlap,
             pReportProgress,
             aaaafI,
             aafI);
@@ -1076,7 +1076,7 @@ HandleBlobDetector(Settings settings,
             settings.blob_maxima_threshold,
             settings.filter_truncate_ratio,
             settings.filter_truncate_threshold,
-            settings.nonmax_suppression_max_overlap,
+            settings.blob_max_overlap,
             &cerr,
             aaaafI,
             aafI);
@@ -1239,7 +1239,7 @@ HandleThresholds(Settings settings,
                                      mask.aaafI);
 
     // REMOVE THIS CRUFT LATER:
-    //long long *histY;
+    //size_t *histY;
     //float *histX;
     //int nbins = -1;
     //float hist_bin_width = 1.0;
@@ -1372,16 +1372,45 @@ HandleExtrema(Settings settings,
     } //for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
   } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
 
-  if (settings.nonmax_suppression_max_overlap < 1.0) {
-    DiscardOverlappingBlobs3D(minima_crds,
+  if (settings.blob_max_overlap < 1.0) {
+    if (settings.find_minima_occlusion_radius > 0.0) {
+      vector<float> minima_sigma(minima_crds_int.size(),
+                                 settings.find_minima_occlusion_radius/sqrt(2));
+      vector<float> minima_scores(minima_crds_int.size());
+      for (size_t i = 0; i < minima_crds_int.size(); i++) {
+        int ix = minima_crds_int[i][0];
+        int iy = minima_crds_int[i][1];
+        int iz = minima_crds_int[i][2];
+        minima_scores[i] = tomo_out.aaafI[iz][iy][ix];
+      }
+      DiscardOverlappingBlobs(minima_crds_int,
                               minima_sigma, 
                               minima_scores,
-                              tomo_in.header.nvoxels);
-    DiscardOverlappingBlobs3D(maxima_crds,
+                              false,
+                              settings.blob_max_overlap,
+                              tomo_in.header.nvoxels,
+                              &cerr);
+    }
+    if (settings.find_maxima_occlusion_radius > 0.0) {
+      vector<float> maxima_sigma(maxima_crds_int.size(),
+                                 settings.find_maxima_occlusion_radius/sqrt(2));
+      vector<float> maxima_scores(maxima_crds_int.size());
+      for (size_t i = 0; i < maxima_crds_int.size(); i++) {
+        int ix = maxima_crds_int[i][0];
+        int iy = maxima_crds_int[i][1];
+        int iz = maxima_crds_int[i][2];
+        maxima_scores[i] = tomo_out.aaafI[iz][iy][ix];
+      }
+      DiscardOverlappingBlobs(maxima_crds_int,
                               maxima_sigma, 
                               maxima_scores,
-                              tomo_in.header.nvoxels);
-  }
+                              true,
+                              settings.blob_max_overlap,
+                              tomo_in.header.nvoxels,
+                              &cerr);
+    }
+
+  } //if (settings.blob_max_overlap < 1.0)
 
   //string out_file_name_base = settings.out_file_name;
   //if ((EndsWith(settings.out_file_name, ".rec")) ||

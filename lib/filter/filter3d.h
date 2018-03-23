@@ -4,6 +4,7 @@
 #include <cstring>
 #include <ostream>
 #include <vector>
+#include <tuple>
 using namespace std;
 #include <filter1d.h>  // defines "Filter1D" (used in "ApplyGauss()")
 
@@ -199,7 +200,7 @@ void MinMaxArr(RealNum& min,
 template<class RealNum, class Integer>
 void
 IntensityHistogramArr(RealNum **paHistX, //pointer to an array of intensities
-                      long long **paHistY,//number of voxels with that intensity
+                      size_t **paHistY,//number of voxels with that intensity
                       Integer &nbins,     //specify number of bins (if positive)
                       RealNum &bin_width, //alternatively, suggest bin_width
                       Integer const array_size[3],
@@ -237,7 +238,7 @@ IntensityHistogramArr(RealNum **paHistX, //pointer to an array of intensities
     (*paHistX)[i] = hmin + i*bin_width;
 
   assert(paHistY);
-  *paHistY = new long long [nbins];
+  *paHistY = new size_t [nbins];
   for (int i=0; i < nbins; i++)
     (*paHistY)[i] = 0;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
@@ -1660,9 +1661,9 @@ BlobDog3D(int const image_size[3], //source image size
 template<typename T>
 void
 apply_permutation(vector<T>& v,
-                  vector<int>& indices)
+                  vector<size_t>& indices)
 {
-  using swap;
+  using std::swap;
   for (size_t i = 0; i < indices.size(); i++) {
     auto current = i;
     while (i != indices[current]) {
@@ -1676,20 +1677,89 @@ apply_permutation(vector<T>& v,
 } //apply_permutation()
 
 
-          
-          
+
+
 template<class RealNum>
 void
-DiscardOverlappingBlobs3D(vector<array<int,3> >& blob_crds,
-                          vector<RealNum>& blob_sigma, 
-                          vector<RealNum>& blob_scores,
-                          occupancy_table_size) {
-  cerr << "     -- Attempting to allocate space for one more image map --\n"
-       << "     -- (If this crashes your computer, find a computer     --\n"
-       << "     --  with more RAM and use \"ulimit\")                    --\n";
+SortBlobs(vector<array<int,3> >& blob_crds,
+          vector<RealNum>& blob_sigma, 
+          vector<RealNum>& blob_scores,
+          bool descending_order = true, //sort scores in ascending or descending order?
+          ostream *pReportProgress = NULL)
+{ 
+  size_t n_blobs = blob_crds.size();
+  assert(n_blobs == blob_sigma.size());
+  assert(n_blobs == blob_scores.size());
+  vector<tuple<float, size_t> > score_index(n_blobs);
+  for (size_t i = 0; i < n_blobs; i++)
+    score_index[i] = make_tuple(blob_scores[i], i);
+
+  if (n_blobs > 0) {
+    if (pReportProgress)
+      *pReportProgress << "-- Sorting blobs according to their scores...";
+    if (descending_order)
+      sort(score_index.rbegin(),
+           score_index.rend());
+    else
+      sort(score_index.begin(),
+           score_index.end());
+    vector<size_t> permute_min;
+    for (size_t i = 0; i < score_index.size(); i++)
+      permute_min[i] = get<1>(score_index[i]);
+    score_index.clear();
+    apply_permutation(blob_crds,  permute_min);
+    apply_permutation(blob_sigma, permute_min);
+    apply_permutation(blob_scores, permute_min);
+    if (pReportProgress)
+      *pReportProgress << "done --" << endl;
+  }
+} //SortBlobs()
+          
+          
+
+template<class RealNum>
+void
+DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
+                        vector<RealNum>& blob_sigma, 
+                        vector<RealNum>& blob_scores,
+                        bool descending_order, //sort scores in ascending or descending order?
+                        float max_overlap,
+                        int const occupancy_table_size[3],
+                        ostream *pReportProgress = NULL)
+{
+  if (pReportProgress)
+    *pReportProgress
+      << "     -- Attempting to allocate space for one more image map --\n"
+      << "     -- (If this crashes your computer, find a computer     --\n"
+      << "     --  with more RAM and use \"ulimit\")                    --\n";
+
+  // Strategy:
+  // 1) Sort the blobs in order of their scores: from good scores, to bad scores
+  // 2) Beginning with the best scoring blobs and proceeding downwards,
+  //    check to see if the current blob overlaps with any of the blobs which
+  //    came before it (which score better).
+  // 3) If there is an overlap, delete it from the list.
+
+  SortBlobs(blob_crds,
+            blob_sigma, 
+            blob_scores,
+            descending_order,
+            pReportProgress);
+
+  // Implementation detail:
+  //    To check to see whether blobs overlap, it would be inefficient to
+  // compare that blob with all the blobs which came before it
+  // (O(n_blobs^2), where "n_blobs", could easily be 10^5 or larger.)
+  //    Instead we create a new image of voxels containing true/false values.
+  // Voxels in the image belonging to one of the blobs are assigned a "true"
+  // value.  This is a fast (O(1)) way to check if a given blob overlaps with
+  // any preceeding blobs.  Because the user may want to allow for partial
+  // overlap, we have the option to make these spheres smaller than their
+  // real size by some fraction, which we call "max_overlap"
+
 
   bool *abOccupied;
-  bool *aaabOccupied;
+  bool ***aaabOccupied;
   Alloc3D(occupancy_table_size,
           &abOccupied,
           &aaabOccupied);
@@ -1698,19 +1768,22 @@ DiscardOverlappingBlobs3D(vector<array<int,3> >& blob_crds,
       for(int ix = 0; ix < occupancy_table_size[0]; ix++)
         aaabOccupied[iz][iy][ix] = false;
 
-  vector<long long> i_keep_blob;
-  for (long long i=0; i < nmin; i++) {
+  size_t n_blobs = blob_crds.size();
+  assert(n_blobs == blob_sigma.size());
+  assert(n_blobs == blob_scores.size());
+
+  for (size_t i=0; i < n_blobs; i++) {
     bool discard = false;
-    float reff = (1.0-nonmax_suppression_max_overlap)*blob_sigma[i]*sqrt(2.0);
+    float reff = (1.0 - max_overlap) * blob_sigma[i] * sqrt(2.0);
     int Reff = ceil(reff);
     int Reffsq = ceil(reff*reff);
-    ix = blob_crds[i][0];
-    iy = blob_crds[i][1];
-    iz = blob_crds[i][2];
+    int ix = blob_crds[i][0];
+    int iy = blob_crds[i][1];
+    int iz = blob_crds[i][2];
     for(int jz = -Reff; jz <= Reff && (! discard); jz++) {
       for(int jy = -Reff; jy <= Reff && (! discard); jy++) {
         for(int jx = -Reff; jx <= Reff && (! discard); jx++) {
-          rsq = jx*jx + jy*jy + jz*jz;
+          int rsq = jx*jx + jy*jy + jz*jz;
           if (rsq > Reffsq)
             continue;
           if (aaabOccupied[iz+jz][iy+jy][ix+jx])
@@ -1720,15 +1793,16 @@ DiscardOverlappingBlobs3D(vector<array<int,3> >& blob_crds,
       }
     }
     if (discard) {
-
-
+      blob_crds.erase(blob_crds.begin() + i);
+      blob_sigma.erase(blob_sigma.begin() + i);
+      blob_scores.erase(blob_scores.begin() + i);
     }
-  }
+  } //for (size_t i=0; i < n_blobs; i++) {
 
   Dealloc3D(occupancy_table_size,
             &abOccupied,
             &aaabOccupied);
-} //DiscardOverlappingBlobs3D()
+} //DiscardOverlappingBlobs()
 
 
 
@@ -1783,68 +1857,34 @@ BlobDog3D(int const image_size[3], //source image size
             aaaafI, //preallocated memory for filtered images
             aafI);     //preallocated memory for filtered images
 
-  cerr << "--- Removing overlapping blobs ---" << endl;
+  if (pReportProgress)
+    *pReportProgress << "--- Removing overlapping blobs ---" << endl;
 
-  long long n_min = minima_crds.size();
-  assert(n_min == minima_sigma.size());
-  assert(n_min == minima_scores.size());
-  long long n_max = maxima_crds.size();
-  assert(n_max == maxima_sigma.size());
-  assert(n_max == maxima_scores.size());
-  vector<tuple<float, long long> > score_index_minima(n_min);
-  vector<tuple<float, long long> > score_index_maxima(n_max);
-  for (long long i = 0; i < n_min; i++)
-    score_index_minima[i] = tuple<float, long>(minima_scores[i], i);
-  for (long long i = 0; i < n_max; i++)
-    score_index_maxima[i] = tuple<float, long>(maxima_scores[i], i);
-
-  if (n_min > 0) {
-    cerr << "-- Sorting minima blobs according to their scores in descending order...";
-    sort(score_index_minima.rbegin(),
-         score_index_minima.rend(),
-         lessthan());
-    vector<long long> permute_min;
-    for (i = 0; i < score_index_minima.size(); i++)
-      permute_min[i] = score_index_minima[i];
-    score_index_minima.clear();
-    apply_permutation(minima_crds,  permute_min);
-    apply_permutation(minima_sigma, permute_min);
-    apply_permutation(minima_scores, permute_min);
-    cerr << "done --" << endl;
-  }
-  if (n_max > 0) {
-    cerr << "-- Sorting maxima blobs according to their scores in ascending order...";
-    sort(score_index_maxima.begin(),
-         score_index_maxima.end(),
-         lessthan());
-    vector<long long> permute_max;
-    for (i = 0; i < score_index_maxima.size(); i++)
-      permute_max[i] = score_index_maxima[i];
-    score_index_maxima.clear();
-    apply_permutation(maxima_crds,  permute_max);
-    apply_permutation(maxima_sigma, permute_max);
-    apply_permutation(maxima_scores, permute_max);
-    cerr << "done --" << endl;
-  }
-
-  
   if (max_overlap < 1.0) {
-    cerr << "-- Discarding overlapping minima blobs (volume overlap > "
-         << max_overlap << ")...";
+    if (pReportProgress)
+      *pReportProgress << "-- Discarding overlapping minima blobs (volume overlap > "
+                       << max_overlap << ")...";
 
-    DiscardOverlappingBlobs3D(minima_crds,
-                              minima_sigma,
-                              minima_scores,
-                              image_size);
+    DiscardOverlappingBlobs(minima_crds,
+                            minima_sigma,
+                            minima_scores,
+                            false,
+                            max_overlap,
+                            image_size,
+                            pReportProgress);
 
-    cerr << "done --" << endl;
-    cerr << "-- Discarding overlapping maxima blobs (volume overlap > "
-         << max_overlap << ")...";
-    DiscardOverlappingBlobs3D(maxima_crds,
-                              maxima_sigma,
-                              maxima_scores,
-                              image_size);
-    cerr << "done --" << endl;
+    if (pReportProgress)
+      *pReportProgress << "done --\n"
+                       << "--- Discarding overlapping blobs \n"
+                       << "(max_overlap = " << max_overlap << ") ---\n";
+
+    DiscardOverlappingBlobs(maxima_crds,
+                            maxima_sigma,
+                            maxima_scores,
+                            true,
+                            max_overlap,
+                            image_size,
+                            pReportProgress);
   }
 
 } //BlobDog3D()
