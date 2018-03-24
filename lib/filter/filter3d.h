@@ -1670,12 +1670,15 @@ BlobDog3D(int const image_size[3], //source image size
 
   } //for (ir = 0; ir < blob_widths.size(); ir++)
 
+
   if (use_threshold_ratios) {
     // Now that we know what the true global minima and maxima are,
     // go back and discard maxima whose scores are not higher than
     // maxima_threshold * global_maxima_score.
     // (Do the same for local minima as well.)
-    for (int i = 0; i < minima_scores.size(); i++) {
+    int i;
+    i = 0;
+    while (i < minima_scores.size()) {
       assert(minima_scores[i] < 0.0);
       if (minima_scores[i] > minima_threshold * global_minima_score) {
         // delete this blob
@@ -1686,8 +1689,11 @@ BlobDog3D(int const image_size[3], //source image size
         minima_scores.erase(minima_scores.begin() + i,
                             minima_scores.begin() + i + 1);
       }
+      else
+        i++;
     }
-    for (int i = 0; i < maxima_scores.size(); i++) {
+    i = 0;
+    while (i < maxima_scores.size()) {
       assert(maxima_scores[i] > 0.0);
       if (maxima_scores[i] < maxima_threshold * global_maxima_score) {
         // delete this blob
@@ -1698,6 +1704,8 @@ BlobDog3D(int const image_size[3], //source image size
         maxima_scores.erase(maxima_scores.begin() + i,
                             maxima_scores.begin() + i + 1);
       }
+      else
+        i++;
     }
   } // if (use_threshold_ratios)
 
@@ -1721,24 +1729,16 @@ BlobDog3D(int const image_size[3], //source image size
 
 
 //apply permutation in-place, credit: Raymond Chen
-template<typename T>
+template<class T>
 void
 apply_permutation(vector<T>& v,
-                  vector<size_t>& indices)
-{
-  using std::swap;
+                  vector<size_t>& indices) {
+  vector<T> v_copy(v);
   for (size_t i = 0; i < indices.size(); i++) {
-    auto current = i;
-    while (i != indices[current]) {
-      auto next = indices[current];
-      swap(v[current], v[next]);
-      indices[current] = current;
-      current = next;
-    }
-    indices[current] = current;
+    size_t j = indices[i];
+    v[i] = v_copy[j];
   }
-} //apply_permutation()
-
+}
 
 
 
@@ -1766,13 +1766,13 @@ SortBlobs(vector<array<int,3> >& blob_crds,
     else
       sort(score_index.begin(),
            score_index.end());
-    vector<size_t> permute_min;
+    vector<size_t> permutation(n_blobs);
     for (size_t i = 0; i < score_index.size(); i++)
-      permute_min[i] = get<1>(score_index[i]);
+      permutation[i] = get<1>(score_index[i]);
     score_index.clear();
-    apply_permutation(blob_crds,  permute_min);
-    apply_permutation(blob_sigma, permute_min);
-    apply_permutation(blob_scores, permute_min);
+    apply_permutation(blob_crds,  permutation);
+    apply_permutation(blob_sigma, permutation);
+    apply_permutation(blob_scores, permutation);
     if (pReportProgress)
       *pReportProgress << "done --" << endl;
   }
@@ -1831,11 +1831,11 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
       for(int ix = 0; ix < occupancy_table_size[0]; ix++)
         aaabOccupied[iz][iy][ix] = false;
 
-  size_t n_blobs = blob_crds.size();
-  assert(n_blobs == blob_sigma.size());
-  assert(n_blobs == blob_scores.size());
-
-  for (size_t i=0; i < n_blobs; i++) {
+  size_t i = 0;
+  while (i < blob_crds.size()) {
+    size_t n_blobs = blob_crds.size();
+    assert(n_blobs == blob_sigma.size());
+    assert(n_blobs == blob_scores.size());
     bool discard = false;
     float reff = (1.0 - max_overlap) * blob_sigma[i] * sqrt(2.0);
     int Reff = ceil(reff);
@@ -1847,6 +1847,10 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
       for(int jy = -Reff; jy <= Reff && (! discard); jy++) {
         for(int jx = -Reff; jx <= Reff && (! discard); jx++) {
           int rsq = jx*jx + jy*jy + jz*jz;
+          if (! ((0 <= ix+jx) && (ix+jx < occupancy_table_size[0]) &&
+                 (0 <= iy+jy) && (iy+jy < occupancy_table_size[1]) &&
+                 (0 <= iz+jz) && (iz+jz < occupancy_table_size[2])))
+            continue;
           if (rsq > Reffsq)
             continue;
           if (aaabOccupied[iz+jz][iy+jy][ix+jx])
@@ -1860,7 +1864,9 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
       blob_sigma.erase(blob_sigma.begin() + i);
       blob_scores.erase(blob_scores.begin() + i);
     }
-  } //for (size_t i=0; i < n_blobs; i++) {
+    else
+      i++;
+  } //while (i < blob_crds.size())
 
   Dealloc3D(occupancy_table_size,
             &abOccupied,
