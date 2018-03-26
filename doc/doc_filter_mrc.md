@@ -601,7 +601,28 @@ The resulting voxels will have intensities in the range from 0.48 to 0.52.
        When choosing thresholds, the 
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
-       It displays the range of voxel intensities in an image.*
+       It displays the range of voxel intensities in an image.
+       Alternatively you can use the "**-cl a b**" argument.*
+
+### -cl
+```
+-cl  a  b
+```
+The "**-cl**" argument is similar to the "**-clip**" argument, however it
+allows you to specify the minimimum and maximum intensity parameters 
+in units of σ, where σ is the standard deviation of the brightness values
+present in the image.  Typical usage:
+```
+-cl  -2.5 2.5
+```
+This will clip voxel intensities which are either 2.5 standard-deviations
+below or above the average intensity value, respectively
+*Note: You can use the "**-mask**" argument to exclude certain voxels 
+       from the clipping and thresholding operations.
+       When using "**-mask**" together with "**-cl**", then 
+       these voxels will also be excluded from consideration when 
+       calculating the average and spread(σ) of voxel intensities.
+
 
 ### -thresh  threshold
 
