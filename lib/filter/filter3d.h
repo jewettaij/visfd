@@ -1564,8 +1564,7 @@ BlobDog3D(int const image_size[3], //source image size
          << blob_widths[ir-1] << " ---\n";
 
     // As we are looking for local minima and maxima we need to
-    // 
-    // Keep track of the best scores so far
+    // keep track of the best scores so far
     // and discard blobs with weak scores as early as possible.
     // If use_threshold_ratios=true (default), then any
     // local maxima which are not > maxima_threshold * highest_score_so_far
@@ -1623,7 +1622,7 @@ BlobDog3D(int const image_size[3], //source image size
               minima_threshold_so_far = minima_threshold*global_minima_score;
             if (is_minima &&
                 (score < 0.0) &&
-                ((score <= minima_threshold) || disable_thresholds))
+                ((score < minima_threshold_so_far) || disable_thresholds))
             {
               array<int, 3> ixiyiz;
               ixiyiz[0] = ix;
@@ -1641,7 +1640,7 @@ BlobDog3D(int const image_size[3], //source image size
               maxima_threshold_so_far = maxima_threshold*global_maxima_score;
             if (is_maxima &&
                 (score > 0.0) &&
-                ((score >= maxima_threshold) || disable_thresholds))
+                ((score > maxima_threshold_so_far) || disable_thresholds))
             {
               array<int, 3> ixiyiz;
               ixiyiz[0] = ix;
@@ -1680,7 +1679,7 @@ BlobDog3D(int const image_size[3], //source image size
     i = 0;
     while (i < minima_scores.size()) {
       assert(minima_scores[i] < 0.0);
-      if (minima_scores[i] > minima_threshold * global_minima_score) {
+      if (minima_scores[i] >= minima_threshold * global_minima_score) {
         // delete this blob
         minima_crds.erase(minima_crds.begin() + i,
                           minima_crds.begin() + i + 1);
@@ -1695,7 +1694,7 @@ BlobDog3D(int const image_size[3], //source image size
     i = 0;
     while (i < maxima_scores.size()) {
       assert(maxima_scores[i] > 0.0);
-      if (maxima_scores[i] < maxima_threshold * global_maxima_score) {
+      if (maxima_scores[i] <= maxima_threshold * global_maxima_score) {
         // delete this blob
         maxima_crds.erase(maxima_crds.begin() + i,
                           maxima_crds.begin() + i + 1);

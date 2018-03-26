@@ -111,7 +111,7 @@ Settings::Settings() {
   blob_use_threshold_ratios = true;
   blob_minima_threshold = 0.5;
   blob_maxima_threshold = 0.5;
-  blob_max_overlap = 0.2;
+  blob_max_overlap = 0.3;
 
   use_thresholds = false;
   use_dual_thresholds = false;

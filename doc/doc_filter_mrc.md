@@ -366,7 +366,7 @@ Whenever two blobs overlap, the one with the better score
 is superimposed upon the one with a poorer score.
 By default, if the distance between the blobs is less than 0.8 times
 the sum of their radii, then the poorer-scoring blob is discarded.
-(Equivalently if the overlap between them is more than 0.2 times 
+(Equivalently if the overlap between them is more than 0.3 times 
  the sum of their radii, then the poorer-scoring blow will be discarded.)
 This can be overridden using the "**-max-overlap fraction**" argument
 ```

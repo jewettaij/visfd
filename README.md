@@ -17,13 +17,13 @@ and saves the result as a new .mrc/.rec file.
 This program can be used to rescale or invert a 3-D image, remove its high or low spatial frequencies,
 (smoothing, edge detection, band-pass filtering).
 and perform 3-D blob detection.
-This program can also be used for the simple template matching of spherical objects of arbitrary size (and arbitrary mask width).
+This program can be used
+[Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
 Currently, the program supports the following filters:
 ([generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1))
 [Gaussians](https://en.wikipedia.org/wiki/Gaussian_blur),
 ([generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1))
 [Difference-of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
-[Laplacian-of-Gaussians](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 inverse ("-invert", bright <--> dark),
 and
 several threshold filters ("-thresh", "-thresh2", "-thresh4".

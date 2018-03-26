@@ -1175,7 +1175,7 @@ HandleBlobDetector(Settings settings,
   for (int i = 0; i < display_crds_int.size(); i++) {
     // Choose the size of the hollow spheres around each object so they are
     // large enough that the original objects underneath are still visible.
-    display_radii[i] = 1.9 * display_sigma[i] / voxel_width[0];
+    display_radii[i] = sqrt(2.0) * display_sigma[i] / voxel_width[0];
     display_shell_thicknesses[i] = 0.1 * display_radii[i];
     // The spherical shells superimposed on the tomogram should be
     // at least 1 voxel wide in order to be visible to the user

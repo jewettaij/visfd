@@ -10,7 +10,7 @@ mrc_simple
 
 #The "PRIVATE_SRC_DIRS" directories contain source for libraries not intended
 #for outside scrutiny.  These directories contain code which will be
-#exclusively used by code contained in the minrms/bin directory.
+#exclusively used by code contained in the bin directory.
 PRIVATE_SRC_DIRS = 
 
 #When the "install" target is used, some of the libraries
