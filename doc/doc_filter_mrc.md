@@ -364,19 +364,19 @@ respectively.
 Whenever two blobs overlap, the one with the better score
 (ie. higher score for maxima, and lower score for minima)
 is superimposed upon the one with a poorer score.
-By default, if the distance between the blobs is less than 0.8 times
-the sum of their radii, then the poorer-scoring blob is discarded.
-(Equivalently if the overlap between them is more than 0.3 times 
- the sum of their radii, then the poorer-scoring blow will be discarded.)
-This can be overridden using the "**-max-overlap fraction**" argument
-```
-   -max-overlap fraction
-```
-where "**fraction**" is a number between 0 and 1.
-(A smaller number means less overlap is permitted.
- Setting fraction = 1.0 disables this feature.
- Radii are estimated according to the formula r≈σ√3.
- Negative values of "fraction" are permitted.)
+By default, if the distance between the blobs is less than 1.0 times
+the sum of their Gaussian widths 
+(σ1+σ2, or equivalently, (1/√3) times the sum of their radii), 
+then the poorer-scoring blob is discarded.
+This can be overridden using the "**-blob-sepration fraction**" argument
+where "**fraction**" is typically a number between 0 and √3.
+(A larger number means less overlap is permitted.
+ Setting *fraction=0.0* disables this feature.)
+Alternatively, if you prefer specifying separation distances in terms 
+of the blob radii (or diameters), you can use 
+"**-blobr-separation**" (or "**-blobd-separation**") arguments instead.
+(Again, blob radii and diameters are related to Gaussian widths, σ, 
+ according to r≈σ√3 and d≈σ√3.)
 
 
 #### Specifying the radius or diameter of the objects of interest:
