@@ -374,14 +374,17 @@ This can be overridden using the "**-max-overlap fraction**" argument
 ```
 where "**fraction**" is a number between 0 and 1.
 (A smaller number means less overlap is permitted.
- Setting fraction = 1.0 disables this feature.)
+ Setting fraction = 1.0 disables this feature.
+ Radii are estimated according to the formula r≈σ√3.
+ Negative values of "fraction" are permitted.)
+
 
 #### Specifying the radius or diameter of the objects of interest:
 
 The "**-blobr**", "**-blobd**", (and "**-blobr1**" "**-blobd1**") arguments
 are all variants of the
 "**-blob**" (and "**-blob1**") argument whose parameters are (more conveniently)
-specified by the approximate radius(r≈σ√2) or diameter(d≈σ2√2) of the objects 
+specified by the approximate radius(r≈σ√3) or diameter(d≈σ2√3) of the objects 
 that you wish to detect within the image (instead of the Gaussian width, σ).
 
 
@@ -402,7 +405,7 @@ filter, *h(x,y,z)*
     scale = (1.0 / δ^2)
 ```
 The A and B parameters are determined automatically by normalization.
-The "*δ*" parameter is *0.01* by default.
+The "*δ*" parameter is *0.02* by default.
 (This can be overridden using the "-dog-delta δ" argument.
 A smaller "*δ*" value may improve the approximation.)
 The width of the Gaussian (the *σ_x*, *σ_y*, *σ_z* arguments) should be specified in units of physical distance, not in voxels.

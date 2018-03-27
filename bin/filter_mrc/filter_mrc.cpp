@@ -722,7 +722,7 @@ BlobDog3D(int const image_size[3], //source image size
           RealNum minima_threshold,       // discard unremarkable minima
           RealNum maxima_threshold,       // discard unremarkable maxima
           bool use_threshold_ratios=true, // threshold=ratio*best_score ?
-          RealNum max_overlap = 0.0,
+          RealNum min_separation = 0.0,
           ostream *pReportProgress = NULL,
           RealNum ****aaaafI = NULL, //preallocated memory for filtered images
           RealNum **aafI = NULL)     //preallocated memory for filtered images
@@ -751,7 +751,7 @@ BlobDog3D(int const image_size[3], //source image size
             minima_threshold,
             maxima_threshold,
             use_threshold_ratios,
-            max_overlap,
+            min_separation,
             pReportProgress,
             aaaafI,
             aafI);
@@ -1079,7 +1079,7 @@ HandleBlobDetector(Settings settings,
             settings.blob_minima_threshold,
             settings.blob_maxima_threshold,
             settings.blob_use_threshold_ratios,
-            settings.blob_max_overlap,
+            settings.blob_min_separation,
             &cerr,
             aaaafI,
             aafI);
@@ -1150,52 +1150,88 @@ HandleBlobDetector(Settings settings,
     }
   }
 
-  // Optional: Draw spherical shells around all of the objects in the image.
-
-  //concatinate "maxima_crds_int" with "minima_crds_int"
-  vector<array<int,3> > display_crds_int; //(maxima_crds_int);
-  display_crds_int.insert(display_crds_int.end(),
-                          minima_crds_int.begin(),
-                          minima_crds_int.end());
-
-  //concatinate "maxima_sigma" with "minima_sigma"
-  vector<float> display_sigma(maxima_sigma);
-  display_sigma.insert(display_sigma.end(),
-                       minima_sigma.begin(),
-                       minima_sigma.end());
-
-  //concatinate "maxima_scores" with "minima_scores"
-  vector<float> display_scores(maxima_scores);
-  display_scores.insert(display_scores.end(),
-                        minima_scores.begin(),
-                        minima_scores.end());
-
-  vector<float> display_shell_thicknesses(display_crds_int.size());
-  vector<float> display_radii(display_crds_int.size());
-  for (int i = 0; i < display_crds_int.size(); i++) {
-    // Choose the size of the hollow spheres around each object so they are
-    // large enough that the original objects underneath are still visible.
-    display_radii[i] = sqrt(2.0) * display_sigma[i] / voxel_width[0];
-    display_shell_thicknesses[i] = 0.1 * display_radii[i];
-    // The spherical shells superimposed on the tomogram should be
-    // at least 1 voxel wide in order to be visible to the user
-    if (display_shell_thicknesses[i] < 1.0)
-      display_shell_thicknesses[i] = 1.0;
-  }
-
+  // ---------------------------------------------------------------------
   // OPTIONAL: Now render the final image with all of the spherical shells
   //           superimposed on top of the original image:
   //
-  tomo_out = tomo_in;
-  ApplySphereDecals(tomo_in,
-                    tomo_out,
-                    mask,
-                    display_crds_int,
-                    display_radii,
-                    display_shell_thicknesses,
-                    display_scores,
-                    0.0,
-                    true);
+  // Does the user want us to create a new image showing where the blobs are?
+  if (tomo_out.aaafI) {
+
+    vector<array<int,3> > display_crds_int(minima_crds_int);
+    display_crds_int.insert(display_crds_int.end(),
+                            maxima_crds_int.rbegin(),
+                            maxima_crds_int.rend());
+
+    //concatinate "maxima_sigma" with "minima_sigma"
+    vector<float> display_sigma(minima_sigma);
+    display_sigma.insert(display_sigma.end(),
+                         maxima_sigma.rbegin(),
+                         maxima_sigma.rend());
+
+    //concatinate "maxima_scores" with "minima_scores"
+    vector<float> display_scores(minima_scores);
+    display_scores.insert(display_scores.end(),
+                          maxima_scores.rbegin(),
+                          maxima_scores.rend());
+
+    vector<float> display_shell_thicknesses(display_crds_int.size());
+    vector<float> display_radii(display_crds_int.size());
+    for (int i = 0; i < display_crds_int.size(); i++) {
+      // Choose the size of the hollow spheres around each object so they are
+      // large enough that the original objects underneath are still visible.
+      display_radii[i] = sqrt(3.0) * display_sigma[i] / voxel_width[0];
+      display_shell_thicknesses[i] = 0.08 * display_radii[i];
+      // The spherical shells superimposed on the tomogram should be
+      // at least 1 voxel wide in order to be visible to the user
+      if (display_shell_thicknesses[i] < 1.0)
+        display_shell_thicknesses[i] = 1.0;
+    }
+
+    if (display_scores.size() > 0) {
+
+      tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
+      float tomo_ave   = AverageArr(tomo_in.header.nvoxels,
+                                    tomo_in.aaafI,
+                                    mask.aaafI);
+      float tomo_stddev = StdDevArr(tomo_in.header.nvoxels,
+                                    tomo_in.aaafI,
+                                    mask.aaafI);
+
+      double score_sum_sq = 0.0;
+      for (int i = 0; i < display_scores.size(); i++)
+        score_sum_sq += SQR(display_scores[i]);
+
+      double score_rms = sqrt(score_sum_sq / display_scores.size());
+
+      // The spherical shells will have brightnesses chosen according to their
+      // scores. Rescale the tomogram intensities so that they are approximately
+      // in the range of scores.  This way we can see both at the same time
+      // (when viewing the tomogram using IMOD, for example)
+      for (int iz = 0; iz < tomo_out.header.nvoxels[2]; iz++) {
+        for (int iy = 0; iy < tomo_out.header.nvoxels[1]; iy++) {
+          for (int ix = 0; ix < tomo_out.header.nvoxels[0]; ix++) {
+            tomo_out.aaafI[iz][iy][ix] =
+              ((tomo_out.aaafI[iz][iy][ix] - tomo_ave) / tomo_stddev)
+               *
+               score_rms
+               /
+              3.0; // <--reduction by a factor of 3 seems to look good visually
+          }
+        }
+      }
+    }
+
+    ApplySphereDecals(tomo_in,
+                      tomo_out,
+                      mask,
+                      display_crds_int,
+                      display_radii,
+                      display_shell_thicknesses,
+                      display_scores,
+                      0.0,
+                      true);
+  } //if (tomo_out.aaafI)
+
 
 
   Dealloc3D(tomo_in.header.nvoxels,
@@ -1375,7 +1411,7 @@ HandleExtrema(Settings settings,
     } //for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
   } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
 
-  if (settings.blob_max_overlap < 1.0) {
+  if (settings.blob_min_separation > 0.0) {
     if (settings.find_minima_occlusion_radius > 0.0) {
       vector<float> minima_sigma(minima_crds_int.size(),
                                  settings.find_minima_occlusion_radius/sqrt(2));
@@ -1390,7 +1426,7 @@ HandleExtrema(Settings settings,
                               minima_sigma, 
                               minima_scores,
                               false,
-                              settings.blob_max_overlap,
+                              settings.blob_min_separation,
                               tomo_in.header.nvoxels,
                               &cerr);
     }
@@ -1408,12 +1444,12 @@ HandleExtrema(Settings settings,
                               maxima_sigma, 
                               maxima_scores,
                               true,
-                              settings.blob_max_overlap,
+                              settings.blob_min_separation,
                               tomo_in.header.nvoxels,
                               &cerr);
     }
 
-  } //if (settings.blob_max_overlap < 1.0)
+  } //if (settings.blob_min_separation > 0)
 
   //string out_file_name_base = settings.out_file_name;
   //if ((EndsWith(settings.out_file_name, ".rec")) ||

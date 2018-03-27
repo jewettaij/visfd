@@ -1785,7 +1785,7 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
                         vector<RealNum>& blob_sigma, 
                         vector<RealNum>& blob_scores,
                         bool descending_order, //sort scores in ascending or descending order?
-                        float max_overlap,
+                        float min_separation,
                         int const occupancy_table_size[3],
                         ostream *pReportProgress = NULL)
 {
@@ -1813,11 +1813,14 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
   // compare that blob with all the blobs which came before it
   // (O(n_blobs^2), where "n_blobs", could easily be 10^5 or larger.)
   //    Instead we create a new image of voxels containing true/false values.
-  // Voxels in the image belonging to one of the blobs are assigned a "true"
-  // value.  This is a fast (O(1)) way to check if a given blob overlaps with
-  // any preceeding blobs.  Because the user may want to allow for partial
-  // overlap, we have the option to make these spheres smaller than their
-  // real size by some fraction, which we call "max_overlap"
+  // Voxels in the image belonging to one of the blobs are assigned a "true".
+  // This occurs if they lie within a distance of:
+  //    min_separation * σ
+  // from the center of that blob.
+  // This provides us with a fast (O(1)) way to check if a given blob 
+  // overlaps with any preceeding blobs.  All voxels in a region of size 
+  // (NOTE: This means that min_separation is measured in units of σ, NOT the
+  //  blob's radius, r.  In 3-dimensions the radius would be r≈σ√3.)
 
 
   bool *abOccupied;
@@ -1836,7 +1839,7 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
     assert(n_blobs == blob_sigma.size());
     assert(n_blobs == blob_scores.size());
     bool discard = false;
-    float reff = (1.0 - max_overlap) * blob_sigma[i] * sqrt(2.0);
+    float reff = min_separation * blob_sigma[i];
     int Reff = ceil(reff);
     int Reffsq = ceil(reff*reff);
     int ix = blob_crds[i][0];
@@ -1877,10 +1880,10 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
 
 // Find all scale-invariant blobs in the image,
 // This version can discard blobs which overlap with existing blobs
-// using the "max_overlap" parameter (which varies between 0 and 1).
+// using the "min_separation" parameter (which varies between 0 and 1).
 // (This is sometimes called "non-max suppression")
 // If two blobs lie within a distance of
-//     max_overlap * (R1 + R2)
+//     min_separation * (σ1 + σ2)
 // from each other, then the blob with the lower score is discarded.
 template<class RealNum>
 void
@@ -1896,10 +1899,10 @@ BlobDog3D(int const image_size[3], //source image size
           vector<RealNum>& maxima_scores, // (score = intensity after filtering)
           RealNum delta_sigma_over_sigma,// param for approximating LOG with DOG
           RealNum truncate_ratio,      // how many sigma before truncating?
-          RealNum minima_threshold,    // discard blobs with unremarkable scores
-          RealNum maxima_threshold,    // discard blobs with unremarkable scores
+          RealNum minima_threshold=0.5,  // discard blobs with unremarkable scores
+          RealNum maxima_threshold=0.5,  // discard blobs with unremarkable scores
           bool    use_threshold_ratios=true, // threshold=ratio*best_score?
-          RealNum max_overlap=0.0,            // maximum overlap between blobs
+          RealNum min_separation=1.0,      // maximum overlap between blobs
           // optional arguments
           ostream *pReportProgress = NULL, // report progress to the user?
           RealNum ****aaaafI = NULL, //preallocated memory for filtered images
@@ -1929,33 +1932,33 @@ BlobDog3D(int const image_size[3], //source image size
   if (pReportProgress)
     *pReportProgress << "--- Removing overlapping blobs ---" << endl;
 
-  if (max_overlap < 1.0) {
+  if (min_separation > 0.0) {
     if (pReportProgress)
       *pReportProgress << "done --\n"
-                       << "--- Discarding overlapping minima blobs \n"
-                       << "(max_overlap = " << max_overlap << ") ---\n";
+                       << "--- Discarding overlapping minima blobs "
+                       << "(min_separation = " << min_separation << ") ---\n";
 
     DiscardOverlappingBlobs(minima_crds,
                             minima_sigma,
                             minima_scores,
                             false,
-                            max_overlap,
+                            min_separation,
                             image_size,
                             pReportProgress);
 
     if (pReportProgress)
       *pReportProgress << "done --\n"
                        << "--- Discarding overlapping maxima blobs \n"
-                       << "(max_overlap = " << max_overlap << ") ---\n";
+                       << "(min_separation = " << min_separation << ") ---\n";
 
     DiscardOverlappingBlobs(maxima_crds,
                             maxima_sigma,
                             maxima_scores,
                             true,
-                            max_overlap,
+                            min_separation,
                             image_size,
                             pReportProgress);
-  } //if (max_overlap < 1.0)
+  } //if (min_separation > 0.0)
 
 } //BlobDog3D()
 

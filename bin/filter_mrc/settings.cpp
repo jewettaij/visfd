@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <cassert>
+#include <cmath>      //(defines "HUGE_VALF")
 using namespace std;
 
 #include <err_report.h>
@@ -68,7 +69,7 @@ Settings::Settings() {
   dogsf_width[0] = 0.0;
   dogsf_width[1] = 0.0;
   dogsf_width[2] = 0.0;
-  delta_sigma_over_sigma = 0.01;
+  delta_sigma_over_sigma = 0.02;
 
   #ifndef DISABLE_BOOTSTRAPPING
   bs_ntests = 0;                   //disable
@@ -111,7 +112,7 @@ Settings::Settings() {
   blob_use_threshold_ratios = true;
   blob_minima_threshold = 0.5;
   blob_maxima_threshold = 0.5;
-  blob_max_overlap = 0.3;
+  blob_min_separation = 1.0;
 
   use_thresholds = false;
   use_dual_thresholds = false;
@@ -298,7 +299,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by 3 positive numbers:\n"
                        " s_x  s_y  s_z\n"
-                       " the Gaussian widths (* sqrt(2)) in the X, Y, and Z direction.)\n");
+                       " the Gaussian widths in the X, Y, and Z direction.)\n");
       }
       num_arguments_deleted = 4;
     } //if (vArgs[i] == "-gauss-aniso")
@@ -324,7 +325,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a positive number (\"s\"),\n"
-                       " the Gaussian width (multiplied by sqrt(2))\n");
+                       " the Gaussian width\n");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-gauss")
@@ -477,11 +478,11 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         float blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blobr1") || (vArgs[i] == "-blob1r") )
-          //blob_width_multiplier = 0.5;
-          blob_width_multiplier = 1.0/sqrt(2.0);
+          // (for a solid uniform 3-D sphere)
+          blob_width_multiplier = 1.0/sqrt(3.0);
         if ((vArgs[i] == "-blobd1") || (vArgs[i] == "-blob1d") )
-          //blob_width_multiplier = 0.25;
-          blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
+          // (for a solid uniform 3-D sphere)
+          blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
         dogsf_width[0] = stof(vArgs[i+1]) * blob_width_multiplier;
         dogsf_width[1] = dogsf_width[0];
         dogsf_width[2] = dogsf_width[0];
@@ -526,19 +527,70 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-max-overlap")
     {
       try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        if (i+1 >= vArgs.size())
           throw invalid_argument("");
-        blob_max_overlap = stof(vArgs[i+1]);
+        float max_overlap = stof(vArgs[i+1]);
+        blob_min_separation = (1.0 - max_overlap) * sqrt(3.0);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by a positive number:\n"
-                       "       the maximum overlap between to detected blobs\n"
-                       "       (as a percentage of either blob's volume).");
+                       " argument must be followed by a number:\n"
+                       "       the maximum overlap allowed between a pair of detected blobs\n"
+                       "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-max-overlap")
+
+
+    else if (vArgs[i] == "-blob-separation")
+    {
+      try {
+        if (i+1 >= vArgs.size())
+          throw invalid_argument("");
+        blob_min_separation = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number:\n"
+                       "       the minimum allowed separation between a pair of detected blobs\n"
+                       "       (as a fraction of the sum of their Gaussian widths (σ1+σ2)).");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-blob-separation")
+
+
+    else if (vArgs[i] == "-blobr-separation")
+    {
+      try {
+        if (i+1 >= vArgs.size())
+          throw invalid_argument("");
+        blob_min_separation = stof(vArgs[i+1]) * sqrt(3.0);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number:\n"
+                       "       the minimum allowed separation between a pair of detected blobs\n"
+                       "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-blobr-separation")
+
+
+    else if (vArgs[i] == "-blobd-separation")
+    {
+      try {
+        if (i+1 >= vArgs.size())
+          throw invalid_argument("");
+        blob_min_separation = stof(vArgs[i+1]) * (2.0 * sqrt(3.0));
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number:\n"
+                       "       the minimum allowed separation between a pair of detected blobs\n"
+                       "       (as a fraction of the sum of their diameters, estimated using d=2r≈2σ√3).");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-blobd-separation")
 
 
     else if ((vArgs[i] == "-blob") ||
@@ -579,24 +631,25 @@ Settings::ParseArgs(vector<string>& vArgs)
         blob_widths.resize(N);
         float ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
 
+        // REMOVE THIS CRUFT:
         // Optional:
         // Make sure the difference between the width of the Gaussians used
         // to approximate the Laplacian-of-Gaussian (delta_sigma_over_sigma), 
         // is no larger than the difference between the successive widths
         // in the list of Gaussian blurs we will apply to our source image.
         // (Actually, I make sure it is no larger than 1/3 this difference.)
-        if (((ratio-1.0)/3 < delta_sigma_over_sigma)
-            &&
-            (! delta_set_by_user))
-          delta_sigma_over_sigma = (ratio-1.0)/3;
+        //if (((ratio-1.0)/3 < delta_sigma_over_sigma)
+        //    &&
+        //    (! delta_set_by_user))
+        //  delta_sigma_over_sigma = (ratio-1.0)/3;
 
         blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blobr"))
-          //blob_width_multiplier = 0.5;  // (for a solid uniform sphere)
-          blob_width_multiplier = 1.0/sqrt(2.0);
+          // (for a solid uniform 3-D sphere)
+          blob_width_multiplier = 1.0/sqrt(3.0);
         else if ((vArgs[i] == "-blob-diameters") || (vArgs[i] == "-blobd"))
-          //blob_width_multiplier = 0.25;  // (for a solid uniform sphere)
-          blob_width_multiplier = 1.0/(2.0*sqrt(2.0));
+          // (for a solid uniform 3-D sphere)
+          blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
         blob_widths[0] = blob_width_min * blob_width_multiplier;
         for (int n = 1; n < N; n++) {
           blob_widths[n] = blob_widths[n-1] * ratio;
@@ -619,6 +672,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         blob_minima_threshold = stof(vArgs[i+1]);
+        blob_maxima_threshold = HUGE_VALF;
         blob_use_threshold_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -634,6 +688,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         blob_maxima_threshold = stof(vArgs[i+1]);
+        blob_minima_threshold = -HUGE_VALF;
         blob_use_threshold_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -649,6 +704,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         blob_minima_threshold = stof(vArgs[i+1]);
+        blob_maxima_threshold = HUGE_VALF;
         blob_use_threshold_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -664,6 +720,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         blob_maxima_threshold = stof(vArgs[i+1]);
+        blob_minima_threshold = -HUGE_VALF;
         blob_use_threshold_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -1388,6 +1445,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   }
   if ((out_file_name.size() == 0) &&
       ((filter_type != NONE) ||
+       (filter_type != BLOB) || 
        use_thresholds ||
        invert_output))
   {
@@ -1474,6 +1532,39 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (exponents_set_by_user) {
   } //if ((filter_type == DOG) || (filter_type == DOGG))
 
+
+  if (filter_type == BLOB) {
+    if ((blob_minima_file_name != "") &&
+        (blob_maxima_threshold == HUGE_VALF))
+    {
+      // If the user is not interested in local maxima, then we only
+      // need to create one file (for the minima, as opposed to a separate
+      // file for both minima and maxima).  In that case, remove the
+      // "_minima.txt" which was earlier automatically added to the end
+      // of that file's name.
+      string blob_file_name_base = blob_minima_file_name;
+      if (EndsWith(blob_file_name_base, "_minima.txt"))
+        blob_file_name_base =
+          blob_file_name_base.substr(0,
+                                     blob_file_name_base.length()-11);
+      blob_minima_file_name = blob_file_name_base;
+    }
+    if ((blob_maxima_file_name != "") &&
+        (blob_minima_threshold == -HUGE_VALF))
+    {
+      // If the user is not interested in local minima, then we only
+      // need to create one file (for the maxima, as opposed to a separate
+      // file for both minima and maxima).  In that case, remove the
+      // "_maxima.txt" which was earlier automatically added to the end
+      // of that file's name.
+      string blob_file_name_base = blob_maxima_file_name;
+      if (EndsWith(blob_file_name_base, "_maxima.txt"))
+        blob_file_name_base =
+          blob_file_name_base.substr(0,
+                                     blob_file_name_base.length()-11);
+      blob_maxima_file_name = blob_file_name_base + ".txt";
+    }
+  } //if (filter_type == BLOB)
 
 } // Settings::ParseArgs()
 
