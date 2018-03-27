@@ -263,7 +263,7 @@ the original image is convolved with the following function:
 The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
 
 
-### -blob, -blobr, -blobd, -blob1, -blobr1, -blobd1, -blob1-aniso
+### -blob,  -blobr,  -blobd,  -blob1,  -blobr1,  -blobd1,  -blob1-aniso
 
 When the "**-blob1**", "**-blobr1**", and "**-blobd1**" arguments are selected a
 [Laplacian-of-a-Gaussian (LOG)](https://en.wikipedia.org/wiki/Blob_detection)
@@ -291,7 +291,7 @@ There is also an anisotropic version of this filter.
   -blob1-aniso  σ_x  σ_y  σ_z
 ```
 
-####  -blob, -blobr, -blobd
+####  -blob,  -blobr,  -blobd
 
 The "**-blob**", "**-blobr**", and "**-blobd**" arguments are used when the user
 *does not* know the exact size of the objects of interest within the image.
@@ -335,7 +335,7 @@ a LOG filter of that size was applied to it.
 The list is ordered from high score to low score
 (for maxima, or low score to high score for minima).
 
-#### automatic disposal of poor scoring blobs
+#### Automatic disposal of poor scoring blobs
 
 There are an enormous number of local minima in X,Y,Z,scale space.
 By default, local maxima whose score is less than 50% of the global maxima
@@ -359,7 +359,7 @@ respectively.
 *(Note: You can either use thresolds or ratios, but you cannot mix both.)*
 
 
-#### automatic disposal of overlapping blobs (non-max suppression)
+#### Automatic disposal of overlapping blobs (non-max suppression)
 
 Whenever two blobs overlap, the one with the better score
 (ie. higher score for maxima, and lower score for minima)
@@ -373,8 +373,9 @@ where "**fraction**" is typically a number between 0 and √3.
 (A larger number means less overlap is permitted.
  Setting *fraction=0.0* disables this feature.)
 Alternatively, if you prefer specifying separation distances in terms 
-of the blob radii (or diameters), you can use 
-"**-blobr-separation**" (or "**-blobd-separation**") arguments instead.
+of the blob radii (or diameters), you can use the
+"**-blobr-separation fraction**" (or "**-blobd-separation fraction**")
+arguments instead.
 (Again, blob radii and diameters are related to Gaussian widths, σ, 
  according to r≈σ√3 and d≈σ√3.)
 
