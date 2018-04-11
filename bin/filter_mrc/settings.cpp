@@ -608,12 +608,13 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
 
         string blob_file_name_base = vArgs[i+1];
-        if (EndsWith(blob_file_name_base, ".txt"))
-          blob_file_name_base =
-            blob_file_name_base.substr(0,
-                                       blob_file_name_base.length()-4);
-        blob_minima_file_name = blob_file_name_base + string("_minima.txt");
-        blob_maxima_file_name = blob_file_name_base + string("_maxima.txt");
+        //if (EndsWith(blob_file_name_base, ".txt"))
+        //  blob_file_name_base =
+        //    blob_file_name_base.substr(0,
+        //                               blob_file_name_base.length()-4);
+
+        blob_minima_file_name = blob_file_name_base + string(".minima.txt");
+        blob_maxima_file_name = blob_file_name_base + string(".maxima.txt");
 
         cerr << "settings.blob_minima_file_name = \""
              << blob_minima_file_name << "\"" << endl;
@@ -629,7 +630,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (N < 3)
           throw InputErr("The 3rd parameter to the \"" + vArgs[i] + "\" argument must be >= 3.");
         blob_widths.resize(N);
-        float ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
+        float growth_ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
 
         // REMOVE THIS CRUFT:
         // Optional:
@@ -638,10 +639,10 @@ Settings::ParseArgs(vector<string>& vArgs)
         // is no larger than the difference between the successive widths
         // in the list of Gaussian blurs we will apply to our source image.
         // (Actually, I make sure it is no larger than 1/3 this difference.)
-        //if (((ratio-1.0)/3 < delta_sigma_over_sigma)
+        //if (((growth_ratio-1.0)/3 < delta_sigma_over_sigma)
         //    &&
         //    (! delta_set_by_user))
-        //  delta_sigma_over_sigma = (ratio-1.0)/3;
+        //  delta_sigma_over_sigma = (growth_ratio-1.0)/3;
 
         blob_width_multiplier = 1.0;
         if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blobr"))
@@ -652,7 +653,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
         blob_widths[0] = blob_width_min * blob_width_multiplier;
         for (int n = 1; n < N; n++) {
-          blob_widths[n] = blob_widths[n-1] * ratio;
+          blob_widths[n] = blob_widths[n-1] * growth_ratio;
         }
         m_exp = 2.0; // (<--not necessary, we ignore these parameters anyway)
         n_exp = 2.0; // (<--not necessary, we ignore these parameters anyway)
@@ -729,6 +730,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-blob-maxima-ratio")
+
 
 
     else if (vArgs[i] == "-dog-delta") {
@@ -1540,10 +1542,10 @@ Settings::ParseArgs(vector<string>& vArgs)
       // If the user is not interested in local maxima, then we only
       // need to create one file (for the minima, as opposed to a separate
       // file for both minima and maxima).  In that case, remove the
-      // "_minima.txt" which was earlier automatically added to the end
+      // ".minima.txt" which was earlier automatically added to the end
       // of that file's name.
       string blob_file_name_base = blob_minima_file_name;
-      if (EndsWith(blob_file_name_base, "_minima.txt"))
+      if (EndsWith(blob_file_name_base, ".minima.txt"))
         blob_file_name_base =
           blob_file_name_base.substr(0,
                                      blob_file_name_base.length()-11);
@@ -1555,14 +1557,14 @@ Settings::ParseArgs(vector<string>& vArgs)
       // If the user is not interested in local minima, then we only
       // need to create one file (for the maxima, as opposed to a separate
       // file for both minima and maxima).  In that case, remove the
-      // "_maxima.txt" which was earlier automatically added to the end
+      // ".maxima.txt" which was earlier automatically added to the end
       // of that file's name.
       string blob_file_name_base = blob_maxima_file_name;
-      if (EndsWith(blob_file_name_base, "_maxima.txt"))
+      if (EndsWith(blob_file_name_base, ".maxima.txt"))
         blob_file_name_base =
           blob_file_name_base.substr(0,
                                      blob_file_name_base.length()-11);
-      blob_maxima_file_name = blob_file_name_base + ".txt";
+      blob_maxima_file_name = blob_file_name_base;
     }
   } //if (filter_type == BLOB)
 

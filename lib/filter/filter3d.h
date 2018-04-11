@@ -1660,7 +1660,7 @@ BlobDog3D(int const image_size[3], //source image size
 
     cerr << "--- found " << minima_crds.size ()
          << " and " << maxima_crds.size()
-         << " local minima and maxima, respectively ---\n" << endl;
+         << " local minima and maxima, respectively so far ---\n" << endl;
 
     assert((minima_crds.size() == minima_sigma.size()) &&
            (minima_crds.size() == minima_scores.size()));
