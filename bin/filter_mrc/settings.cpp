@@ -113,7 +113,7 @@ Settings::Settings() {
   score_lower_bound = 0.5;
   score_bounds_are_ratios = true;
   blob_width_multiplier = 1.0;
-  blob_min_separation = 1.0;
+  blob_min_separation = 1.0 * sqrt(3.0);
 
   use_thresholds = false;
   use_dual_thresholds = false;
