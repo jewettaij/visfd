@@ -275,6 +275,12 @@ ApplyDog3D(int const image_size[3], //source image size
             &afTemp,
             &aaafTemp);
 
+  // Report the A and B normalization coefficients to the caller?
+  if (pA)
+    *pA = A;
+  if (pB)
+    *pB = B;
+
 } // ApplyDog3D(...,filter_truncate_ratio,filter_truncate_threshold,...)
 
 
@@ -848,14 +854,47 @@ ApplySphereDecals(MrcSimple &tomo_in,
                   vector<float> &shell_thicknesses,
                   vector<float> &voxel_intensities_foreground,
                   float voxel_intensity_background = 0.0,
-                  bool vacant_pixels_keep_original_values = false,
-                  bool normalize_occupied_instensities = false)
+                  float voxel_intensity_background_rescale = 0.4,
+                  bool voxel_intensity_foreground_normalize = false)
 {
-  if (! vacant_pixels_keep_original_values)
-    for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++)
-      for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++)
-        for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++)
-          tomo_out.aaafI[iz][iy][ix] = voxel_intensity_background;
+
+  tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
+  float tomo_ave  =  AverageArr(tomo_in.header.nvoxels,
+                                tomo_in.aaafI,
+                                mask.aaafI);
+  float tomo_stddev = StdDevArr(tomo_in.header.nvoxels,
+                                tomo_in.aaafI,
+                                mask.aaafI);
+
+  double score_sum_sq = 0.0;
+  for (int i = 0; i < voxel_intensities_foreground.size(); i++)
+    score_sum_sq += SQR(voxel_intensities_foreground[i]);
+
+  double score_rms = sqrt(score_sum_sq / voxel_intensities_foreground.size());
+
+  // The spherical shells will have brightnesses chosen according to their
+  // scores. Rescale the tomogram intensities so that they are approximately
+  // in the range of scores.  This way we can see both at the same time
+  // (when viewing the tomogram using IMOD, for example)
+  for (int iz = 0; iz < tomo_out.header.nvoxels[2]; iz++) {
+    for (int iy = 0; iy < tomo_out.header.nvoxels[1]; iy++) {
+      for (int ix = 0; ix < tomo_out.header.nvoxels[0]; ix++) {
+        tomo_out.aaafI[iz][iy][ix] =
+          ((tomo_out.aaafI[iz][iy][ix] - tomo_ave) / tomo_stddev)
+          *
+          score_rms
+          *
+          voxel_intensity_background_rescale;
+      }
+    }
+  }
+
+
+  for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++)
+    for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++)
+      for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++)
+        tomo_out.aaafI[iz][iy][ix] += voxel_intensity_background;
+
 
   for (int i = 0; i < crds.size(); i++) {
     cerr << "processing coordinates " << i+1 << " / "
@@ -866,22 +905,23 @@ ApplySphereDecals(MrcSimple &tomo_in,
         (mask.aaafI[crds[i][2]][crds[i][1]][crds[i][0]] == 0.0))
       continue;
 
-    float Rs = ceil(radii[i]);
-    float Rssqr_max = ceil(SQR(radii[i]));
+    int Rs = ceil(radii[i]-0.5);
+    if (Rs < 0) Rs = 0;
+    float Rssqr_max = SQR(radii[i]);
     float Rssqr_min = 0.0;
-    if (shell_thicknesses[i] > 0.0)
-      Rssqr_min = floor(SQR(radii[i] - shell_thicknesses[i]));
+    if ((shell_thicknesses[i] > 0.0) && (radii[i] - shell_thicknesses[i] > 0.0))
+      Rssqr_min = SQR(radii[i] - shell_thicknesses[i]);
     // Normalize the brightness of each sphere?
     // (ie by dividing the intensity by the number of voxels in the sphere)
     float imultiplier = 1.0;
     long nvoxelspersphere = 1;
-    if (normalize_occupied_instensities) {
+    if (voxel_intensity_foreground_normalize) {
       nvoxelspersphere = 0;
       for (int jz = -Rs; jz <= Rs; jz++) {
         for (int jy = -Rs; jy <= Rs; jy++) {
           for (int jx = -Rs; jx <= Rs; jx++) {
             float rsqr = jx*jx + jy*jy + jz*jz;
-            if (! ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max)))
+            if ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max))
               nvoxelspersphere++;
           }
         }
@@ -973,38 +1013,70 @@ HandleSphereDecals(Settings settings,
     ixiyiz[0] = ix;
     ixiyiz[1] = iy;
     ixiyiz[2] = iz;
-    crds.push_back(ixiyiz);
-    float radius = settings.sphere_decals_radius;
-    float score = 1.0;
-    if (ssLine) {
+
+    float radius = -1.0;
+    float score = settings.sphere_decals_foreground;
+    if (ssLine) { // Does the file contain a 4th column? (the radius)
       float _radius;
       ssLine >> _radius;
-      // actually the file is assumed to store diameters, not radii, so / by 2
-      _radius /= 2.0;
       // convert from physical distance to # of voxels:
       _radius /= voxel_width[0];
       if (ssLine)
         radius = _radius;
       custom_radii = true;
     }
-    radii.push_back(radius);
+
+    if (radius < 0) { //If file does not contain a 4th column
+      radius = settings.sphere_decals_radius;
+      if (settings.sphere_decals_radius < 0)
+        radius = 0.5;   // (sphere will be 1 voxel wide by default)
+    }
+    if (settings.sphere_decals_radius >= 0) //override the radius ?
+      radius = settings.sphere_decals_radius;
+    else
+      radius *= settings.sphere_decals_scale;
+
     float shell_thickness = settings.sphere_decals_shell_thickness;
     if (settings.sphere_decals_shell_thickness_is_ratio) {
       shell_thickness *= radius;
       if (shell_thickness < settings.sphere_decals_shell_thickness_min)
         shell_thickness = settings.sphere_decals_shell_thickness_min;
     }
-    shell_thicknesses.push_back(shell_thickness);
-    if (settings.sphere_decals_foreground_score) {
-      if (ssLine) {
-        float _score;
-        ssLine >> _score;
-        if (ssLine)
-          score = _score;
-      }
+    shell_thickness = settings.sphere_decals_shell_thickness;
+    if (settings.sphere_decals_shell_thickness_is_ratio) {
+      shell_thickness *= radius;
+      // The spherical shells superimposed on the tomogram should be
+      // at least 1 voxel wide in order to be visible to the user
+      if (shell_thickness < settings.sphere_decals_shell_thickness_min)
+        shell_thickness = 1.0;
     }
+
+    if (ssLine) {
+      float _score;
+      ssLine >> _score;
+      if (ssLine)
+        score = _score;
+    }
+
+    if (settings.score_lower_bound > settings.score_upper_bound) {
+      if (! ((settings.score_lower_bound <= score) ||
+             (score <= settings.score_upper_bound)))
+        // If the score is not sufficiently high (or low), skip this blob
+        continue; 
+    }
+
+    if (! settings.sphere_decals_foreground_use_score)
+      score = settings.sphere_decals_foreground;
+
+    crds.push_back(ixiyiz);
+    radii.push_back(radius);
+    shell_thicknesses.push_back(shell_thickness);
     scores.push_back(score);
-  }
+
+  } //while (coords_file) {...
+
+
+
 
   reverse(crds.begin(), crds.end());
   reverse(radii.begin(), radii.end());
@@ -1018,7 +1090,7 @@ HandleSphereDecals(Settings settings,
                     shell_thicknesses,
                     scores,
                     settings.sphere_decals_background,
-                    settings.sphere_decals_background_orig,
+                    settings.sphere_decals_background_scale,
                     settings.sphere_decals_foreground_norm);
 
 } //HandleSphereDecals()
@@ -1047,19 +1119,25 @@ HandleBlobDetector(Settings settings,
   // Optional: Preallocate space for BlobDog3D()
   float*** aaaafI[3];
   float* aafI[3];
+
   Alloc3D(tomo_in.header.nvoxels,
           &(aafI[0]),
           &(aaaafI[0]));
-  //Alloc3D(tomo_in.header.nvoxels,
-  //        &(aafI[1]),
-  //        &(aaaafI[1]));
+
+  if (tomo_out.aaafI) {
+    // Optional: Instead of allocating aaaafI[1] and aafI[1], borrow the memory
+    // you've already allocated to tomo_out.aaafI and afI. (Goal: Save memory.)
+    aafI[1] = tomo_out.afI;
+    aaaafI[1] = tomo_out.aaafI;
+  } else {
+    Alloc3D(tomo_in.header.nvoxels,
+            &(aafI[1]),
+            &(aaaafI[1]));
+  }
+
   Alloc3D(tomo_in.header.nvoxels,
           &(aafI[2]),
           &(aaaafI[2]));
-  // Optional: Instead of allocating aaaafI[1] and aafI[1], borrow the memory
-  // you've already allocated to tomo_out.aaafI and afI.  REPLACING WITH:
-  aafI[1] = tomo_out.afI;
-  aaaafI[1] = tomo_out.aaafI;
   // This way we can save memory and also save the 
   // filtered image to a file which we can view using IMOD.
 
@@ -1076,9 +1154,9 @@ HandleBlobDetector(Settings settings,
             settings.delta_sigma_over_sigma, //difference in Gauss widths parameter
             settings.filter_truncate_ratio,
             settings.filter_truncate_threshold,
-            settings.blob_minima_threshold,
-            settings.blob_maxima_threshold,
-            settings.blob_use_threshold_ratios,
+            settings.score_upper_bound,
+            settings.score_lower_bound,
+            settings.score_bounds_are_ratios,
             settings.blob_min_separation,
             &cerr,
             aaaafI,
@@ -1180,46 +1258,16 @@ HandleBlobDetector(Settings settings,
       // Choose the size of the hollow spheres around each object so they are
       // large enough that the original objects underneath are still visible.
       display_radii[i] = sqrt(3.0) * display_sigma[i] / voxel_width[0];
-      display_shell_thicknesses[i] = 0.08 * display_radii[i];
+      display_shell_thicknesses[i] = settings.sphere_decals_shell_thickness;
+      if (settings.sphere_decals_shell_thickness_is_ratio)
+        display_shell_thicknesses[i] *= display_radii[i];
+      display_radii[i] *= settings.sphere_decals_scale;
       // The spherical shells superimposed on the tomogram should be
       // at least 1 voxel wide in order to be visible to the user
-      if (display_shell_thicknesses[i] < 1.0)
+      if (display_shell_thicknesses[i] < settings.sphere_decals_shell_thickness_min)
         display_shell_thicknesses[i] = 1.0;
     }
 
-    if (display_scores.size() > 0) {
-
-      tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
-      float tomo_ave   = AverageArr(tomo_in.header.nvoxels,
-                                    tomo_in.aaafI,
-                                    mask.aaafI);
-      float tomo_stddev = StdDevArr(tomo_in.header.nvoxels,
-                                    tomo_in.aaafI,
-                                    mask.aaafI);
-
-      double score_sum_sq = 0.0;
-      for (int i = 0; i < display_scores.size(); i++)
-        score_sum_sq += SQR(display_scores[i]);
-
-      double score_rms = sqrt(score_sum_sq / display_scores.size());
-
-      // The spherical shells will have brightnesses chosen according to their
-      // scores. Rescale the tomogram intensities so that they are approximately
-      // in the range of scores.  This way we can see both at the same time
-      // (when viewing the tomogram using IMOD, for example)
-      for (int iz = 0; iz < tomo_out.header.nvoxels[2]; iz++) {
-        for (int iy = 0; iy < tomo_out.header.nvoxels[1]; iy++) {
-          for (int ix = 0; ix < tomo_out.header.nvoxels[0]; ix++) {
-            tomo_out.aaafI[iz][iy][ix] =
-              ((tomo_out.aaafI[iz][iy][ix] - tomo_ave) / tomo_stddev)
-               *
-               score_rms
-               /
-              3.0; // <--reduction by a factor of 3 seems to look good visually
-          }
-        }
-      }
-    }
 
     ApplySphereDecals(tomo_in,
                       tomo_out,
@@ -1228,8 +1276,10 @@ HandleBlobDetector(Settings settings,
                       display_radii,
                       display_shell_thicknesses,
                       display_scores,
-                      0.0,
-                      true);
+                      settings.sphere_decals_background,
+                      settings.sphere_decals_background_scale,
+                      false);
+
   } //if (tomo_out.aaafI)
 
 
@@ -1237,9 +1287,16 @@ HandleBlobDetector(Settings settings,
   Dealloc3D(tomo_in.header.nvoxels,
             &aafI[0],
             &aaaafI[0]);
-  //Dealloc3D(tomo_in.header.nvoxels,
-  //          &aafI[1],
-  //          &aaaafI[1]);
+
+  // Optional: Instead of allocating aaaafI[1] and aafI[1], borrow the memory
+  // you've already allocated to tomo_out.aaafI and afI. (Goal: Save memory.)
+  if (! tomo_out.aaafI) {  // <-- Was tomo_out.aaafI available?
+    // However, if we didn't allocate it this memory, then don't delete it:
+    Dealloc3D(tomo_in.header.nvoxels,
+              &aafI[1],
+              &aaaafI[1]);
+  }
+
   Dealloc3D(tomo_in.header.nvoxels,
             &aafI[2],
             &aaaafI[2]);
@@ -2310,7 +2367,7 @@ HandleLocalFluctuations(Settings settings,
                         MrcSimple &tomo_out,
                         MrcSimple &mask,
                         float voxel_width[3])
-// Calculate the fluctuations of nerby voxel intensities
+// Calculate the fluctuations of nearby voxel intensities
 {
 
   // Filter weights, w_i:
@@ -2732,11 +2789,9 @@ int main(int argc, char **argv) {
     // down the next step considerably, so I just assume cube-shaped voxels:
     assert((voxel_width[0] == voxel_width[1]) &&
            (voxel_width[1] == voxel_width[2]));
-    // REMOVE THIS CRUFT EVENTUALLY:
-    //settings.blob_minima_threshold *= SQR(voxel_width[0]);
-    //settings.blob_maxima_threshold *= SQR(voxel_width[0]);
     for (int ir = 0; ir < settings.blob_widths.size(); ir++)
       settings.blob_widths[ir] /= voxel_width[0];
+
     settings.sphere_decals_radius /= voxel_width[0];
     settings.sphere_decals_shell_thickness /= voxel_width[0];
 

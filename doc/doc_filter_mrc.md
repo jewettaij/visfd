@@ -274,6 +274,8 @@ The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
 and then calculates the Laplacian of the result.
 Features in the image of various sizes can be emphasized 
 using this kind of filter.
+Detected blobs can be displayed to the user using the 
+"**-o** filename.mrc" (and "**-spheres**") arguments.
 
 The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
 arguments is typically chosen when the user already knows the approximate
@@ -387,6 +389,73 @@ are all variants of the
 "**-blob**" (and "**-blob1**") argument whose parameters are (more conveniently)
 specified by the approximate radius(r≈σ√3) or diameter(d≈σ2√3) of the objects 
 that you wish to detect within the image (instead of the Gaussian width, σ).
+
+
+####  Visualizing blobs using the "**-o**" argument
+
+*If* the "**-o**" argument is specified during blob-detection,
+then a new tomogram will be created with each blob represented
+by a spherical shell that surrounds the point of 
+interest, whose *radius* and *brightness* indicate *size* and *score* of 
+that blob, respectively.
+*(The intensity of voxels belonging to the spherical
+shell should exactly match the score of that blob.  
+In IMOD, blobs with good scores typically appear as black or white spheres,
+and grey spheres correspond to blobs with poor scores.
+The score of a given blob
+can be queried in IMOD by clicking on a voxel somewhere in the spherical shell
+and selecting the "Edit"->"Point"->"Value" menu option.)
+
+The radii and brightnesses can be overidden using the
+"**-sphere-radius r**" 
+and "**-sphere-foreground intensity**" arguments, respectively.
+(The size and thickness of the the shell can also be
+controlled using the "**-sphere-scale ratio**" and
+"**-spheres-shell-ratio ratio**" arguments, respectively.
+ Setting the "ratio" to 1 results in a solid rather than hollow sphere.
+ The default shell thickness is 0.08.)
+
+By default, these spherical shells will be superimposed upon the
+original image (whose voxel's brightness will be shifted and scaled 
+so that the voxels remain easy to see in the presence of the spherical shells).
+The average *brightness* and *contrast* of these background voxels
+is controlled by the "**-sphere-background brightness**", and the 
+"**-sphere-background-scale ratio**" arguments, respectively.
+(Using "**-sphere-background-scale 0**" makes this background image invisible.
+ The default scale ratio is 0.4.)
+
+
+####  Visualizing blobs using the "**-spheres**" argument
+
+If you did not generate an image showing the blob locations at the time
+you performed the blob detection, you can generate this image later using:
+```
+  filter_mrc -spheres blob_filename.txt -o new_image.mrc
+```
+This can be useful because, quite often, 
+these default score thresholds too permissive.
+(Far too many blobs are detected.)
+As before, 
+the user can discard poor scoring blobs by using any one of these arguments
+*(explained elsewhere)*:
+"**-blob-minima-threshold**", 
+"**-blob-maxima-threshold**", 
+"**-blob-minima-ratio**", 
+"**-blob-maxima-ratio**"
+
+#### Recommendation:
+
+Blob-detection is computationally expensive, 
+but it only has to be performed once.
+Typically, users will perform blob detection with the default (permissive)
+score thresholds, so that they keep most of the minima and maxima.
+Then later, they will run **filter_mrc** with the 
+"**-spheres**" and "**-blob-minima-threshold**" (or "**-blob-maxima-threshold")
+arguments several times with different thresholds to decide which of 
+these blobs are worth keeping.
+
+
+
 
 
 ####  Implementation:

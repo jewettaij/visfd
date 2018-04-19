@@ -1328,6 +1328,12 @@ ApplyDog3D(int const image_size[3],
             &afTemp,
             &aaafTemp);
 
+  // Report the A and B (normalization) coefficients to the caller?
+  if (pA)
+    *pA = A;
+  if (pB)
+    *pB = B;
+
 } // ApplyDog3D()
 
 
@@ -1401,6 +1407,8 @@ ApplyDogScaleFree3D(int const image_size[3], //source image size
       for (int ix = 0; ix < image_size[0]; ix++)
         aaafDest[iz][iy][ix] *= t_over_delta_t;
 
+  // Report the A and B (normalization) coefficients to the caller?
+  // If so, we need to include the factor of t_over_delta_t that we used above.
   if (pA)
     *pA *= t_over_delta_t;
   if (pB)
@@ -1501,7 +1509,8 @@ BlobDog3D(int const image_size[3], //source image size
 
   float global_minima_score = 1.0;  //impossible, minima < 0
   float global_maxima_score = -1.0; //impossible, maxima > 0
-  bool disable_thresholds = (minima_threshold > maxima_threshold); //(unwise)
+  bool disable_thresholds = ((! use_threshold_ratios) &&
+                             (minima_threshold >= maxima_threshold));
 
 
   for (int ir = 0; ir < blob_widths.size(); ir++) {

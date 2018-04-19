@@ -115,12 +115,13 @@ class Settings {
 
   vector<float> blob_widths;    // blob widths considered for scale free blob detection
   float blob_width_multiplier;
-  float blob_minima_threshold;
-  float blob_maxima_threshold;
   string blob_minima_file_name;
   string blob_maxima_file_name;
-  float blob_use_threshold_ratios;
   float blob_min_separation;
+
+  float score_upper_bound;   //Ignore blobs with scores above this (usually <0)
+  float score_lower_bound;   //Ignore blobs with scores less than this (>0)
+  float score_bounds_are_ratios; //Are these ratios relative to min & max score?
 
   float filter_truncate_threshold;
   float filter_truncate_ratio;
@@ -171,9 +172,10 @@ class Settings {
   float sphere_decals_scale;
   float sphere_decals_foreground;      //intensity of voxels in each sphere
   float sphere_decals_background;      //intensity of voxels not in any spheres
-  bool sphere_decals_foreground_score; //color each sphere by its "score"
+  float sphere_decals_background_scale; //multiply background voxel intensities
+  bool sphere_decals_foreground_use_score; //color each sphere by its "score"?
                                        //This overrides sphere_decals_foreground
-  bool sphere_decals_background_orig;  //superimpose spheres on background image
+  //bool sphere_decals_background_use_orig;  //superimpose spheres on background image
                                        //This overrides sphere_decals_background
   bool sphere_decals_foreground_norm;  //Divide foreground intensity by the
                                        //number of voxels in each sphere

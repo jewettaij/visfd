@@ -101,17 +101,18 @@ Settings::Settings() {
   sphere_decals_shell_thickness = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
-  sphere_decals_foreground_score = false;
-  sphere_decals_background_orig = false;
+  sphere_decals_background_scale = 0.4; //default dimming of original image to emphasize spheres
+  sphere_decals_foreground_use_score = true;
+  //sphere_decals_background_use_orig = true;
   sphere_decals_foreground_norm = false;
   sphere_decals_scale = 1.0;
-  sphere_decals_shell_thickness_is_ratio = false;
-  sphere_decals_shell_thickness = -1.0;
-  sphere_decals_shell_thickness_min = -1.0;
+  sphere_decals_shell_thickness_is_ratio = true;
+  sphere_decals_shell_thickness = 0.08;
+  sphere_decals_shell_thickness_min = 1.0;
+  score_upper_bound = 0.5;
+  score_lower_bound = 0.5;
+  score_bounds_are_ratios = true;
   blob_width_multiplier = 1.0;
-  blob_use_threshold_ratios = true;
-  blob_minima_threshold = 0.5;
-  blob_maxima_threshold = 0.5;
   blob_min_separation = 1.0;
 
   use_thresholds = false;
@@ -616,12 +617,6 @@ Settings::ParseArgs(vector<string>& vArgs)
         blob_minima_file_name = blob_file_name_base + string(".minima.txt");
         blob_maxima_file_name = blob_file_name_base + string(".maxima.txt");
 
-        cerr << "settings.blob_minima_file_name = \""
-             << blob_minima_file_name << "\"" << endl;
-        cerr << "settings.blob_maxima_file_name = \""
-             << blob_maxima_file_name << "\"" << endl;
-
-
         float blob_width_min = stof(vArgs[i+2]);
         float blob_width_max = stof(vArgs[i+3]);
         int N = stof(vArgs[i+4]);
@@ -668,13 +663,14 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob")
 
 
-    else if (vArgs[i] == "-blob-minima-threshold") {
+    else if ((vArgs[i] == "-score-upper-bound") ||
+             (vArgs[i] == "-blob-minima-threshold")) {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_minima_threshold = stof(vArgs[i+1]);
-        blob_maxima_threshold = HUGE_VALF;
-        blob_use_threshold_ratios = false;
+        score_upper_bound = stof(vArgs[i+1]);
+        score_lower_bound = HUGE_VALF;
+        score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -684,13 +680,14 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob-minima-threshold")
 
 
-    else if (vArgs[i] == "-blob-maxima-threshold") {
+    else if ((vArgs[i] == "-score-lower-bound") ||
+             (vArgs[i] == "-blob-maxima-threshold")) {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_maxima_threshold = stof(vArgs[i+1]);
-        blob_minima_threshold = -HUGE_VALF;
-        blob_use_threshold_ratios = false;
+        score_lower_bound = stof(vArgs[i+1]);
+        score_upper_bound = -HUGE_VALF;
+        score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -700,13 +697,14 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob-maxima-threshold")
              
 
-    else if (vArgs[i] == "-blob-minima-ratio") {
+    else if ((vArgs[i] == "-score-lower-bound-ratio") ||
+             (vArgs[i] == "-blob-minima-ratio")) {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_minima_threshold = stof(vArgs[i+1]);
-        blob_maxima_threshold = HUGE_VALF;
-        blob_use_threshold_ratios = true;
+        score_upper_bound = stof(vArgs[i+1]);
+        score_lower_bound = HUGE_VALF;
+        score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -716,13 +714,14 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob-minima_ratio")
 
 
-    else if (vArgs[i] == "-blob-maxima-ratio") {
+    else if ((vArgs[i] == "-score-upper-bound-ratio") ||
+             (vArgs[i] == "-blob-maxima-ratio")) {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blob_maxima_threshold = stof(vArgs[i+1]);
-        blob_minima_threshold = -HUGE_VALF;
-        blob_use_threshold_ratios = true;
+        score_lower_bound = stof(vArgs[i+1]);
+        score_upper_bound = -HUGE_VALF;
+        score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -730,6 +729,38 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-blob-maxima-ratio")
+
+
+    // REMOVE THIS CRUFT:
+    //else if (vArgs[i] == "-score-upper-bound") {
+    //  try {
+    //    if ((i+1 >= vArgs.size()) ||
+    //        (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+    //      throw invalid_argument("");
+    //    score_upper_bound = stof(vArgs[i+1]);
+    //  }
+    //  catch (invalid_argument& exc) {
+    //    throw InputErr("Error: The " + vArgs[i] + 
+    //                   " argument must be followed by a number:\n"
+    //                   "       scores above this (usually negative) number will be ignored\n");
+    //  }
+    //  num_arguments_deleted = 2;
+    //}
+    //
+    //else if (vArgs[i] == "-score-lower-bound") {
+    //  try {
+    //    if ((i+1 >= vArgs.size()) ||
+    //        (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+    //      throw invalid_argument("");
+    //    score_lower_bound = stof(vArgs[i+1]);
+    //  }
+    //  catch (invalid_argument& exc) {
+    //    throw InputErr("Error: The " + vArgs[i] + 
+    //                   " argument must be followed by a number:\n"
+    //                   "       Scores below this number will be ignored.\n");
+    //  }
+    //  num_arguments_deleted = 2;
+    //}
 
 
 
@@ -1158,7 +1189,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = SPHERE_DECALS;
-        sphere_decals_radius = 0.0;
+        sphere_decals_radius = -1.0;
         in_coords_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
@@ -1207,7 +1238,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if ((vArgs[i] == "-spheres-scale") ||
              (vArgs[i] == "-sphere-scale")) {
-      sphere_decals_foreground_score = false;
+      sphere_decals_foreground_use_score = false;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -1217,7 +1248,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a number:\n"
-                       "       the voxel intensity value outside the sphere (normally 0).\n");
+                       "       the ratio of the displyed sphere size to the radius detected (usually 1).\n");
       }
       num_arguments_deleted = 2;
     }
@@ -1266,21 +1297,14 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if ((vArgs[i] == "-spheres-score") ||
              (vArgs[i] == "-sphere-score")) {
-      sphere_decals_foreground_score = true;
+      sphere_decals_foreground_use_score = true;
       num_arguments_deleted = 1;
     }
-
-
-    else if ((vArgs[i] == "-spheres-background-orig") ||
-             (vArgs[i] == "-sphere-background-orig")) {
-      sphere_decals_background_orig = true;
-      num_arguments_deleted = 1;
-    }
-
 
     else if ((vArgs[i] == "-spheres-background") ||
              (vArgs[i] == "-sphere-background")) {
-      sphere_decals_background_orig = false;
+      //sphere_decals_background_use_orig = false;
+      sphere_decals_background_scale = 0.0;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -1296,9 +1320,28 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+    else if ((vArgs[i] == "-spheres-background-scale") ||
+             (vArgs[i] == "-sphere-background-scale")) {
+      //sphere_decals_background_use_orig = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        sphere_decals_background_scale = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number, usually between 0 and 1:\n"
+                       "       how much to supress fluctuations in the original background image.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+
     else if ((vArgs[i] == "-spheres-foreground") ||
              (vArgs[i] == "-sphere-foreground")) {
-      sphere_decals_foreground_score = false;
+      sphere_decals_foreground_use_score = false;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -1446,8 +1489,10 @@ Settings::ParseArgs(vector<string>& vArgs)
                    "       (These files usually end in \".mrc\" or \".rec\" .)\n");
   }
   if ((out_file_name.size() == 0) &&
-      ((filter_type != NONE) ||
-       (filter_type != BLOB) || 
+      ((!
+        ((filter_type == NONE) ||
+         (filter_type == BLOB)))
+       ||
        use_thresholds ||
        invert_output))
   {
@@ -1537,7 +1582,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
   if (filter_type == BLOB) {
     if ((blob_minima_file_name != "") &&
-        (blob_maxima_threshold == HUGE_VALF))
+        (score_lower_bound == HUGE_VALF))
     {
       // If the user is not interested in local maxima, then we only
       // need to create one file (for the minima, as opposed to a separate
@@ -1552,7 +1597,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       blob_minima_file_name = blob_file_name_base;
     }
     if ((blob_maxima_file_name != "") &&
-        (blob_minima_threshold == -HUGE_VALF))
+        (score_upper_bound == -HUGE_VALF))
     {
       // If the user is not interested in local minima, then we only
       // need to create one file (for the maxima, as opposed to a separate
