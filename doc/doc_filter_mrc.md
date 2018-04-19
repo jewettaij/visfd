@@ -372,8 +372,8 @@ This can be overridden using the "**-blobr-sepration fraction**" argument
 where "**fraction**" is typically a number between 0 and 1.
 (A larger number means less overlap is permitted.
  Setting *fraction=0.0* disables this feature.
- You can also specify the overlap in terms of the Gaussian width of each blob 
- (σ) using the "**-blob-sepration fraction**" argument.  In that case,
+ You can also specify the overlap in terms of the Gaussian width of each blob, 
+ σ, using the "**-blob-sepration fraction**" argument.  In that case,
  setting *fraction* to 1 will discard blobs if they lies closer than 
  the sum of their Gaussian widths, σ1+σ2 = (r1+r2)/√3.
  *Be careful not to use "-blob-sepration" when you really mean
