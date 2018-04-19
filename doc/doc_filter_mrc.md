@@ -376,8 +376,8 @@ where "**fraction**" is typically a number between 0 and 1.
  (σ) using the "**-blob-sepration fraction**" argument.  In that case,
  setting *fraction* to 1 will discard blobs if they lies closer than 
  the sum of their Gaussian widths, σ1+σ2 = (r1+r2)/√3.
- Be careful not to use "**-blob-sepration**" when you really mean
- "**-blobr-sepration**")
+ *Be careful not to use "-blob-sepration" when you really mean
+ "-blobr-sepration"*)
 
 
 #### Specifying the radius or diameter of the objects of interest:
