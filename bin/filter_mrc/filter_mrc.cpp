@@ -2793,7 +2793,8 @@ int main(int argc, char **argv) {
       settings.blob_widths[ir] /= voxel_width[0];
 
     settings.sphere_decals_radius /= voxel_width[0];
-    settings.sphere_decals_shell_thickness /= voxel_width[0];
+    if (! settings.sphere_decals_shell_thickness_is_ratio)
+      settings.sphere_decals_shell_thickness /= voxel_width[0];
 
 
 

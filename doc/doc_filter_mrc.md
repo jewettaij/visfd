@@ -101,7 +101,7 @@ filter.
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
 
-The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be emphasized or selected using this filter.  This filter is useful when the size of the objects in the image is not known in advance.  Unfortunately, the computation is slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
+The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be emphasized or selected using this filter.  Unfortunately, the computation is slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
 
 The "**-dog**"" filter uses a (band-pass)
 [Difference-Of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
@@ -295,28 +295,36 @@ There is also an anisotropic version of this filter.
 
 ####  -blob,  -blobr,  -blobd
 
-The "**-blob**", "**-blobr**", and "**-blobd**" arguments are used when the user
-*does not* know the exact size of the objects of interest within the image.
-In this case, the program will apply a LOG filter to the image multiple times
-using a range of Gaussian widths (σ) (specified by the user)
+The "**-blob**", "**-blobr**", and "**-blobd**" arguments are used for
+[Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
+When this is used, the program will apply a LOG filter to the image 
+multiple times using a range of Gaussian widths (σ) (specified by the user)
 in an attempt to determine the correct size (scale) for the relevant objects
 in the image automatically.  (As such, this operation is comparatively slow.)
-A list of local minima and maxima in *X,Y,Z* space (and scale-space, "*t*")
+A list of local minima and maxima in *X,Y,Z* space (and scale-space)
 will generated and saved in a file, using the method described in:
-Lindeberg,T., Int. J. Comput. Vision.(1998)
+Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 
 The "**-blob**", "**-blobr**" and "**-blobd**" arguments
 filters are followed by 4 arguments:
 ```
-  -blob   file_name.txt  σ_min  σ_max  N
-  -blobr  file_name.txt  r_min  r_max  N
-  -blobd  file_name.txt  d_min  d_max  N
+  -blob   file_name.txt  σ_min  σ_max  gratio
+  -blobr  file_name.txt  r_min  r_max  gratio
+  -blobd  file_name.txt  d_min  d_max  gratio
 ```
-
-"file_name.txt" is the name of a file which will store the 
-location of all the blobs detected in the image.
-These blobs are either local minima or maxima in X,Y,Z,scale space.
-Actually, two files will be created, named
+A LOG filter will be applied to the image using different Gaussians
+whose widths (σ) vary between "**σ_min**", and "**σ_max**"
+(or, equivalently whose radii vary between "**r_min**" and "**r_max**").
+Each Gaussian will be wider than the previous Gaussian by a fraction
+(no larger than) "**gratio**", a number which should be > 1.
+(**1.01** is safe, recommended choice,
+ but you can speed up the calculation by increasing this parameter.)
+"**file_name.txt**" is the name of a file which will store the 
+locations of all the blobs detected in the image
+as well as their sizes and scores (see below).
+These detected blobs are either local minima or maxima in
+X,Y,Z,[σ space](https://en.wikipedia.org/wiki/Scale_space_representation).
+By default, two files will be created, named
 *file_name_minima.txt* (for storing local minima), and 
 *file_name_maxima.txt* (for storing local maxima).
 Each file is a 5-column ascii text file with the following format:
@@ -393,7 +401,7 @@ that you wish to detect within the image (instead of the Gaussian width, σ).
 
 *If* the "**-o**" argument is specified during blob-detection,
 then a new tomogram will be created with each blob represented
-by a spherical shell that surrounds the point of 
+by a hollow spherical shell that surrounds the point of 
 interest, whose *radius* and *brightness* indicate *size* and *score* of 
 that blob, respectively.
 *(The intensity of voxels belonging to the spherical
@@ -401,17 +409,21 @@ shell should exactly match the score of that blob.
 In IMOD, blobs with good scores typically appear as black or white spheres,
 and grey spheres correspond to blobs with poor scores.
 The score of a given blob
-can be queried in IMOD by clicking on a voxel somewhere in the spherical shell
+can be queried in IMOD by clicking on a voxel somewhere on the spherical shell
 and selecting the "Edit"->"Point"->"Value" menu option.)
 
-The radii and brightnesses can be overidden using the
+The radii and brightnesses of the spheres can be overidden using the
 "**-sphere-radius r**" 
 and "**-sphere-foreground intensity**" arguments, respectively.
-(The size and thickness of the the shell can also be
-controlled using the "**-sphere-scale ratio**" and
-"**-spheres-shell-ratio ratio**" arguments, respectively.
- Setting the "ratio" to 1 results in a solid rather than hollow sphere.
- The default shell thickness is 0.08.)
+(Note: The *r* parameter should be in physical units/Angstroms, not voxels.
+ If you prefer to scale all the radii up or down by the same ratio,
+ use the "**-sphere-scale ratio**" argument instead.)
+
+The thickness of the shell can be controlled using the 
+"**-spheres-shell-ratio ratio**" argument.
+Setting the "ratio" to 1 results in a solid rather than hollow sphere.
+(The default shell thickness is 0.08.
+ The minimum width of the shell is 1 voxel wide.)
 
 By default, these spherical shells will be superimposed upon the
 original image (whose voxel's brightness will be shifted and scaled 
@@ -420,7 +432,7 @@ The average *brightness* and *contrast* of these background voxels
 is controlled by the "**-sphere-background brightness**", and the 
 "**-sphere-background-scale ratio**" arguments, respectively.
 (Using "**-sphere-background-scale 0**" makes this background image invisible.
- The default scale ratio is 0.4.)
+ The default scale ratio is 0.3.)
 
 
 ####  Visualizing blobs using the "**-spheres**" argument

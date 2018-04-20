@@ -1484,9 +1484,11 @@ BlobDog3D(int const image_size[3], //source image size
   // We need 3 images to store the result of filtering the image
   // using DOG filters with 3 different widths.  Store those images here:
 
-  cerr << " -- Attempting to allocate space for 3 more images.  --\n"
-       << " -- (If this crashes your computer, find a computer  --\n"
-       << " --  with more RAM and use \"ulimit\")               --\n";
+  if (pReportProgress)
+    *pReportProgress
+      << " -- Attempting to allocate space for 3 more images.  --\n"
+      << " -- (If this crashes your computer, find a computer  --\n"
+      << " --  with more RAM and use \"ulimit\")               --\n";
 
   bool preallocated = ! (aaaafI == NULL);
 
@@ -1512,12 +1514,18 @@ BlobDog3D(int const image_size[3], //source image size
   bool disable_thresholds = ((! use_threshold_ratios) &&
                              (minima_threshold >= maxima_threshold));
 
+  if (pReportProgress)
+    *pReportProgress << "\n----- Blob detection initiated using "
+                     << blob_widths.size() << " trial Gaussians -----\n\n";
 
   for (int ir = 0; ir < blob_widths.size(); ir++) {
 
-    cerr << "---------- sigma[" << ir << "] = "
-         << blob_widths[ir]
-         << " (in voxels)----------\n";
+    if (pReportProgress)
+      *pReportProgress
+        << "-- Progress: "<<ir+1<<"/"<<blob_widths.size()
+        <<", sigma[" << ir << "]="
+        << blob_widths[ir]
+        << " (in voxels) --\n";
 
     // Run the image through a DOG filter with the currently selected width.
     // Compare the resulting filtered image with filtered images
@@ -1529,8 +1537,10 @@ BlobDog3D(int const image_size[3], //source image size
     // Keep track of all of these X,Y,Z,R local maxima voxels and their values
     // (and the local minima as well).
 
-    cerr << "--- Applying DOG filter using sigma[" << ir << "] = "
-         << blob_widths[ir] << " (in voxels) ---\n";
+    if (pReportProgress)
+      *pReportProgress
+        << "--- Applying DOG filter using sigma[" << ir << "] = "
+        << blob_widths[ir] << " (in voxels) ---\n";
 
     // We are going to apply a DOG filter to the original image and
     // store it in the aaaaf array.
@@ -1569,8 +1579,10 @@ BlobDog3D(int const image_size[3], //source image size
             (blob_widths[ir-1] > blob_widths[ir])));
 
 
-    cerr << "--- searching for local minima & maxima at sigma[" << ir-1 << "] = "
-         << blob_widths[ir-1] << " ---\n";
+    if (pReportProgress)
+      *pReportProgress
+        << "--- searching for local minima & maxima at sigma[" << ir-1 << "] = "
+        << blob_widths[ir-1] << " ---\n";
 
     // As we are looking for local minima and maxima we need to
     // keep track of the best scores so far
@@ -1586,7 +1598,8 @@ BlobDog3D(int const image_size[3], //source image size
     // It's better to prevent this list from growing too large at any point.
     
     for (int iz = 0; iz < image_size[2]; iz++) {
-      cerr << "  " << iz+1 << " / " << image_size[2] << "\n";
+      if (pReportProgress)
+        *pReportProgress << "  " << iz+1 << " / " << image_size[2] << "\n";
       for (int iy = 0; iy < image_size[1]; iy++) {
         for (int ix = 0; ix < image_size[0]; ix++) {
           // Search the 81-1 = 80 surrounding voxels to see if this voxel is
@@ -1667,9 +1680,11 @@ BlobDog3D(int const image_size[3], //source image size
       } //for (int iy=0; iy<image_size[1]; iy++) {
     } //for (int iz=0; iz<image_size[2]; iz++) {
 
-    cerr << "--- found " << minima_crds.size ()
-         << " and " << maxima_crds.size()
-         << " local minima and maxima, respectively so far ---\n" << endl;
+    if (pReportProgress)
+      *pReportProgress
+        << "--- found " << minima_crds.size ()
+        << " and " << maxima_crds.size()
+        << " local minima and maxima, respectively so far ---\n" << endl;
 
     assert((minima_crds.size() == minima_sigma.size()) &&
            (minima_crds.size() == minima_scores.size()));

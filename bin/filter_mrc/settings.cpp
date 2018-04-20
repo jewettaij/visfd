@@ -101,7 +101,7 @@ Settings::Settings() {
   sphere_decals_shell_thickness = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
-  sphere_decals_background_scale = 0.4; //default dimming of original image to emphasize spheres
+  sphere_decals_background_scale = 0.3; //default dimming of original image to emphasize spheres
   sphere_decals_foreground_use_score = true;
   //sphere_decals_background_use_orig = true;
   sphere_decals_foreground_norm = false;
@@ -619,13 +619,23 @@ Settings::ParseArgs(vector<string>& vArgs)
 
         float blob_width_min = stof(vArgs[i+2]);
         float blob_width_max = stof(vArgs[i+3]);
-        int N = stof(vArgs[i+4]);
-        if ((blob_width_min <= 0.0) || (blob_width_min <= 0.0))
+        if ((blob_width_min <= 0.0) ||
+            (blob_width_max <= 0.0) ||
+            (blob_width_min >= blob_width_max))
           throw invalid_argument("");
-        if (N < 3)
-          throw InputErr("The 3rd parameter to the \"" + vArgs[i] + "\" argument must be >= 3.");
+
+        // The old version of the code allows user to set "N" directly
+        //int N = stof(vArgs[i+4]);
+        //if (N < 3)
+        //  throw InputErr("The 4th parameter to the \"" + vArgs[i] + "\" argument must be >= 3.");
+        //float growth_ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
+
+        // In the new version of the code, the user specifies "growth_ratio"
+        float growth_ratio = stof(vArgs[i+4]);
+        if (growth_ratio <= 1.0)
+          throw invalid_argument("");
+        int N = ceil( log(blob_width_max/blob_width_min) / log(growth_ratio) );
         blob_widths.resize(N);
-        float growth_ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
 
         // REMOVE THIS CRUFT:
         // Optional:
@@ -1254,6 +1264,41 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+    else if ((vArgs[i] == "-spheres-shell-ratio") ||
+             (vArgs[i] == "-sphere-shell-ratio")) {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        sphere_decals_shell_thickness_is_ratio = true;
+        sphere_decals_shell_thickness     = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a numbers:\n"
+                       "       -the ratio of the shell thickness to the sphere radius\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if ((vArgs[i] == "-sphere-shell-thickness-min") ||
+             (vArgs[i] == "-sphere-shell-thicknesses-min") ||
+             (vArgs[i] == "-spheres-shell-thickness-min") ||
+             (vArgs[i] == "-spheres-shell-thicknesses-min")) {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        sphere_decals_shell_thickness_min = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
 
     else if ((vArgs[i] == "-sphere-shell-thickness") ||
              (vArgs[i] == "-sphere-shell-thicknesses") ||
@@ -1273,26 +1318,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-
-    else if ((vArgs[i] == "-spheres-shell-ratio") ||
-             (vArgs[i] == "-sphere-shell-ratio")) {
-      try {
-        if ((i+2 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-'))
-          throw invalid_argument("");
-        sphere_decals_shell_thickness_is_ratio = true;
-        sphere_decals_shell_thickness     = stof(vArgs[i+1]);
-        sphere_decals_shell_thickness_min = stof(vArgs[i+2]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by two numbers:\n"
-                       "       -the ratio of the shell thickness to the sphere radius, and\n"
-                       "       -the minimal shell thickness\n");
-      }
-      num_arguments_deleted = 3;
-    }
 
 
     else if ((vArgs[i] == "-spheres-score") ||
