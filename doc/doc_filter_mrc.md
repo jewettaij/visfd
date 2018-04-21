@@ -233,67 +233,7 @@ if you use the default exponent of 2.
 *Changing the exponents will slow down the filter considerably.*
 
 
-### -doggxy
-The **-doggxy** argument must be followed by 3 numbers:
-```
-  -doggxy  a  b  c
-```
-When the "**-dogxy**" filter is selected,
-the original image is convolved with the following function:
-```
-   h(x,y,z) = h_xy(x,y) * h_z(z)
-```
- In the XY plane, the filter used is:
-```
-   h_xy(x,y) = A*exp(-(|r|/a)^m) - B*exp(-(|r|/b)^n)
-           r = √(x^2 + y^2)
- and A,B coefficients are chosen so that each Gaussian is normalized
-
-```
- The "m" and "n" parameters are exponents.
- They are both set to 2 by default, however you can override them
- using the "**-exponents m n**" argument.
-
- Along the Z direction, the filter used is a simple Gaussian:
-```
-   h_z(r) = C * exp(-0.5*(z/c)^2)
-```
-(The "C" constant is determined by normalization.)
-
-The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
-
-
-### -blob,  -blobr,  -blobd,  -blob1,  -blobr1,  -blobd1,  -blob1-aniso
-
-When the "**-blob1**", "**-blobr1**", and "**-blobd1**" arguments are selected a
-[Laplacian-of-a-Gaussian (LOG)](https://en.wikipedia.org/wiki/Blob_detection)
-filter is applied on the source image.
-(See implementation details below.)
-The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
-(whose width is specified by the user), 
-and then calculates the Laplacian of the result.
-Features in the image of various sizes can be emphasized 
-using this kind of filter.
-Detected blobs can be displayed to the user using the 
-"**-o** filename.mrc" (and "**-spheres**") arguments.
-
-The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
-arguments is typically chosen when the user already knows the approximate
-size of the objects or features they want to detect in the image.
-When these arguments are selected, an LOG filter will be applied
-to the image only once using a Gaussian width (σ) specified by the user,
-and the resulting filtered image will be saved as a file.
-(The local minima and maxima of this image can then be extracted later using
- the "**-find-minima**", "**-find-maxima**" and "**-max-overlap**" arguments.)
-```
-  -blob1  σ
-```
-There is also an anisotropic version of this filter.
-```
-  -blob1-aniso  σ_x  σ_y  σ_z
-```
-
-####  -blob,  -blobr,  -blobd
+### -blob,  -blobr,  -blobd
 
 The "**-blob**", "**-blobr**", and "**-blobd**" arguments are used for
 [Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
@@ -455,6 +395,41 @@ the user can discard poor scoring blobs by using any one of these arguments
 "**-blob-minima-ratio**", 
 "**-blob-maxima-ratio**"
 
+
+### -blob1,  -blobr1,  -blobd1,  -blob1-aniso
+
+
+When the "**-blob1**", "**-blobr1**", and "**-blobd1**", or "**-blob1-aniso**"
+arguments are selected, a
+[Laplacian-of-a-Gaussian (LOG)](https://en.wikipedia.org/wiki/Blob_detection)
+filter is applied on the source image.
+(See implementation details below.)
+The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
+(whose width is specified by the user), 
+and then calculates the Laplacian of the result.
+Features in the image of various sizes can be emphasized 
+using this kind of filter.
+Detected blobs can be displayed to the user using the 
+"**-o** filename.mrc" (and "**-spheres**") arguments.
+The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
+arguments is typically chosen when the user already knows the approximate
+size of the objects or features they want to detect in the image.
+When these arguments are selected, an LOG filter will be applied
+to the image ***only once*** using a Gaussian width (σ) specified by the user,
+and the resulting filtered image will be saved as a file.
+*(The local minima and maxima of this image can then be extracted later using
+ the "-find-minima", "-find-maxima", and "-blob-separation" arguments.)*
+```
+  -blob1  σ
+```
+There is also an anisotropic version of this filter.
+```
+  -blob1-aniso  σ_x  σ_y  σ_z
+```
+
+### "**-find-minima**", "**-find-maxima**" and "**-max-overlap**" arguments.)
+
+
 #### Recommendation:
 
 Blob-detection is computationally expensive, 
@@ -514,7 +489,7 @@ in the scale-space literature according to:
 ```
    σ^2 = t
 ```
-(See implementation details above)
+(See above.)
 
 
 *Note:* As a reminder, 
@@ -936,3 +911,37 @@ instead of Angstroms.
 (The voxel width in most tomograms is in Angstroms by default.)
 
 This argument has no effect if the "-w" argument is used.
+
+
+## Miscellaneous filters:
+
+### -doggxy
+The **-doggxy** argument must be followed by 3 numbers:
+```
+  -doggxy  a  b  c
+```
+When the "**-dogxy**" filter is selected,
+the original image is convolved with the following function:
+```
+   h(x,y,z) = h_xy(x,y) * h_z(z)
+```
+ In the XY plane, the filter used is:
+```
+   h_xy(x,y) = A*exp(-(|r|/a)^m) - B*exp(-(|r|/b)^n)
+           r = √(x^2 + y^2)
+ and A,B coefficients are chosen so that each Gaussian is normalized
+
+```
+ The "m" and "n" parameters are exponents.
+ They are both set to 2 by default, however you can override them
+ using the "**-exponents m n**" argument.
+
+ Along the Z direction, the filter used is a simple Gaussian:
+```
+   h_z(r) = C * exp(-0.5*(z/c)^2)
+```
+(The "C" constant is determined by normalization.)
+
+The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
+
+
