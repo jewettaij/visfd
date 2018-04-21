@@ -101,7 +101,14 @@ filter.
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
 
+The "**-find-minima**" and "**-find-maxima**" will find all of the local
+intensity minima and maxima respectively in the image.
+The user has the option to discard poor scoring minima or maxima,
+or minima and maxima which are too close together.
+
+
 The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be emphasized or selected using this filter.  Unfortunately, the computation is slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
+
 
 The "**-dog**"" filter uses a (band-pass)
 [Difference-Of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
@@ -109,8 +116,15 @@ filter which can be used as a frequency band-pass filter (for both high and low 
 (The "**-dog-aniso**" filter allows you to modify the properties of the filter in the X,Y,Z directions.  Filter sharpness can be customized using the "-exponents" argument.)
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
-The "**-template-gauss**" filter
-is also used for blob detection.
+
+The "**-fluct**" and "**-fluct-aniso**" filters calculate the magnitude of
+the voxel intensity fluctuations relative to their local surroundings.
+They can be used to find locations in the image where the brightness
+remains relatively constant or fluctuates wildly.  It can also be useful
+for characterizing regions within the image that have poor contrast.
+
+
+The "**-template-gauss**" filter can also be used for blob detection.
 It performs
 [template-matching](https://en.wikipedia.org/wiki/Template_matching)
 on 
@@ -118,7 +132,7 @@ on
 Specifically, it calculates the overlap 
 (cross-correlation) 
 of the image with the template
-(a generalizec Gaussian),
+(a generalized Gaussian),
 as well as the RMSE (root-mean-squared-error) between the
 original image and the Gaussian template
 after optimal overlap.
@@ -418,7 +432,7 @@ When these arguments are selected, an LOG filter will be applied
 to the image ***only once*** using a Gaussian width (σ) specified by the user,
 and the resulting filtered image will be saved as a file.
 *(The local minima and maxima of this image can then be extracted later using
- the "-find-minima", "-find-maxima", and "-blob-separation" arguments.)*
+ the "-find-minima", "-find-maxima", and "-blobr-separation" arguments.)*
 ```
   -blob1  σ
 ```
@@ -427,7 +441,50 @@ There is also an anisotropic version of this filter.
   -blob1-aniso  σ_x  σ_y  σ_z
 ```
 
-### "**-find-minima**", "**-find-maxima**" and "**-max-overlap**" arguments.)
+### **-find-minima**, "**-find-maxima**"
+Usage:
+```
+  -find-minima  filename
+```
+or
+```
+  -find-maxima  filename
+```
+The **-find-minima** and **-find-maxima** arguments will 
+create a file containing the locations of the local minima or maxima 
+of the voxel brightnesses within the image, respectively.
+The file is a 5-column ascii text file. 
+The x,y,z coordinates of each minima or maxima are in the first 3 columns,
+followed by the "radius" of the minima (which is "0" by default), and finally 
+it's "score" (which is the brightness of the voxel at that location).
+*(This format is identical to the format used by the
+  "-blob",  "-blobr",  "-blobd" and "-spheres" arguments.)*
+These arguments are typically used together with the following arguments:
+```
+  -blob-minima-threshold   threshold
+```
+or
+```
+  -blob-maxima-threshold   threshold
+```
+This allows users to discard poor scoring minima (or maxima),
+minima whose "scores" do not fall below (or above) "threshold".
+
+It is also useful to discard minima which are too close together:
+```
+  -sphere-radius    radius
+```
+and
+```
+  -blobr-separation  ratio
+```
+The "**-sphere-radius** argument allows you to assign a radius to each minima
+(or maxima).  If a pair of minima (or maxima) lie within the sum of their
+radii (*2\*radius*) then the poorer scoring minima will be discarded.
+(The "*radius*" will also be written to the 4th column of the "filename" file.
+*If the "-blobr-separation ratio" argument is supplied, then minima or maxima
+ will be discarded if the distance between them falls below 2\*radius\*ratio.*)
+
 
 
 #### Recommendation:
@@ -504,6 +561,38 @@ instead of
 [ordinary Gaussians](https://en.wikipedia.org/wiki/Normal_distribution)
 (by using the "-exponents m n" argument).
 
+
+### -fluct,   -fluct-aniso
+Usage:
+```
+  fluct  σ
+```
+The "**-fluct**" filter calculates the magnitude of
+the voxel intensity fluctuations relative to their local surroundings.
+This is useful for finding regions in an image with nearly uniform brightness
+and regions whose brightness fluctuates wildly.
+
+To compute this, near every voxel, a Gaussian-weighted average
+intensity is computed (who'se Gaussian width is σ).
+A Gaussian-weighted squared-difference between all the nearby voxel intensities
+and this local average intensity is also computed.
+A new image is generated whose voxel intensities equal this
+local average squared difference intensity of nearby voxels.
+A new image is gerated squared-difference is 
+They can be used to find locations in the image where the brightness
+remains relatively constant or fluctuates wildly.  It can also be useful
+for characterizing regions within the image that have poor contrast.
+The "**-fluct-aniso**" variant allows the user to control the width
+of the Gaussian independently in the x,y,z directions:
+```
+  fluct-aniso   σ_x  σ_y  σ_z
+```
+*(Implementation detail:
+ It might seem more straightforward to simply consider the fluctuations in
+ brightnesses of all of the voxels which lie within a fixed radius from
+ each target voxel.  However using Gaussian weighted averages instead
+ accomplishes the same goal and is much more
+ [computationally efficient](https://en.wikipedia.org/wiki/Separable_filter).)*
 
 
 

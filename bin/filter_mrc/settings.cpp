@@ -71,6 +71,44 @@ Settings::Settings() {
   dogsf_width[2] = 0.0;
   delta_sigma_over_sigma = 0.02;
 
+  find_minima = false;
+  find_maxima = false;
+  find_minima_file_name = "";
+  find_maxima_file_name = "";
+  find_extrema_occlusion_ratio = 1.0;
+  in_coords_file_name = "";
+  sphere_decals_radius = -1.0;
+  sphere_decals_shell_thickness = -1.0;
+  sphere_decals_foreground = 1.0;
+  sphere_decals_background = 0.0;
+  sphere_decals_background_scale = 0.3; //default dimming of original image to emphasize spheres
+  sphere_decals_foreground_use_score = true;
+  //sphere_decals_background_use_orig = true;
+  sphere_decals_foreground_norm = false;
+  sphere_decals_scale = 1.0;
+  sphere_decals_shell_thickness_is_ratio = true;
+  sphere_decals_shell_thickness = 0.08;
+  sphere_decals_shell_thickness_min = 1.0;
+  score_lower_bound = -HUGE_VALF;
+  score_upper_bound = HUGE_VALF;
+  score_bounds_are_ratios = true;
+  blob_width_multiplier = 1.0;
+  blob_min_separation = 1.0 * sqrt(3.0);
+
+  use_thresholds = false;
+  use_dual_thresholds = false;
+  out_threshold_01_a = 1.0;
+  out_threshold_01_b = 1.0;
+  out_threshold_10_a = 1.0;
+  out_threshold_10_b = 1.0;
+  out_thresh2_use_clipping = false;
+  out_thresh_a_value = 0.0;
+  out_thresh_b_value = 1.0;
+  //missing_wedge_min[0]=-90.0; // By default, the "missing wedge" includes all
+  //missing_wedge_max[0]=90.0;  // orientations around the Y axis which lie
+  //missing_wedge_min[1]=-30.0; // between -30 and +30 degrees (relative to the
+  //missing_wedge_max[1]=+30.0; // Z axis), independent of X-axis orientation.
+
   #ifndef DISABLE_BOOTSTRAPPING
   bs_ntests = 0;                   //disable
   bs_threshold = 0.0;              //disable
@@ -92,43 +130,7 @@ Settings::Settings() {
   //template_compare_exponent = 2.0;            //default value
   #endif //#ifndef DISABLE_TEMPLATE_MATCHING
 
-  find_minima = false;
-  find_maxima = false;
-  find_minima_file_name = "";
-  find_maxima_file_name = "";
-  in_coords_file_name = "";
-  sphere_decals_radius = -1.0;
-  sphere_decals_shell_thickness = -1.0;
-  sphere_decals_foreground = 1.0;
-  sphere_decals_background = 0.0;
-  sphere_decals_background_scale = 0.3; //default dimming of original image to emphasize spheres
-  sphere_decals_foreground_use_score = true;
-  //sphere_decals_background_use_orig = true;
-  sphere_decals_foreground_norm = false;
-  sphere_decals_scale = 1.0;
-  sphere_decals_shell_thickness_is_ratio = true;
-  sphere_decals_shell_thickness = 0.08;
-  sphere_decals_shell_thickness_min = 1.0;
-  score_upper_bound = 0.5;
-  score_lower_bound = 0.5;
-  score_bounds_are_ratios = true;
-  blob_width_multiplier = 1.0;
-  blob_min_separation = 1.0 * sqrt(3.0);
-
-  use_thresholds = false;
-  use_dual_thresholds = false;
-  out_threshold_01_a = 1.0;
-  out_threshold_01_b = 1.0;
-  out_threshold_10_a = 1.0;
-  out_threshold_10_b = 1.0;
-  out_thresh2_use_clipping = false;
-  out_thresh_a_value = 0.0;
-  out_thresh_b_value = 1.0;
-  //missing_wedge_min[0]=-90.0; // By default, the "missing wedge" includes all
-  //missing_wedge_max[0]=90.0;  // orientations around the Y axis which lie
-  //missing_wedge_min[1]=-30.0; // between -30 and +30 degrees (relative to the
-  //missing_wedge_max[1]=+30.0; // Z axis), independent of X-axis orientation.
-}
+} //Settings::Settings()
 
 
 
@@ -549,6 +551,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
         blob_min_separation = stof(vArgs[i+1]);
+        find_extrema_occlusion_ratio = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -566,6 +569,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
         blob_min_separation = stof(vArgs[i+1]) * sqrt(3.0);
+        find_extrema_occlusion_ratio = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -583,6 +587,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
         blob_min_separation = stof(vArgs[i+1]) * (2.0 * sqrt(3.0));
+        find_extrema_occlusion_ratio = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1153,33 +1158,31 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-find-minima") {
       try {
-        if (i+2 >= vArgs.size())
+        if (i+1 >= vArgs.size())
           throw invalid_argument("");
         find_minima = true;
         find_minima_file_name = vArgs[i+1];
-        find_minima_threshold = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
           throw InputErr("Error: The " + vArgs[i] + 
                          " argument must be followed by a number.\n");
       }
-      num_arguments_deleted = 3;
+      num_arguments_deleted = 2;
     }
 
 
     else if (vArgs[i] == "-find-maxima") {
       try {
-        if (i+2 >= vArgs.size())
+        if (i+1 >= vArgs.size())
           throw invalid_argument("");
         find_maxima = true;
         find_maxima_file_name = vArgs[i+1];
-        find_maxima_threshold = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
           throw InputErr("Error: The " + vArgs[i] + 
                          " argument must be followed by a number.\n");
       }
-      num_arguments_deleted = 3;
+      num_arguments_deleted = 2;
     }
 
 

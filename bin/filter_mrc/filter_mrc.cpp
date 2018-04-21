@@ -1058,12 +1058,10 @@ HandleSphereDecals(Settings settings,
         score = _score;
     }
 
-    if (settings.score_lower_bound > settings.score_upper_bound) {
-      if (! ((settings.score_lower_bound <= score) ||
-             (score <= settings.score_upper_bound)))
-        // If the score is not sufficiently high (or low), skip this blob
-        continue; 
-    }
+    if (! ((settings.score_lower_bound <= score) ||
+           (score <= settings.score_upper_bound)))
+      // If the score is not sufficiently high (or low), skip this blob
+      continue; 
 
     if (! settings.sphere_decals_foreground_use_score)
       score = settings.sphere_decals_foreground;
@@ -1403,8 +1401,13 @@ HandleExtrema(Settings settings,
   tomo_out.FindMinMaxMean();
 
   //default values disable the thresholds:
-  float local_minima_threshold = settings.find_minima_threshold;
-  float local_maxima_threshold = settings.find_maxima_threshold;
+  // REMOVE THIS CRUFT:
+  //float local_minima_threshold = settings.find_minima_threshold;
+  //float local_maxima_threshold = settings.find_maxima_threshold;
+
+  float local_minima_threshold = settings.score_upper_bound;
+  float local_maxima_threshold = settings.score_lower_bound;
+  
   //float local_minima_threshold =tomo_out.header.dmax;//keep all minima
   //float local_maxima_threshold =tomo_out.header.dmin;//keep all maxima
 
@@ -1469,9 +1472,11 @@ HandleExtrema(Settings settings,
   } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
 
   if (settings.blob_min_separation > 0.0) {
-    if (settings.find_minima_occlusion_radius > 0.0) {
-      vector<float> minima_sigma(minima_crds_int.size(),
-                                 settings.find_minima_occlusion_radius/sqrt(2));
+    if ((settings.sphere_decals_radius > 0) &&
+        (settings.find_extrema_occlusion_ratio > 0.0)) {
+      vector<float> minima_radii(minima_crds_int.size(),
+                                 settings.sphere_decals_radius);
+                                 
       vector<float> minima_scores(minima_crds_int.size());
       for (size_t i = 0; i < minima_crds_int.size(); i++) {
         int ix = minima_crds_int[i][0];
@@ -1480,16 +1485,18 @@ HandleExtrema(Settings settings,
         minima_scores[i] = tomo_out.aaafI[iz][iy][ix];
       }
       DiscardOverlappingBlobs(minima_crds_int,
-                              minima_sigma, 
+                              minima_radii, 
                               minima_scores,
                               false,
-                              settings.blob_min_separation,
+                              settings.find_extrema_occlusion_ratio,
                               tomo_in.header.nvoxels,
                               &cerr);
     }
-    if (settings.find_maxima_occlusion_radius > 0.0) {
-      vector<float> maxima_sigma(maxima_crds_int.size(),
-                                 settings.find_maxima_occlusion_radius/sqrt(2));
+    if ((settings.sphere_decals_radius > 0) &&
+        (settings.find_extrema_occlusion_ratio > 0.0)) {
+      vector<float> maxima_radii(maxima_crds_int.size(),
+                                 settings.sphere_decals_radius *
+                                 settings.find_extrema_occlusion_ratio);
       vector<float> maxima_scores(maxima_crds_int.size());
       for (size_t i = 0; i < maxima_crds_int.size(); i++) {
         int ix = maxima_crds_int[i][0];
@@ -1498,10 +1505,10 @@ HandleExtrema(Settings settings,
         maxima_scores[i] = tomo_out.aaafI[iz][iy][ix];
       }
       DiscardOverlappingBlobs(maxima_crds_int,
-                              maxima_sigma, 
+                              maxima_radii, 
                               maxima_scores,
                               true,
-                              settings.blob_min_separation,
+                              settings.find_extrema_occlusion_ratio,
                               tomo_in.header.nvoxels,
                               &cerr);
     }

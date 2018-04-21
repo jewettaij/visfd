@@ -162,10 +162,7 @@ class Settings {
   bool find_maxima = false;
   string find_minima_file_name;
   string find_maxima_file_name;
-  float find_minima_threshold;
-  float find_maxima_threshold;
-  float find_minima_occlusion_radius;
-  float find_maxima_occlusion_radius;
+  float find_extrema_occlusion_ratio;
 
   string in_coords_file_name;
   float sphere_decals_radius;

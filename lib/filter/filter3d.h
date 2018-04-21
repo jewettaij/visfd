@@ -1832,6 +1832,10 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
             descending_order,
             pReportProgress);
 
+  if (pReportProgress)
+    *pReportProgress
+      << "-- Detecting collisions between blobs (this can take a while) --\n";
+
   // Implementation detail:
   //    To check to see whether blobs overlap, it would be inefficient to
   // compare that blob with all the blobs which came before it
@@ -1842,9 +1846,11 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
   //    min_separation * σ
   // from the center of that blob.
   // This provides us with a fast (O(1)) way to check if a given blob 
-  // overlaps with any preceeding blobs.  All voxels in a region of size 
-  // (NOTE: This means that min_separation is measured in units of σ, NOT the
-  //  blob's radius, r.  In 3-dimensions the radius would be r≈σ√3.)
+  // overlaps with any preceeding blobs.
+  // (NOTE: In practice, this means that min_separation is measured in
+  //        of the units of sigma (σ), which, in typical usage, is a Gaussian
+  //        width parameter describing thab blob, not the blob's radius.
+  //        In 3-dimensions the radius would be r≈σ√3.)
 
 
   bool *abOccupied;
@@ -1954,12 +1960,11 @@ BlobDog3D(int const image_size[3], //source image size
             aafI);
 
   if (pReportProgress)
-    *pReportProgress << "--- Removing overlapping blobs ---" << endl;
+    *pReportProgress << "----------- Removing overlapping blobs -----------\n" << endl;
 
   if (min_separation > 0.0) {
     if (pReportProgress)
-      *pReportProgress << "done --\n"
-                       << "--- Discarding overlapping minima blobs "
+      *pReportProgress << "--- Discarding overlapping minima blobs "
                        << "(min_separation = " << min_separation << ") ---\n";
 
     DiscardOverlappingBlobs(minima_crds,
