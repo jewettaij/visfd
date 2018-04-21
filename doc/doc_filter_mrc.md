@@ -308,9 +308,9 @@ Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 The "**-blob**", "**-blobr**" and "**-blobd**" arguments
 filters are followed by 4 arguments:
 ```
-  -blob   file_name.txt  σ_min  σ_max  gratio
-  -blobr  file_name.txt  r_min  r_max  gratio
-  -blobd  file_name.txt  d_min  d_max  gratio
+  -blob   file_name  σ_min  σ_max  gratio
+  -blobr  file_name  r_min  r_max  gratio
+  -blobd  file_name  d_min  d_max  gratio
 ```
 A LOG filter will be applied to the image using different Gaussians
 whose widths (σ) vary between "**σ_min**", and "**σ_max**"
@@ -319,14 +319,16 @@ Each Gaussian will be wider than the previous Gaussian by a fraction
 (no larger than) "**gratio**", a number which should be > 1.
 (**1.01** is safe, recommended choice,
  but you can speed up the calculation by increasing this parameter.)
-"**file_name.txt**" is the name of a file which will store the 
+"**file_name**" is the name of a file which will store the 
 locations of all the blobs detected in the image
 as well as their sizes and scores (see below).
 These detected blobs are either local minima or maxima in
-X,Y,Z,[σ space](https://en.wikipedia.org/wiki/Scale_space_representation).
+X,Y,Z,[scale-space](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach).
 By default, two files will be created, named
-*file_name_minima.txt* (for storing local minima), and 
-*file_name_maxima.txt* (for storing local maxima).
+*file_name.minima.txt* (for storing local minima), and 
+*file_name.minima.txt* (for storing local maxima).
+*(Note: If the "-blob-minima-threshold" or "-blob-maxima-threshold" 
+ argument is specified, then only one file is generated.)*
 Each file is a 5-column ascii text file with the following format:
 ```
 x1 y1 z1 size1 score1
