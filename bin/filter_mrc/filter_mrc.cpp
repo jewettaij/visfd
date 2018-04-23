@@ -898,12 +898,12 @@ ApplySphereDecals(MrcSimple &tomo_in,
 
   for (int i = 0; i < crds.size(); i++) {
     cerr << "processing coordinates " << i+1 << " / "
-         << crds.size() << " : "
-         << crds[i][0] << " " << crds[i][1] << " " << crds[i][2] << "\n";
+         << crds.size() << ": x,y,z(in_voxels)="
+         << crds[i][0] << "," << crds[i][1] << "," << crds[i][2];
 
     if (mask.aaafI &&
         (mask.aaafI[crds[i][2]][crds[i][1]][crds[i][0]] == 0.0))
-      continue;
+      continue;    // CONTINUEHERE OUT OF BOUNDS ERR WHEN WRONG "-w" ARGUMENT
 
     int Rs = ceil(radii[i]-0.5);
     if (Rs < 0) Rs = 0;
@@ -911,6 +911,10 @@ ApplySphereDecals(MrcSimple &tomo_in,
     float Rssqr_min = 0.0;
     if ((shell_thicknesses[i] > 0.0) && (radii[i] - shell_thicknesses[i] > 0.0))
       Rssqr_min = SQR(radii[i] - shell_thicknesses[i]);
+
+    cerr << ", r=" << radii[i] << ", th=" << shell_thicknesses[i];
+    cerr <<"\n";
+
     // Normalize the brightness of each sphere?
     // (ie by dividing the intensity by the number of voxels in the sphere)
     float imultiplier = 1.0;
@@ -1078,6 +1082,7 @@ HandleSphereDecals(Settings settings,
 
   reverse(crds.begin(), crds.end());
   reverse(radii.begin(), radii.end());
+  reverse(shell_thicknesses.begin(), shell_thicknesses.end());
   reverse(scores.begin(), scores.end());
 
   ApplySphereDecals(tomo_in,
