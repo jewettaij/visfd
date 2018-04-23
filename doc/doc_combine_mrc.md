@@ -70,7 +70,7 @@ then the resulting intensities will be vertically scaled between 0 and 1.
 *Note:* If the order of thresholds is reversed, the inverse images is generated.
 For example:
 ```
-   combine_mrc file1.mrc,0.48,0.52 + file2.mrc,0.48,0.52 out_file.mrc
+   combine_mrc file1.mrc,0.52,0.48 + file2.mrc,0.52,0.48 out_file.mrc
 ```
 ...runs the input image intensities through an inverted threshold filter
 (i.e., bright voxels become dark, and dark voxels become bright):

@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     tomo1.PrintStats(cerr);
 
     cerr << "\n"
-	 << "Reading tomogram2 \""<<settings.in1_file_name<<"\"" << endl;
+	 << "Reading tomogram2 \""<<settings.in2_file_name<<"\"" << endl;
     MrcSimple tomo2;
     tomo2.Read(settings.in2_file_name,
 	       settings.in_rescale01 && !settings.in2_use_thresholds);
