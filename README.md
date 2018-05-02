@@ -10,7 +10,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 ## filter_mrc
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
-![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob__detection_blue_fluctuation_filter.jpg)
+![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)
 
 **filter_mrc** can be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
