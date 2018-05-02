@@ -577,10 +577,6 @@ A Gaussian-weighted squared-difference between all the nearby voxel intensities
 and this local average intensity is also computed.
 A new image is generated whose voxel intensities equal this
 local average squared difference intensity of nearby voxels.
-A new image is gerated squared-difference is
-They can be used to find locations in the image where the brightness
-remains relatively constant or fluctuates wildly.  It can also be useful
-for characterizing regions within the image that have poor contrast.
 The "**-fluct-aniso**" variant allows the user to control the width
 of the Gaussian independently in the x,y,z directions:
 ```
