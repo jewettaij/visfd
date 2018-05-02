@@ -54,7 +54,8 @@ using the "-out" argument:
 are assumed to be in **physical units**.  (Eg. *Angstroms*, not *voxels*.)
 This makes it more convenient to apply the software
 to images at different magnifications.
-(This includes all of the width parameters used with the "-gauss", "-blob", "-dog", and "-template-gauss" filters.)
+(This includes all of the width parameters used with the
+ "-gauss", "-blob", "-dog", "-spheres", and "-template-gauss" filters.)
 
 Consequently, this program needs to know the physical width of each voxel.
 By default it will attempt to infer that from the MRC file
@@ -246,9 +247,9 @@ if you use the default exponent of 2.
 *Changing the exponents will slow down the filter considerably.*
 
 
-### -blob,  -blobr,  -blobd
+### -blobr,  -blobd,  -blob
 
-The "**-blob**", "**-blobr**", and "**-blobd**" arguments are used for
+The "**-blobr**", "**-blobd**", and "**-blob**" arguments are used for
 [Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
 When this is used, the program will apply a LOG filter to the image
 multiple times using a range of Gaussian widths (σ) (specified by the user)
@@ -258,18 +259,22 @@ A list of local minima and maxima in *X,Y,Z* space (and scale-space)
 will generated and saved in a file, using the method described in:
 Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 
-The "**-blob**", "**-blobr**" and "**-blobd**" arguments
-filters are followed by 4 arguments:
+The "**-blobr**", "**-blobd**" and "**-blob**" filters are followed 
+by 4 arguments (whose meaning depends on the filter selected):
 ```
-  -blob   file_name  σ_min  σ_max  gratio
   -blobr  file_name  r_min  r_max  gratio
   -blobd  file_name  d_min  d_max  gratio
+  -blob   file_name  σ_min  σ_max  gratio
 ```
+If "**-blobr**" is selected, then it should be followed by the range of radii
+of the objects you wish to detect (**r_min** and **r_max**).
 A LOG filter will be applied to the image using different Gaussians
 whose widths (σ) vary between "**σ_min**", and "**σ_max**"
-(or, equivalently whose radii vary between "**r_min**" and "**r_max**").
-Each Gaussian will be wider than the previous Gaussian by a fraction
-(no larger than) "**gratio**", a number which should be > 1.
+(which are equal to r_min/√3 and r_max/√3 respectively).
+(If you prefer, you can use the "*-blob*" argument to directly specify the
+ range of Gaussian widths you wish to use"*σ_min*", and "*σ_max*".)
+Either way, each Gaussian will be wider than the previous Gaussian by a
+fraction (no larger than) "**gratio**", a number which should be > 1.
 (**1.01** is safe, recommended choice,
  but you can speed up the calculation by increasing this parameter.)
 "**file_name**" is the name of a file which will store the
@@ -520,8 +525,9 @@ filter, *h(x,y,z)*
 The A and B parameters are determined automatically by normalization.
 The "*δ*" parameter is *0.02* by default.
 (This can be overridden using the "-dog-delta δ" argument.
-A smaller "*δ*" value may improve the approximation.)
-The width of the Gaussian (the *σ_x*, *σ_y*, *σ_z* arguments) should be specified in units of physical distance, not in voxels.
+A smaller "*δ*" value may improve the approximation,
+but may also result in a noisier filtered image.)
+As always, the width of the Gaussian (the *σ_x*, *σ_y*, *σ_z* arguments) should be specified in units of physical distance, not in voxels.
 The *A* and *B* coefficients will be automatically chosen using normalization
 (so that the discrete integral sums of *exp(-0.5*r_a^2)* and *exp(-0.5*r_b^2)*
 functions are both 1).
