@@ -545,13 +545,12 @@ in the scale-space literature according to:
 ```
    σ^2 = t
 ```
-(See above.)
 
 
 *Note:* As a reminder,
 a more general version of the the DOG filter used above can be
 applied to the image by using the "-dog" and "-dogg" arguments,
-(although it's not clear whether this would be useful for blob detection).
+(although using them is unlikely to improve blob detection).
 These alternate versions of the DOG filter allow the user
 to specify the *a_x, a_y, a_z, b_x, b_y, b_z* parameters  directly,
 and use
