@@ -13,7 +13,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 ![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob__detection_blue_fluctuation_filter.jpg)
 
 **filter_mrc** can be used for 3D
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection).
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 smoothing, edge detection, low-pass, high-pass, band-pass filters, brightness-fluctuation,
 thresholding, inversions, minima-finding, and
 [template-matching](https://en.wikipedia.org/wiki/Template_matching)
