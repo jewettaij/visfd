@@ -9,33 +9,19 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 
 ## filter_mrc
+![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
+![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob__detection_blue_fluctuation_filter.jpg)
 
-![A comparison of Difference-of-Gaussians Difference-of-Generalized-Gaussians filter weights](./doc/images/example_dogxy_w=2.516nm_a=13nm_b=20nm_m=2_n=2__vs__m=6_n=16.svg)
-
-**filter_mrc** applies a filter to a tomogram in the X,Y,Z directions
-and saves the result as a new .mrc/.rec file.
-This program can be used to rescale or invert a 3-D image, remove its high or low spatial frequencies,
-(smoothing, edge detection, band-pass filtering),
-and perform 
-[Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
-Currently, the program supports the following filters:
-([generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1))
-[Gaussians](https://en.wikipedia.org/wiki/Gaussian_blur),
-([generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1))
-[Difference-of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
-inverse ("-invert", bright <--> dark),
-and
-several threshold filters ("-thresh", "-thresh2", "-thresh4".
-(Threshold filters are useful for selecting voxels with intensities
- which lie within a certain range.)
-Both isotropic and anisotropic versions of these filters are supported.
-(Fast [separable](https://en.wikipedia.org/wiki/Separable_filter) filters are used when possible.)
-This program can also perform
+**filter_mrc** can be used for 3D
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection).
+smoothing, edge detection, low-pass, high-pass, band-pass filters, brightness-fluctuation,
+thresholding, inversions, minima-finding, and
 [template-matching](https://en.wikipedia.org/wiki/Template_matching)
-with *error-estimation* 
-(but only for simple spherical template shapes).
-The user can exclude certain voxels or regions from consideration
-(using the "-mask" argument).
+(of spherical objects) in tomograms.
+A list of detected objects can be saved to a text file.
+Processed or annotated images can be saved to a new MRC/REC file.
+(Fast [separable](https://en.wikipedia.org/wiki/Separable_filter) filters are used whenever possible.)
+As shown in the example above, certain voxels or regions can be excluded from consideration (using the "-mask" argument).
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 
@@ -67,11 +53,11 @@ For convenience, the voxel intensities can be clipped or scaled
 between 0 and 1 beforehand
 (by using the "-thresh", "-thresh2", and "-thresh4" arguments),
 and the sum can be restricted to certain regions
-(by using the "-mask" and "-mask-select" arguments). 
+(by using the "-mask" and "-mask-select" arguments).
 
 
-## Development Status: *pre-alpha*
-As of 2018-2-12, this code has been lightly tested.
+## Development Status: *alpha*
+As of 2018-4-30, this code has been lightly tested.
 Program names and command line
 arguments may change in the future.
 Tagged *releases* of this repository should have some semblance

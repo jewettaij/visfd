@@ -20,15 +20,14 @@ the "*-mask*" and "*-thresh*" (and "*-thresh2*" and "*-thresh4*") arguments.
 ## Usage Example:
 
 ```
-filter_mrc \
-   -in Bdellovibrio_1K.rec \
-   -out Bdellovibrio_1K_ribosome_peaks.mrc \
-   -w 19.2 \
-   -template-gauss 100 130 \
-   -exponents 4 8 \
-   -cutoff 0.0001 \
-   -mask Bdellovibrio_1K_mask_water=0_periplasm=1_cytoplasm=2.mrc \
-   -mask-select 2 -mask-out 0.0
+filter_mrc -w 19.2 \
+  -in Bdellovibrio_1K.rec \
+  -out Bdellovibrio_1K_ribosomes.mrc \
+  -blobr Bdellovibrio_1K_ribosomes.txt 100.0 150.0 1.01 \
+  -blobr-separation 0.8 \
+  -blob-minima-ratio 0.5 \
+  -mask Bdellovibrio_1K_mask_water=0_periplasm=1_cytoplasm=2.mrc \
+  -mask-select 2 -mask-out 0.0
 ```
 
 ## Arguments:
@@ -127,10 +126,10 @@ for characterizing regions within the image that have poor contrast.
 The "**-template-gauss**" filter can also be used for blob detection.
 It performs
 [template-matching](https://en.wikipedia.org/wiki/Template_matching)
-on 
+on
 [(generalized) Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
-Specifically, it calculates the overlap 
-(cross-correlation) 
+Specifically, it calculates the overlap
+(cross-correlation)
 of the image with the template
 (a generalized Gaussian),
 as well as the RMSE (root-mean-squared-error) between the
@@ -162,7 +161,7 @@ In either case, the original image is convolved with:
 ```
 When *-gauss* is used, *σ_x = σ_y = σ_z = σ*
 
-If **-ggauss** or **-ggauss-aniso** is used, 
+If **-ggauss** or **-ggauss-aniso** is used,
 then the image is instead convolved with
 [a generalized gaussian function](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1):
 ```
@@ -173,9 +172,9 @@ The width of the Gaussian (ie, the σ_x, σ_y, σ_z arguments) should be specifi
 (The A coefficient will be determined automatically by normalization.)
 By default **m** *= 2*,
 however this can be overridden using the optional "**-exponent m**"
-*Note:* that these *σ*, *σ_x*, *σ_y*, *σ_z*, parameters are a factor 
+*Note:* that these *σ*, *σ_x*, *σ_y*, *σ_z*, parameters are a factor
 of *√2 times larger* than the corresponding *σ* ("sigma") parameter
-traditionally used in the 
+traditionally used in the
 [Gaussian function](https://en.wikipedia.org/wiki/Normal_distribution).
 (For your convenience, you can plot these functions for various parameters using
 the "draw_filter1D.py -ggauss A s m" python script which is located in the same directory.
@@ -201,18 +200,18 @@ or:
 ```
   -dog-aniso  a_x  a_y  a_z  b_x  b_y  b_z
 ```
-In either case, 
+In either case,
 The original image will be convolved with the following function:
 ```
   h(x,y,z) =   A*exp(-0.5 * ((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
              - B*exp(-0.5 * ((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
 ```
-When *-dog* is used, 
+When *-dog* is used,
 *a_x = a_y = a_z = a*
 and
 *b_x = b_y = b_z = b*
 
-Alternatively, if the **-dogg** or **-dogg-aniso* arguments are selected, 
+Alternatively, if the **-dogg** or **-dogg-aniso* arguments are selected,
 then the image will instead be convolved with the following function:
 ```
   h(x,y,z) = A*exp(-r_a^m) - B*exp(-r_b^n)
@@ -220,7 +219,7 @@ then the image will instead be convolved with the following function:
      and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
 ```
 The width of the Gaussian (the a_x, a_y, a_z, b_x, b_y, b_z arguments) should be specified in units of physical distance, not in voxels.
-The A and B coefficients will be automatically chosen 
+The A and B coefficients will be automatically chosen
 so that each Gaussian is normalized.
 (The sum of h(x,y,z) over x,y,z is 0.
  The sum of the A and B terms over x,y,z is 1.)
@@ -237,9 +236,9 @@ using the "draw_filter1D.py -dogg A B a b m n" python script which is
 located in the same directory.
 In this case, the "a" and "b" parameters should be specified in voxels, not physical distance.)
 *Note:* that these *a*, *a_x*, *a_y*, *a_z*,
-and *b*, *b_x*, *b_y*, and *b_z* parameters are a factor 
+and *b*, *b_x*, *b_y*, and *b_z* parameters are a factor
 of *√2 times larger* than the corresponding *σ* ("sigma") parameter
-traditionally used in the 
+traditionally used in the
 [Gaussian function](https://en.wikipedia.org/wiki/Normal_distribution).
 *Note:* The calculation is
 [fast](https://en.wikipedia.org/wiki/Separable_filter)
@@ -251,7 +250,7 @@ if you use the default exponent of 2.
 
 The "**-blob**", "**-blobr**", and "**-blobd**" arguments are used for
 [Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
-When this is used, the program will apply a LOG filter to the image 
+When this is used, the program will apply a LOG filter to the image
 multiple times using a range of Gaussian widths (σ) (specified by the user)
 in an attempt to determine the correct size (scale) for the relevant objects
 in the image automatically.  (As such, this operation is comparatively slow.)
@@ -273,15 +272,15 @@ Each Gaussian will be wider than the previous Gaussian by a fraction
 (no larger than) "**gratio**", a number which should be > 1.
 (**1.01** is safe, recommended choice,
  but you can speed up the calculation by increasing this parameter.)
-"**file_name**" is the name of a file which will store the 
+"**file_name**" is the name of a file which will store the
 locations of all the blobs detected in the image
 as well as their sizes and scores (see below).
 These detected blobs are either local minima or maxima in
 X,Y,Z,[scale-space](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach).
 By default, two files will be created, named
-*file_name.minima.txt* (for storing local minima), and 
+*file_name.minima.txt* (for storing local minima), and
 *file_name.minima.txt* (for storing local maxima).
-*(Note: If the "-blob-minima-threshold" or "-blob-maxima-threshold" 
+*(Note: If the "-blob-minima-threshold" or "-blob-maxima-threshold"
  argument is specified, then only one file is generated.)*
 Each file is a 5-column ascii text file with the following format:
 ```
@@ -294,9 +293,9 @@ xM yM zM sizeM scoreM
 "**M**" is the number of blobs (maxima or minima) which were detected,
 On each line of that file,
 **x,y,z** are the coordinates for the blob's center,
-**size** is the size of the blob, 
+**size** is the size of the blob,
 (characterized either using either σ, radius, or diameter, as explained below),
-and **score** is the intensity of that voxel after 
+and **score** is the intensity of that voxel after
 a LOG filter of that size was applied to it.
 The list is ordered from high score to low score
 (for maxima, or low score to high score for minima).
@@ -336,9 +335,9 @@ This can be overridden using the "**-blobr-sepration fraction**" argument
 where "**fraction**" is typically a number between 0 and 1.
 (A larger number means less overlap is permitted.
  Setting *fraction=0.0* disables this feature.
- You can also specify the overlap in terms of the Gaussian width of each blob, 
+ You can also specify the overlap in terms of the Gaussian width of each blob,
  σ, using the "**-blob-sepration fraction**" argument.  In that case,
- setting *fraction* to 1 will discard blobs if they lies closer than 
+ setting *fraction* to 1 will discard blobs if they lies closer than
  the sum of their Gaussian widths, σ1+σ2 = (r1+r2)/√3.
  *Be careful not to use "-blob-sepration" when you really mean
  "-blobr-sepration"*)
@@ -349,7 +348,7 @@ where "**fraction**" is typically a number between 0 and 1.
 The "**-blobr**", "**-blobd**", (and "**-blobr1**" "**-blobd1**") arguments
 are all variants of the
 "**-blob**" (and "**-blob1**") argument whose parameters are (more conveniently)
-specified by the approximate radius(r≈σ√3) or diameter(d≈σ2√3) of the objects 
+specified by the approximate radius(r≈σ√3) or diameter(d≈σ2√3) of the objects
 that you wish to detect within the image (instead of the Gaussian width, σ).
 
 
@@ -357,8 +356,8 @@ that you wish to detect within the image (instead of the Gaussian width, σ).
 
 *If* the "**-o**" argument is specified during blob-detection,
 then a new tomogram will be created with each blob represented
-by a hollow spherical shell that surrounds the point of 
-interest, whose *radius* and *brightness* indicate *size* and *score* of 
+by a hollow spherical shell that surrounds the point of
+interest, whose *radius* and *brightness* indicate *size* and *score* of
 that blob, respectively.
 *(The intensity of voxels belonging to the spherical
 shell should exactly match the score of that blob.  
@@ -369,23 +368,23 @@ can be queried in IMOD by clicking on a voxel somewhere on the spherical shell
 and selecting the "Edit"->"Point"->"Value" menu option.)
 
 The radii and brightnesses of the spheres can be overidden using the
-"**-sphere-radius r**" 
+"**-sphere-radius r**"
 and "**-sphere-foreground intensity**" arguments, respectively.
 (Note: The *r* parameter should be in physical units/Angstroms, not voxels.
  If you prefer to scale all the radii up or down by the same ratio,
  use the "**-sphere-scale ratio**" argument instead.)
 
-The thickness of the shell can be controlled using the 
+The thickness of the shell can be controlled using the
 "**-spheres-shell-ratio ratio**" argument.
 Setting the "ratio" to 1 results in a solid rather than hollow sphere.
 (The default shell thickness is 0.08.
  The minimum width of the shell is 1 voxel wide.)
 
 By default, these spherical shells will be superimposed upon the
-original image (whose voxel's brightness will be shifted and scaled 
+original image (whose voxel's brightness will be shifted and scaled
 so that the voxels remain easy to see in the presence of the spherical shells).
 The average *brightness* and *contrast* of these background voxels
-is controlled by the "**-sphere-background brightness**", and the 
+is controlled by the "**-sphere-background brightness**", and the
 "**-sphere-background-scale ratio**" arguments, respectively.
 (Using "**-sphere-background-scale 0**" makes this background image invisible.
  The default scale ratio is 0.3.)
@@ -398,15 +397,15 @@ you performed the blob detection, you can generate this image later using:
 ```
   filter_mrc -spheres blob_filename.txt -o new_image.mrc
 ```
-This can be useful because, quite often, 
+This can be useful because, quite often,
 these default score thresholds too permissive.
 (Far too many blobs are detected.)
-As before, 
+As before,
 the user can discard poor scoring blobs by using any one of these arguments
 *(explained elsewhere)*:
-"**-blob-minima-threshold**", 
-"**-blob-maxima-threshold**", 
-"**-blob-minima-ratio**", 
+"**-blob-minima-threshold**",
+"**-blob-maxima-threshold**",
+"**-blob-minima-ratio**",
 "**-blob-maxima-ratio**"
 
 
@@ -419,11 +418,11 @@ arguments are selected, a
 filter is applied on the source image.
 (See implementation details below.)
 The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
-(whose width is specified by the user), 
+(whose width is specified by the user),
 and then calculates the Laplacian of the result.
-Features in the image of various sizes can be emphasized 
+Features in the image of various sizes can be emphasized
 using this kind of filter.
-Detected blobs can be displayed to the user using the 
+Detected blobs can be displayed to the user using the
 "**-o** filename.mrc" (and "**-spheres**") arguments.
 The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
 arguments is typically chosen when the user already knows the approximate
@@ -450,12 +449,12 @@ or
 ```
   -find-maxima  filename
 ```
-The **-find-minima** and **-find-maxima** arguments will 
-create a file containing the locations of the local minima or maxima 
+The **-find-minima** and **-find-maxima** arguments will
+create a file containing the locations of the local minima or maxima
 of the voxel brightnesses within the image, respectively.
-The file is a 5-column ascii text file. 
+The file is a 5-column ascii text file.
 The x,y,z coordinates of each minima or maxima are in the first 3 columns,
-followed by the "radius" of the minima (which is "0" by default), and finally 
+followed by the "radius" of the minima (which is "0" by default), and finally
 it's "score" (which is the brightness of the voxel at that location).
 *(This format is identical to the format used by the
   "-blob",  "-blobr",  "-blobd" and "-spheres" arguments.)*
@@ -489,13 +488,13 @@ radii (*2\*radius*) then the poorer scoring minima will be discarded.
 
 #### Recommendation:
 
-Blob-detection is computationally expensive, 
+Blob-detection is computationally expensive,
 but it only has to be performed once.
 Typically, users will perform blob detection with the default (permissive)
 score thresholds, so that they keep most of the minima and maxima.
-Then later, they will run **filter_mrc** with the 
+Then later, they will run **filter_mrc** with the
 "**-spheres**" and "**-blob-minima-threshold**" (or "**-blob-maxima-threshold")
-arguments several times with different thresholds to decide which of 
+arguments several times with different thresholds to decide which of
 these blobs are worth keeping.
 
 
@@ -504,10 +503,10 @@ these blobs are worth keeping.
 
 ####  Implementation:
 
-To speed up the calculation, 
-the Difference-of-Gaussian approximation to the Laplacian-of-Gaussian 
+To speed up the calculation,
+the Difference-of-Gaussian approximation to the Laplacian-of-Gaussian
 filter us used.
-Specifically, the original image is convolved with a 
+Specifically, the original image is convolved with a
 [Difference-of-Gaussians (DOG)](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach)
 filter, *h(x,y,z)*
 ```
@@ -527,21 +526,21 @@ The *A* and *B* coefficients will be automatically chosen using normalization
 (so that the discrete integral sums of *exp(-0.5*r_a^2)* and *exp(-0.5*r_b^2)*
 functions are both 1).
 The filter is multiplied by (1.0 / δ^2) to achieve *scale invariance*.
-*("Scale invariance" means an object of width W filtered with a Gaussian 
+*("Scale invariance" means an object of width W filtered with a Gaussian
 of width σ, receives the same score as an
 object of width 2W filtered with a Gaussian of width *2σ*, for example.)
 This also means that you can use the
-"**-blob1**",  "**-blobr1**", and "**-blobd1**" arguments 
+"**-blob1**",  "**-blobr1**", and "**-blobd1**" arguments
 to perform scale-free-blob-detection, *one Gaussian-width at a time,*
 in such a way that that you can directly compare
-the results of using different Gaussian-widths 
+the results of using different Gaussian-widths
 (the same way they are compared when using
 "**-blob**", "**-blobr**", and "**-blob**").
 
 In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
 
 *Note:* The Gaussian "σ" arguments (*σ*, *σ_x*, *σ_y*, and *σ_z*)
-are the related to the *t* ("time") scaling parameter traditionally used 
+are the related to the *t* ("time") scaling parameter traditionally used
 in the scale-space literature according to:
 ```
    σ^2 = t
@@ -549,11 +548,11 @@ in the scale-space literature according to:
 (See above.)
 
 
-*Note:* As a reminder, 
-a more general version of the the DOG filter used above can be 
+*Note:* As a reminder,
+a more general version of the the DOG filter used above can be
 applied to the image by using the "-dog" and "-dogg" arguments,
 (although it's not clear whether this would be useful for blob detection).
-These alternate versions of the DOG filter allow the user 
+These alternate versions of the DOG filter allow the user
 to specify the *a_x, a_y, a_z, b_x, b_y, b_z* parameters  directly,
 and use
 [generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
@@ -578,7 +577,7 @@ A Gaussian-weighted squared-difference between all the nearby voxel intensities
 and this local average intensity is also computed.
 A new image is generated whose voxel intensities equal this
 local average squared difference intensity of nearby voxels.
-A new image is gerated squared-difference is 
+A new image is gerated squared-difference is
 They can be used to find locations in the image where the brightness
 remains relatively constant or fluctuates wildly.  It can also be useful
 for characterizing regions within the image that have poor contrast.
@@ -652,13 +651,13 @@ and comparing the fit with the voxels at that location in the original image.
 The value of the constant, **c**, is calculated everywhere, and the new
 image file (specified by the "*-o*" argument)
 will store the value of **c** calculated at all of these locations.
-The **c** value turns out to equal the 
+The **c** value turns out to equal the
 ["cross-correlation"](https://en.wikipedia.org/wiki/Template_matching#Template-based_matching_explained_using_cross_correlation_or_sum_of_absolute_differences),
 between the relative voxel intensities of the source image and the template.
 The cross-correlation frequently used in template matching,
 however it is often an inadequate measure of similarity on its own.
 A high **c** value indicates that the Gaussian that fits as well as possible
-must have a high peak, but it does not indicate whether or not 
+must have a high peak, but it does not indicate whether or not
 that Gaussian is actually a good fit.
 A single bright or dark voxel could cause a large **c** value.
 
@@ -717,9 +716,9 @@ will be shifted and rescaled so that the
 minimum and maximum voxel intensities are 0 and 1.
 
 *(Note: As of 2018-1-31, IMOD reports voxel brightnesses between 0 and 255
-  even if the actual voxel brightnesses are floating point numbers between 
+  even if the actual voxel brightnesses are floating point numbers between
   0 and 1.  Keep this in mind when using that software.
-  Instead, you can use the "histogram_mrc.py" script to 
+  Instead, you can use the "histogram_mrc.py" script to
   see if your intensity values lie in the range you expect.)*
 
 ### -clip a b
@@ -747,7 +746,7 @@ The resulting voxels will have intensities in the range from 0.48 to 0.52.
 ```
 
 *Note: Unfortunately, intensity values can be difficult to guess.
-       When choosing thresholds, the 
+       When choosing thresholds, the
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
        It displays the range of voxel intensities in an image.
@@ -758,7 +757,7 @@ The resulting voxels will have intensities in the range from 0.48 to 0.52.
 -cl  a  b
 ```
 The "**-cl**" argument is similar to the "**-clip**" argument, however it
-allows you to specify the minimimum and maximum intensity parameters 
+allows you to specify the minimimum and maximum intensity parameters
 in units of σ, where σ is the standard deviation of the brightness values
 present in the image.  Typical usage:
 ```
@@ -766,10 +765,10 @@ present in the image.  Typical usage:
 ```
 This will clip voxel intensities which are either 2.5 standard-deviations
 below or above the average intensity value, respectively
-*Note: You can use the "**-mask**" argument to exclude certain voxels 
+*Note: You can use the "**-mask**" argument to exclude certain voxels
        from the clipping and thresholding operations.
-       When using "**-mask**" together with "**-cl**", then 
-       these voxels will also be excluded from consideration when 
+       When using "**-mask**" together with "**-cl**", then
+       these voxels will also be excluded from consideration when
        calculating the average and spread(σ) of voxel intensities.
 
 
@@ -795,7 +794,7 @@ results in:
 ```
 
 
-*Note: When choosing thresholds, the 
+*Note: When choosing thresholds, the
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
        It displays the range of voxel intensities in an image.*
@@ -849,7 +848,7 @@ with a smooth ramp between *thresh_a* and *thresh_b*:
                    (thresh_b)     (thresh_a)
 ```
 
-*Note: When choosing thresholds, the 
+*Note: When choosing thresholds, the
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
        It displays the range of voxel intensities in an image.*
@@ -899,7 +898,7 @@ for example:
 ```
 
 
-*Note: When choosing thresholds, the 
+*Note: When choosing thresholds, the
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
        It displays the range of voxel intensities in an image.*
@@ -1032,5 +1031,3 @@ the original image is convolved with the following function:
 (The "C" constant is determined by normalization.)
 
 The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
-
-
