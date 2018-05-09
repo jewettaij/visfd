@@ -695,7 +695,7 @@ Thresholding operations can be used to insure that the intensities
 They can also be used to select only voxels whose intensities lie within
 a narrow range of interest.
 
-*Note:* All threshold operations are performed *after* normal filtering operations have been applied (such as Gaussian blurs, -gdog filters, or -dog filters).
+*Note:* All threshold operations are performed *after* normal filtering operations have been applied (such as -gauss, -dog, -dogg, -fluct, or -blob1 filters).
 
 ### -invert
 
@@ -1009,7 +1009,7 @@ The **-doggxy** argument must be followed by 3 numbers:
 ```
   -doggxy  a  b  c
 ```
-When the "**-dogxy**" filter is selected,
+When the "**-doggxy**" filter is selected,
 the original image is convolved with the following function:
 ```
    h(x,y,z) = h_xy(x,y) * h_z(z)
@@ -1031,4 +1031,4 @@ the original image is convolved with the following function:
 ```
 (The "C" constant is determined by normalization.)
 
-The computational cost of "**-gdogxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-gdog**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-gdogxy**" (and "**-dog**") filters may work just as well and are significantly faster.)
+The computational cost of "**-doggxy**" lies in between the ordinary and *generalized* difference-of-Gaussian (DOG) filters discussed above.  (Features in electron tomography are typically blurred more in the Z direction due to the effect of the missing wedge.  So it may be pointless and impossible to use the computationally more expensive generalized ("**-dogg**", "**-exponents**") filter in an effort to find the precise boundaries of objects in the Z direction.  In these cases, the "**-doggxy**" filter may work just as well and is significantly faster.)

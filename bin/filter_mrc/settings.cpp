@@ -413,7 +413,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         width_a[1] = stof(vArgs[i+2]);
         width_b[0] = stof(vArgs[i+3]);
         width_b[1] = stof(vArgs[i+4]);
-        //The "-gdogxy" filter is a Difference-of-Generalized-Gaussians 
+        //The "-doggxy" filter is a Difference-of-Generalized-Gaussians 
         //in the X,Y  directions, multiplied by an ordinary Gaussian in 
         //the Z direction.
         width_a[2] = stof(vArgs[i+5]);
@@ -446,7 +446,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         width_a[1] = width_a[0];
         width_b[0] = stof(vArgs[i+2]);
         width_b[1] = width_b[0];
-        //The "-gdogxy" filter is a Difference-of-Generalized-Gaussians 
+        //The "-doggxy" filter is a Difference-of-Generalized-Gaussians 
         //in the X,Y  directions, multiplied by an ordinary Gaussian in 
         //the Z direction.
         width_a[2] = stof(vArgs[i+3]);

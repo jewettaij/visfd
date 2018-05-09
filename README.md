@@ -27,7 +27,7 @@ Documentation for this program is located
 
 
 ## combine_mrc
-**combine_mrc** is a program for combining two volumetric images (i.e. tomograms, both of identical size) into one image/tomogram, using a combination of addition, multiplication, and thresholding operations.  These features can be used perform binary operations between two images (which are similar to "**and**" and "**or**" operations.  "**not**" operations are also possible.)  As with the "*filter_mrc*" program, you can also use the "-mask" argument to restrict the operation to certain voxels from the image.  (See the documentation for that tool for details.)
+**combine_mrc** is a program for combining two volumetric images (i.e. tomograms, both of identical size) into one image/tomogram, using a combination of addition, multiplication, and thresholding operations.  These features can be used perform binary operations between two images (which are similar to "**and**", "**or**", and "**not**" operations.)  As with the "*filter_mrc*" program, you can also use the "-mask" argument to restrict the operation to certain voxels from both images.  (See the documentation for that tool for details.)
 Documentation for this program is located
 [here](./doc/doc_combine_mrc.md).
 
