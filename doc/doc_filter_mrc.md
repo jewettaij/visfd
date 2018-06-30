@@ -357,9 +357,9 @@ specified by the approximate radius(r≈σ√3) or diameter(d≈σ2√3) of the 
 that you wish to detect within the image (instead of the Gaussian width, σ).
 
 
-####  Visualizing blobs using the "**-o**" argument
+####  Visualizing blobs using the "**-out**" argument
 
-*If* the "**-o**" argument is specified during blob-detection,
+*If* the "**-out**" argument is specified during blob-detection,
 then a new tomogram will be created with each blob represented
 by a hollow spherical shell that surrounds the point of
 interest, whose *radius* and *brightness* indicate *size* and *score* of
@@ -400,7 +400,7 @@ is controlled by the "**-sphere-background brightness**", and the
 If you did not generate an image showing the blob locations at the time
 you performed the blob detection, you can generate this image later using:
 ```
-  filter_mrc -spheres blob_filename.txt -o new_image.mrc
+  filter_mrc -spheres blob_filename.txt -out new_image.mrc
 ```
 This can be useful because, quite often,
 these default score thresholds too permissive.
@@ -428,7 +428,7 @@ and then calculates the Laplacian of the result.
 Features in the image of various sizes can be emphasized
 using this kind of filter.
 Detected blobs can be displayed to the user using the
-"**-o** filename.mrc" (and "**-spheres**") arguments.
+"**-out** filename.mrc" (and "**-spheres**") arguments.
 The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
 arguments is typically chosen when the user already knows the approximate
 size of the objects or features they want to detect in the image.
@@ -650,7 +650,7 @@ This fitting is performed everywhere, sliding the template function
 (a Gaussian whose peak height=1) along the image, centered it on every voxel
 and comparing the fit with the voxels at that location in the original image.
 The value of the constant, **c**, is calculated everywhere, and the new
-image file (specified by the "*-o*" argument)
+image file (specified by the "*-out*" argument)
 will store the value of **c** calculated at all of these locations.
 The **c** value turns out to equal the
 ["cross-correlation"](https://en.wikipedia.org/wiki/Template_matching#Template-based_matching_explained_using_cross_correlation_or_sum_of_absolute_differences),
