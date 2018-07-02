@@ -167,8 +167,10 @@ class MrcSimple {
   // using header.Read(mrc_file), and header.Write(mrc_file)
   // After that, you can read and write the rest of the file using:
  
-  void ReadArray(istream& mrc_file);   //Invoke only after header.Read()
-  void WriteArray(ostream& mrc_file) const; //Invoke after header.Write()
+  //Invoke only after header.Read()
+  void ReadArray(istream& mrc_file, int const *axis_order);
+  //Invoke after header.Write()
+  void WriteArray(ostream& mrc_file) const; 
 
 }; //MrcSimple
 

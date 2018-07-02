@@ -79,11 +79,9 @@ public:
 
   float cellB[3];  // unit cell angles (IGNORED, assume 90 degrees)
 
-  // As of 2015-4-16, mapCRS numbers currently IGNORED (assumed to be 1,2,3)
-  Int mapCRS[3];
-  // mapCRS[0] = which axis (x,y,z) corresponds to the "columns" in the array
-  // mapCRS[1] = which axis (x,y,z) distinguishes different "rows" in the array
-  // mapCRS[2] = which axis (x,y,z) distinguishes the sections (planes) in the array
+  Int mapCRS[3];        // which axis (x,y,z) corresponds to which index (i,j,k)
+                        // in the array of voxel intensities (aaaI[k][j][i]) ? 
+                        // The default (1,2,3) corresponds to x<->i, y<->j, z<->k
 
   float dmin;           // Minimum-possible numeric value of entry in the array
   float dmax;           // Maximum-possible numeric value of entry in the array

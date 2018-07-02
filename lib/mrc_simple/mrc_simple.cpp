@@ -4,10 +4,7 @@
 // Tomographic data is internally stored as arrays of floats, however
 // this program can read MRC/REC files using several other numeric formats 
 // as well (including signed and unsigned 8-bit and 16-bit integers).
-// Note: As of 2015-4-20, file data is assumed to be in row-major format.
-//       http://en.wikipedia.org/wiki/Row-major_order
-//       (IE The "mapC", "mapR", and "mapS" (mapCRS[]) header data is ignored.)
-// Note: As of 2015-4-20, this software does not attempt to detect 
+// Note: As of 2018-6-30, this software does not attempt to detect 
 //       or convert big-endian or little-endian numbers.
 //       To be on the safe side, compile this software on hardware which is
 //       compatible with the hardware which was used to write the MRC file.
@@ -58,12 +55,6 @@ void MrcSimple::Alloc() {
   Alloc3D(header.nvoxels,
           &afI,
           &aaafI);
-  header.mvoxels[0] = header.nvoxels[0];
-  header.mvoxels[1] = header.nvoxels[1];
-  header.mvoxels[2] = header.nvoxels[2];
-  header.origin[0] = ceil(header.nvoxels[0]*0.5);  //default location of
-  header.origin[1] = ceil(header.nvoxels[1]*0.5);  //origin is at the
-  header.origin[2] = ceil(header.nvoxels[2]*0.5);  //center of the image
 }
 
 
@@ -79,32 +70,108 @@ void MrcSimple::Dealloc() {
 
 
 
+template<class Int, class Entry>
+void PermuteCArray(Int n,
+		   Entry *target,
+		   Int const *p) {
+  assert(target && p);
+  Int *tmp = new Int[n];
+  for (Int i=0; i<n; i++)
+    tmp[i] = target[i];
+  for (Int i=0; i<n; i++)
+    target[i] = tmp[ p[i] ];
+  delete [] tmp;
+}
+
+
+template<class Int>
+void PermuteInverseCArrayA(Int n,
+                           Int *p) {
+  assert(p);
+  Int *tmp = new Int[n];
+  for (Int i=0; i<n; i++)
+    tmp[i] = p[i];
+  for (Int i=0; i<n; i++)
+    p[ tmp[i] ] = i;
+  delete [] tmp;
+}
+
 
 
 void MrcSimple::Read(istream& mrc_file,
                      bool rescale,
-		     float ***aaafMask) {
+                     float ***aaafMask) {
   header.Read(mrc_file);
+
+  //    Row-major format ??
+  Int *axis_order = NULL;
   if ((header.mapCRS[0] != 1) ||
       (header.mapCRS[1] != 2) ||
-      (header.mapCRS[2] != 3))
-    throw InputErr("Error: This program currently only supports .MRC/.REC files in row-major\n"
-      "       format, and whose mapC, mapR, mapS numbers (in the file header)\n"
-      "       are 1,2,3, respectively.  Please use an alternate program to convert\n"
-      "       to this format.  For more information on MRC file format, see:\n"
-      "       http://www2.mrc-lmb.cam.ac.uk/research/locally-developed-software/image-processing-software/#image"
-      "       http://bio3d.colorado.edu/imod/doc/mrc_format.txt\n"
-                 "       http://ami.scripps.edu/software/mrctools/mrc_specification.php\n");
-  ReadArray(mrc_file);
+      (header.mapCRS[2] != 3)) {
+    cerr <<
+      "--------------------------------------------------------------------\n"
+      "--------------------------------------------------------------------\n"
+      "WARNING: The data in the file is not stored in row-major order.\n"
+      "         This program has not been tested carefully on these kinds\n"
+      "         of files.  Any calculated results will be written to a file\n"
+      "         in row-major order, but the file's header entries may be\n"
+      "         incorrect.  Use with caution.  Please report bugs.\n"
+      "--------------------------------------------------------------------\n"
+      "--------------------------------------------------------------------\n";
+    // If the image data is not stored row-major format (header.mapCRS[]),
+    // we must rearrange it. (This makes my once pretty code much uglier.)
+    // Make a copy of "mapCRS[]" now so that later we can keep track of 
+    // which axis (x,y,z) was stored in each index (i,j,k) of the array.
+    axis_order = new Int[3];
+    axis_order[0] = header.mapCRS[0] - 1;
+    axis_order[1] = header.mapCRS[1] - 1;
+    axis_order[2] = header.mapCRS[2] - 1;
+    // Internally I decided to keep the image in row-major format,
+    // so, to be consistent, I change the header entries accordingly.
+    header.mapCRS[0] = 1;
+    header.mapCRS[1] = 2;
+    header.mapCRS[2] = 3;
+    // Re-arrange the array storing the size of the image.
+    PermuteCArray(3, header.nvoxels, axis_order);
+    PermuteCArray(3, header.mvoxels, axis_order);
+    PermuteCArray(3, header.origin, axis_order);
+    // Do we need to re-arrange the other header entries as well?
+    PermuteCArray(3, header.cellA, axis_order);
+    // (Did I forget anything?)
+
+  } // deal with non-row-major axis order
+
+
+  // I'm not sure what some of these header entries mean, so I
+  // just tried to fill them in with reasonable values:
+
+  header.mvoxels[0] = header.nvoxels[0];
+  header.mvoxels[1] = header.nvoxels[1];
+  header.mvoxels[2] = header.nvoxels[2];
+  header.origin[0] = ceil(header.nvoxels[0]*0.5);  //default location of
+  header.origin[1] = ceil(header.nvoxels[1]*0.5);  //origin is at the
+  header.origin[2] = ceil(header.nvoxels[2]*0.5);  //center of the image
+
+
+  // Read the image
+  ReadArray(mrc_file, axis_order);
+
+
   if (rescale)
     Rescale01(aaafMask);
-}
+
+
+  // clean up
+  if (axis_order)
+    delete [] axis_order;
+
+} //MrcSimple::Read()
 
 
 
 void MrcSimple::Read(string in_file_name,
                      bool rescale,
-		     float ***aaafMask) {
+                     float ***aaafMask) {
   Int len_in_file_name = in_file_name.size();
   fstream mrc_file;
   mrc_file.open(in_file_name.c_str(), ios::binary | ios::in);
@@ -122,16 +189,60 @@ void MrcSimple::Read(string in_file_name,
 }
 
 
-void MrcSimple::ReadArray(istream& mrc_file) {
+
+
+
+void MrcSimple::ReadArray(istream& mrc_file,
+                          int const *axis_order=NULL) {
+
   Dealloc(); //free up any space you may have allocated earlier
   Alloc();   //allocate space for the array
+
+  // Something like this might be faster:
   //mrc_file.read((char*)afI, sizeof(float)*num_voxels);
-  for(Int iz=0; iz<header.nvoxels[2]; iz++) {
-    //aaafI[iz] = new float* [header.nvoxels[1]];
-    for(Int iy=0; iy<header.nvoxels[1]; iy++) {
-      //aaafI[iz][iy] = &(afI[iz*header.nvoxels[0]*header.nvoxels[1] + 
-      //                                    iy*header.nvoxels[0]]);
-      for(Int ix=0; ix<header.nvoxels[0]; ix++) {
+  // (I don't remember why I did not use this approach.
+  //  Hopefully the code here fast enough in any case.)
+
+  size_t num_voxels = header.nvoxels[0] *
+                      header.nvoxels[1] *
+                      header.nvoxels[2];
+
+  Int iX = 0;
+  Int iY = 0;
+  Int iZ = 0;
+  Int NX = header.nvoxels[0];
+  Int NY = header.nvoxels[1];
+  Int NZ = header.nvoxels[2];
+  Int inv_axis_order[3];
+  if (axis_order) {
+    inv_axis_order[0] = axis_order[0];
+    inv_axis_order[1] = axis_order[1];
+    inv_axis_order[2] = axis_order[2];
+    PermuteInverseCArrayA(3, inv_axis_order);
+    NX = header.nvoxels[ inv_axis_order[0] ];
+    NY = header.nvoxels[ inv_axis_order[1] ];
+    NZ = header.nvoxels[ inv_axis_order[2] ];
+  }
+  
+
+  // REMOVE THIS CRUFT:
+  //for (size_t i = 0; i < num_voxels; i++) {
+
+  for(Int iZ=0; iZ<NZ; iZ++) {
+    for(Int iY=0; iY<NY; iY++) {
+      for(Int iX=0; iX<NX; iX++) {
+        Int ix = iX;
+        Int iy = iY;
+        Int iz = iZ;
+        if (axis_order) {
+          int ixyz[3];
+          ixyz[0] = iX;
+          ixyz[1] = iY;
+          ixyz[2] = iZ;
+          ix = ixyz[ inv_axis_order[0] ];
+          iy = ixyz[ inv_axis_order[1] ];
+          iz = ixyz[ inv_axis_order[2] ];
+        }
 
         switch (header.mode) {
 
@@ -180,15 +291,36 @@ void MrcSimple::ReadArray(istream& mrc_file) {
           break;
         } // switch (header.mode)
 
-        // Debugging check:
-        //if ((abs(ix-100) <= 2) && (iy==100) && (iz==100))
-        //  cerr << "aaafI["<<iz<<"]["<<iy<<"]["<<ix<<"] = "
-        //       << aaafI[iz][iy][ix] << endl;
 
-      } //for(Int ix=0; ix<header.nvoxels[0]; ix++) {
-    } //for(Int iy=0; iy<header.nvoxels[1]; iy++) {
-  } //for(Int iz=0; iz<header.nvoxels[2]; iz++) {
-} //MrcSimple::ReadArray(istream& mrc_file)
+	// REMOVE THIS CRUFT:
+        // find indices for the next entry in the array:
+        //iX++;
+        //if (iX >= NX) {
+        //  iX = 0;
+        //  iY++;
+        //  if (iY >= NY) {
+        //    iY = 0;
+        //    iZ++;
+        //    if (iZ >= NZ) {
+        //      iZ = 0;
+        //    }
+        //  }
+        //}
+
+
+      } // for(Int iZ=0; iZ<NZ; iZ++)
+    } // for(Int iY=0; iY<NY; iY++) {
+  } // for(Int iX=0; iX<NX; iX++) {
+
+
+
+  // REMOVE THIS CRUFT:
+  //} //for (size_t i = 0; i < num_voxels; i++)
+
+
+
+} //MrcSimple::ReadArray()
+
 
 
 
@@ -243,8 +375,8 @@ void MrcSimple::FindMinMaxMean(float ***aaafMask) {
   for(Int iz=0; iz<header.nvoxels[2]; iz++) {
     for(Int iy=0; iy<header.nvoxels[1]; iy++) {
       for(Int ix=0; ix<header.nvoxels[0]; ix++) {
-	if (aaafMask && (aaafMask[iz][iy][ix] == 0))
-	  continue; //if a mask is supplied, ignore voxels when mask=0
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0))
+          continue; //if a mask is supplied, ignore voxels when mask=0
         density_total += aaafI[iz][iy][ix];
         if (dmin > dmax) {
           dmin = aaafI[iz][iy][ix];
@@ -256,7 +388,7 @@ void MrcSimple::FindMinMaxMean(float ***aaafMask) {
           if (aaafI[iz][iy][ix] < dmin)
             dmin = aaafI[iz][iy][ix];
         }
-	nvoxels_kept++;
+        nvoxels_kept++;
       }
     }
   }
@@ -292,8 +424,8 @@ void MrcSimple::Invert(float ***aaafMask)
   for(Int iz=0; iz<header.nvoxels[2]; iz++) {
     for(Int iy=0; iy<header.nvoxels[1]; iy++) {
       for(Int ix=0; ix<header.nvoxels[0]; ix++) {
-	if (aaafMask && (aaafMask[iz][iy][ix] == 0))
-	  continue; //if a mask is supplied, ignore voxels when mask=0
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0))
+          continue; //if a mask is supplied, ignore voxels when mask=0
         sum += aaafI[iz][iy][ix];
         n += 1;
       }
@@ -305,8 +437,8 @@ void MrcSimple::Invert(float ***aaafMask)
   for(Int iz=0; iz<header.nvoxels[2]; iz++) {
     for(Int iy=0; iy<header.nvoxels[1]; iy++) {
       for(Int ix=0; ix<header.nvoxels[0]; ix++) {
-	if (aaafMask && (aaafMask[iz][iy][ix] == 0))
-	  continue; //if a mask is supplied, ignore voxels when mask=0
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0))
+          continue; //if a mask is supplied, ignore voxels when mask=0
         aaafI[iz][iy][ix] = 2.0*ave - aaafI[iz][iy][ix];
         if (aaafI[iz][iy][ix] < dmin)
           dmin = aaafI[iz][iy][ix];

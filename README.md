@@ -17,7 +17,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 smoothing, edge detection, low-pass, high-pass, band-pass filters, brightness-fluctuation,
 thresholding, inversions, minima-finding, and
 [template-matching](https://en.wikipedia.org/wiki/Template_matching)
-(of spherical objects) in tomograms.
+(spherical objects only) in tomograms.
 A list of detected objects can be saved to a text file.
 Processed or annotated images can be saved to a new MRC/REC file.
 (Fast [separable](https://en.wikipedia.org/wiki/Separable_filter) filters are used whenever possible.)

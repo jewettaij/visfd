@@ -1367,16 +1367,22 @@ HandleThresholds(Settings settings,
     for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
       for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
         if (! settings.use_dual_thresholds) {
-          tomo_out.aaafI[iz][iy][ix] =
-            Threshold2(tomo_out.aaafI[iz][iy][ix],
-                       settings.out_threshold_01_a,
-                       settings.out_threshold_01_b,
-                       (settings.out_thresh2_use_clipping
-                        ? settings.out_threshold_01_a
-                        : settings.out_thresh_a_value),
-                       (settings.out_thresh2_use_clipping
-                        ? settings.out_threshold_01_b
-                        : settings.out_thresh_b_value));
+          if (settings.out_threshold_01_a == settings.out_threshold_01_b)
+	    tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >=
+					   settings.out_threshold_01_a)
+                                          ? 1.0
+                                          : 0.0);
+          else
+            tomo_out.aaafI[iz][iy][ix] =
+              Threshold2(tomo_out.aaafI[iz][iy][ix],
+                         settings.out_threshold_01_a,
+                         settings.out_threshold_01_b,
+                         (settings.out_thresh2_use_clipping
+                          ? settings.out_threshold_01_a
+                          : settings.out_thresh_a_value),
+                         (settings.out_thresh2_use_clipping
+                          ? settings.out_threshold_01_b
+                          : settings.out_thresh_b_value));
         }
         else
           tomo_out.aaafI[iz][iy][ix] =
@@ -2799,8 +2805,8 @@ int main(int argc, char **argv) {
     // for the possibility that voxels need not be cubes (same width x,y,z)
     // Now, I realize that allowing for this possibility would slow
     // down the next step considerably, so I just assume cube-shaped voxels:
-    assert((voxel_width[0] == voxel_width[1]) &&
-           (voxel_width[1] == voxel_width[2]));
+    //assert((voxel_width[0] == voxel_width[1]) &&
+    //       (voxel_width[1] == voxel_width[2]));
     for (int ir = 0; ir < settings.blob_widths.size(); ir++)
       settings.blob_widths[ir] /= voxel_width[0];
 
