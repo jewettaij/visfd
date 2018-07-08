@@ -901,9 +901,17 @@ ApplySphereDecals(MrcSimple &tomo_in,
          << crds.size() << ": x,y,z(in_voxels)="
          << crds[i][0] << "," << crds[i][1] << "," << crds[i][2];
 
+    if ((crds[i][0] < 0) || (crds[i][1] < 0) || (crds[i][2] < 0) ||
+	(crds[i][0] >= tomo_out.header.nvoxels[0]) ||
+	(crds[i][1] >= tomo_out.header.nvoxels[1]) ||
+	(crds[i][2] >= tomo_out.header.nvoxels[2]))
+        throw InputErr("Error: Coordinates in the text file lie outside the boundaries of the image.\n"
+		       "       Did you set the voxel width correctly?\n"
+		       "       (Did you use the \"-w\" argument?)\n");
+      
     if (mask.aaafI &&
         (mask.aaafI[crds[i][2]][crds[i][1]][crds[i][0]] == 0.0))
-      continue;    // CONTINUEHERE OUT OF BOUNDS ERR WHEN WRONG "-w" ARGUMENT
+      continue;
 
     int Rs = ceil(radii[i]-0.5);
     if (Rs < 0) Rs = 0;
