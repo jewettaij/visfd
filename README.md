@@ -28,7 +28,7 @@ A image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.)
 A list of detected objects can be saved to a text file.
-Processed or annotated images can be saved to a new MRC/REC file.
+Annotated images can be saved to a new MRC/REC file.
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 
