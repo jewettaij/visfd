@@ -5,7 +5,7 @@ This is a collection of programs (mainly "filter_mrc" and "combine_mrc") for 3-D
 
 ## programs included with this repository:
 
-After compilation, all programs will be located in the "*bin/*" subdirectory.  Here is a brief description of each:
+After compilation, all programs will be located in the "*bin/*" subdirectory.  Here is a brief description of some of them:
 
 
 ## filter_mrc
@@ -23,7 +23,7 @@ low-pass, high-pass,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 and
 [DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
-filters (and others).
+filters, and others.
 A image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.)
@@ -34,20 +34,9 @@ Documentation for this program is located
 
 
 ## combine_mrc
-**combine_mrc** is a program for combining two volumetric images (i.e. tomograms, both of identical size) into one image/tomogram, using a combination of addition, multiplication, and thresholding operations.  These features can be used perform binary operations between two images (which are similar to "**and**", "**or**", and "**not**" operations.)  As with the "*filter_mrc*" program, you can also use the "-mask" argument to restrict the operation to certain voxels from both images.  (See the documentation for that tool for details.)
+**combine_mrc** is a program for combining two volumetric images (i.e. tomograms, both of identical size) into one image/tomogram, using a combination of addition, multiplication, and thresholding operations.  These features can be used perform binary operations between two images (which are similar to "**and**", "**or**", and "**not**" operations.)
 Documentation for this program is located
 [here](./doc/doc_combine_mrc.md).
-
-
-## histogram_mrc.py
-**histogram_mrc.py** is a graphical python program which displays the
-histogram of voxel intensities contained in an MRC file.
-It can be useful when deciding what thresholds to use
-with in the "**filter_mrc**" and "**combine_mrc**" programs.
-This software requires the *matplotlib* and *mrcfile* python modules
-(both of which can be installed using pip).
-Documentation for this program is located
-[here](./doc/doc_histogram_mrc.md).
 
 ## sum_voxels
 **sum_voxels** is a simple program which
@@ -63,12 +52,20 @@ and the sum can be restricted to certain regions
 (by using the "-mask" and "-mask-select" arguments).
 
 
+## histogram_mrc.py
+**histogram_mrc.py** is a graphical python program which displays the
+histogram of voxel intensities contained in an MRC file.
+It can be useful when deciding what thresholds to use
+with in the "**filter_mrc**" and "**combine_mrc**" programs.
+This software requires the *matplotlib* and *mrcfile* python modules
+(both of which can be installed using pip).
+Documentation for this program is located
+[here](./doc/doc_histogram_mrc.md).
+
+
 ## Development Status: *alpha*
-As of 2018-4-30, this code has been lightly tested.
 Program names and command line
 arguments may change in the future.
-Tagged *releases* of this repository should have some semblance
-of functionality.  (More recent commits may not even compile.)
 
 
 ## Compilation
