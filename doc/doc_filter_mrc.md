@@ -5,7 +5,12 @@ filter_mrc
 and saves the result as a new .mrc/.rec file.
 This program can be used to rescale or invert a 3-D image, 
 remove high or low frequencies, perform
-[scale-free 3D blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian) using DOG and LOG filters,
+[scale-free 3D blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian)
+using
+[DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
+and
+[LOG](https://en.wikipedia.org/wiki/Blob_detection)
+filters,
 and compute local brightness fluctuations.
 (Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
