@@ -3,14 +3,13 @@ filter_mrc
 
 **filter_mrc** applies a filter to a tomogram in the X,Y,Z directions
 and saves the result as a new .mrc/.rec file.
-This program can be used to rescale or invert a 3-D image,
-remove high or low frequencies (smoothing, edge detection, band pass filter).
-perform 3-D blob detection.
-Currently, the program supports the following list of filters:
-(generalized) Gaussians,
-(generalized) Difference-of-Gaussians,
-Laplacian-of-Gaussians, and others.
-Both isotropic and anisotropic filters are supported.
+This program can be used to rescale or invert a 3-D image, 
+remove high or low frequencies, perform
+[scale-free 3D blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian) using DOG and LOG filters,
+and compute local brightness fluctuations.
+(Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
+filters are used whenever possible.
+Both isotropic and anisotropic filters are supported.)
 
 
 This program supports masks and thresholding using
@@ -25,7 +24,7 @@ filter_mrc -w 19.2 \
   -out Bdellovibrio_1K_ribosomes.mrc \
   -blobr Bdellovibrio_1K_ribosomes.txt 100.0 150.0 1.01 \
   -blobr-separation 0.8 \
-  -blob-minima-ratio 0.5 \
+  -blob-minima-ratio 0.4 \
   -mask Bdellovibrio_1K_mask_water=0_periplasm=1_cytoplasm=2.mrc \
   -mask-select 2 -mask-out 0.0
 ```

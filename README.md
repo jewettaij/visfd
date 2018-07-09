@@ -14,14 +14,16 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 **filter_mrc** can be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
-smoothing, edge detection, low-pass, high-pass, band-pass filters, brightness-fluctuation,
+low-pass, high-pass, brightness-fluctuation,
 thresholding, inversions, minima-finding, and
+(spherical)
 [template-matching](https://en.wikipedia.org/wiki/Template_matching)
-(spherical objects only) in tomograms.
+in tomograms.
+An image *mask* can be used to exclude certain
+voxels or regions from consideration.
+(Typically these are voxels which have been characterized previously.)
 A list of detected objects can be saved to a text file.
 Processed or annotated images can be saved to a new MRC/REC file.
-(Fast [separable](https://en.wikipedia.org/wiki/Separable_filter) filters are used whenever possible.)
-As shown in the example above, certain voxels or regions can be excluded from consideration (using the "-mask" argument).
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 
