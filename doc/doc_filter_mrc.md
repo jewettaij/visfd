@@ -1,22 +1,33 @@
 filter_mrc
 ===========
 
-**filter_mrc** applies a filter to a tomogram in the X,Y,Z directions
+**filter_mrc** applies a filter to a 3D image, 
 and saves the result as a new .mrc/.rec file.
-This program can be used to rescale or invert a 3-D image, 
-remove high or low frequencies, perform
-[scale-free 3D blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian)
-using a
-[DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
-filter,
-and compute local brightness fluctuations.
+It currently supports
+low-pass, high-pass,
+thresholding,
+brightness inversions,
+[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
+[Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
+[Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
+and
+[Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian) filters.
+
+*filter_mrc** can also be used for 3D
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
+detecting local brightness-fluctuations,
+local minima-finding, and
+(spherical)
+[template-matching](https://en.wikipedia.org/wiki/Template_matching).
+A list of detected objects can be saved to a text file.
+Processed or annotated images can be saved to a new MRC/REC file.
+
+An image *mask* can be used to exclude certain
+voxels or regions from consideration.
+(Typically these are voxels which have been characterized previously.)
 (Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
 Both isotropic and anisotropic filters are supported.)
-
-
-This program supports masks and thresholding using
-the "*-mask*" and "*-thresh*" (and "*-thresh2*" and "*-thresh4*") arguments.
 
 
 ## Usage Example:

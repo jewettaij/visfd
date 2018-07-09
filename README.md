@@ -12,14 +12,19 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
 ![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)
 
-**filter_mrc** can be used for 3D
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
-low-pass, high-pass, brightness-fluctuation,
-thresholding, inversions, minima-finding, and
-(spherical)
-[template-matching](https://en.wikipedia.org/wiki/Template_matching)
-in tomograms.
-An image *mask* can be used to exclude certain
+**filter_mrc** detects features and applies simple filters to 3-D images.
+It supports 
+[3D scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
+and local minima/maxima finding (with non-max suppresion).
+Filters include
+thresholding,
+low-pass, high-pass, 
+[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
+[Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
+and
+[DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
+filters (and others).
+A image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.)
 A list of detected objects can be saved to a text file.
