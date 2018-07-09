@@ -12,6 +12,9 @@ brightness inversions,
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 and
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian) filters.
+Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
+filters are used whenever possible.
+Both isotropic and anisotropic filters are supported.
 
 **filter_mrc** can also be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
@@ -26,9 +29,6 @@ An image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.)
 
-Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
-filters are used whenever possible.
-Both isotropic and anisotropic filters are supported.
 
 
 ## Usage Example:
