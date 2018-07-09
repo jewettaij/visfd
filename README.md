@@ -38,29 +38,33 @@ Documentation for this program is located
 Documentation for this program is located
 [here](./doc/doc_combine_mrc.md).
 
-## sum_voxels
-**sum_voxels** is a simple program which
-reads an MRC (.REC) file as an argument
-and computes the sum of all the voxel intensities.
-(Typically the voxel intensities are either 1 or 0.
- The resulting sums can be converted into volumes by
- multiplying by the volume-per-voxel.)
-For convenience, the voxel intensities can be clipped or scaled
-between 0 and 1 beforehand
-(by using the "-thresh", "-thresh2", and "-thresh4" arguments),
-and the sum can be restricted to certain regions
-(by using the "-mask" and "-mask-select" arguments).
-
-
 ## histogram_mrc.py
 **histogram_mrc.py** is a graphical python program which displays the
 histogram of voxel intensities contained in an MRC file.
 It can be useful when deciding what thresholds to use
 with in the "**filter_mrc**" and "**combine_mrc**" programs.
+Voxels and regions in the image can be excluded from consideration 
+by using the "-mask" and "-mask-select" arguments.
 This software requires the *matplotlib* and *mrcfile* python modules
 (both of which can be installed using pip).
 Documentation for this program is located
 [here](./doc/doc_histogram_mrc.md).
+
+## sum_voxels
+**sum_voxels** is a program for estimating volumes.
+It is a simple program which
+reads an MRC (.REC) file as an argument
+and computes the sum of all the voxel intensities.
+(Typically the voxel intensities are either 1 or 0.
+ The resulting sums can be converted into volumes
+ either by multiplying by the volume-per-voxel,
+ or by specifying the voxel width using the "-w" argument.)
+For convenience, threshold operation can be applied
+(using the "-thresh", "-thresh2", and "-thresh4" arguments)
+so that the voxels intensities vary between 0 and 1
+before the sum is calculated.
+The sum can be restricted to certain regions
+(by using the "-mask" and "-mask-select" arguments).
 
 
 ## Development Status: *alpha*
