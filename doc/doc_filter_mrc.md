@@ -13,7 +13,7 @@ brightness inversions,
 and
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian) filters.
 
-*filter_mrc** can also be used for 3D
+**filter_mrc** can also be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 detecting local brightness-fluctuations,
 local minima-finding, and
