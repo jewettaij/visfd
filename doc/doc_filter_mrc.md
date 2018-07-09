@@ -20,14 +20,15 @@ local minima-finding, and
 (spherical)
 [template-matching](https://en.wikipedia.org/wiki/Template_matching).
 A list of detected objects can be saved to a text file.
-Processed or annotated images can be saved to a new MRC/REC file.
+Processed or annotated images can be saved to a new .mrc/.rec file.
 
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.)
-(Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
+
+Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
-Both isotropic and anisotropic filters are supported.)
+Both isotropic and anisotropic filters are supported.
 
 
 ## Usage Example:
