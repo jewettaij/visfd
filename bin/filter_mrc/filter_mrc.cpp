@@ -708,31 +708,133 @@ HandleDogScaleFree(Settings settings,
 
 
 
+/// @brief Find scale-invariant blobs in the image as a function of diameter.
+///        This variant detects blobs and performs non-max suppression.
+///
+/// Algorithm described in:
+///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
+/// This version refers to blobs by their diameter (instead of "sigma").
+/// This version can discard blobs which overlap with existing blobs.
+/// (This is sometimes called "non-max suppression".)
 
-// Find all scale-invariant blobs in the image:
 template<class RealNum>
 void
-BlobDog3D(int const image_size[3], //source image size
-          RealNum ***aaafSource,   //source image
-          RealNum ***aaafMask,     //ignore voxels where mask==0
-          const vector<RealNum>& blob_widths, // list of radii to try (ordered)
-          vector<array<int,3> >& minima_crds, // store minima x,y,z coords here
-          vector<array<int,3> >& maxima_crds, // store maxima x,y,z coords here
-          vector<RealNum>& minima_sigma, // corresponding radius for that minima
-          vector<RealNum>& maxima_sigma, // corresponding radius for that maxima
-          vector<RealNum>& minima_scores, // what was the blobs score?
-          vector<RealNum>& maxima_scores, // (score = intensity after filtering)
-          RealNum delta_sigma_over_sigma, //difference in Gauss widths parameter
-          RealNum filter_truncate_ratio,     //how many sigma before truncating?
-          RealNum filter_truncate_threshold, //decay in filter before truncating
-          RealNum minima_threshold,       // discard unremarkable minima
-          RealNum maxima_threshold,       // discard unremarkable maxima
-          bool use_threshold_ratios=true, // threshold=ratio*best_score ?
-          RealNum min_separation = 0.0,
-          ostream *pReportProgress = NULL,
-          RealNum ****aaaafI = NULL, //preallocated memory for filtered images
-          RealNum **aafI = NULL)     //preallocated memory for filtered images
-                                     //(sometimes the caller wants to access)
+BlobDogNM(int const image_size[3], //!<source image size
+          RealNum ***aaafSource,   //!<source image
+          RealNum ***aaafMask,     //!<ignore voxels where mask==0
+          const vector<RealNum>& blob_diameters, //!< blob widths to try, ordered
+          vector<array<RealNum,3> >& minima_crds, //!<store minima x,y,z coords here
+          vector<array<RealNum,3> >& maxima_crds, //!<store maxima x,y,z coords here
+          vector<RealNum>& minima_diameters, //!< corresponding width for that minima
+          vector<RealNum>& maxima_diameters, //!< corresponding width for that maxima
+          vector<RealNum>& minima_scores, //!< what was the blob's score?
+          vector<RealNum>& maxima_scores, //!< (score = intensity after filtering)
+          RealNum delta_sigma_over_sigma,//!< param for approximating LOG with DOG
+          RealNum truncate_ratio,      //!< how many sigma before truncating?
+          RealNum minima_threshold=0.5,  //!< discard blobs with unremarkable scores
+          RealNum maxima_threshold=0.5,  //!< discard blobs with unremarkable scores
+          bool    use_threshold_ratios=true, //!< threshold=ratio*best_score?
+          RealNum sep_ratio_thresh=1.0,          //!< minimum radial separation between blobs
+          RealNum nonmax_max_overlap_large=1.0,  //!< maximum volume overlap with larger blob
+          RealNum nonmax_max_overlap_small=1.0,  //!< maximum volume overlap with smaller blob
+          // optional arguments
+          ostream *pReportProgress = NULL, //!< report progress to the user?
+          RealNum ****aaaafI = NULL, //!<preallocated memory for filtered images
+          RealNum **aafI = NULL     //!<preallocated memory for filtered images
+        )
+{
+
+  BlobDogD(image_size,
+           aaafSource,
+           aaafMask,
+           blob_diameters,
+           minima_crds,
+           maxima_crds,
+           minima_diameters,
+           maxima_diameters,
+           minima_scores,
+           maxima_scores,
+           delta_sigma_over_sigma,
+           truncate_ratio,
+           minima_threshold,
+           maxima_threshold,
+           use_threshold_ratios,
+           pReportProgress,
+           aaaafI,
+           aafI);
+
+  if (pReportProgress)
+    *pReportProgress << "----------- Removing overlapping blobs -----------\n" << endl;
+
+
+  if (pReportProgress)
+    *pReportProgress << "--- Discarding overlapping minima blobs ---\n";
+
+  DiscardOverlappingBlobs(minima_crds,
+                          minima_diameters,
+                          minima_scores,
+                          PRIORITIZE_LOW_SCORES,
+                          sep_ratio_thresh,
+                          nonmax_max_overlap_large,
+                          nonmax_max_overlap_small,
+                          pReportProgress);
+
+  if (pReportProgress)
+    *pReportProgress << "done --\n"
+                     << "--- Discarding overlapping maxima blobs ---\n";
+
+  DiscardOverlappingBlobs(maxima_crds,
+                          maxima_diameters,
+                          maxima_scores,
+                          PRIORITIZE_HIGH_SCORES,
+                          sep_ratio_thresh,
+                          nonmax_max_overlap_large,
+                          nonmax_max_overlap_small,
+                          pReportProgress);
+
+} //BlobDogNM()
+
+
+
+
+
+/// @brief Find scale-invariant blobs in the image as a function of diameter.
+///        In this minor variant, the user can specify the filter window width
+///        either in units of sigma, or by specifying the decay threshold.
+///        This function was not intended for public use.
+///
+/// Algorithm described in:
+///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
+/// This version refers to blobs by their diameter (instead of "sigma").
+/// This version can discard blobs which overlap with existing blobs.
+/// (This is sometimes called "non-max suppression".)
+
+template<class RealNum>
+static
+void
+_BlobDogNM(int const image_size[3], //!<source image size
+           RealNum ***aaafSource,   //!<source image
+           RealNum ***aaafMask,     //!<ignore voxels where mask==0
+           const vector<RealNum>& blob_diameters, //!<list of diameters to try (ordered)
+           vector<array<RealNum,3> >& minima_crds, //!<store minima x,y,z coords here
+           vector<array<RealNum,3> >& maxima_crds, //!<store maxima x,y,z coords here
+           vector<RealNum>& minima_diameters, //!<corresponding radius for that minima
+           vector<RealNum>& maxima_diameters, //!<corresponding radius for that maxima
+           vector<RealNum>& minima_scores, //!<what was the blobs score?
+           vector<RealNum>& maxima_scores, //!<(score = intensity after filtering)
+           RealNum delta_sigma_over_sigma, //!<difference in Gauss widths parameter
+           RealNum filter_truncate_ratio,     //!<how many sigma before truncating?
+           RealNum filter_truncate_threshold, //!<decay in filter before truncating
+           RealNum minima_threshold,       //!<discard unremarkable minima
+           RealNum maxima_threshold,       //!<discard unremarkable maxima
+           bool use_threshold_ratios=true, //!<threshold=ratio*best_score ?
+           RealNum sep_ratio_thresh=1.0,          //!<minimum radial separation between blobs
+           RealNum nonmax_max_overlap_large=1.0,  //!<maximum volume overlap with larger blob
+           RealNum nonmax_max_overlap_small=1.0,  //!<maximum volume overlap with smaller blob
+           ostream *pReportProgress = NULL,
+           RealNum ****aaaafI = NULL, //!<preallocated memory for filtered images
+           RealNum **aafI = NULL     //!<preallocated memory for filtered images
+           )
 {
   
   if (filter_truncate_ratio <= 0) {
@@ -742,14 +844,14 @@ BlobDog3D(int const image_size[3], //source image size
     filter_truncate_ratio = sqrt(-2*log(filter_truncate_threshold));
   }
 
-  BlobDog3D(image_size,
+  BlobDogNM(image_size,
             aaafSource,
             aaafMask,
-            blob_widths,
+            blob_diameters,
             minima_crds,
             maxima_crds,
-            minima_sigma,
-            maxima_sigma,
+            minima_diameters,
+            maxima_diameters,
             minima_scores,
             maxima_scores,
             delta_sigma_over_sigma,
@@ -757,12 +859,14 @@ BlobDog3D(int const image_size[3], //source image size
             minima_threshold,
             maxima_threshold,
             use_threshold_ratios,
-            min_separation,
+            sep_ratio_thresh,
+            nonmax_max_overlap_large,
+            nonmax_max_overlap_small,
             pReportProgress,
             aaaafI,
             aafI);
 
-} //BlobDog3D(...,filter_truncate_ratio,filter_truncate_threshold,...)
+} //_BlobDogNM(...,filter_truncate_ratio,filter_truncate_threshold,...)
 
 
 
@@ -845,143 +949,19 @@ HandleMinDistance(Settings settings,
 
 
 
-void
-ApplySphereDecals(MrcSimple &tomo_in,
-                  MrcSimple &tomo_out,
-                  MrcSimple &mask,
-                  vector<array<int,3> > &crds,
-                  vector<float> &radii,
-                  vector<float> &shell_thicknesses,
-                  vector<float> &voxel_intensities_foreground,
-                  float voxel_intensity_background = 0.0,
-                  float voxel_intensity_background_rescale = 0.4,
-                  bool voxel_intensity_foreground_normalize = false)
-{
-
-  tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
-  float tomo_ave  =  AverageArr(tomo_in.header.nvoxels,
-                                tomo_in.aaafI,
-                                mask.aaafI);
-  float tomo_stddev = StdDevArr(tomo_in.header.nvoxels,
-                                tomo_in.aaafI,
-                                mask.aaafI);
-
-  double score_sum_sq = 0.0;
-  for (int i = 0; i < voxel_intensities_foreground.size(); i++)
-    score_sum_sq += SQR(voxel_intensities_foreground[i]);
-
-  double score_rms = sqrt(score_sum_sq / voxel_intensities_foreground.size());
-
-  // The spherical shells will have brightnesses chosen according to their
-  // scores. Rescale the tomogram intensities so that they are approximately
-  // in the range of scores.  This way we can see both at the same time
-  // (when viewing the tomogram using IMOD, for example)
-  for (int iz = 0; iz < tomo_out.header.nvoxels[2]; iz++) {
-    for (int iy = 0; iy < tomo_out.header.nvoxels[1]; iy++) {
-      for (int ix = 0; ix < tomo_out.header.nvoxels[0]; ix++) {
-        tomo_out.aaafI[iz][iy][ix] =
-          ((tomo_out.aaafI[iz][iy][ix] - tomo_ave) / tomo_stddev)
-          *
-          score_rms
-          *
-          voxel_intensity_background_rescale;
-      }
-    }
-  }
 
 
-  for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++)
-    for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++)
-      for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++)
-        tomo_out.aaafI[iz][iy][ix] += voxel_intensity_background;
-
-
-  for (int i = 0; i < crds.size(); i++) {
-    cerr << "processing coordinates " << i+1 << " / "
-         << crds.size() << ": x,y,z(in_voxels)="
-         << crds[i][0] << "," << crds[i][1] << "," << crds[i][2];
-
-    if ((crds[i][0] < 0) || (crds[i][1] < 0) || (crds[i][2] < 0) ||
-	(crds[i][0] >= tomo_out.header.nvoxels[0]) ||
-	(crds[i][1] >= tomo_out.header.nvoxels[1]) ||
-	(crds[i][2] >= tomo_out.header.nvoxels[2]))
-        throw InputErr("Error: Coordinates in the text file lie outside the boundaries of the image.\n"
-		       "       Did you set the voxel width correctly?\n"
-		       "       (Did you use the \"-w\" argument?)\n");
-      
-    if (mask.aaafI &&
-        (mask.aaafI[crds[i][2]][crds[i][1]][crds[i][0]] == 0.0))
-      continue;
-
-    int Rs = ceil(radii[i]-0.5);
-    if (Rs < 0) Rs = 0;
-    float Rssqr_max = SQR(radii[i]);
-    float Rssqr_min = 0.0;
-    if ((shell_thicknesses[i] > 0.0) && (radii[i] - shell_thicknesses[i] > 0.0))
-      Rssqr_min = SQR(radii[i] - shell_thicknesses[i]);
-
-    cerr << ", r=" << radii[i] << ", th=" << shell_thicknesses[i];
-    cerr <<"\n";
-
-    // Normalize the brightness of each sphere?
-    // (ie by dividing the intensity by the number of voxels in the sphere)
-    float imultiplier = 1.0;
-    long nvoxelspersphere = 1;
-    if (voxel_intensity_foreground_normalize) {
-      nvoxelspersphere = 0;
-      for (int jz = -Rs; jz <= Rs; jz++) {
-        for (int jy = -Rs; jy <= Rs; jy++) {
-          for (int jx = -Rs; jx <= Rs; jx++) {
-            float rsqr = jx*jx + jy*jy + jz*jz;
-            if ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max))
-              nvoxelspersphere++;
-          }
-        }
-      }
-    }
-    imultiplier = 1.0 / nvoxelspersphere;
-    for (int jz = -Rs; jz <= Rs; jz++) {
-      for (int jy = -Rs; jy <= Rs; jy++) {
-        for (int jx = -Rs; jx <= Rs; jx++) {
-          int rsqr = jx*jx + jy*jy + jz*jz;
-          if (! ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max)))
-            continue;
-          else if ((crds[i][0] + jx < 0) ||
-                   (crds[i][0] + jx >= tomo_out.header.nvoxels[0]) ||
-                   (crds[i][1] + jy < 0) ||
-                   (crds[i][1] + jy >= tomo_out.header.nvoxels[1]) ||
-                   (crds[i][2] + jz < 0) ||
-                   (crds[i][2] + jz >= tomo_out.header.nvoxels[2]))
-            continue;
-          else if (mask.aaafI
-                   &&
-                   (mask.aaafI[crds[i][2]+jz]
-                              [crds[i][1]+jy]
-                              [crds[i][0]+jx]
-                    == 0.0))
-            continue;
-          else
-            tomo_out.aaafI[crds[i][2]+jz]
-                          [crds[i][1]+jy]
-                          [crds[i][0]+jx] =
-                               voxel_intensities_foreground[i] * imultiplier;
-        }
-      }
-    }
-  } //for (int i = 0; i < crds.size(); i++) {
-
-} //ApplySphereDecals()
 
 
 
 
 
 void
-HandleSphereDecals(Settings settings,
-                   MrcSimple &tomo_in,
-                   MrcSimple &tomo_out,
-                   MrcSimple &mask,
-                   float voxel_width[3])
+HandleBlobsNonmaxSuppression(Settings settings,
+                             float voxel_width[3],
+                             vector<array<float,3> >& crds,
+                             vector<float>& diameters,
+                             vector<float>& scores)
 {
   // At some point I was trying to be as general as possible and allowed
   // for the possibility that voxels need not be cubes (same width x,y,z)
@@ -991,14 +971,10 @@ HandleSphereDecals(Settings settings,
   assert((voxel_width[0] == voxel_width[1]) &&
          (voxel_width[1] == voxel_width[2]));
 
-  vector<array<int,3> > crds;
-  vector<float> radii;
-  vector<float> shell_thicknesses;
-  vector<float> scores;
 
-  cerr << " ------ calculating distance to points in "
-       << settings.in_coords_file_name << " ------\n"
-       << endl;
+  cerr << " ------ calculating distance and volume overlap in: -------\n"
+       << " " << settings.in_coords_file_name << "\n"
+       << "\n";
 
   fstream coords_file;
   coords_file.open(settings.in_coords_file_name.c_str(), ios::in);
@@ -1006,7 +982,7 @@ HandleSphereDecals(Settings settings,
     throw InputErr("Error: unable to open \""+
                    settings.in_coords_file_name +"\" for reading.\n");
 
-  bool custom_radii = false;
+  bool custom_diameters = false;
   while (coords_file) {
     string strLine;
     getline(coords_file, strLine);
@@ -1017,51 +993,44 @@ HandleSphereDecals(Settings settings,
     ssLine >> x;
     ssLine >> y;
     ssLine >> z;
-    int ix, iy, iz;
-    ix = static_cast<int>(x / voxel_width[0]);
-    iy = static_cast<int>(y / voxel_width[1]);
-    iz = static_cast<int>(z / voxel_width[2]);
-    array<int, 3> ixiyiz;
+    float ix, iy, iz;
+    ix = x / voxel_width[0];
+    iy = y / voxel_width[1];
+    iz = z / voxel_width[2];
+    array<float, 3> ixiyiz;
     ixiyiz[0] = ix;
     ixiyiz[1] = iy;
     ixiyiz[2] = iz;
 
-    float radius = -1.0;
+    float diameter = -1.0;
     float score = settings.sphere_decals_foreground;
-    if (ssLine) { // Does the file contain a 4th column? (the radius)
-      float _radius;
-      ssLine >> _radius;
+    if (ssLine) { // Does the file contain a 4th column? (the diameter)
+      float _diameter;
+      ssLine >> _diameter;
       // convert from physical distance to # of voxels:
-      _radius /= voxel_width[0];
+      _diameter /= voxel_width[0];
       if (ssLine)
-        radius = _radius;
-      custom_radii = true;
+        diameter = _diameter;
+      custom_diameters = true;
+      if ((! ((settings.sphere_diameters_lower_bound <= diameter) &&
+             (diameter <= settings.sphere_diameters_upper_bound)))
+          &&
+          (settings.sphere_diameters_lower_bound <=
+           settings.sphere_diameters_upper_bound))
+        // If the diameter lies outside of the desired range, ignore this blob
+        continue; 
     }
 
-    if (radius < 0) { //If file does not contain a 4th column
-      radius = settings.sphere_decals_radius;
-      if (settings.sphere_decals_radius < 0)
-        radius = 0.5;   // (sphere will be 1 voxel wide by default)
+    if (diameter < 0) { //If file does not contain a 4th column
+      diameter = settings.sphere_decals_diameter;
+      if (settings.sphere_decals_diameter < 0)
+        diameter = 0.5;   // (sphere will be 1 voxel wide by default)
     }
-    if (settings.sphere_decals_radius >= 0) //override the radius ?
-      radius = settings.sphere_decals_radius;
+
+    if (settings.sphere_decals_diameter >= 0) //override the diameter ?
+      diameter = settings.sphere_decals_diameter;
     else
-      radius *= settings.sphere_decals_scale;
-
-    float shell_thickness = settings.sphere_decals_shell_thickness;
-    if (settings.sphere_decals_shell_thickness_is_ratio) {
-      shell_thickness *= radius;
-      if (shell_thickness < settings.sphere_decals_shell_thickness_min)
-        shell_thickness = settings.sphere_decals_shell_thickness_min;
-    }
-    shell_thickness = settings.sphere_decals_shell_thickness;
-    if (settings.sphere_decals_shell_thickness_is_ratio) {
-      shell_thickness *= radius;
-      // The spherical shells superimposed on the tomogram should be
-      // at least 1 voxel wide in order to be visible to the user
-      if (shell_thickness < settings.sphere_decals_shell_thickness_min)
-        shell_thickness = 1.0;
-    }
+      diameter *= settings.sphere_decals_scale;
 
     if (ssLine) {
       float _score;
@@ -1070,41 +1039,121 @@ HandleSphereDecals(Settings settings,
         score = _score;
     }
 
-    if (! ((settings.score_lower_bound <= score) ||
-           (score <= settings.score_upper_bound)))
+    if ((settings.score_lower_bound <= settings.score_upper_bound) &&
+        (! ((settings.score_lower_bound <= score) &&
+            (score <= settings.score_upper_bound))))
+      // If the score lies outside the desired range, skip this blob
+      continue; 
+    else if (! ((settings.score_lower_bound <= score) ||
+                (score <= settings.score_upper_bound)))
       // If the score is not sufficiently high (or low), skip this blob
       continue; 
 
-    if (! settings.sphere_decals_foreground_use_score)
-      score = settings.sphere_decals_foreground;
-
     crds.push_back(ixiyiz);
-    radii.push_back(radius);
-    shell_thicknesses.push_back(shell_thickness);
+    diameters.push_back(diameter);
     scores.push_back(score);
 
   } //while (coords_file) {...
 
 
+  DiscardOverlappingBlobs(crds,
+                          diameters, 
+                          scores,
+                          DO_NOT_SORT,
+                          //REMOVE THIS CRUFT
+                          //settings.find_extrema_occlusion_ratio,
+                          settings.nonmax_min_radial_separation_ratio,
+                          settings.nonmax_max_volume_overlap_large,
+                          settings.nonmax_max_volume_overlap_small,
+                          &cerr);
 
+
+  if (settings.out_coords_file_name != "") {
+    fstream out_coords_file;
+    out_coords_file.open(settings.out_coords_file_name.c_str(), ios::out);
+    for (size_t i=0; i < crds.size(); i++) {
+      out_coords_file << crds[i][0]*voxel_width[0] << " "
+                      << crds[i][1]*voxel_width[1] << " "
+                      << crds[i][2]*voxel_width[2] << " " 
+                      << diameters[i]*voxel_width[0] << " " 
+                      << scores[i]
+                      << endl;
+    }
+  }
+
+} //HandleBlobsNonmaxSuppression()
+
+
+
+
+
+void
+HandleVisualizeBlobs(Settings settings,
+                     MrcSimple &tomo_in,
+                     MrcSimple &tomo_out,
+                     MrcSimple &mask,
+                     float voxel_width[3])
+{
+
+  vector<array<float,3> > crds;
+  vector<float> diameters;
+  vector<float> scores;
+
+  HandleBlobsNonmaxSuppression(settings,
+                               voxel_width,
+                               crds,
+                               diameters,
+                               scores);
+
+  assert(crds.size() == diameters.size());
+  assert(crds.size() == scores.size());
+
+  // Sometimes the user wants to display the decal with a particular brightness
+  // We store that brightness inside the "scores[]" array
+  if (! settings.sphere_decals_foreground_use_score)
+    for (size_t i=0; i < diameters.size(); i++)
+      scores[i] = settings.sphere_decals_foreground;
+
+  vector<float> shell_thicknesses(diameters.size());
+  for (size_t i=0; i < diameters.size(); i++) {
+    float diameter = diameters[i];
+    float shell_thickness = settings.sphere_decals_shell_thickness;
+    if (settings.sphere_decals_shell_thickness_is_ratio) {
+      shell_thickness *= diameter;
+      if (shell_thickness < settings.sphere_decals_shell_thickness_min)
+        shell_thickness = settings.sphere_decals_shell_thickness_min;
+    }
+    shell_thickness = settings.sphere_decals_shell_thickness;
+    if (settings.sphere_decals_shell_thickness_is_ratio) {
+      shell_thickness *= diameter;
+      // The spherical shells superimposed on the tomogram should be
+      // at least 1 voxel wide in order to be visible to the user
+      if (shell_thickness < settings.sphere_decals_shell_thickness_min)
+        shell_thickness = 1.0;
+    }
+    shell_thicknesses[i] = shell_thickness;
+  }
 
   reverse(crds.begin(), crds.end());
-  reverse(radii.begin(), radii.end());
+  reverse(diameters.begin(), diameters.end());
   reverse(shell_thicknesses.begin(), shell_thicknesses.end());
   reverse(scores.begin(), scores.end());
 
-  ApplySphereDecals(tomo_in,
-                    tomo_out,
-                    mask,
-                    crds,
-                    radii,
-                    shell_thicknesses,
-                    scores,
-                    settings.sphere_decals_background,
-                    settings.sphere_decals_background_scale,
-                    settings.sphere_decals_foreground_norm);
+  tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
 
-} //HandleSphereDecals()
+  VisualizeBlobs(tomo_out.header.nvoxels,
+                 tomo_out.aaafI,
+                 mask.aaafI,
+                 crds,
+                 diameters,
+                 shell_thicknesses,
+                 scores,
+                 settings.sphere_decals_background,
+                 settings.sphere_decals_background_scale,
+                 settings.sphere_decals_foreground_norm);
+
+} //HandleVisualizeBlobs()
+
 
 
 
@@ -1117,17 +1166,17 @@ HandleBlobDetector(Settings settings,
                    MrcSimple &mask,
                    float voxel_width[3])
 {
-  vector<array<int,3> > minima_crds_int;
-  vector<array<int,3> > maxima_crds_int;
+  vector<array<float,3> > minima_crds_voxels;
+  vector<array<float,3> > maxima_crds_voxels;
 
-  vector<float> minima_sigma;
-  vector<float> maxima_sigma;
+  vector<float> minima_diameters;
+  vector<float> maxima_diameters;
 
   vector<float> minima_scores;
   vector<float> maxima_scores;
 
 
-  // Optional: Preallocate space for BlobDog3D()
+  // Optional: Preallocate space for BlobDogNM()
   float*** aaaafI[3];
   float* aafI[3];
 
@@ -1152,48 +1201,50 @@ HandleBlobDetector(Settings settings,
   // This way we can save memory and also save the 
   // filtered image to a file which we can view using IMOD.
 
-  BlobDog3D(tomo_in.header.nvoxels,
-            tomo_in.aaafI,
-            mask.aaafI,
-            settings.blob_widths,  // a list of different sigma to try (ordered)
-            minima_crds_int,  // store minima x,y,z coords here
-            maxima_crds_int,  // store maxima x,y,z coords here
-            minima_sigma, // corresponding radius for that minima
-            maxima_sigma, // corresponding radius for that maxima
-            minima_scores, // what was the blob's score?
-            maxima_scores, // ("score" = intensity after filtering)
-            settings.delta_sigma_over_sigma, //difference in Gauss widths parameter
-            settings.filter_truncate_ratio,
-            settings.filter_truncate_threshold,
-            settings.score_upper_bound,
-            settings.score_lower_bound,
-            settings.score_bounds_are_ratios,
-            settings.blob_min_separation,
-            &cerr,
-            aaaafI,
-            aafI);
+  _BlobDogNM(tomo_in.header.nvoxels,
+             tomo_in.aaafI,
+             mask.aaafI,
+             settings.blob_diameters,  // try detecting blobs of these diameters
+             minima_crds_voxels,  // store minima x,y,z coords here
+             maxima_crds_voxels,  // store maxima x,y,z coords here
+             minima_diameters, // corresponding diameter for that minima
+             maxima_diameters, // corresponding diameter for that maxima
+             minima_scores, // what was the blob's score?
+             maxima_scores, // ("score" = intensity after filtering)
+             settings.delta_sigma_over_sigma, //difference in Gauss widths parameter
+             settings.filter_truncate_ratio,
+             settings.filter_truncate_threshold,
+             settings.score_upper_bound,
+             settings.score_lower_bound,
+             settings.score_bounds_are_ratios,
+             settings.nonmax_min_radial_separation_ratio,
+             settings.nonmax_max_volume_overlap_large,
+             settings.nonmax_max_volume_overlap_small,
+             &cerr,
+             aaaafI,
+             aafI);
 
 
-  long n_minima = minima_crds_int.size();
-  long n_maxima = maxima_crds_int.size();
+  long n_minima = minima_crds_voxels.size();
+  long n_maxima = maxima_crds_voxels.size();
   vector<array<float,3> > minima_crds(n_minima);
   vector<array<float,3> > maxima_crds(n_maxima);
 
   // The user expects results in units of physical distance, not voxels.
   // Compensate for that now:
   for (int i = 0; i < n_minima; i++) {
-    minima_crds[i][0] = minima_crds_int[i][0] * voxel_width[0];
-    minima_crds[i][1] = minima_crds_int[i][1] * voxel_width[1];
-    minima_crds[i][2] = minima_crds_int[i][2] * voxel_width[2];
-    minima_sigma[i] *= voxel_width[0];      //Gaussian width has units of length
+    minima_crds[i][0] = minima_crds_voxels[i][0] * voxel_width[0];
+    minima_crds[i][1] = minima_crds_voxels[i][1] * voxel_width[1];
+    minima_crds[i][2] = minima_crds_voxels[i][2] * voxel_width[2];
+    minima_diameters[i] *= voxel_width[0];      //Gaussian width has units of length
     // REMOVE THIS CRUFT EVENTUALLY:
     //minima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
   }
   for (int i = 0; i < n_maxima; i++) {
-    maxima_crds[i][0] = maxima_crds_int[i][0] * voxel_width[0];
-    maxima_crds[i][1] = maxima_crds_int[i][1] * voxel_width[1];
-    maxima_crds[i][2] = maxima_crds_int[i][2] * voxel_width[2];
-    maxima_sigma[i] *= voxel_width[0];      //Gaussian width has units of length
+    maxima_crds[i][0] = maxima_crds_voxels[i][0] * voxel_width[0];
+    maxima_crds[i][1] = maxima_crds_voxels[i][1] * voxel_width[1];
+    maxima_crds[i][2] = maxima_crds_voxels[i][2] * voxel_width[2];
+    maxima_diameters[i] *= voxel_width[0];      //Gaussian width has units of length
     // REMOVE THIS CRUFT EVENTUALLY:
     //maxima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
   }
@@ -1205,16 +1256,24 @@ HandleBlobDetector(Settings settings,
   //    settings.out_file_name.substr(0,
   //                                  settings.out_file_name.length()-4);
 
-  if ((minima_crds_int.size() > 0) && (settings.blob_minima_file_name != "")) {
+  if ((minima_crds_voxels.size() > 0) && (settings.blob_minima_file_name != ""))
+  {
+
+    SortBlobs(minima_crds,
+              minima_diameters,
+              minima_scores,
+              false);
+
     fstream minima_file;
     minima_file.open(settings.blob_minima_file_name.c_str(), ios::out);
     if (! minima_file)
       throw InputErr("Error: unable to open \""+ settings.blob_minima_file_name +"\" for reading.\n");
-    for (int i=0; i < minima_crds_int.size(); i++) {
+    for (int i=0; i < minima_crds_voxels.size(); i++) {
       minima_file << minima_crds[i][0] << " "
                   << minima_crds[i][1] << " "
                   << minima_crds[i][2] << " "
-                  << minima_sigma[i] / settings.blob_width_multiplier << " "
+                  << minima_diameters[i] << " "
+                //<< minima_diameters[i] / settings.blob_width_multiplier << " "
         // See comment at the end of this function:
                   << minima_scores[i] << "\n";
         // Here we assume the voxel width is the same in x,y,z directions
@@ -1222,16 +1281,25 @@ HandleBlobDetector(Settings settings,
     }
   }
 
-  if ((maxima_crds_int.size() > 0) && (settings.blob_maxima_file_name != "")) {
+
+  if ((maxima_crds_voxels.size() > 0) && (settings.blob_maxima_file_name != ""))
+  {
+
+    SortBlobs(maxima_crds,
+              maxima_diameters,
+              maxima_scores,
+              true);
+
     fstream maxima_file;
     maxima_file.open(settings.blob_maxima_file_name.c_str(), ios::out);
     if (! maxima_file)
       throw InputErr("Error: unable to open \""+ settings.blob_maxima_file_name +"\" for reading.\n");
-    for (int i=0; i < maxima_crds_int.size(); i++) {
+    for (int i=0; i < maxima_crds_voxels.size(); i++) {
       maxima_file << maxima_crds[i][0] << " "
                   << maxima_crds[i][1] << " "
                   << maxima_crds[i][2] << " "
-                  << maxima_sigma[i] / settings.blob_width_multiplier << " "
+                  << maxima_diameters[i] << " "
+                //<< maxima_diameters[i] / settings.blob_width_multiplier << " "
         // See comment at the end of this function:
                   << maxima_scores[i] << "\n";
         // Here we assume the voxel width is the same in x,y,z directions
@@ -1246,16 +1314,16 @@ HandleBlobDetector(Settings settings,
   // Does the user want us to create a new image showing where the blobs are?
   if (tomo_out.aaafI) {
 
-    vector<array<int,3> > display_crds_int(minima_crds_int);
-    display_crds_int.insert(display_crds_int.end(),
-                            maxima_crds_int.rbegin(),
-                            maxima_crds_int.rend());
+    vector<array<float,3> > display_crds_voxels(minima_crds_voxels);
+    display_crds_voxels.insert(display_crds_voxels.end(),
+                               maxima_crds_voxels.rbegin(),
+                               maxima_crds_voxels.rend());
 
-    //concatinate "maxima_sigma" with "minima_sigma"
-    vector<float> display_sigma(minima_sigma);
-    display_sigma.insert(display_sigma.end(),
-                         maxima_sigma.rbegin(),
-                         maxima_sigma.rend());
+    //concatinate "maxima_diameters" with "minima_diameters"
+    vector<float> display_diameters(minima_diameters);
+    display_diameters.insert(display_diameters.end(),
+                             maxima_diameters.rbegin(),
+                             maxima_diameters.rend());
 
     //concatinate "maxima_scores" with "minima_scores"
     vector<float> display_scores(minima_scores);
@@ -1263,16 +1331,15 @@ HandleBlobDetector(Settings settings,
                           maxima_scores.rbegin(),
                           maxima_scores.rend());
 
-    vector<float> display_shell_thicknesses(display_crds_int.size());
-    vector<float> display_radii(display_crds_int.size());
-    for (int i = 0; i < display_crds_int.size(); i++) {
+    vector<float> display_shell_thicknesses(display_crds_voxels.size());
+    for (int i = 0; i < display_crds_voxels.size(); i++) {
       // Choose the size of the hollow spheres around each object so they are
       // large enough that the original objects underneath are still visible.
-      display_radii[i] = sqrt(3.0) * display_sigma[i] / voxel_width[0];
+      display_diameters[i] = display_diameters[i] / voxel_width[0];
       display_shell_thicknesses[i] = settings.sphere_decals_shell_thickness;
       if (settings.sphere_decals_shell_thickness_is_ratio)
-        display_shell_thicknesses[i] *= display_radii[i];
-      display_radii[i] *= settings.sphere_decals_scale;
+        display_shell_thicknesses[i] *= display_diameters[i];
+      display_diameters[i] *= settings.sphere_decals_scale;
       // The spherical shells superimposed on the tomogram should be
       // at least 1 voxel wide in order to be visible to the user
       if (display_shell_thicknesses[i] < settings.sphere_decals_shell_thickness_min)
@@ -1280,16 +1347,18 @@ HandleBlobDetector(Settings settings,
     }
 
 
-    ApplySphereDecals(tomo_in,
-                      tomo_out,
-                      mask,
-                      display_crds_int,
-                      display_radii,
-                      display_shell_thicknesses,
-                      display_scores,
-                      settings.sphere_decals_background,
-                      settings.sphere_decals_background_scale,
-                      false);
+    tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
+
+    VisualizeBlobs(tomo_out.header.nvoxels,
+                   tomo_out.aaafI,
+                   mask.aaafI,
+                   display_crds_voxels,
+                   display_diameters,
+                   display_shell_thicknesses,
+                   display_scores,
+                   settings.sphere_decals_background,
+                   settings.sphere_decals_background_scale,
+                   false);
 
   } //if (tomo_out.aaafI)
 
@@ -1350,13 +1419,13 @@ HandleThresholds(Settings settings,
     //float *histX;
     //int nbins = -1;
     //float hist_bin_width = 1.0;
-    //IntensityHistogramArr(&histX,
-    //                      &histY,
-    //                      nbins,
-    //                      hist_bin_width,
-    //                      tomo_out.header.nvoxels,
-    //                      tomo_out.aaafI,
-    //                      mask.aaafI);
+    //HistogramArr(&histX,
+    //             &histY,
+    //             nbins,
+    //             hist_bin_width,
+    //             tomo_out.header.nvoxels,
+    //             tomo_out.aaafI,
+    //             mask.aaafI);
     //for (int i=0; i < nbins; i++)
     //  cerr << histX[i] << " " << histY[i] << endl;
     //delete [] histX;
@@ -1376,8 +1445,8 @@ HandleThresholds(Settings settings,
       for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
         if (! settings.use_dual_thresholds) {
           if (settings.out_threshold_01_a == settings.out_threshold_01_b)
-	    tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >=
-					   settings.out_threshold_01_a)
+            tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >=
+                                           settings.out_threshold_01_a)
                                           ? 1.0
                                           : 0.0);
           else
@@ -1427,11 +1496,8 @@ HandleExtrema(Settings settings,
   float local_minima_threshold = settings.score_upper_bound;
   float local_maxima_threshold = settings.score_lower_bound;
   
-  //float local_minima_threshold =tomo_out.header.dmax;//keep all minima
-  //float local_maxima_threshold =tomo_out.header.dmin;//keep all maxima
-
-  vector<array<int, 3> > minima_crds_int;
-  vector<array<int, 3> > maxima_crds_int;
+  vector<array<float, 3> > minima_crds_voxels;
+  vector<array<float, 3> > maxima_crds_voxels;
 
   cerr << "---- searching for local minima & maxima ----\n";
   for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
@@ -1468,21 +1534,21 @@ HandleExtrema(Settings settings,
         if (is_minima && settings.find_minima) {
           if (((! mask.aaafI) || (mask.aaafI[iz][iy][ix] != 0)) &&
               (tomo_out.aaafI[iz][iy][ix] < local_minima_threshold)) {
-            array<int, 3> ixiyiz;
+            array<float, 3> ixiyiz;
             ixiyiz[0] = ix;
             ixiyiz[1] = iy;
             ixiyiz[2] = iz;
-            minima_crds_int.push_back(ixiyiz);
+            minima_crds_voxels.push_back(ixiyiz);
           }
         }
         if (is_maxima && settings.find_maxima) {
           if (((! mask.aaafI) || (mask.aaafI[iz][iy][ix] != 0)) &&
               (tomo_out.aaafI[iz][iy][ix] > local_maxima_threshold)) {
-            array<int, 3> ixiyiz;
+            array<float, 3> ixiyiz;
             ixiyiz[0] = ix;
             ixiyiz[1] = iy;
             ixiyiz[2] = iz;
-            maxima_crds_int.push_back(ixiyiz);
+            maxima_crds_voxels.push_back(ixiyiz);
           }
         }
         assert(! (is_minima && is_maxima));
@@ -1490,49 +1556,60 @@ HandleExtrema(Settings settings,
     } //for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
   } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
 
-  if (settings.blob_min_separation > 0.0) {
-    if ((settings.sphere_decals_radius > 0) &&
-        (settings.find_extrema_occlusion_ratio > 0.0)) {
-      vector<float> minima_radii(minima_crds_int.size(),
-                                 settings.sphere_decals_radius);
-                                 
-      vector<float> minima_scores(minima_crds_int.size());
-      for (size_t i = 0; i < minima_crds_int.size(); i++) {
-        int ix = minima_crds_int[i][0];
-        int iy = minima_crds_int[i][1];
-        int iz = minima_crds_int[i][2];
+  if ((settings.nonmax_min_radial_separation_ratio > 0.0) ||
+      (settings.nonmax_max_volume_overlap_large < 1.0) ||
+      (settings.nonmax_max_volume_overlap_small < 1.0)) {
+    if ((settings.sphere_decals_diameter > 0) &&
+        //(settings.find_extrema_occlusion_ratio > 0.0)) {
+        (settings.nonmax_min_radial_separation_ratio > 0.0)) {
+      vector<float> minima_diameters(minima_crds_voxels.size(),
+                                 settings.sphere_decals_diameter *
+                                 //settings.find_extrema_occlusion_ratio);
+                                 settings.nonmax_min_radial_separation_ratio);
+      vector<float> minima_scores(minima_crds_voxels.size());
+      for (size_t i = 0; i < minima_crds_voxels.size(); i++) {
+        int ix = minima_crds_voxels[i][0];
+        int iy = minima_crds_voxels[i][1];
+        int iz = minima_crds_voxels[i][2];
         minima_scores[i] = tomo_out.aaafI[iz][iy][ix];
       }
-      DiscardOverlappingBlobs(minima_crds_int,
-                              minima_radii, 
+      DiscardOverlappingBlobs(minima_crds_voxels,
+                              minima_diameters, 
                               minima_scores,
-                              false,
-                              settings.find_extrema_occlusion_ratio,
-                              tomo_in.header.nvoxels,
+                              PRIORITIZE_LOW_SCORES,
+                              //settings.find_extrema_occlusion_ratio,
+                              settings.nonmax_min_radial_separation_ratio,
+                              settings.nonmax_max_volume_overlap_large,
+                              settings.nonmax_max_volume_overlap_small,
                               &cerr);
     }
-    if ((settings.sphere_decals_radius > 0) &&
-        (settings.find_extrema_occlusion_ratio > 0.0)) {
-      vector<float> maxima_radii(maxima_crds_int.size(),
-                                 settings.sphere_decals_radius *
-                                 settings.find_extrema_occlusion_ratio);
-      vector<float> maxima_scores(maxima_crds_int.size());
-      for (size_t i = 0; i < maxima_crds_int.size(); i++) {
-        int ix = maxima_crds_int[i][0];
-        int iy = maxima_crds_int[i][1];
-        int iz = maxima_crds_int[i][2];
+    if ((settings.sphere_decals_diameter > 0) &&
+        //(settings.find_extrema_occlusion_ratio > 0.0)) {
+        (settings.nonmax_min_radial_separation_ratio > 0.0)) {
+      vector<float> maxima_diameters(maxima_crds_voxels.size(),
+                                 settings.sphere_decals_diameter *
+                                 //settings.find_extrema_occlusion_ratio);
+                                 settings.nonmax_min_radial_separation_ratio);
+      vector<float> maxima_scores(maxima_crds_voxels.size());
+      for (size_t i = 0; i < maxima_crds_voxels.size(); i++) {
+        int ix = maxima_crds_voxels[i][0];
+        int iy = maxima_crds_voxels[i][1];
+        int iz = maxima_crds_voxels[i][2];
         maxima_scores[i] = tomo_out.aaafI[iz][iy][ix];
       }
-      DiscardOverlappingBlobs(maxima_crds_int,
-                              maxima_radii, 
+      DiscardOverlappingBlobs(maxima_crds_voxels,
+                              maxima_diameters, 
                               maxima_scores,
-                              true,
-                              settings.find_extrema_occlusion_ratio,
-                              tomo_in.header.nvoxels,
+                              PRIORITIZE_HIGH_SCORES,
+                              //REMOVE THIS CRUFT
+                              //settings.find_extrema_occlusion_ratio,
+                              settings.nonmax_min_radial_separation_ratio,
+                              settings.nonmax_max_volume_overlap_large,
+                              settings.nonmax_max_volume_overlap_small,
                               &cerr);
     }
 
-  } //if (settings.blob_min_separation > 0)
+  } //if (settings.nonmax_min_radial_separation_ratio > 0)
 
   //string out_file_name_base = settings.out_file_name;
   //if ((EndsWith(settings.out_file_name, ".rec")) ||
@@ -1540,25 +1617,25 @@ HandleExtrema(Settings settings,
   //  out_file_name_base =
   //    settings.out_file_name.substr(0,
   //                                  settings.out_file_name.length()-4);
-  if ((minima_crds_int.size()) > 0 && settings.find_minima) {
+  if ((minima_crds_voxels.size()) > 0 && settings.find_minima) {
     fstream minima_file;
     minima_file.open(settings.find_minima_file_name.c_str(), ios::out);
     if (! minima_file)
       throw InputErr("Error: unable to open \""+ settings.find_minima_file_name +"\" for reading.\n");
-    for (int i=0; i < minima_crds_int.size(); i++)
-      minima_file << minima_crds_int[i][0] * voxel_width[0] << " "
-                  << minima_crds_int[i][1] * voxel_width[1] << " "
-                  << minima_crds_int[i][2] * voxel_width[2] << "\n";
+    for (int i=0; i < minima_crds_voxels.size(); i++)
+      minima_file << minima_crds_voxels[i][0] * voxel_width[0] << " "
+                  << minima_crds_voxels[i][1] * voxel_width[1] << " "
+                  << minima_crds_voxels[i][2] * voxel_width[2] << "\n";
   }
-  if ((maxima_crds_int.size() > 0) && settings.find_maxima) {
+  if ((maxima_crds_voxels.size() > 0) && settings.find_maxima) {
     fstream coords_file;
     coords_file.open(settings.find_maxima_file_name.c_str(), ios::out);
     if (! coords_file)
       throw InputErr("Error: unable to open \""+ settings.find_maxima_file_name +"\" for reading.\n");
-    for (int i=0; i < maxima_crds_int.size(); i++)
-      coords_file << maxima_crds_int[i][0] * voxel_width[0] << " "
-                  << maxima_crds_int[i][1] * voxel_width[1] << " "
-                  << maxima_crds_int[i][2] * voxel_width[2] << "\n";
+    for (int i=0; i < maxima_crds_voxels.size(); i++)
+      coords_file << maxima_crds_voxels[i][0] * voxel_width[0] << " "
+                  << maxima_crds_voxels[i][1] * voxel_width[1] << " "
+                  << maxima_crds_voxels[i][2] * voxel_width[2] << "\n";
   }
 } //HandleExtrema()
 
@@ -2717,12 +2794,14 @@ int main(int argc, char **argv) {
     Settings settings; // parse the command-line argument list from the shell
     settings.ParseArgs(argc, argv);
 
-    // Read the input tomogram
-    cerr << "Reading tomogram \""<<settings.in_file_name<<"\"" << endl;
     MrcSimple tomo_in;
-    tomo_in.Read(settings.in_file_name, false);
-    // (Note: You can also use "tomo_in.Read(cin);" or "cin >> tomo;")
-    tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
+    if (settings.in_file_name != "") {
+      // Read the input tomogram
+      cerr << "Reading tomogram \""<<settings.in_file_name<<"\"" << endl;
+      tomo_in.Read(settings.in_file_name, false);
+      // (Note: You can also use "tomo_in.Read(cin);" or "cin >> tomo;")
+      tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
+    }
 
     // ---- mask ----
 
@@ -2815,10 +2894,10 @@ int main(int argc, char **argv) {
     // down the next step considerably, so I just assume cube-shaped voxels:
     //assert((voxel_width[0] == voxel_width[1]) &&
     //       (voxel_width[1] == voxel_width[2]));
-    for (int ir = 0; ir < settings.blob_widths.size(); ir++)
-      settings.blob_widths[ir] /= voxel_width[0];
+    for (int ir = 0; ir < settings.blob_diameters.size(); ir++)
+      settings.blob_diameters[ir] /= voxel_width[0];
 
-    settings.sphere_decals_radius /= voxel_width[0];
+    settings.sphere_decals_diameter /= voxel_width[0];
     if (! settings.sphere_decals_shell_thickness_is_ratio)
       settings.sphere_decals_shell_thickness /= voxel_width[0];
 
@@ -2946,10 +3025,23 @@ int main(int argc, char **argv) {
 
     else if (settings.filter_type == settings.SPHERE_DECALS) {
 
-      HandleSphereDecals(settings, tomo_in, tomo_out, mask, voxel_width);
+      HandleVisualizeBlobs(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 
+    else if (settings.filter_type == settings.SPHERE_NONMAX_SUPPRESSION) {
+
+      vector<array<float,3> > crds;
+      vector<float> diameters;
+      vector<float> scores;
+
+      HandleBlobsNonmaxSuppression(settings,
+                                   voxel_width,
+                                   crds,
+                                   diameters,
+                                   scores);
+
+    }
 
     else {
       assert(false);  //should be one of the choices above

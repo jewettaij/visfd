@@ -96,7 +96,8 @@ class Settings {
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
     MIN_DISTANCE,    //voxel intensity = distance to nearest object
-    SPHERE_DECALS    //voxel intensity = 1 if within R from the nearest object
+    SPHERE_DECALS,   //voxel intensity = 1 if within R from the nearest object
+    SPHERE_NONMAX_SUPPRESSION
   } FilterType; 
   
   FilterType filter_type;
@@ -113,15 +114,19 @@ class Settings {
                                  // for details.
 
 
-  vector<float> blob_widths;    // blob widths considered for scale free blob detection
+  vector<float> blob_diameters;    // blob widths considered for scale free blob detection
   float blob_width_multiplier;
   string blob_minima_file_name;
   string blob_maxima_file_name;
-  float blob_min_separation;
+  float nonmax_min_radial_separation_ratio;
+  float nonmax_max_volume_overlap_small;
+  float nonmax_max_volume_overlap_large;
 
   float score_upper_bound;   //Ignore blobs with scores above this (usually <0)
   float score_lower_bound;   //Ignore blobs with scores less than this (>0)
   float score_bounds_are_ratios; //Are these ratios relative to min & max score?
+  float sphere_diameters_lower_bound;//Ignore blobs outside a desired range of sizes
+  float sphere_diameters_upper_bound;
 
   float filter_truncate_threshold;
   float filter_truncate_ratio;
@@ -162,10 +167,12 @@ class Settings {
   bool find_maxima = false;
   string find_minima_file_name;
   string find_maxima_file_name;
-  float find_extrema_occlusion_ratio;
+  //REMOVE THIS CRUFT:
+  //float find_extrema_occlusion_ratio; // nonmax_min_radial_separation_ratio
 
   string in_coords_file_name;
-  float sphere_decals_radius;
+  string out_coords_file_name;
+  float sphere_decals_diameter;
   float sphere_decals_scale;
   float sphere_decals_foreground;      //intensity of voxels in each sphere
   float sphere_decals_background;      //intensity of voxels not in any spheres

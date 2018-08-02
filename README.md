@@ -12,7 +12,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
 ![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)
 
-**filter_mrc** detects features and applies simple filters to 3-D images.
+**filter_mrc** detects features and applies simple filters to 3D images.
 It supports 
 [3D scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
 and local minima/maxima finding (with non-max suppresion).

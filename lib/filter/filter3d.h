@@ -1,7 +1,13 @@
+///   @file filter3d.h
+///   @brief a collection of functions for applying common filters to 3D arrays
+///   @author Andrew Jewett
+///   @date 2018-7-26
+
 #ifndef _FILTER3D_H
 #define _FILTER3D_H
 
 #include <cstring>
+#include <cmath>
 #include <ostream>
 #include <vector>
 #include <tuple>
@@ -10,10 +16,20 @@ using namespace std;
 
 
 
+
+/// @brief 
+/// Compute a weighted average of the entries in a 3-dimensional array.
+///         This function was not intended for public use.
+/// @param  array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       the array whose entries will be averaged
+/// @param  aaafW       an optional array of weights (for weighted averages)
+/// @return the weighted average
+
+
 template<class RealNum, class Integer>
 RealNum AverageArr(Integer const array_size[3],
-                   RealNum ***aaafH,
-                   RealNum ***aaafW = NULL) 
+                    RealNum ***aaafH,
+                    RealNum ***aaafW = NULL) 
 {
   double total = 0.0;
   double denom = 0.0;
@@ -38,8 +54,17 @@ RealNum AverageArr(Integer const array_size[3],
 
 
 
+/// @brief 
+/// Compute a weighted average of the square of entries in a 3D array.
+///         This function was not intended for public use.
+/// @param  array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       the array whose entries will be squared and averaged
+/// @param  aaafW       an optional array of weights (for weighted averages)
+/// @return the weighted average of the squared entries in the array
+
 template<class RealNum, class Integer>
-RealNum AveSqrArr(Integer const array_size[3],
+static
+RealNum _AveSqrArr(Integer const array_size[3],
                   RealNum ***aaafH,
                   RealNum ***aaafW = NULL) 
 {
@@ -64,8 +89,19 @@ RealNum AveSqrArr(Integer const array_size[3],
     }
   }
   return static_cast<RealNum>(sqrt(total / denom));
-} //void AveSqrArr()
+} //void _AveSqrArr()
 
+
+
+
+/// @brief 
+/// Compute the weighted standard deviation of entries in a 3-dimensional array.
+///         This function was not intended for public use.
+/// @param  array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       we will compute the standard deviation of entries
+///                     in this array
+/// @param  aaafW       an optional array of weights (for weighted averages)
+/// @return the weighted standard deviation
 
 template<class RealNum, class Integer>
 RealNum StdDevArr(Integer const array_size[3],
@@ -94,12 +130,56 @@ RealNum StdDevArr(Integer const array_size[3],
     }
   }
   return static_cast<RealNum>(sqrt(total / denom));
-} //void StdDev()
+} //void StdDevArr()
 
 
+
+/// @brief Compute a (weighted) sum of the entries in a 3D array.
+///         This function was not intended for public use.
+/// @param array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       we will compute the sum of the squares of the 
+///                     entries in this array
+/// @param  aaafW       an optional array of weights (which multiply the
+///                     the corresponding entry value)
+/// @return the (weighted) sum
 
 template<class RealNum, class Integer>
-RealNum SumSqrArr(Integer const array_size[3],
+static
+RealNum _SumArr(Integer const array_size[3],
+               RealNum ***aaafH,
+               RealNum ***aaafW = NULL) 
+{
+  double total = 0.0;
+  double denom = 0.0;
+
+  for (Integer iz = 0; iz < array_size[2]; iz++) {
+    for (Integer iy = 0; iy < array_size[1]; iy++) {
+      for (Integer ix = 0; ix < array_size[0]; ix++) {
+        double h = aaafH[iz][iy][ix];
+        total += h;
+        if (aaafW)
+          h *= aaafW[iz][iy][ix];
+      }
+    }
+  }
+  return static_cast<RealNum>(total);
+} //void _SumArr()
+
+
+
+/// @brief
+/// Compute a (weighted) sum of the squares of the entries in a 3D array
+///         This function was not intended for public use.
+/// @param array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       we will compute the sum of the squares of the 
+///                     entries in this array
+/// @param  aaafW       an optional array of weights (which multiply the
+///                     the corresponding squared entry value)
+/// @return the (weighted) sum of squares
+
+template<class RealNum, class Integer>
+static
+RealNum _SumSqrArr(Integer const array_size[3],
                   RealNum ***aaafH,
                   RealNum ***aaafW = NULL) 
 {
@@ -118,37 +198,21 @@ RealNum SumSqrArr(Integer const array_size[3],
     }
   }
   return static_cast<RealNum>(total);
-} //void SumSqrArr()
+} //void _SumSqrArr()
 
 
 
-template<class RealNum, class Integer>
-RealNum SumArr(Integer const array_size[3],
-               RealNum ***aaafH,
-               RealNum ***aaafW = NULL) 
-{
-  double total = 0.0;
-  double denom = 0.0;
-
-  for (Integer iz = 0; iz < array_size[2]; iz++) {
-    for (Integer iy = 0; iy < array_size[1]; iy++) {
-      for (Integer ix = 0; ix < array_size[0]; ix++) {
-        double h = aaafH[iz][iy][ix];
-        total += h;
-        if (aaafW)
-          h *= aaafW[iz][iy][ix];
-      }
-    }
-  }
-  return static_cast<RealNum>(total);
-} //void SumArr()
-
-
+/// @brief  Add a scalar offset to all of the entries in a 3D array.
+///         This function was not intended for public use.
+/// @param  offset       the number that will be added to all array entries
+/// @param  array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       the 3D array containing the entries to be modified
 
 template<class RealNum, class Integer>
-void AddScalarArr(RealNum offset,
-                  Integer const array_size[3],
-                  RealNum ***aaafH)
+static
+void _AddScalarArr(RealNum offset,
+                   Integer const array_size[3],
+                   RealNum ***aaafH)
 {
   for (Integer iz = 0; iz < array_size[2]; iz++)
     for (Integer iy = 0; iy < array_size[1]; iy++)
@@ -157,11 +221,17 @@ void AddScalarArr(RealNum offset,
 }
 
 
+/// @brief  Multiply all the entries in a 3D array by a scalar.
+///         This function was not intended for public use.
+/// @param  scale       the number that will be multiplied by the array entries
+/// @param  array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       the 3D array containing the entries to be modified
 
 template<class RealNum, class Integer>
-void MultiplyScalarArr(RealNum scale,
-                       Integer const array_size[3],
-                       RealNum ***aaafH)
+static
+void _MultiplyScalarArr(RealNum scale,
+                        Integer const array_size[3],
+                        RealNum ***aaafH)
 {
   for (Integer iz = 0; iz < array_size[2]; iz++)
     for (Integer iy = 0; iy < array_size[1]; iy++)
@@ -171,8 +241,17 @@ void MultiplyScalarArr(RealNum scale,
 
 
 
+/// @brief  Find the minimum and maximum entries in a 3D array.
+///         This function was not intended for public use.
+/// @param  min         the mininum entry will be stored here
+/// @param  max         the maxinum entry will be stored here
+/// @param  array_size  an array of 3 integers storing the size of the array
+/// @param  aaafH       the 3D array containing the entries
+/// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
+
 template<class RealNum, class Integer>
-void MinMaxArr(RealNum& min,
+static
+void _MinMaxArr(RealNum& min,
                RealNum& max,
                Integer const array_size[3],
                RealNum ***aaafH,
@@ -192,20 +271,28 @@ void MinMaxArr(RealNum& min,
       }
     }
   }
-} //void MinMaxArr()
+} //void _MinMaxArr()
 
 
 
+
+/// @brief  Generate a histogram of the values contained in a 3D numeric array
+/// @param  paHistX     store entry values corresponding to the center of each bin here
+/// @param  paHistY     store the number of entries that fall into that bin here
+/// @param  nbins       specify number of bins (if positive)
+/// @param  bin_width   alternatively, (if nbins<=0), specify the width of each bin
+/// @param  aaafI       the 3D array containing the entries
+/// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
 
 template<class RealNum, class Integer>
 void
-IntensityHistogramArr(RealNum **paHistX, //pointer to an array of intensities
-                      size_t **paHistY,//number of voxels with that intensity
-                      Integer &nbins,     //specify number of bins (if positive)
-                      RealNum &bin_width, //alternatively, suggest bin_width
-                      Integer const array_size[3],
-                      RealNum ***aaafI,
-                      RealNum ***aaafW = NULL) 
+HistogramArr(RealNum **paHistX,  
+             size_t  **paHistY,
+             Integer &nbins,
+             RealNum &bin_width,
+             Integer const array_size[3],
+             RealNum ***aaafI,
+             RealNum ***aaafMask = NULL) 
 {
   RealNum hmin = 0.0;
   RealNum hmax = -1.0;
@@ -245,7 +332,7 @@ IntensityHistogramArr(RealNum **paHistX, //pointer to an array of intensities
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
         RealNum h = aaafI[iz][iy][ix];
-        if ((! aaafW) || (aaafW[iz][iy][ix] != 0.0)) {
+        if ((! aaafMask) || (aaafMask[iz][iy][ix] != 0.0)) {
           RealNum h = aaafI[iz][iy][ix];
           Integer i = floor( (h - hmin)/bin_width );
           assert((0 <= i) && (i < nbins));
@@ -254,37 +341,49 @@ IntensityHistogramArr(RealNum **paHistX, //pointer to an array of intensities
       }
     }
   }
-} //void IntensityHistogramArr()
+} //void HistogramArr()
 
 
 
 
+
+
+/// @brief A simple class for general 3D convolutional filters
+///
+/// @note  In practice, this class is not used often because separable filters
+///        based on Gaussians are much much faster.
+/// @note  The "template" features are not yet intended for public use.
+///        -A2018.7.27
 
 template<class RealNum, class Integer>
 
 class Filter3D {
 public:
-  RealNum *af;
-  RealNum ***aaafH;
-  Integer halfwidth[3]; //num pixels from filter center to edge in x,y,z directions
-  Integer array_size[3]; //size of the array in x,y,z directions (in voxels)
+  RealNum *af;          //!< contiguous block of memory storing the filter array
+  RealNum ***aaafH;     //!< the same array which can be indexed using [i][j][k] notation
+  Integer halfwidth[3]; //!< num pixels from filter center to edge in x,y,z directions
+  Integer array_size[3]; //!<size of the array in x,y,z directions (2*halfwidth+1)
 
-  RealNum ApplyToVoxel(Integer ix,  // voxel's position in the x,y,z directions
+
+ private:
+  /// @brief Apply a filter to a single voxel from the source image (aaafSource).
+  ///         This function was not intended for public use.
+  /// @param ix  the voxel's position in that 3D image
+  /// @param iy  the voxel's position in that 3D image
+  /// @param iz  the voxel's position in that 3D image
+  /// @param size_source contains size of the source image (in the x,y,z directions)
+  /// @param aaafSource[][][] is the source image
+  /// @param optional. aaafMask[i][j][k]==0 for voxels we want to exclude from consideration
+  /// @param normalize=true if we want to normalize the weights considered in the sum
+  /// (useful if the sum was not complete due to some voxels being masked out,
+  ///  or because the filter extends beyond the boundaries of the image)
+  RealNum ApplyToVoxel(Integer ix,
                        Integer iy,
                        Integer iz,
-                       Integer const size_source[3], // size of the source image
-                       RealNum ***aaafSource,        // source image
-                       RealNum ***aaafMask = NULL,   // consider only some voxels?
-                       bool normalize = false) const // normalize incomplete sums?
-
-  // Apply a filter to a single voxel from the source image (aaafSource)
-  // Arguments:
-  // ix,iy,iz the voxel's position in that 3-D image
-  // size_source[] contains size of the source image (in the x,y,z directions)
-  // aaafSource[][][] is the source image
-  // aaafMask[][][] = 0 for voxels we should exclude from consideration
-  // normalize = true if we want to normalize the weights considered in the sum
-  // (useful if the sum was not complete due to some voxels being masked out).
+                       Integer const size_source[3],
+                       RealNum ***aaafSource,
+                       RealNum ***aaafMask = NULL,
+                       bool normalize = false) const
   {
     RealNum g = 0.0;
     RealNum denominator = 0.0;
@@ -349,35 +448,46 @@ public:
 
 
 
+ public:
 
-  // Apply the filter to tomographic data in the "aaafSource" array
-  // Save the results in the "aaafDest" array.  (A "mask" is optional.)
-  // All arrays are 3D and assumed to be the same size
+  /// @brief  Apply the filter to tomographic data in the "aaafSource" array
+  /// Save the results in the "aaafDest" array.  (A "mask" is optional.)
+  /// All arrays are 3D and assumed to be the same size
+  /// Apply the filter to the original tomogram data. (Store in aaafSource)
+  ///     
+  /// @code
+  ///        ___
+  ///             \
+  /// g(i) = /__  h(j) * f(i-j)
+  ///         j
+  /// @endcode
+  /// where: f(i) is the original density of the tomogram at position ix,iy,iz
+  ///        h(j) is the filter (smoothing function)
+  ///       
+  /// @note: on mask functions:
+  ///     When summing over j, we ignore contributions from voxels where
+  ///     mask(i-j) is zero.  We don't count them in the average.
+  ///     Because h(j) is not necessarily normalized, g(i) is later divided by
+  ///     the area under the curve h(j)*mask(i-j)    (as a function of j)
+  /// 
+  ///
+  /// @param size_source contains size of the source image (in the x,y,z directions)
+  /// @param aaafSource[][][] is the source array (source image)
+  /// @param aaafMask[][][]=0 whenever we should exclude the corresponding entries in aaafSource from consideration. Optional
+  /// @param normalize=true if we want to normalize the weights considered in the sum
+  /// (useful if the sum was not complete due to some voxels being masked out,
+  ///  or because the filter extends beyond the boundaries of the image)
+  /// @param pReportProgress  optional pointer to an ostream for printing the progress of the calculation
+
   void Apply(Integer const size_source[3],
              RealNum ***aaafSource,
              RealNum ***aaafDest,
              RealNum ***aaafMask = NULL,
              bool normalize = false,
-             //bool precompute_mask_times_source = true,
              ostream *pReportProgress = NULL
              ) const
   {
 
-    // Apply the filter to the original tomogram data. (Store in aaafSource)
-    //        ___
-    //        \
-    // g(i) = /__  h(j) * f(i-j)
-    //         j
-    //
-    // where: f(i) is the original density of the tomogram at position ix,iy,iz
-    //        h(j) is the filter (smoothing function)
-    //       
-    //  Note on mask functions:
-    //     When summing over j, we ignore contributions from voxels where
-    //     mask(i-j) is zero.  We don't count them in the average.
-    //     Because h(j) is not necessarily normalized, g(i) is later divided by
-    //     the area under the curve h(j)*mask(i-j)    (as a function of j)
-    //     
 
     if (pReportProgress)
       *pReportProgress << "  progress: processing plane#" << endl;
@@ -426,22 +536,32 @@ public:
 
 
 
-  #ifndef DISABLE_TEMPLATE_MATCHING
 
+  #ifndef DISABLE_TEMPLATE_MATCHING
+private:
+  /// @brief  Compute the sum weighted difference between the local entries
+  ///         in an array centered around position ix,iy,iz, 
+  ///         and another array we call the "template" (which is assumed to
+  ///         be stored in the "aaafH" filter array member for this class).
+  ///         It is assumed that the weighted average of both the
+  ///          source and template arrays is 0 before calling this function.
+  ///         This function was not intended for public use.
+  /// @return the weighted sum of the error (raised to the power of
+  ///         err_exponent, which is 2 by default) summed over all entries
+  ///         in the template.  Weights are typically chosen so that they
+  ///         decay to 0 near the boundaries of the aaafH array.
   RealNum
-  TemplateError(Integer ix, //voxel's position in the x,y,z directions
-                Integer iy,
-                Integer iz,
-                Integer const size_source[3], // size of the source image
-                RealNum ***aaafSource,
-                RealNum intensity_ratio, //how much to scale template intensities
-                RealNum ***aaafW, //weights used in all summations
-                RealNum template_compare_exponent,
-                RealNum ***aaafMask = NULL,
-                //bool normalize = false,
-                //bool precompute_mask_times_source = true,
-                ostream *pReportProgress = NULL
-                ) const 
+  _TemplateError(Integer ix, //!< voxel's position in the x,y,z directions
+                 Integer iy, //!< voxel's position in the x,y,z directions
+                 Integer iz, //!< voxel's position in the x,y,z directions
+                 Integer const size_source[3], //!< size of the source array
+                 RealNum ***aaafSource,   //!< the array 
+                 RealNum scale, //!< how much to scale template intensities
+                 RealNum ***aaafW, //!< weights used in all summations
+                 RealNum err_exponent=2, //!< exponent used for calculating error
+                 RealNum ***aaafMask = NULL, //!< optional array storing voxels we should ignore (if 0)
+                 ostream *pReportProgress = NULL //!< optional ostream for printing out progress of the calculation
+                 ) const 
   {
       RealNum g = 0.0;
       RealNum denominator = 0.0;
@@ -482,16 +602,16 @@ public:
 
 
           RealNum delta_g = 
-            (intensity_ratio * aaafH[jz+halfwidth[2]]
-                                    [jy+halfwidth[1]]
-                                    [jx+halfwidth[0]]
+            (scale * aaafH[jz+halfwidth[2]]
+                          [jy+halfwidth[1]]
+                          [jx+halfwidth[0]]
              -
              aaafSource[iz-jz][iy-jy][ix-jx]);
 
-          if (template_compare_exponent == 2.0)
+          if (err_exponent == 2.0)
             delta_g *= delta_g;
           else
-            delta_g = pow(delta_g, template_compare_exponent);
+            delta_g = pow(delta_g, err_exponent);
 
           //if (! precompute_mask_times_source)
           delta_g *= 
@@ -543,22 +663,26 @@ public:
       g = 1.0;
 
     return g;
-  } // TemplateError()
+  } // _TemplateError()
 
-  
+
+
+
+
+  /// @brief Calculate the TemplateError() everywhere in the source array
+  ///        (aaafSource).  Store the result in aaafDest.
+  ///         This function was not intended for public use.
 
   void
-  ScanTemplateError(Integer const size_source[3], // size of the source image
-                    RealNum ***aaafSource,
-                    RealNum ***aaafDest,
-                    RealNum ***aaafC, //how much to scale template intensities
-                    RealNum ***aaafW, //weights used in all summations
-                    RealNum template_compare_exponent,
-                    RealNum ***aaafMask = NULL,
-                    //bool normalize = false,
-                    //bool precompute_mask_times_source = true,
-                    ostream *pReportProgress = NULL
-                    ) const
+  _ScanTemplateError(Integer const size_source[3], //!< size of the source array
+                     RealNum ***aaafSource, //!< source array
+                     RealNum ***aaafDest, //!< store the template error results here
+                     RealNum ***aaafC, //!< how much to scale template intensities
+                     RealNum ***aaafW, //!< weights used in all summations
+                     RealNum err_exponent=2, //!< exponent used for calculating error
+                     RealNum ***aaafMask = NULL, //!< optional: indicate which entries should be ignored
+                     ostream *pReportProgress = NULL //!< optional: print out the progress of the calculation
+                     ) const
   {
     if (pReportProgress)
       *pReportProgress << "  progress: processing plane#" << endl;
@@ -586,18 +710,22 @@ public:
                           aaafSource,
                           aaafC[iz][iy][ix],
                           aaafW,
-                          template_compare_exponent,
+                          err_exponent,
                           NULL); //aaafMask);
                           //normalize);
         }
       }
     }
-  } //ScanTemplateError()
+  } //_ScanTemplateError()
 
   #endif //#ifndef DISABLE_TEMPLATE_MATCHING
 
 
 
+ private:
+
+  /// @brief allocate space for the filter array
+  ///         This function was not intended for public use.
   void Alloc(Integer const set_halfwidth[3]) {
     //Integer array_size[3];
     for(Integer d=0; d < 3; d++) {
@@ -611,6 +739,8 @@ public:
           aaafH[iz][iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
   }
 
+  /// @brief allocate space used by the filter array
+  ///         This function was not intended for public use.
   void Dealloc() {
     //Integer array_size[3];
     for(Integer d=0; d < 3; d++) {
@@ -627,6 +757,17 @@ public:
     Alloc(set_halfwidth);
   }
 
+  void Init() {
+    halfwidth[0] = -1;
+    halfwidth[1] = -1;
+    halfwidth[2] = -1;
+    af = NULL;
+    aaafH = NULL;
+  }
+  
+
+ public:
+
   inline Filter3D<RealNum, Integer>&
     operator = (const Filter3D<RealNum, Integer>& source) {
     Resize(source.halfwidth); // allocates and initializes af and aaafH
@@ -640,15 +781,6 @@ public:
            ((1+2*halfwidth[0]) * (1+2*halfwidth[1]) * (1+2*halfwidth[2]))
            *sizeof(RealNum));
   } // operator = ()
-
-  void Init() {
-    halfwidth[0] = -1;
-    halfwidth[1] = -1;
-    halfwidth[2] = -1;
-    af = NULL;
-    aaafH = NULL;
-  }
-  
 
   Filter3D(Integer const set_halfwidth[3]) {
     Init();
@@ -669,37 +801,9 @@ public:
     Dealloc();
   }
 
-  RealNum Average(RealNum ***aaafW) {
-    return AverageArr(array_size, aaafH, aaafW);
-  }
 
-  RealNum AverageSqr(RealNum ***aaafW) {
-    return AveSqrArr(array_size, aaafH, aaafW);
-  }
-
-  RealNum StdDev(RealNum ***aaafW) {
-    return StdDevArr(array_size, aaafH, aaafW);
-  }
-
-  RealNum SumSqr(RealNum ***aaafW) {
-    return SumSqrArr(array_size, aaafH, aaafW);
-  }
-
-  RealNum Sum(RealNum ***aaafW) {
-    return SumArr(array_size, aaafH, aaafW);
-  }
-
-  void AddScalar(RealNum offset) {
-    AddScalarArr(offset, array_size, aaafH);
-  }
-
-  void MultiplyScalar(RealNum scale) {
-    MultiplyScalarArr(scale, array_size, aaafH);
-  }
-
-
+  /// @ brief   Make sure the sum of the filter weights (in aaafH) is 1
   void Normalize() {
-    // Make sure the sum of the filter weights is 1
     RealNum total = 0.0;
     for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
       for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
@@ -714,6 +818,54 @@ public:
             /= total;
   }
 
+  /// @brief Calculate the (weighted) average value of the filter array aaafH
+  /// @param aaafW optional weights used when calculating the averages
+  /// @return the (weighted) average value of the filter array aaafH
+  RealNum Average(RealNum ***aaafW=NULL) {
+    return AverageArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) average squared values in the filter array, aaafH
+  /// @param aaafW optional weights used when calculating the averages
+  /// @return the (weighted) average squared values in the filter array aaafH
+  RealNum AverageSqr(RealNum ***aaafW=NULL) {
+    return _AveSqrArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) standard deviation of the filter array values
+  /// @param aaafW optional weights used when calculating the standard deviation
+  /// @return the (weighted) standard deviation of the filter array aaafH
+  RealNum StdDev(RealNum ***aaafW=NULL) {
+    return StdDevArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) sum of the filter array values, aaafH
+  /// @param aaafW optional weights used when calculating the sum
+  /// @return the (weighted) sum of the filter array values
+  RealNum Sum(RealNum ***aaafW=NULL) {
+    return _SumArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) sum of the squared filter array values
+  /// @param aaafW optional weights used when calculating the sum
+  /// @return the (weighted) sum of the squared filter array values
+  RealNum SumSqr(RealNum ***aaafW=NULL) {
+    return _SumSqrArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Add a number to all of the filter array values, aaafH
+  /// @param offset  the number to add
+  void AddScalar(RealNum offset) {
+    _AddScalarArr(offset, array_size, aaafH);
+  }
+
+  /// @brief multiply all of the filter array values (aaafH) by a number
+  /// @param offset  the number to multiply
+  void MultiplyScalar(RealNum scale) {
+    _MultiplyScalarArr(scale, array_size, aaafH);
+  }
+
+
 }; // class Filter
 
 
@@ -721,20 +873,21 @@ public:
 
 
 
+/// @brief Create a 3D filter and fill it with a "generalized Gaussian" function
+///   @verbatim h(x,y,z) = A*exp(-r^m)  @endverbatim
+/// where  @verbatim r  = sqrt((x/s_x)^2 + (y/s_y)^2 + (z/s_z)^2) @endverbatim
+///   and  "A" is determined by normalization of the discrete sum
+/// @note "A" is equal to the value stored in the middle of the array,
+///       The caller can determine what "A" is by looking at this value.
 
 template<class RealNum>
-// Create a 3-D filter and fill it with a "generalized Gaussian" function:
-//   h(x,y,z) = A*exp(-r^m)
-// where   r  = sqrt((x/s_x)^2 + (y/s_y)^2 + (z/s_z)^2)
-//   and   A  is determined by normalization of the discrete sum
-// Note: "A" is equal to the value stored in the middle of the array,
-//       The caller can determine what "A" is by looking at this value.
 Filter3D<RealNum, int>
-GenFilterGenGauss3D(RealNum width[3],    //"s_x", "s_y", "s_z" parameters
-                    RealNum m_exp,       //"m" exponent parameter
-                    int truncate_halfwidth[3],
-                    RealNum *pA=NULL,    //optional:report A coeff to user
-                    ostream *pReportEquation = NULL)
+GenFilterGenGauss3D(RealNum width[3],    //!< "s_x", "s_y", "s_z" parameters
+                    RealNum m_exp,       //!< "m" exponent parameter
+                    int truncate_halfwidth[3], //!< size of filter window
+                    RealNum *pA=NULL,    //!< optional:report A coeff to user
+                    ostream *pReportEquation=NULL//!< optional:report equation used to the user
+                    )
 {
   RealNum window_threshold = 1.0;
   for (int d=0; d<3; d++) {
@@ -826,13 +979,24 @@ GenFilterGenGauss3D(RealNum width[3],    //"s_x", "s_y", "s_z" parameters
 
 
 
+
+
+
+/// @brief Create a 3D filter and fill it with a "generalized Gaussian" function
+///   @verbatim h(x,y,z) = A*exp(-r^m)  @endverbatim
+/// where  @verbatim r  = sqrt((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2) @endverbatim
+///   and  "A" is determined by normalization of the discrete sum
+/// @note "A" is equal to the value stored in the middle of the array (aaafH),
+///       The caller can determine what "A" is by looking at aaafH there
+
 template<class RealNum>
 Filter3D<RealNum, int>
-GenFilterGenGauss3D(RealNum width[3],          //"s_x", "s_y", "s_z" parameters
-                    RealNum m_exp,             //"m" parameter in formula
-                    RealNum filter_cutoff_ratio,
-                    RealNum *pA=NULL,    //optional:report A coeff to user
-                    ostream *pReportProgress = NULL)
+GenFilterGenGauss3D(RealNum width[3],    //!< "s_x", "s_y", "s_z" parameters
+                    RealNum m_exp,       //!< "m" parameter in formula
+                    RealNum filter_cutoff_ratio=2.5, //!< how many sigma (σ) before truncating?
+                    RealNum *pA=NULL,    //!< optional:report A coeff to user
+                    ostream *pReportEquation = NULL //!< optional:report equation used to the user
+                    )
 {
   // choose the width of the filter window based on the filter_cutoff_ratio
   int truncate_halfwidth[3];
@@ -845,7 +1009,7 @@ GenFilterGenGauss3D(RealNum width[3],          //"s_x", "s_y", "s_z" parameters
                              m_exp,
                              truncate_halfwidth,
                              pA,
-                             pReportProgress);
+                             pReportEquation);
 } //GenFilterGenGauss3D(width, m_exp, filter_cutoff_ratio)
 
 
@@ -853,23 +1017,26 @@ GenFilterGenGauss3D(RealNum width[3],          //"s_x", "s_y", "s_z" parameters
 
 
 
-// (The next function was not intended for public use)
+/// @brief  Create a 3D filter and fill it with a difference of (generalized) Gaussians 
+///
+/// This version requires that the caller has already created individual
+/// filters for the two gaussians.
+/// All this function does is subtract one filter from the other (and rescale).
+/// This function was not intended for public use
 
-// Create a 3-D filter and fill it with a difference of (generalized) Gaussians:
-// This version requires that the caller has already created individual
-// filters for the two gaussians.
-// All this function does is subtract one filter from the other (and rescale).
 template<class RealNum>
+static
 Filter3D<RealNum, int> 
-_GenFilterDogg3D(RealNum width_a[3],  //"a" parameter in formula
-                 RealNum width_b[3],  //"b" parameter in formula
-                 RealNum m_exp,  //"m" parameter in formula
-                 RealNum n_exp,  //"n" parameter in formula
-                 Filter3D<RealNum, int>& filter_A, //filters for the two
-                 Filter3D<RealNum, int>& filter_B, //gaussians
-                 RealNum *pA=NULL, //optional:report A,B coeffs to user
-                 RealNum *pB=NULL,
-                 ostream *pReportEquation = NULL)
+_GenFilterDogg3D(RealNum width_a[3],  //!< "a" parameter in formula
+                 RealNum width_b[3],  //!< "b" parameter in formula
+                 RealNum m_exp,  //!< "m" parameter in formula
+                 RealNum n_exp,  //!< "n" parameter in formula
+                 Filter3D<RealNum, int>& filter_A, //!< filters for the two
+                 Filter3D<RealNum, int>& filter_B, //!< gaussians
+                 RealNum *pA=NULL, //!< optional:report A,B coeffs to user
+                 RealNum *pB=NULL, //!< optional:report A,B coeffs to user
+                 ostream *pReportEquation = NULL //!< optional: report equation to the user
+                 )
 {
   RealNum A, B;
   //A, B = height of the central peak
@@ -1000,18 +1167,18 @@ _GenFilterDogg3D(RealNum width_a[3],  //"a" parameter in formula
 
 
 
-
+/// @brief Create a 3D filter and fill it with a difference of (generalized) Gaussians
 template<class RealNum>
-// Create a 3-D filter and fill it with a difference of (generalized) Gaussians:
 Filter3D<RealNum, int> 
-GenFilterDogg3D(RealNum width_a[3],   //"a" parameter in formula
-                RealNum width_b[3],   //"b" parameter in formula
-                RealNum m_exp,        //"m" parameter in formula
-                RealNum n_exp,        //"n" parameter in formula
-                int halfwidth[3],
-                RealNum *pA=NULL,     //optional:report A,B coeffs to user
-                RealNum *pB=NULL,     //optional:report A,B coeffs to user
-                ostream *pReportEquation = NULL) //optional: print params used?
+GenFilterDogg3D(RealNum width_a[3],   //!< "a" parameter in formula
+                RealNum width_b[3],   //!< "b" parameter in formula
+                RealNum m_exp,        //!< "m" parameter in formula
+                RealNum n_exp,        //!< "n" parameter in formula
+                int halfwidth[3],     //!< the width of the filter
+                RealNum *pA=NULL,     //!< optional:report A,B coeffs to user
+                RealNum *pB=NULL,     //!< optional:report A,B coeffs to user
+                ostream *pReportEquation = NULL //!< optional: print params used?
+                )
 {
   Filter3D<RealNum, int> filter_A =
     GenFilterGenGauss3D(width_a,      //"a_x", "a_y" gaussian width parameters
@@ -1036,15 +1203,18 @@ GenFilterDogg3D(RealNum width_a[3],   //"a" parameter in formula
 
 
 
-
-// (The next function was not intended for public use)
+// @brief _ApplyGauss3D applies a Gaussian filter on a 3D array.
+//        It assumes separate Filter1D objects have already been created 
+//        which will blur the image in each direction (x,y,z).
+//        This function was not intended for public use
 template<class RealNum>
+static
 RealNum
 _ApplyGauss3D(int const image_size[3], 
               RealNum ***aaafSource,
               RealNum ***aaafDest,
               RealNum ***aaafMask,
-              Filter1D<float, int> aFilter[3],
+              Filter1D<RealNum, int> aFilter[3],
               bool normalize = true,
               ostream *pReportProgress = NULL)
 {
@@ -1052,7 +1222,7 @@ _ApplyGauss3D(int const image_size[3],
   assert(aaafDest);
 
   // Optional
-  // The "A" 3-D Gaussian coefficient is the product of the
+  // The "A" 3D Gaussian coefficient is the product of the
   // 1-D Gaussian coefficients in the X,Y,Z directions.
   // Those coefficients happen to equal the value of the 1-D
   // Gaussian evaluated at its peak, which is stored in the central entry at
@@ -1065,15 +1235,15 @@ _ApplyGauss3D(int const image_size[3],
   // (I suppose if I really cared about speed, I could alter Filter1D::Apply() 
   //  function to use pointer arithmatic and allow large strides.
   //  This would also eliminate the need for these temporary arrays.)
-  float *aafSource[3];
-  float *aafDest[3];
-  float *aafMask[3];
+  RealNum *aafSource[3];
+  RealNum *aafDest[3];
+  RealNum *aafMask[3];
   for (int d=0; d < 3; d++) {
-    aafDest[d]   = new float [image_size[d]];
-    aafSource[d] = new float [image_size[d]];
+    aafDest[d]   = new RealNum [image_size[d]];
+    aafSource[d] = new RealNum [image_size[d]];
     aafMask[d]   = NULL;
     if (aaafMask)
-      aafMask[d] = new float [image_size[d]];
+      aafMask[d] = new RealNum [image_size[d]];
   }
 
   // This is a "separable" filter.
@@ -1202,23 +1372,33 @@ _ApplyGauss3D(int const image_size[3],
 
 
 
+/// @brief Apply a Gaussian filter (blur) to an image
+///
+/// @code h(x,y,z)=A*exp(-0.5*((x/σ_x)^2+(y/σ_y)^2+(z/σ_z)^2) @endcode
+/// In this version, the user manually specifies the filter window width.
+/// Voxels outside the boundary of the image or outside the mask are not
+/// considered during the averaging (blurring) process, and the resulting
+/// after blurring is weighted accordingly.  (normalize=true by default)
+///
+/// @returns the "A" coefficient (determined by normalization)
 
 template<class RealNum>
 RealNum
-ApplyGauss3D(int const image_size[3], 
-             RealNum ***aaafSource,
-             RealNum ***aaafDest,
-             RealNum ***aaafMask,
-             RealNum const sigma[3],
-             int const truncate_halfwidth[3],
-             bool normalize = true,
-             ostream *pReportProgress = NULL)
+ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
+             RealNum ***aaafSource,   //!< source image (3D array)
+             RealNum ***aaafDest,     //!< filtered (blurred) image stored here
+             RealNum ***aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+             RealNum const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
+             int const truncate_halfwidth[3], //!< the filter window width
+             bool normalize = true,           //!< normalize the average?
+             ostream *pReportProgress = NULL  //!< print progress to the user?
+             )
 {
   assert(aaafSource);
   assert(aaafDest);
   //assert(aaafMask);
   //Allocate filters in all 3 directions.  (Later apply them sequentially.)
-  Filter1D<float, int> aFilter[3];
+  Filter1D<RealNum, int> aFilter[3];
   for (int d=0; d < 3; d++)
     aFilter[d] = GenFilterGauss1D(sigma[d], truncate_halfwidth[d]);
 
@@ -1235,17 +1415,28 @@ ApplyGauss3D(int const image_size[3],
 
 
 
+/// @brief Apply a Gaussian filter (blur) to a 3D image
+///
+/// @code h(x,y,z)=A*exp(-0.5*((x/σ_x)^2+(y/σ_y)^2+(z/σ_z)^2) @endcode
+/// The constant "A" is determined by normalization.
+/// In this version, the user specifies the filter window-width in units of σ
+/// Voxels outside the boundary of the image or outside the mask are not
+/// considered during the averaging (blurring) process, and the resulting
+/// after blurring is weighted accordingly.  (normalize=true by default)
+///
+/// @returns the "A" coefficient (determined by normalization)
 
 template<class RealNum>
 RealNum
-ApplyGauss3D(int const image_size[3], 
-             RealNum ***aaafSource,
-             RealNum ***aaafDest,
-             RealNum ***aaafMask,
-             RealNum const sigma[3],
-             RealNum truncate_ratio,
-             bool normalize = true,
-             ostream *pReportProgress = NULL)
+ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
+             RealNum ***aaafSource,   //!< source image (3D array)
+             RealNum ***aaafDest,     //!< filtered (blurred) image stored here
+             RealNum ***aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+             RealNum const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
+             RealNum truncate_ratio = 2.5,  //!< how many sigma before truncating?
+             bool normalize = true,           //!< normalize the average?
+             ostream *pReportProgress = NULL  //!< print progress to the user?
+             )
 {
   RealNum A;
   int truncate_halfwidth[3];
@@ -1269,18 +1460,33 @@ ApplyGauss3D(int const image_size[3],
 
 
 
+
+
+/// @brief Apply a Difference-of-Gaussians filter to a 3D image
+///
+/// @code
+///  h(x,y,z) =   A*exp(-0.5 * ((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+///             - B*exp(-0.5 * ((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+/// @endcode
+/// The constants "A" and "B" are determined by normalization.
+/// In this version, the user manually specifies the filter window width.
+/// Voxels outside the boundary of the image or outside the mask are not
+/// considered during the averaging (blurring) process, and the resulting
+/// after blurring is weighted accordingly.  (normalize=true by default)
+
 template<class RealNum>
 void
-ApplyDog3D(int const image_size[3],
-           RealNum ***aaafSource,
-           RealNum ***aaafDest,
-           RealNum ***aaafMask,
-           RealNum const sigma_a[3],
-           RealNum const sigma_b[3],
-           int const truncate_halfwidth[3],//(half the filter width along x,y,z)
-           RealNum *pA = NULL,
-           RealNum *pB = NULL,
-           ostream *pReportProgress = NULL)
+ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
+           RealNum ***aaafSource,   //!< source image (3D array)
+           RealNum ***aaafDest,     //!< filtered (blurred) image stored here
+           RealNum ***aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+           RealNum const sigma_a[3], //!< (a_x, a_y, a_z) in the formula above
+           RealNum const sigma_b[3], //!< (b_x, b_y, b_z) in the formula above
+           int const truncate_halfwidth[3],//!<(half the filter window width along x,y,z)
+           RealNum *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+           RealNum *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
   RealNum ***aaafTemp; //temporary array to store partially processed tomogram
   RealNum *afTemp;     //temporary array to store partially processed tomogram
@@ -1340,18 +1546,35 @@ ApplyDog3D(int const image_size[3],
 
 
 
+/// @brief Apply a "scale free" Difference-of-Gaussians filter to a 3D image
+///
+/// @code
+///   h(x,y,z) = scale * ( A*exp(-0.5*r_a^2) - B*exp(-0.5*r_b^2) )
+///  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+///    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+///      a_x = σ_x*(1-0.5*δ), a_y = σ_y*(1-0.5*δ), a_z = σ_z*(1-0.5*δ)
+///      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
+///    scale = (1.0 / δ^2)
+/// @endcode
+/// The constants "A" and "B" are determined by normalization.
+/// In this version, the user manually specifies the filter window width.
+/// Voxels outside the boundary of the image or outside the mask are not
+/// considered during the averaging (blurring) process, and the resulting
+/// after blurring is weighted accordingly.  (normalize=true by default)
+
 template<class RealNum>
 void
-ApplyDogScaleFree3D(int const image_size[3], //source image size
-                    RealNum ***aaafSource,   //source image
-                    RealNum ***aaafDest,     //save results here
-                    RealNum ***aaafMask,     //ignore voxels where mask==0
-                    RealNum const sigma[3],  //Gaussian width in x,y,z drections
+ApplyDogScaleFree3D(int const image_size[3], //!< source image size
+                    RealNum ***aaafSource,   //!< source image
+                    RealNum ***aaafDest,     //!< save results here
+                    RealNum ***aaafMask,     //!< ignore voxels where mask==0
+                    RealNum const sigma[3],  //!< Gaussian width in x,y,z drections
                     RealNum delta_sigma_over_sigma, //difference in Gauss widths
-                    RealNum truncate_ratio, //how many sigma before truncating?
-                    RealNum *pA = NULL,
-                    RealNum *pB = NULL,
-                    ostream *pReportProgress = NULL)
+                    RealNum truncate_ratio,  //!< how many sigma before truncating?
+                    RealNum *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+                    RealNum *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+                    ostream *pReportProgress = NULL  //!< print progress to the user?
+                    )
 {
   // "-log" approximates to the "Laplacian of a Gaussian" ("DOG") filter
   // with the difference of two Gaussians ("DOG") filter.
@@ -1428,18 +1651,36 @@ ApplyDogScaleFree3D(int const image_size[3], //source image size
 
 
 
+
+/// @brief Apply a "scale free" Difference-of-Gaussians filter to a 3D image
+///
+/// @code
+///   h(x,y,z) = scale * ( A*exp(-0.5*r_a^2) - B*exp(-0.5*r_b^2) )
+///  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+///    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+///      a_x = σ_x*(1-0.5*δ), a_y = σ_y*(1-0.5*δ), a_z = σ_z*(1-0.5*δ)
+///      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
+///    scale = (1.0 / δ^2)
+/// @endcode
+/// The constants "A" and "B" are determined by normalization.
+/// In this version, the user specifies the filter window width in units of σ.
+/// Voxels outside the boundary of the image or outside the mask are not
+/// considered during the averaging (blurring) process, and the resulting
+/// after blurring is weighted accordingly.  (normalize=true by default)
+
 template<class RealNum>
 void
-ApplyDogScaleFree3D(int const image_size[3], //source image size
-                    RealNum ***aaafSource,   //source image
-                    RealNum ***aaafDest,     //save results here
-                    RealNum ***aaafMask,     //ignore voxels where mask==0
-                    RealNum sigma,  //Gaussian width in x,y,z drections
-                    RealNum delta_sigma_over_sigma, //difference in Gauss widths
-                    RealNum truncate_ratio,  //how many sigma before truncating?
-                    RealNum *pA = NULL,
-                    RealNum *pB = NULL,
-                    ostream *pReportProgress = NULL)
+ApplyDogScaleFree3D(int const image_size[3], //!< source image size
+                    RealNum ***aaafSource,   //!< source image
+                    RealNum ***aaafDest,     //!< save results here
+                    RealNum ***aaafMask,     //!< ignore voxels where mask==0
+                    RealNum sigma,  //!< Gaussian width in x,y,z drections
+                    RealNum delta_sigma_over_sigma, //!< δ, difference in Gauss widths
+                    RealNum truncate_ratio=2.5,  //!< how many sigma before truncating?
+                    RealNum *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+                    RealNum *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+                    ostream *pReportProgress = NULL  //!< print progress to the user?
+                    )
 {
   RealNum sigma_xyz[3] = {sigma, sigma, sigma};
   ApplyDogScaleFree3D(image_size,
@@ -1456,29 +1697,37 @@ ApplyDogScaleFree3D(int const image_size[3], //source image size
 
 
 
-// Find all scale-invariant blobs in the image:
+
+/// @brief Find all scale-invariant blobs in the image as a function of sigma
+///        regardless of overlap.  (Blobs with poor scores can be discarded)
+///        Discard blobs with poor scores or large overlap with other blobs.
+///
+/// Algorithm described in:
+///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
+
 template<class RealNum>
 void
-BlobDog3D(int const image_size[3], //source image size
-          RealNum ***aaafSource,   //source image
-          RealNum ***aaafMask,     //ignore voxels where mask==0
-          const vector<RealNum>& blob_widths, // blob widths to try, ordered
-          vector<array<int,3> >& minima_crds, // store minima x,y,z coords here
-          vector<array<int,3> >& maxima_crds, // store maxima x,y,z coords here
-          vector<RealNum>& minima_sigma, // corresponding width for that minima
-          vector<RealNum>& maxima_sigma, // corresponding width for that maxima
-          vector<RealNum>& minima_scores, // what was the blob's score?
-          vector<RealNum>& maxima_scores, // (score = intensity after filtering)
-          RealNum delta_sigma_over_sigma,// param for approximating LOG with DOG
-          RealNum truncate_ratio,      // how many sigma before truncating?
-          RealNum minima_threshold,    // discard blobs with unremarkable scores
-          RealNum maxima_threshold,    // discard blobs with unremarkable scores
-          bool use_threshold_ratios=true, // threshold=ratio*best_score ?
-          // optional arguments
-          ostream *pReportProgress = NULL, // report progress to the user?
-          RealNum ****aaaafI = NULL, //preallocated memory for filtered images
-          RealNum **aafI = NULL)     //preallocated memory for filtered images
-                                     //(sometimes the caller wants to access)
+BlobDog(int const image_size[3], //!< source image size
+        RealNum ***aaafSource,   //!< source image
+        RealNum ***aaafMask,     //!< ignore voxels where mask==0
+        const vector<RealNum>& blob_sigma, //!< blob widths to try, ordered
+        vector<array<RealNum,3> >& minima_crds, //!< store minima x,y,z coords here
+        vector<array<RealNum,3> >& maxima_crds, //!< store maxima x,y,z coords here
+        vector<RealNum>& minima_sigma, //!< corresponding width for that minima
+        vector<RealNum>& maxima_sigma, //!< corresponding width for that maxima
+        vector<RealNum>& minima_scores, //!< what was the blob's score?
+        vector<RealNum>& maxima_scores, //!< (score = intensity after filtering)
+        RealNum delta_sigma_over_sigma,//!< δ param for approximating LOG with DOG
+        RealNum truncate_ratio,      //!< how many sigma before truncating?
+        RealNum minima_threshold=0.0,    //!< discard blobs with unremarkable scores
+        RealNum maxima_threshold=0.0,    //!< discard blobs with unremarkable scores
+        bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
+        // optional arguments
+        ostream *pReportProgress = NULL, //!< optional: report progress to the user?
+        RealNum ****aaaafI = NULL, //!<optional: preallocated memory for filtered images (indexable)
+        RealNum **aafI = NULL      //!<optional: preallocated memory for filtered images (contiguous)
+        )
+
 {
 
   // We need 3 images to store the result of filtering the image
@@ -1509,23 +1758,24 @@ BlobDog3D(int const image_size[3], //source image size
   }
 
 
-  float global_minima_score = 1.0;  //impossible, minima < 0
-  float global_maxima_score = -1.0; //impossible, maxima > 0
-  bool disable_thresholds = ((! use_threshold_ratios) &&
-                             (minima_threshold >= maxima_threshold));
+  RealNum global_minima_score = 1.0;  //impossible, minima < 0
+  RealNum global_maxima_score = -1.0; //impossible, maxima > 0
+
+  //REMOVE THIS CRUFT:
+  //bool disable_thresholds = ((! use_threshold_ratios) &&
+  //                           (minima_threshold >= maxima_threshold));
 
   if (pReportProgress)
     *pReportProgress << "\n----- Blob detection initiated using "
-                     << blob_widths.size() << " trial Gaussians -----\n\n";
+                     << blob_sigma.size() << " trial Gaussians -----\n\n";
 
-  for (int ir = 0; ir < blob_widths.size(); ir++) {
+  for (int ir = 0; ir < blob_sigma.size(); ir++) {
 
     if (pReportProgress)
       *pReportProgress
-        << "-- Progress: "<<ir+1<<"/"<<blob_widths.size()
-        <<", sigma[" << ir << "]="
-        << blob_widths[ir]
-        << " (in voxels) --\n";
+        << "-- Progress: "<<ir+1<<"/"<<blob_sigma.size() << "\n"
+        << "--- Applying DOG filter using sigma[" << ir << "] = "
+        << blob_sigma[ir] << " (in voxels) ---\n";
 
     // Run the image through a DOG filter with the currently selected width.
     // Compare the resulting filtered image with filtered images
@@ -1536,11 +1786,6 @@ BlobDog3D(int const image_size[3], //source image size
     //   ... -then- it is a local maximum in 4-dimensional X,Y,Z,R space.
     // Keep track of all of these X,Y,Z,R local maxima voxels and their values
     // (and the local minima as well).
-
-    if (pReportProgress)
-      *pReportProgress
-        << "--- Applying DOG filter using sigma[" << ir << "] = "
-        << blob_widths[ir] << " (in voxels) ---\n";
 
     // We are going to apply a DOG filter to the original image and
     // store it in the aaaaf array.
@@ -1564,7 +1809,7 @@ BlobDog3D(int const image_size[3], //source image size
                         aaafSource,
                         aaaafI[j2i[1]], //<-store the most recent filtered image
                         aaafMask,
-                        blob_widths[ir],
+                        blob_sigma[ir],
                         delta_sigma_over_sigma,
                         truncate_ratio);
 
@@ -1573,16 +1818,16 @@ BlobDog3D(int const image_size[3], //source image size
       continue;
 
     // The blob widths should be ordered consistently (increasing or decreasing)
-    assert(((blob_widths[ir-2] < blob_widths[ir-1]) &&   //increasing order
-            (blob_widths[ir-1] < blob_widths[ir])) ||    
-           ((blob_widths[ir-2] > blob_widths[ir-1]) &&   //decreasing order
-            (blob_widths[ir-1] > blob_widths[ir])));
+    assert(((blob_sigma[ir-2] < blob_sigma[ir-1]) &&   //increasing order
+            (blob_sigma[ir-1] < blob_sigma[ir])) ||    
+           ((blob_sigma[ir-2] > blob_sigma[ir-1]) &&   //decreasing order
+            (blob_sigma[ir-1] > blob_sigma[ir])));
 
 
     if (pReportProgress)
       *pReportProgress
-        << "--- searching for local minima & maxima at sigma[" << ir-1 << "] = "
-        << blob_widths[ir-1] << " ---\n";
+        << "--- searching for local minima & maxima with width[" << ir-1 << "] = "
+        << blob_sigma[ir-1]*2.0*sqrt(3) << " ---\n";
 
     // As we are looking for local minima and maxima we need to
     // keep track of the best scores so far
@@ -1639,37 +1884,39 @@ BlobDog3D(int const image_size[3], //source image size
 
           if ((! aaafMask) || (aaafMask[iz][iy][ix] != 0))
           {
-            float minima_threshold_so_far = minima_threshold;
+            RealNum minima_threshold_so_far = minima_threshold;
             if (use_threshold_ratios)
               minima_threshold_so_far = minima_threshold*global_minima_score;
             if (is_minima &&
                 (score < 0.0) &&
-                ((score < minima_threshold_so_far) || disable_thresholds))
+                ((score < minima_threshold_so_far) // || disable_thresholds
+                 ))   
             {
-              array<int, 3> ixiyiz;
+              array<RealNum, 3> ixiyiz;
               ixiyiz[0] = ix;
               ixiyiz[1] = iy;
               ixiyiz[2] = iz;
               minima_crds.push_back(ixiyiz);
-              minima_sigma.push_back(blob_widths[ir-1]);
+              minima_sigma.push_back(blob_sigma[ir-1]);
               minima_scores.push_back(score);
               if (score < global_minima_score)
                 global_minima_score = score;
             }
 
-            float maxima_threshold_so_far = maxima_threshold;
+            RealNum maxima_threshold_so_far = maxima_threshold;
             if (use_threshold_ratios)
               maxima_threshold_so_far = maxima_threshold*global_maxima_score;
             if (is_maxima &&
                 (score > 0.0) &&
-                ((score > maxima_threshold_so_far) || disable_thresholds))
+                ((score > maxima_threshold_so_far) // || disable_thresholds
+                 ))   
             {
-              array<int, 3> ixiyiz;
+              array<RealNum, 3> ixiyiz;
               ixiyiz[0] = ix;
               ixiyiz[1] = iy;
               ixiyiz[2] = iz;
               maxima_crds.push_back(ixiyiz);
-              maxima_sigma.push_back(blob_widths[ir-1]);
+              maxima_sigma.push_back(blob_sigma[ir-1]);
               maxima_scores.push_back(score);
               if (score > global_maxima_score)
                 global_maxima_score = score;
@@ -1691,46 +1938,48 @@ BlobDog3D(int const image_size[3], //source image size
     assert((maxima_crds.size() == maxima_sigma.size()) &&
            (maxima_crds.size() == maxima_scores.size()));
 
-  } //for (ir = 0; ir < blob_widths.size(); ir++)
+  } //for (ir = 0; ir < blob_sigma.size(); ir++)
 
 
   if (use_threshold_ratios) {
-    // Now that we know what the true global minima and maxima are,
-    // go back and discard maxima whose scores are not higher than
-    // maxima_threshold * global_maxima_score.
-    // (Do the same for local minima as well.)
-    int i;
-    i = 0;
-    while (i < minima_scores.size()) {
-      assert(minima_scores[i] < 0.0);
-      if (minima_scores[i] >= minima_threshold * global_minima_score) {
-        // delete this blob
-        minima_crds.erase(minima_crds.begin() + i,
-                          minima_crds.begin() + i + 1);
-        minima_sigma.erase(minima_sigma.begin() + i,
-                           minima_sigma.begin() + i + 1);
-        minima_scores.erase(minima_scores.begin() + i,
-                            minima_scores.begin() + i + 1);
-      }
-      else
-        i++;
+    minima_threshold *= global_minima_score;
+    maxima_threshold *= global_maxima_score;
+  }
+  // Now that we know what the true global minima and maxima are,
+  // go back and discard maxima whose scores are not higher than
+  // maxima_threshold * global_maxima_score.
+  // (Do the same for local minima as well.)
+  int i;
+  i = 0;
+  while (i < minima_scores.size()) {
+    assert(minima_scores[i] < 0.0);
+    if (minima_scores[i] >= minima_threshold) {
+      // delete this blob
+      minima_crds.erase(minima_crds.begin() + i,
+                        minima_crds.begin() + i + 1);
+      minima_sigma.erase(minima_sigma.begin() + i,
+                         minima_sigma.begin() + i + 1);
+      minima_scores.erase(minima_scores.begin() + i,
+                          minima_scores.begin() + i + 1);
     }
-    i = 0;
-    while (i < maxima_scores.size()) {
-      assert(maxima_scores[i] > 0.0);
-      if (maxima_scores[i] <= maxima_threshold * global_maxima_score) {
-        // delete this blob
-        maxima_crds.erase(maxima_crds.begin() + i,
-                          maxima_crds.begin() + i + 1);
-        maxima_sigma.erase(maxima_sigma.begin() + i,
-                           maxima_sigma.begin() + i + 1);
-        maxima_scores.erase(maxima_scores.begin() + i,
-                            maxima_scores.begin() + i + 1);
-      }
-      else
-        i++;
+    else
+      i++;
+  }
+  i = 0;
+  while (i < maxima_scores.size()) {
+    assert(maxima_scores[i] > 0.0);
+    if (maxima_scores[i] <= maxima_threshold) {
+      // delete this blob
+      maxima_crds.erase(maxima_crds.begin() + i,
+                        maxima_crds.begin() + i + 1);
+      maxima_sigma.erase(maxima_sigma.begin() + i,
+                         maxima_sigma.begin() + i + 1);
+      maxima_scores.erase(maxima_scores.begin() + i,
+                          maxima_scores.begin() + i + 1);
     }
-  } // if (use_threshold_ratios)
+    else
+      i++;
+  }
 
 
   if (! preallocated) {
@@ -1748,10 +1997,228 @@ BlobDog3D(int const image_size[3], //source image size
     delete [] aafI;
   }
 
-} //BlobDog3D()
+} //BlobDog()
 
 
-//apply permutation in-place, credit: Raymond Chen
+
+/// @brief Find all scale-invariant blobs in the image as a function of diameter
+///        regardless of overlap.  (Blobs with poor scores can be discarded.)
+///
+/// Algorithm described in:
+///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
+/// This version refers to blobs by their diameter (instead of "sigma").
+/// This version can discard blobs which overlap with existing blobs.
+/// (This is sometimes called "non-max suppression".)
+
+template<class RealNum>
+void
+BlobDogD(int const image_size[3], //!<source image size
+         RealNum ***aaafSource,   //!<source image
+         RealNum ***aaafMask,     //!<ignore voxels where mask==0
+         const vector<RealNum>& blob_diameters, //!<blob widths to try, ordered
+         vector<array<RealNum,3> >& minima_crds, //!<store minima x,y,z coords here
+         vector<array<RealNum,3> >& maxima_crds, //!<store maxima x,y,z coords here
+         vector<RealNum>& minima_diameters, //!<corresponding width for that minima
+         vector<RealNum>& maxima_diameters, //!<corresponding width for that maxima
+         vector<RealNum>& minima_scores, //!<what was the blob's score?
+         vector<RealNum>& maxima_scores, //!<(score = intensity after filtering)
+         // optional arguments
+         RealNum delta_sigma_over_sigma=0.02,//!<param for approximating LOG with DOG
+         RealNum truncate_ratio=2.5,    //!<how many sigma before truncating?
+         RealNum minima_threshold=0.5,  //!<discard blobs with unremarkable scores
+         RealNum maxima_threshold=0.5,  //!<discard blobs with unremarkable scores
+         bool    use_threshold_ratios=true, //!<threshold=ratio*best_score?
+         ostream *pReportProgress = NULL, //!<report progress to the user?
+         RealNum ****aaaafI = NULL, //!<preallocated memory for filtered images
+         RealNum **aafI = NULL     //!<preallocated memory for filtered images (conserve memory)
+         )
+{
+
+  vector<RealNum> minima_sigma;
+  vector<RealNum> maxima_sigma;
+  vector<RealNum> blob_sigma(blob_diameters.size());
+  for (int i=0; i < blob_diameters.size(); i++)
+    blob_sigma[i] = blob_diameters[i]/(2.0*sqrt(3));
+
+  BlobDog(image_size,
+          aaafSource,
+          aaafMask,
+          blob_sigma,
+          minima_crds,
+          maxima_crds,
+          minima_sigma,
+          maxima_sigma,
+          minima_scores,
+          maxima_scores,
+          delta_sigma_over_sigma,
+          truncate_ratio,
+          minima_threshold,
+          maxima_threshold,
+          use_threshold_ratios,
+          pReportProgress,
+          aaaafI,
+          aafI);
+
+  minima_diameters.resize(minima_sigma.size());
+  for (int i=0; i < minima_sigma.size(); i++)
+    minima_diameters[i] = minima_sigma[i] * 2.0 * sqrt(3);
+
+  maxima_diameters.resize(maxima_sigma.size());
+  for (int i=0; i < maxima_sigma.size(); i++)
+    maxima_diameters[i] = maxima_sigma[i] * 2.0 * sqrt(3);
+
+} // BlobDogD()
+
+
+
+
+
+/// @brief  Create a 3D image containing multiple spheres (or spherical shells)
+///         various sizes, thicknesses, and locations, specified by the caller.
+///         The resulting spheres can (optionally) be superimposed with the
+///         existing image (if aaafImage contains data).  This is done by 
+///         rescaling the background image voxel brightnesses.
+
+template<class RealNum>
+void
+VisualizeBlobs(int const image_size[3], //!< image size
+               RealNum ***aaafImage,  //!< array where we should write new image
+               RealNum ***aaafMask,   //!< ignore voxels where mask==0
+               vector<array<RealNum,3> > &centers, //!< center of each blob
+               vector<RealNum> &diameters,         //!< diameter of eachs pherical shell (in voxels)
+               vector<RealNum> &shell_thicknesses, //!< how thick is each spherical shell (in voxels)
+               vector<RealNum> &voxel_intensities_foreground, //!< voxels in spherical shell get this value
+               RealNum voxel_intensity_background = 0.0, //!< assign background voxels to this value
+               RealNum voxel_intensity_background_rescale = 0.25, //!< superimpose with old image? Which weight?
+               bool voxel_intensity_foreground_normalize = false, //!< divide brightnesses by number of voxels in spherical shell? (rarely useful)
+	       ostream *pReportProgress = NULL //!<optional: report progress to the user?
+               )
+{
+
+  RealNum tomo_ave  =  AverageArr(image_size,
+                                  aaafImage,
+                                  aaafMask);
+  RealNum tomo_stddev  =  StdDevArr(image_size,
+                                    aaafImage,
+                                    aaafMask);
+
+  double score_sum_sq = 0.0;
+  for (int i = 0; i < voxel_intensities_foreground.size(); i++)
+    score_sum_sq += SQR(voxel_intensities_foreground[i]);
+
+  double score_rms = sqrt(score_sum_sq / voxel_intensities_foreground.size());
+
+  // The spherical shells will have brightnesses chosen according to their
+  // scores. Rescale the tomogram intensities so that they are approximately
+  // in the range of scores.  This way we can see both at the same time
+  // (when viewing the tomogram using IMOD, for example)
+  for (int iz = 0; iz < image_size[2]; iz++) {
+    for (int iy = 0; iy < image_size[1]; iy++) {
+      for (int ix = 0; ix < image_size[0]; ix++) {
+        aaafImage[iz][iy][ix] =
+          ((aaafImage[iz][iy][ix] - tomo_ave) / tomo_stddev)
+          *
+          score_rms
+          *
+          voxel_intensity_background_rescale;
+      }
+    }
+  }
+
+
+  for (int iz=0; iz<image_size[2]; iz++)
+    for (int iy=0; iy<image_size[1]; iy++)
+      for (int ix=0; ix<image_size[0]; ix++)
+        aaafImage[iz][iy][ix] += voxel_intensity_background;
+
+
+  for (int i = 0; i < centers.size(); i++) {
+    if (pReportProgress)
+      *pReportProgress << "processing coordinates " << i+1 << " / "
+           << centers.size() << ": x,y,z(in_voxels)="
+           << centers[i][0] << "," << centers[i][1] << "," << centers[i][2];
+
+    if ((centers[i][0] < 0) || (centers[i][1] < 0) || (centers[i][2] < 0) ||
+        (centers[i][0] >= image_size[0]) ||
+        (centers[i][1] >= image_size[1]) ||
+        (centers[i][2] >= image_size[2]))
+        throw InputErr("Error: Coordinates in the text file lie outside the boundaries of the image.\n"
+                       "       Did you set the voxel width correctly?\n"
+                       "       (Did you use the \"-w\" argument?)\n");
+      
+    if (aaafMask &&
+        (aaafMask[static_cast<int>(centers[i][2])]
+                 [static_cast<int>(centers[i][1])]
+                 [static_cast<int>(centers[i][0])] == 0.0))
+      continue;
+
+    int Rs = ceil(diameters[i]/2-0.5);
+    if (Rs < 0) Rs = 0;
+    RealNum Rssqr_max = SQR(diameters[i]/2);
+    RealNum Rssqr_min = 0.0;
+    if ((shell_thicknesses[i] > 0.0) && (diameters[i]/2 - shell_thicknesses[i] > 0.0))
+      Rssqr_min = SQR(diameters[i]/2 - shell_thicknesses[i]);
+
+    if (pReportProgress)
+      *pReportProgress << ", diameter=" << diameters[i] << ", th=" << shell_thicknesses[i]
+                       <<"\n";
+
+    // Normalize the brightness of each sphere?
+    // (ie by dividing the intensity by the number of voxels in the sphere)
+    RealNum imultiplier = 1.0;
+    long nvoxelspersphere = 1;
+    if (voxel_intensity_foreground_normalize) {
+      nvoxelspersphere = 0;
+      for (int jz = -Rs; jz <= Rs; jz++) {
+        for (int jy = -Rs; jy <= Rs; jy++) {
+          for (int jx = -Rs; jx <= Rs; jx++) {
+            RealNum rsqr = jx*jx + jy*jy + jz*jz;
+            if ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max))
+              nvoxelspersphere++;
+          }
+        }
+      }
+    }
+    imultiplier = 1.0 / nvoxelspersphere;
+    for (int jz = -Rs; jz <= Rs; jz++) {
+      for (int jy = -Rs; jy <= Rs; jy++) {
+        for (int jx = -Rs; jx <= Rs; jx++) {
+          int rsqr = jx*jx + jy*jy + jz*jz;
+          if (! ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max)))
+            continue;
+          else if ((centers[i][0] + jx < 0) ||
+                   (centers[i][0] + jx >= image_size[0]) ||
+                   (centers[i][1] + jy < 0) ||
+                   (centers[i][1] + jy >= image_size[1]) ||
+                   (centers[i][2] + jz < 0) ||
+                   (centers[i][2] + jz >= image_size[2]))
+            continue;
+          else if (aaafMask
+                   &&
+                   (aaafMask[static_cast<int>(centers[i][2])+jz]
+                            [static_cast<int>(centers[i][1])+jy]
+                            [static_cast<int>(centers[i][0])+jx]
+                    == 0.0))
+            continue;
+          else
+            aaafImage[static_cast<int>(centers[i][2])+jz]
+                     [static_cast<int>(centers[i][1])+jy]
+                     [static_cast<int>(centers[i][0])+jx] =
+                          voxel_intensities_foreground[i] * imultiplier;
+        }
+      }
+    }
+  } //for (int i = 0; i < centers.size(); i++) {
+
+} //VisualizeBlobs()
+
+
+
+
+
+/// @brief apply permutation in-place
+///
+/// credit: Raymond Chen
 template<class T>
 void
 apply_permutation(vector<T>& v,
@@ -1765,18 +2232,21 @@ apply_permutation(vector<T>& v,
 
 
 
+
+/// @brief sort blobs by their scores
 template<class RealNum>
 void
-SortBlobs(vector<array<int,3> >& blob_crds,
-          vector<RealNum>& blob_sigma, 
-          vector<RealNum>& blob_scores,
-          bool descending_order = true, //sort scores in ascending or descending order?
-          ostream *pReportProgress = NULL)
+SortBlobs(vector<array<RealNum,3> >& blob_crds, //!< x,y,z of each blob's center
+          vector<RealNum>& blob_diameters,  //!< the width of each blob
+          vector<RealNum>& blob_scores,  //!< the score for each blob
+          bool descending_order = true, //!<sort scores in ascending or descending order?
+          ostream *pReportProgress = NULL //!< optional: report progress to the user?
+          )
 { 
   size_t n_blobs = blob_crds.size();
-  assert(n_blobs == blob_sigma.size());
+  assert(n_blobs == blob_diameters.size());
   assert(n_blobs == blob_scores.size());
-  vector<tuple<float, size_t> > score_index(n_blobs);
+  vector<tuple<RealNum, size_t> > score_index(n_blobs);
   for (size_t i = 0; i < n_blobs; i++)
     score_index[i] = make_tuple(blob_scores[i], i);
 
@@ -1794,31 +2264,83 @@ SortBlobs(vector<array<int,3> >& blob_crds,
       permutation[i] = get<1>(score_index[i]);
     score_index.clear();
     apply_permutation(blob_crds,  permutation);
-    apply_permutation(blob_sigma, permutation);
+    apply_permutation(blob_diameters, permutation);
     apply_permutation(blob_scores, permutation);
     if (pReportProgress)
       *pReportProgress << "done --" << endl;
   }
 } //SortBlobs()
-          
-          
+
+
+
+
+
+/// @brief  Calculate the volume of overlap between two spheres of radius 
+///         Ri and Rj separated by a distance of rij.
 
 template<class RealNum>
-void
-DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
-                        vector<RealNum>& blob_sigma, 
-                        vector<RealNum>& blob_scores,
-                        bool descending_order, //sort scores in ascending or descending order?
-                        float min_separation,
-                        int const occupancy_table_size[3],
-                        ostream *pReportProgress = NULL)
+RealNum CalcVolOverlap(RealNum rij,//!<the distance between the spheres' centers
+                       RealNum Ri, //!< the radius of sphere i
+                       RealNum Rj  //!< the radius of sphere j
+                       )
 {
-  if (pReportProgress)
-    *pReportProgress
-      << "     -- Attempting to allocate space for one more image map --\n"
-      << "     -- (If this crashes your computer, find a computer     --\n"
-      << "     --  with more RAM and use \"ulimit\")                    --\n";
+  // WLOG, assume Ri <= Rj.  Insure that below
+  if (Ri > Rj) {
+    RealNum tmp = Ri;
+    Ri = Rj;
+    Rj = tmp;
+  }
+  if (rij <= Ri) {
+    return (4*M_PI/3) * Ri*Ri*Ri;
+  }
 
+  // "xi" and "xj" are the distances from the sphere centers
+  // to the plane where the two spheres intersect.
+  RealNum xi = 0.5 * (1.0/rij) * (rij*rij + Ri*Ri - Rj*Rj);
+  RealNum xj = 0.5 * (1.0/rij) * (rij*rij + Rj*Rj - Ri*Ri);
+  RealNum volume_overlap =
+    (M_PI/3)*( Ri*Ri*Ri * (1 + SQR(xi/Ri)) * (1 - (xi/Ri)) +
+               Rj*Rj*Rj * (1 + SQR(xj/Rj)) * (1 - (xj/Rj)) );
+  return volume_overlap;
+}
+
+
+
+/// @brief these options tell "DiscardOverlappingBlobs" how to give
+/// priority to different blobs based on their score (ie, minima or maxima?)
+typedef enum eSortBlobCriteria {
+  DO_NOT_SORT,
+  PRIORITIZE_HIGH_SCORES,
+  PRIORITIZE_LOW_SCORES
+} SortBlobCriteria;
+
+
+
+/// @brief nonmax suppression for blobs
+///
+///   Blobs can either be discarded because the distance between their centers
+///   exceeds the sum of their (*min_radial_separation_ratio)
+///   OR because the overlapping volume exceeds the volume of the larger sphere
+///   (after multiplication by max_volume_overlap_large)
+///   OR because the overlapping volume exceeds the volume of the smaller sphere
+///   (after multiplication by max_volume_overlap_small)
+///
+///   In this function, the width of each blob is located in an array storing
+///   their diameters (instead of their corresponding "sigma" values).
+template<class RealNum>
+void
+DiscardOverlappingBlobs(vector<array<RealNum,3> >& blob_crds,
+                        vector<RealNum>& blob_diameters, 
+                        vector<RealNum>& blob_scores,
+                        SortBlobCriteria sort_blob_criteria, //!< priority to high or low scoring blobs?
+                        RealNum min_radial_separation_ratio, //!< discard blobs too close
+                        RealNum max_volume_overlap_large, //!< discard blobs which overlap too much with the large blob
+                        RealNum max_volume_overlap_small, //!< discard blobs which overlap too much with the small blob
+                        ostream *pReportProgress = NULL, //!< report progress back to the user?
+                        int scale=6 //!<occupancy_table_size shrunk by this much
+                                    //!<relative to source (necessary to reduce memory usage)
+                        )
+{
   // Strategy:
   // 1) Sort the blobs in order of their scores: from good scores, to bad scores
   // 2) Beginning with the best scoring blobs and proceeding downwards,
@@ -1826,170 +2348,175 @@ DiscardOverlappingBlobs(vector<array<int,3> >& blob_crds,
   //    came before it (which score better).
   // 3) If there is an overlap, delete it from the list.
 
-  SortBlobs(blob_crds,
-            blob_sigma, 
-            blob_scores,
-            descending_order,
-            pReportProgress);
+  if (sort_blob_criteria == PRIORITIZE_HIGH_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              true,
+              pReportProgress);
+  else if (sort_blob_criteria == PRIORITIZE_LOW_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              false,
+              pReportProgress);
+
 
   if (pReportProgress)
     *pReportProgress
-      << "-- Detecting collisions between blobs (this can take a while) --\n";
+      << "     -- Attempting to allocate space for one more image map --\n"
+      << "     -- (If this crashes your computer, find a computer     --\n"
+      << "     --  with more RAM and use \"ulimit\")                    --\n";
 
-  // Implementation detail:
-  //    To check to see whether blobs overlap, it would be inefficient to
-  // compare that blob with all the blobs which came before it
-  // (O(n_blobs^2), where "n_blobs", could easily be 10^5 or larger.)
-  //    Instead we create a new image of voxels containing true/false values.
-  // Voxels in the image belonging to one of the blobs are assigned a "true".
-  // This occurs if they lie within a distance of:
-  //    min_separation * σ
-  // from the center of that blob.
-  // This provides us with a fast (O(1)) way to check if a given blob 
-  // overlaps with any preceeding blobs.
-  // (NOTE: In practice, this means that min_separation is measured in
-  //        of the units of sigma (σ), which, in typical usage, is a Gaussian
-  //        width parameter describing thab blob, not the blob's radius.
-  //        In 3-dimensions the radius would be r≈σ√3.)
+  // Occupancy table
+  //     (originally named "bool ***aaabOcc")
+  // This table stores a list of blobs which occupy a given voxel.
+
+  int occupancy_table_size[3];
+  int bounds_min[3] = {0, 0, 0};
+  int bounds_max[3] = {-1, -1, -1};
+  
+  for (int i=0; i < blob_crds.size(); i++) {
+    for (int d=0; d < 3; d++) {
+      RealNum reff = ceil(blob_diameters[i]/2); //blob radii in units of voxels
+      if ((blob_crds[i][d] - reff < bounds_min[d]) ||
+          (bounds_min[d] > bounds_max[d]))
+        bounds_min[d] = blob_crds[i][d] - reff;
+      if ((blob_crds[i][d] + reff > bounds_max[d]) ||
+          (bounds_min[d] > bounds_max[d]))
+        bounds_max[d] = blob_crds[i][d] + reff;
+    }
+  }
+
+  // Because it is such an enormous table, the size of the table does not equal
+  // the size of the original image. Instead we reduce it by a factor of "scale"
+  for (int d=0; d < 3; d++)
+    occupancy_table_size[d] = (1 + bounds_max[d] - bounds_min[d]) / scale;
 
 
-  bool *abOccupied;
-  bool ***aaabOccupied;
-  Alloc3D(occupancy_table_size,
-          &abOccupied,
-          &aaabOccupied);
-  for(int iz = 0; iz < occupancy_table_size[2]; iz++)
-    for(int iy = 0; iy < occupancy_table_size[1]; iy++)
-      for(int ix = 0; ix < occupancy_table_size[0]; ix++)
-        aaabOccupied[iz][iy][ix] = false;
+  //vector<vector<vector<vector size_t> > > >  
+  //  vvvvOcc(occupancy_table_size[3],
+  //          vector<
+  //          vector<
+  //          <vector size_t>(0)
+  //          >(occupancy_table_size[1])
+  //          >(occupancy_table_size[2])
+  //          );
+  //
+  // The nested for-loop below is less confusing, so I use this instead:
+
+  vector<vector<vector<vector<size_t> > > > vvvvOcc(occupancy_table_size[2]);
+  for(int iz = 0; iz < occupancy_table_size[2]; iz++) {
+    vvvvOcc[iz] = vector<vector<vector<size_t> > >(occupancy_table_size[1]);
+    for(int iy = 0; iy < occupancy_table_size[1]; iy++) {
+      vvvvOcc[iz][iy] = vector<vector<size_t> >(occupancy_table_size[0]);
+      //for(int ix = 0; ix < occupancy_table_size[0]; ix++) {
+      //  vvvvOcc[iz][iy][ix] = vector<size_t>(0);
+      //}
+    }
+  }
+
+  if (pReportProgress)
+    *pReportProgress
+      << "     -- done                                                --\n\n";
+
+
+  if (pReportProgress)
+    *pReportProgress
+      << " Detecting collisions between blobs... \n";
+
+
+
+  // Loop through all of the blobs and fill the occupancy table.  If a given
+  // blob overlaps with an existing blob (presumabely with a better score),
+  // then we check to see how much they overlap before deciding whether to
+  // discard the new blob.
 
   size_t i = 0;
   while (i < blob_crds.size()) {
     size_t n_blobs = blob_crds.size();
-    assert(n_blobs == blob_sigma.size());
+    assert(n_blobs == blob_diameters.size());
     assert(n_blobs == blob_scores.size());
     bool discard = false;
-    float reff = min_separation * blob_sigma[i];
-    int Reff = ceil(reff);
-    int Reffsq = ceil(reff*reff);
-    int ix = blob_crds[i][0];
-    int iy = blob_crds[i][1];
-    int iz = blob_crds[i][2];
-    for(int jz = -Reff; jz <= Reff && (! discard); jz++) {
-      for(int jy = -Reff; jy <= Reff && (! discard); jy++) {
-        for(int jx = -Reff; jx <= Reff && (! discard); jx++) {
-          int rsq = jx*jx + jy*jy + jz*jz;
-          if (! ((0 <= ix+jx) && (ix+jx < occupancy_table_size[0]) &&
-                 (0 <= iy+jy) && (iy+jy < occupancy_table_size[1]) &&
-                 (0 <= iz+jz) && (iz+jz < occupancy_table_size[2])))
+    RealNum reff_ = blob_diameters[i]/2; //blob radii in units of voxels
+    RealNum Reff_ = reff_ / scale; //blob radii expressed in "low rez" units
+    int Reff = ceil(Reff_);         //round up
+    int Reffsq = ceil(Reff_*Reff_);
+    RealNum ix = blob_crds[i][0];      //coordinates of the center of the blob
+    RealNum iy = blob_crds[i][1];
+    RealNum iz = blob_crds[i][2];
+    int Ix = floor((ix - bounds_min[0]) / scale); //blob center coords (lowrez version)
+    int Iy = floor((iy - bounds_min[1]) / scale);
+    int Iz = floor((iz - bounds_min[2]) / scale);
+    for(int Jz = -Reff; Jz <= Reff && (! discard); Jz++) {
+      for(int Jy = -Reff; Jy <= Reff && (! discard); Jy++) {
+        for(int Jx = -Reff; Jx <= Reff && (! discard); Jx++) {
+          int rsq = Jx*Jx + Jy*Jy + Jz*Jz;
+          if (! ((0 <= Ix+Jx) && (Ix+Jx < occupancy_table_size[0]) &&
+                 (0 <= Iy+Jy) && (Iy+Jy < occupancy_table_size[1]) &&
+                 (0 <= Iz+Jz) && (Iz+Jz < occupancy_table_size[2])))
             continue;
           if (rsq > Reffsq)
             continue;
-          if (aaabOccupied[iz+jz][iy+jy][ix+jx])
-            discard = true;
-          aaabOccupied[iz+jz][iy+jy][ix+jx] = true;
+
+          // loop over the other blobs which occupy this location (if any)
+          vector<size_t>& overlapping_blobs = vvvvOcc[Iz+Jz][Iy+Jy][Ix+Jx];
+          for (size_t _k=0; _k < overlapping_blobs.size(); _k++) {
+            size_t k = overlapping_blobs[_k];
+            RealNum kx = blob_crds[k][0];
+            RealNum ky = blob_crds[k][1];
+            RealNum kz = blob_crds[k][2];
+            RealNum rik = sqrt((ix-kx)*(ix-kx)+(iy-ky)*(iy-ky)+(iz-kz)*(iz-kz));
+            RealNum vol_overlap = CalcVolOverlap(rik,
+                                                 blob_diameters[i]/2,
+                                                 blob_diameters[k]/2);
+            RealNum ri = blob_diameters[i]/2;
+            RealNum rk = blob_diameters[k]/2;
+            if (rik < (ri + rk) * min_radial_separation_ratio)
+              discard = true;
+            RealNum vi = (4*M_PI/3)*(ri*ri*ri);
+            RealNum vk = (4*M_PI/3)*(rk*rk*rk);
+            RealNum v_large = vi;
+            RealNum v_small = vk;
+            if (vk > vi) {
+              v_large = vk;
+              v_small = vi;
+            }
+            if ((vol_overlap / v_large > max_volume_overlap_large) ||
+                (vol_overlap / v_small > max_volume_overlap_small)) 
+              discard = true;
+          }
         }
       }
     }
     if (discard) {
       blob_crds.erase(blob_crds.begin() + i);
-      blob_sigma.erase(blob_sigma.begin() + i);
+      blob_diameters.erase(blob_diameters.begin() + i);
       blob_scores.erase(blob_scores.begin() + i);
     }
-    else
+    else {
+      for(int Jz = -Reff; Jz <= Reff && (! discard); Jz++) {
+        for(int Jy = -Reff; Jy <= Reff && (! discard); Jy++) {
+          for(int Jx = -Reff; Jx <= Reff && (! discard); Jx++) {
+            int rsq = Jx*Jx + Jy*Jy + Jz*Jz;
+            if (! ((0 <= Ix+Jx) && (Ix+Jx < occupancy_table_size[0]) &&
+                   (0 <= Iy+Jy) && (Iy+Jy < occupancy_table_size[1]) &&
+                   (0 <= Iz+Jz) && (Iz+Jz < occupancy_table_size[2])))
+              continue;
+            if (rsq > Reffsq)
+              continue;
+            vvvvOcc[Iz+Jz][Iy+Jy][Ix+Jx].push_back(i);
+          }
+        }
+      }
       i++;
+    }
   } //while (i < blob_crds.size())
 
-  Dealloc3D(occupancy_table_size,
-            &abOccupied,
-            &aaabOccupied);
+  if (pReportProgress)
+    *pReportProgress << " done.                                 \n";
 } //DiscardOverlappingBlobs()
 
-
-
-
-// Find all scale-invariant blobs in the image,
-// This version can discard blobs which overlap with existing blobs
-// using the "min_separation" parameter (which varies between 0 and 1).
-// (This is sometimes called "non-max suppression")
-// If two blobs lie within a distance of
-//     min_separation * (σ1 + σ2)
-// from each other, then the blob with the lower score is discarded.
-template<class RealNum>
-void
-BlobDog3D(int const image_size[3], //source image size
-          RealNum ***aaafSource,   //source image
-          RealNum ***aaafMask,     //ignore voxels where mask==0
-          const vector<RealNum>& blob_widths, // blob widths to try, ordered
-          vector<array<int,3> >& minima_crds, // store minima x,y,z coords here
-          vector<array<int,3> >& maxima_crds, // store maxima x,y,z coords here
-          vector<RealNum>& minima_sigma, // corresponding width for that minima
-          vector<RealNum>& maxima_sigma, // corresponding width for that maxima
-          vector<RealNum>& minima_scores, // what was the blob's score?
-          vector<RealNum>& maxima_scores, // (score = intensity after filtering)
-          RealNum delta_sigma_over_sigma,// param for approximating LOG with DOG
-          RealNum truncate_ratio,      // how many sigma before truncating?
-          RealNum minima_threshold=0.5,  // discard blobs with unremarkable scores
-          RealNum maxima_threshold=0.5,  // discard blobs with unremarkable scores
-          bool    use_threshold_ratios=true, // threshold=ratio*best_score?
-          RealNum min_separation=1.0,      // maximum overlap between blobs
-          // optional arguments
-          ostream *pReportProgress = NULL, // report progress to the user?
-          RealNum ****aaaafI = NULL, //preallocated memory for filtered images
-          RealNum **aafI = NULL)     //preallocated memory for filtered images
-                                     //(sometimes the caller wants to access)
-{
-
-  BlobDog3D(image_size,
-            aaafSource,
-            aaafMask,
-            blob_widths,
-            minima_crds,
-            maxima_crds,
-            minima_sigma,
-            maxima_sigma,
-            minima_scores,
-            maxima_scores,
-            delta_sigma_over_sigma,
-            truncate_ratio,
-            minima_threshold,
-            maxima_threshold,
-            use_threshold_ratios,
-            pReportProgress,
-            aaaafI,
-            aafI);
-
-  if (pReportProgress)
-    *pReportProgress << "----------- Removing overlapping blobs -----------\n" << endl;
-
-  if (min_separation > 0.0) {
-    if (pReportProgress)
-      *pReportProgress << "--- Discarding overlapping minima blobs "
-                       << "(min_separation = " << min_separation << ") ---\n";
-
-    DiscardOverlappingBlobs(minima_crds,
-                            minima_sigma,
-                            minima_scores,
-                            false,
-                            min_separation,
-                            image_size,
-                            pReportProgress);
-
-    if (pReportProgress)
-      *pReportProgress << "done --\n"
-                       << "--- Discarding overlapping maxima blobs \n"
-                       << "(min_separation = " << min_separation << ") ---\n";
-
-    DiscardOverlappingBlobs(maxima_crds,
-                            maxima_sigma,
-                            maxima_scores,
-                            true,
-                            min_separation,
-                            image_size,
-                            pReportProgress);
-  } //if (min_separation > 0.0)
-
-} //BlobDog3D()
 
 
 

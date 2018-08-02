@@ -34,14 +34,27 @@ voxels or regions from consideration.
 ## Usage Example:
 
 ```
+# Detect all dark blobs between 180 and 260 Angstroms in width:
+
 filter_mrc -w 19.2 \
-  -in Bdellovibrio_1K.rec \
-  -out Bdellovibrio_1K_ribosomes.mrc \
-  -blobr Bdellovibrio_1K_ribosomes.txt 100.0 150.0 1.01 \
-  -blobr-separation 0.8 \
-  -blob-minima-ratio 0.4 \
-  -mask Bdellovibrio_1K_mask_water=0_periplasm=1_cytoplasm=2.mrc \
+  -in Bdellovibrio.rec \
+  -blob Bdellovibrio_blobs 180.0 260.0 1.01 \
+  -mask Bdellovibrio_mask_water=0_periplasm=1_cytoplasm=2.mrc \
   -mask-select 2 -mask-out 0.0
+
+# Now discard the faint, noisy, or overlapping blobs:
+
+filter_mrc -w 19.2 \
+  -discard-blobs Bdellovibrio_blobs.minima.txt Bdellovibrio_ribosomes.txt \
+  -blob-minima-threshold -50 \
+  -blob-separation 0.8
+
+# Finally, display the remaining blobs we want to keep:
+
+filter_mrc -w 19.2 \
+  -in Bdellovibrio.rec \
+  -out Bdellovibrio_ribosomes.rec \
+  -spheres Bdellovibrio_ribosomes.txt
 ```
 
 ## Arguments:
@@ -261,9 +274,9 @@ if you use the default exponent of 2.
 *Changing the exponents will slow down the filter considerably.*
 
 
-### -blobr,  -blobd,  -blob
+### -blob,  -blob-r,  -blob-s
 
-The "**-blobr**", "**-blobd**", and "**-blob**" arguments are used for
+The "**-blob**", "**-blob-r**", and "**-blob-s**" arguments are used for
 [Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
 When this is used, the program will apply a LOG filter to the image
 multiple times using a range of Gaussian widths (σ) (specified by the user)
@@ -273,24 +286,26 @@ A list of local minima and maxima in *X,Y,Z* space (and scale-space)
 will generated and saved in a file, using the method described in:
 Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 
-The "**-blobr**", "**-blobd**" and "**-blob**" filters are followed 
+The "**-blob**", "**-blob-r**" and "**-blob-s**" filters are followed 
 by 4 arguments (whose meaning depends on the filter selected):
 ```
-  -blobr  file_name  r_min  r_max  gratio
-  -blobd  file_name  d_min  d_max  gratio
-  -blob   file_name  σ_min  σ_max  gratio
+  -blob    file_name  d_min  d_max  gratio
+  -blob-s  file_name  r_min  r_max  gratio
+  -blob-r  file_name  σ_min  σ_max  gratio
 ```
-If "**-blobr**" is selected, then it should be followed by the range of radii
-of the objects you wish to detect (**r_min** and **r_max**).
+If "**-blob**" is selected, then it should be followed by the range of diameters
+of the objects you wish to detect (**d_min** and **d_max**).  (Simlarly, 
+"--blob-r" allows the user to specify blob sizes in terms of their radii.)
 A LOG filter will be applied to the image using different Gaussians
 whose widths (σ) vary between "**σ_min**", and "**σ_max**"
-(which are equal to r_min/√3 and r_max/√3 respectively).
-(If you prefer, you can use the "*-blob*" argument to directly specify the
+(which are equal to d_min/(2√3) and d_max/(2√3) respectively).
+(If you prefer, you can use the "*-blob-s*" argument to directly specify the
  range of Gaussian widths you wish to use"*σ_min*", and "*σ_max*".)
 Either way, each Gaussian will be wider than the previous Gaussian by a
 fraction (no larger than) "**gratio**", a number which should be > 1.
-(**1.01** is safe, recommended choice,
- but you can speed up the calculation by increasing this parameter.)
+(**1.01** is a safe choice,
+ but you can speed up the calculation by increasing this parameter.
+ Values as high as 1.1 are not uncommon.)
 "**file_name**" is the name of a file which will store the
 locations of all the blobs detected in the image
 as well as their sizes and scores (see below).
@@ -303,10 +318,10 @@ By default, two files will be created, named
  argument is specified, then only one file is generated.)*
 Each file is a 5-column ascii text file with the following format:
 ```
-x1 y1 z1 size1 score1
-x2 y2 z2 size2 score2
+x1 y1 z1 diameter1 score1
+x2 y2 z2 diameter2 score2
  :  :  :   :     :
-xM yM zM sizeM scoreM
+xM yM zM diameterM scoreM
 ```
 ...where
 "**M**" is the number of blobs (maxima or minima) which were detected,
@@ -319,20 +334,62 @@ a LOG filter of that size was applied to it.
 The list is ordered from high score to low score
 (for maxima, or low score to high score for minima).
 
-#### Automatic disposal of poor scoring blobs
 
-There are an enormous number of local minima in X,Y,Z,scale space.
-By default, local maxima whose score is less than 50% of the global maxima
-are discarded.  A similar rule is used for discarding local minima.
-You can override these rules by supplying the following arguments:
+
+#### Automatic disposal of blobs
+
+***BY DEFAULT, ALL MINIMA AND MAXIMA ARE REPORTED DURING BLOB DETECTION***
+(no matter how insignificant).
+Unfortunately, the blob-detector will typically an enormous number of 
+blobs in a typical image.
+(Running a blob detector on some Electron-Cryotomography images can result
+ in tens of millions of spurious blobs.)
+The *vast majority of these detected blobs* are either
+not relevant due to noise in the source image, or are overlapping.
+You can discard these blobs during the blob detection process
+using the arguments below.
+However, because blob-detection is slow,
+it is recommended that you save all of these blobs to a file.
+Later on you can decide which of these blobs are meaningful
+by running "filter_mrc" again with the "**-spheres-nonmax**" argument.
+This will discard the meaningless blobs.
+Then you can run "filter_mrc" a third time using the "**-spheres**" 
+argument to visualize the remaining blobs you did not throw away.
+Sometimes many iterations of non-max suppression and visualization
+are needed before you get visually pleasing results.
+
+
+
+## -spheres-nonmax  
+```
+   -spheres-nonmax  orig_blobs.txt  selected_blobs.txt
+```
+When *filter_mrc* is run using the " "**-spheres-nonmax**" argument,
+no image processing is done on the source image.
+Instead, *filter_mrc* will read the list of blobs reported in a file
+(created by running *filter_mrc* with the *-blob* argument),
+and discard blobs with poor scores, or blobs which overlap with other blobs.
+The new list of blobs can then be visualized later by running
+*filter_mrc* again using the "**-spheres**" argument.
+
+Note that the "**-spheres-nonmax**" argument by itself does nothing.
+You must run it with other arguments telling it which blobs you want to discard.
+Typically you would run *filter_mrc* together with the "**-spheres-nonmax**",
+**-blob-maxima-threshold** (OR **-blob-minima-threshold**), AND the
+**-max-volume-overlap** arguments, simultaneously.  (See below for details.)
+
+#### Automatic disposal of poor scoring blobs
 ```
    -blob-minima-ratio  ratio_min
    -blob-maxima-ratio  ratio_max
 ```
-...where "ratio_min" and "ratio_max" are fractions between 0 and 1.
-If you prefer, you can alternately specify the exact threshold used
-to discard local minima and maxima (instead of specifying ratios).
-You can do this using the following arguments:
+The *-blob-maxima-ratio* argument allows you to discard maxima whose score 
+is less than *ratio_max* times the blob with the highest score,
+(where *ratio_max* is a number between 0 and 1.
+ *-blob-minima-ratio* behaves in a similar way.)
+Alternatively, if you prefer, you can specify the exact threshold used
+to discard local minima and maxima (instead of specifying ratios),
+using the following arguments:
 ```
    -blob-minima-threshold  thresh_min
    -blob-maxima-threshold  thresh_max
@@ -344,37 +401,58 @@ respectively.
 
 
 #### Automatic disposal of overlapping blobs (non-max suppression)
+There are several arguments you can use to discard overlapping blobs
+which are typically invoked together with "**-spheres-nonmax**"
+```
+   -max-volume-overlap  fraction
+   -max-volume-overlap-small  fraction
+   -radial-separation  fraction
+```
 
 Whenever two blobs overlap, the one with the better score
 (ie. higher score for maxima, and lower score for minima)
 is superimposed upon the one with a poorer score.
-By default, if the distance between two blobs is less than 1.0 times
-the sum of their radii, the poorer-scoring blob will be discarded.
-This can be overridden using the "**-blobr-sepration fraction**" argument
-where "**fraction**" is typically a number between 0 and 1.
+If they overlap too much, the user can request that the 
+one with a poorer score is discarded.
+Again, this does not happen by default.
+
+Disposal of overlapping blobs can be accomplished using the
+"**-max-volume-overlap fraction**" argument.
+If this argument is specified, then the poorer scoring blob is discarded only
+when the volume overlapping region between the two spheres exceeds *fraction*
+multiplied by the volume of the *larger* sphere.
+(A larger *fraction* means that more overlap is permitted.  
+Setting it to 1.0 disables overlap prevention.)
+In addition, you can specify the maximum amount of overlap with the *smaller*
+of the two spheres using the "**-max-volume-overlap-small fraction**" argument.
+
+Alternatively, you can use the
+"**-radial-sepration fraction**" argument
+to discard blobs if the distance is less than **fraction**
+multiplied by the sum of their radii.
+The "**fraction**" parameter is a number between 0 and 1.
 (A larger number means less overlap is permitted.
- Setting *fraction=0.0* disables this feature.
- You can also specify the overlap in terms of the Gaussian width of each blob,
- σ, using the "**-blob-sepration fraction**" argument.  In that case,
- setting *fraction* to 1 will discard blobs if they lies closer than
- the sum of their Gaussian widths, σ1+σ2 = (r1+r2)/√3.
- *Be careful not to use "-blob-sepration" when you really mean
- "-blobr-sepration"*)
+ Setting *fraction=0.0* allows complete overlap and disables this argument.)
+
+*NOTE:* You can *either* discard blobs based on *overlapping volume*
+or *overlapping radii*, but not both.
 
 
-#### Specifying the radius or diameter of the objects of interest:
 
-The "**-blobr**", "**-blobd**", (and "**-blobr1**" "**-blobd1**") arguments
-are all variants of the
-"**-blob**" (and "**-blob1**") argument whose parameters are (more conveniently)
-specified by the approximate radius(r≈σ√3) or diameter(d≈σ2√3) of the objects
-that you wish to detect within the image (instead of the Gaussian width, σ).
+#### Specifying the radius or Gaussian-sigma parameters for the objects of interest:
+
+The "**-blob-r**", "**-blob-s**", (and "**-blob1-r**" "**-blob1-s**") arguments
+are variants of the "**-blob**" (and "**-blob1**") argument.
+Their parameters are specified by the approximate radius(r≈σ√3)
+or Gaussian width (σ) of the objects
+that you wish to detect within the image (instead of the object's diameter).
 
 
-####  Visualizing blobs using the "**-out**" argument
+####  Visualizing blobs using the "**-spheres**" argument
 
-*If* the "**-out**" argument is specified during blob-detection,
-then a new tomogram will be created with each blob represented
+AFTER blob-detection AND nonmax-suppression (see above), you can
+visualize the resulting blobs using the "**-spheres**" and "**-out**" arguments.
+In that case, a new tomogram will be created with each blob represented
 by a hollow spherical shell that surrounds the point of
 interest, whose *radius* and *brightness* indicate *size* and *score* of
 that blob, respectively.
@@ -408,24 +486,6 @@ is controlled by the "**-sphere-background brightness**", and the
 (Using "**-sphere-background-scale 0**" makes this background image invisible.
  The default scale ratio is 0.3.)
 
-
-####  Visualizing blobs using the "**-spheres**" argument
-
-If you did not generate an image showing the blob locations at the time
-you performed the blob detection, you can generate this image later using:
-```
-  filter_mrc -spheres blob_filename.txt -out new_image.mrc
-```
-This can be useful because, quite often,
-these default score thresholds too permissive.
-(Far too many blobs are detected.)
-As before,
-the user can discard poor scoring blobs by using any one of these arguments
-*(explained elsewhere)*:
-"**-blob-minima-threshold**",
-"**-blob-maxima-threshold**",
-"**-blob-minima-ratio**",
-"**-blob-maxima-ratio**"
 
 
 ### -blob1,  -blobr1,  -blobd1,  -blob1-aniso
@@ -780,7 +840,7 @@ present in the image.  Typical usage:
 ```
 This will clip voxel intensities which are either 2.5 standard-deviations
 below or above the average intensity value, respectively
-*Note: You can use the "**-mask**" argument to exclude certain voxels
+**Note:** You can use the "**-mask**" argument to exclude certain voxels
        from the clipping and thresholding operations.
        When using "**-mask**" together with "**-cl**", then
        these voxels will also be excluded from consideration when

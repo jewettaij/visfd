@@ -58,12 +58,8 @@ Settings::Settings() {
                             //parameter overrides other window-width settings.
                             //(Setting it to a number < 0 disables it.)
 
-  filter_truncate_ratio = -1.0;      //By default, when averaging/filtering consider
-                            //nearby voxels up to a distance of 2.0*sigma away
-                            //Throw away all pixels further than this distance
-                            //(even if they lie within the window box).
-                            //This only occurs if the filter_truncate_halfwidth was
-                            //not otherwise specified manually by the user.
+  filter_truncate_ratio = -1.0; //When averaging/filtering consider nearby
+                            //voxels up to a distance of this many sigma away
                             //(Setting this to a number < 0 disables it.)
 
   dogsf_width[0] = 0.0;
@@ -75,9 +71,11 @@ Settings::Settings() {
   find_maxima = false;
   find_minima_file_name = "";
   find_maxima_file_name = "";
-  find_extrema_occlusion_ratio = 1.0;
+  //REMOVE THIS CRUFT
+  //find_extrema_occlusion_ratio = 1.0;
   in_coords_file_name = "";
-  sphere_decals_radius = -1.0;
+  out_coords_file_name = "";
+  sphere_decals_diameter = -1.0;
   sphere_decals_shell_thickness = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
@@ -87,14 +85,20 @@ Settings::Settings() {
   sphere_decals_foreground_norm = false;
   sphere_decals_scale = 1.0;
   sphere_decals_shell_thickness_is_ratio = true;
-  sphere_decals_shell_thickness = 0.08;
+  sphere_decals_shell_thickness = 0.05;
   sphere_decals_shell_thickness_min = 1.0;
-  score_lower_bound = -HUGE_VALF;
-  score_upper_bound = HUGE_VALF;
+  //score_lower_bound = -HUGE_VALF;
+  //score_upper_bound = HUGE_VALF;
+  score_lower_bound = 0.0;
+  score_upper_bound = 0.0;
   score_bounds_are_ratios = true;
+  sphere_diameters_lower_bound = -HUGE_VALF;
+  sphere_diameters_upper_bound = HUGE_VALF;
   blob_width_multiplier = 1.0;
-  blob_min_separation = 1.0 * sqrt(3.0);
-
+  nonmax_min_radial_separation_ratio = 0.0;
+  nonmax_max_volume_overlap_small = 1.0;
+  nonmax_max_volume_overlap_large = 1.0;
+ 
   use_thresholds = false;
   use_dual_thresholds = false;
   out_threshold_01_a = 1.0;
@@ -470,22 +474,33 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if ((vArgs[i] == "-blob-single") ||
              (vArgs[i] == "-blob1") ||
-             (vArgs[i] == "-blobr1") ||
-             (vArgs[i] == "-blobd1") ||
-             (vArgs[i] == "-blob1r") ||
-             (vArgs[i] == "-blob1d"))
+             (vArgs[i] == "-blob1-s") || (vArgs[i] == "-blob-s1") ||
+             (vArgs[i] == "-blob1-r") || (vArgs[i] == "-blob-r1") ||
+             (vArgs[i] == "-blob-1d") || (vArgs[i] == "-blob-d1"))
     {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         float blob_width_multiplier = 1.0;
-        if ((vArgs[i] == "-blobr1") || (vArgs[i] == "-blob1r") )
+        blob_width_multiplier = 1.0;
+        if ((vArgs[i] == "-blob1-s") || (vArgs[i] == "-blob-s1"))
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 1.0/sqrt(3.0);
-        if ((vArgs[i] == "-blobd1") || (vArgs[i] == "-blob1d") )
+          blob_width_multiplier = 2.0*sqrt(3.0);
+          //REMOVE THIS CRUFT
+          //blob_width_multiplier = 1.0/sqrt(3.0);
+        if ((vArgs[i] == "-blob1-r") || (vArgs[i] == "-blob-r1"))
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
+          blob_width_multiplier = 2.0;
+          //REMOVE THIS CRUFT
+          //blob_width_multiplier = 1.0/sqrt(3.0);
+        else if ((vArgs[i] == "-blob-single") ||
+                 (vArgs[i] == "-blob1") ||
+                 (vArgs[i] == "-blob1-d") || (vArgs[i] == "-blob-d1"))
+          // (for a solid uniform 3-D sphere)
+          blob_width_multiplier = 1.0;
+          //REMOVE THIS CRUFT
+          //blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
         dogsf_width[0] = stof(vArgs[i+1]) * blob_width_multiplier;
         dogsf_width[1] = dogsf_width[0];
         dogsf_width[2] = dogsf_width[0];
@@ -527,13 +542,16 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob1-aniso")
 
 
-    else if (vArgs[i] == "-max-overlap")
+
+    else if ((vArgs[i] == "-spheres-nonmax-overlap") ||
+             (vArgs[i] == "-max-volume-overlap") || 
+             (vArgs[i] == "-max-overlap"))
     {
       try {
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
-        float max_overlap = stof(vArgs[i+1]);
-        blob_min_separation = (1.0 - max_overlap) * sqrt(3.0);
+        nonmax_max_volume_overlap_large = stof(vArgs[i+1]);
+        nonmax_min_radial_separation_ratio = 0.0;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -542,34 +560,89 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-max-overlap")
+    } //if (vArgs[i] == "-spheres-nonmax-overlap")
 
 
-    else if (vArgs[i] == "-blob-separation")
+
+    else if ((vArgs[i] == "-spheres-nonmax-overlap-small") ||
+             (vArgs[i] == "-max-volume-overlap-small") ||
+             (vArgs[i] == "-max-overlap-small"))
     {
       try {
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
-        blob_min_separation = stof(vArgs[i+1]);
-        find_extrema_occlusion_ratio = stof(vArgs[i+1]);
+        nonmax_max_volume_overlap_small = stof(vArgs[i+1]);
+        nonmax_min_radial_separation_ratio = 0.0;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a number:\n"
-                       "       the minimum allowed separation between a pair of detected blobs\n"
-                       "       (as a fraction of the sum of their Gaussian widths (σ1+σ2)).");
+                       "       the maximum overlap allowed between a pair of detected blobs\n"
+                       "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-separation")
+    } //if (vArgs[i] == "-spheres-nonmax-overlap-small")
 
 
-    else if (vArgs[i] == "-blobr-separation")
+
+    else if ((vArgs[i] == "-spheres-nonmax-overlap-radial") ||
+             (vArgs[i] == "-max-overlap-radial"))
     {
       try {
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
-        blob_min_separation = stof(vArgs[i+1]) * sqrt(3.0);
-        find_extrema_occlusion_ratio = stof(vArgs[i+1]);
+        float max_overlap = stof(vArgs[i+1]);
+        nonmax_min_radial_separation_ratio = (1.0 - max_overlap);
+        //REMOVE THIS CRUFT:
+        //nonmax_min_radial_separation_ratio = (1.0 - max_overlap) * sqrt(3.0);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number:\n"
+                       "       the maximum overlap allowed between a pair of detected blobs\n"
+                       "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-spheres-nonmax-overlap-radial")
+
+    
+
+    // REMOVE THIS CRUFT
+    //else if ((vArgs[i] == "-spheres-nonmax-separation-sigma") ||
+    //         (vArgs[i] == "-blob-s-separation"))
+    //{
+    //  try {
+    //    if (i+1 >= vArgs.size())
+    //      throw invalid_argument("");
+    //    nonmax_min_radial_separation_ratio = stof(vArgs[i+1]);
+    //    //REMOVE THIS CRUFT
+    //    //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
+    //  }
+    //  catch (invalid_argument& exc) {
+    //    throw InputErr("Error: The " + vArgs[i] + 
+    //                   " argument must be followed by a number:\n"
+    //                   "       the minimum allowed separation between a pair of detected blobs\n"
+    //                   "       (as a fraction of the sum of their Gaussian widths (σ1+σ2)).");
+    //  }
+    //  num_arguments_deleted = 2;
+    //} //if (vArgs[i] == "-blob-s-separation")
+
+
+
+
+    else if ((vArgs[i] == "-blob-separation") ||
+             (vArgs[i] == "-blob-r-separation") ||
+             (vArgs[i] == "-blobr-separation") ||
+             (vArgs[i] == "-radial-separation") ||
+	     (vArgs[i] == "-spheres-nonmax-separation-radius"))
+    {
+      try {
+        if (i+1 >= vArgs.size())
+          throw invalid_argument("");
+        nonmax_min_radial_separation_ratio = stof(vArgs[i+1]);
+        //REMOVE THIS CRUFT
+        //nonmax_min_radial_separation_ratio = stof(vArgs[i+1]) * sqrt(3.0);
+        //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -578,32 +651,43 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blobr-separation")
+    } //if (vArgs[i] == "-blob-separation")
 
 
-    else if (vArgs[i] == "-blobd-separation")
-    {
-      try {
-        if (i+1 >= vArgs.size())
-          throw invalid_argument("");
-        blob_min_separation = stof(vArgs[i+1]) * (2.0 * sqrt(3.0));
-        find_extrema_occlusion_ratio = stof(vArgs[i+1]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by a number:\n"
-                       "       the minimum allowed separation between a pair of detected blobs\n"
-                       "       (as a fraction of the sum of their diameters, estimated using d=2r≈2σ√3).");
-      }
-      num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blobd-separation")
+
+
+    // REMOVE THIS CRUFT
+    //else if ((vArgs[i] == "-spheres-nonmax-separation-diameter") ||
+    //         (vArgs[i] == "-blob-d-separation") ||
+    //         (vArgs[i] == "-blob-separation"))
+    //{
+    //  try {
+    //    if (i+1 >= vArgs.size())
+    //      throw invalid_argument("");
+    //    nonmax_min_radial_separation_ratio = stof(vArgs[i+1]) * 2.0;
+    //    //REMOVE THIS CRUFT
+    //    //nonmax_min_radial_separation_ratio = stof(vArgs[i+1]) * 2.0 * sqrt(3.0);
+    //    //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
+    //  }
+    //  catch (invalid_argument& exc) {
+    //    throw InputErr("Error: The " + vArgs[i] + 
+    //                   " argument must be followed by a number:\n"
+    //                   "       the minimum allowed separation between a pair of detected blobs\n"
+    //                   "       (as a fraction of the sum of their diameters, estimated using d=2r≈2σ√3).");
+    //  }
+    //  num_arguments_deleted = 2;
+    //} //if (vArgs[i] == "-blobd-separation")
+
 
 
     else if ((vArgs[i] == "-blob") ||
+             (vArgs[i] == "-blob-sigma") ||
+             (vArgs[i] == "-blob-s") ||
              (vArgs[i] == "-blob-radii") ||
+             (vArgs[i] == "-blob-r") ||
              (vArgs[i] == "-blobr") ||
              (vArgs[i] == "-blob-diameters") ||
-             (vArgs[i] == "-blobd"))
+             (vArgs[i] == "-blob-d"))
     {
       try {
         if ((i+4 >= vArgs.size()) ||
@@ -640,7 +724,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (growth_ratio <= 1.0)
           throw invalid_argument("");
         int N = ceil( log(blob_width_max/blob_width_min) / log(growth_ratio) );
-        blob_widths.resize(N);
+        blob_diameters.resize(N);
 
         // REMOVE THIS CRUFT:
         // Optional:
@@ -655,15 +739,24 @@ Settings::ParseArgs(vector<string>& vArgs)
         //  delta_sigma_over_sigma = (growth_ratio-1.0)/3;
 
         blob_width_multiplier = 1.0;
-        if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blobr"))
+        if ((vArgs[i] == "-blob-sigma") || (vArgs[i] == "-blob-s"))
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 1.0/sqrt(3.0);
-        else if ((vArgs[i] == "-blob-diameters") || (vArgs[i] == "-blobd"))
+          blob_width_multiplier = 2.0*sqrt(3.0);
+          //REMOVE THIS CRUFT
+          //blob_width_multiplier = 1.0/sqrt(3.0);
+        if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blob-r") || (vArgs[i] == "-blobr"))
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
-        blob_widths[0] = blob_width_min * blob_width_multiplier;
+          blob_width_multiplier = 2.0;
+          //REMOVE THIS CRUFT
+          //blob_width_multiplier = 1.0/sqrt(3.0);
+        else if ((vArgs[i] == "-blob-diameters") || (vArgs[i] == "-blob-d"))
+          // (for a solid uniform 3-D sphere)
+          blob_width_multiplier = 1.0;
+          //REMOVE THIS CRUFT
+          //blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
+        blob_diameters[0] = blob_width_min * blob_width_multiplier;
         for (int n = 1; n < N; n++) {
-          blob_widths[n] = blob_widths[n-1] * growth_ratio;
+          blob_diameters[n] = blob_diameters[n-1] * growth_ratio;
         }
         m_exp = 2.0; // (<--not necessary, we ignore these parameters anyway)
         n_exp = 2.0; // (<--not necessary, we ignore these parameters anyway)
@@ -729,6 +822,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob-minima_ratio")
 
 
+
     else if ((vArgs[i] == "-score-upper-bound-ratio") ||
              (vArgs[i] == "-blob-maxima-ratio")) {
       try {
@@ -776,6 +870,64 @@ Settings::ParseArgs(vector<string>& vArgs)
     //  }
     //  num_arguments_deleted = 2;
     //}
+
+
+
+    else if ((vArgs[i] == "-discard-blobs") or
+	     (vArgs[i] == "-blob-nonmax") or
+             (vArgs[i] == "-blobs-nonmax")) {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+1] == vArgs[i+2]))
+          throw invalid_argument("");
+        in_coords_file_name = vArgs[i+1];
+        out_coords_file_name = vArgs[i+2];
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by two different file names\n");
+      }
+      filter_type = SPHERE_NONMAX_SUPPRESSION;
+      num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-spheres-nonmax")
+
+
+
+    else if ((vArgs[i] == "-spheres-nonmax-radii-range") ||
+             (vArgs[i] == "-sphere-nonmax-radii-range")) {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "-") || (vArgs[i+1][0] == '-') ||
+            (i+2 >= vArgs.size()) || (vArgs[i+2] == "-") || (vArgs[i+2][0] == '-'))
+          throw invalid_argument("");
+        sphere_diameters_lower_bound = stof(vArgs[i+1]);
+        sphere_diameters_upper_bound = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number number.\n");
+      }
+      num_arguments_deleted = 3;
+    }  //if (vArgs[i] == "-spheres-nonmax-radii-range")
+
+
+
+    else if ((vArgs[i] == "-spheres-nonmax-score-range") ||
+             (vArgs[i] == "-sphere-nonmax-score-range")) {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        score_lower_bound = stof(vArgs[i+1]);
+        score_upper_bound = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by two numbers.\n");
+      }
+      num_arguments_deleted = 3;
+    }  //if (vArgs[i] == "-spheres-nonmax-score-range")
+
 
 
 
@@ -1202,7 +1354,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = SPHERE_DECALS;
-        sphere_decals_radius = -1.0;
+        sphere_decals_diameter = -1.0;
         in_coords_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
@@ -1221,7 +1373,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        sphere_decals_radius = stof(vArgs[i+1]) / 2.0;
+        sphere_decals_diameter = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1239,7 +1391,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        sphere_decals_radius = stof(vArgs[i+1]);
+        sphere_decals_diameter = stof(vArgs[i+1]) * 2.0;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1261,7 +1413,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a number:\n"
-                       "       the ratio of the displyed sphere size to the radius detected (usually 1).\n");
+                       "       the ratio of the displyed sphere size to the diameter detected (usually 1).\n");
       }
       num_arguments_deleted = 2;
     }
@@ -1279,7 +1431,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a numbers:\n"
-                       "       -the ratio of the shell thickness to the sphere radius\n");
+                       "       -the ratio of the shell thickness to the sphere diameter\n");
       }
       num_arguments_deleted = 2;
     }
@@ -1511,7 +1663,9 @@ Settings::ParseArgs(vector<string>& vArgs)
   //                 "        by using the \"-gauss\",\"-gdog\",\"-dog\",\"-file\",... arguments)\n");
 
   // ----------
-  if (in_file_name.size() == 0) {
+  if ((in_file_name.size() == 0) &&
+      (filter_type != SPHERE_NONMAX_SUPPRESSION))
+  {
     throw InputErr("Error: You must specify the name of the tomogram you want to read\n"
                    "       using the \"-in SOURCE_FILE\" argument\n"
                    "       (These files usually end in \".mrc\" or \".rec\" .)\n");
@@ -1519,7 +1673,8 @@ Settings::ParseArgs(vector<string>& vArgs)
   if ((out_file_name.size() == 0) &&
       ((!
         ((filter_type == NONE) ||
-         (filter_type == BLOB)))
+         (filter_type == BLOB) ||
+         (filter_type == SPHERE_NONMAX_SUPPRESSION)))
        ||
        use_thresholds ||
        invert_output))
@@ -1528,7 +1683,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                    "       using the \"-out DESTINATION_FILE\" argument\n"
                    "       (These files usually end in \".mrc\" or \".rec\" .)\n");
   }
-  if (out_file_name == in_file_name)
+  if ((out_file_name == in_file_name) && (out_file_name.size() != 0))
   {
     throw InputErr("Error: Input and Output files cannot be the same.\n");
   }
