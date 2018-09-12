@@ -6,7 +6,7 @@ mrc_simple_filter
 This is a C++ template library for 3D image processing
 ("[filter3d.h](./lib/filter/filter3d.h)")
 as well as reading & writing image files using the the MRC file format
-("[mrc_simple.h](.lib/mrc_simple/mrc_simple.h)").
+("[mrc_simple.h](./lib/mrc_simple/mrc_simple.h)").
 It is also a collection of stand-alone programs 
 (mainly "[filter_mrc](./doc/doc_filter_mrc.md)" and
  "[combine_mrc](./doc/doc_combine_mrc.md))")
