@@ -25,45 +25,105 @@ public:
   Integer array_size; //size of the array in x,y directions (in voxels)
 
 
-  // Apply the filter to tomographic data in the "afSource" array
-  // Save the results in the "afDest" array.  (A "mask" is optional.)
-  // All arrays are 1D and assumed to be the same size
-  void Apply(Integer const size_source,
-             RealNum *afSource,
+  /// @brief  Apply the filter to data in the original source array ("afSource")
+  /// Save the results in the "aafDest" array.  (A "mask" is optional.)
+  ///
+  /// @code
+  /// If afMask == NULL, then filter computes g(i):
+  ///        ___
+  ///        \
+  /// g(i) = /__  h(j) * f(i-j)
+  ///         j
+  /// Otherwise, if afMask!=NULL and normalize == true, it computes
+  ///        ___                               /  ___
+  ///        \                                /   \
+  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)  /    /__  h(j) * mask(i-j)
+  ///         j                             /      j
+  ///
+  /// where: f(i) is the original array of (source) data at position i
+  ///        g(i) is the data after the filter has been applied
+  ///        h(j) is the filter
+  ///        mask(i) selects the entries we care about (usually either 0 or 1)
+  /// @endcode
+  ///
+  /// @param size_source contains size of the source image (in the x,y directions)
+  /// @param afSource[] is the original source data <==> h(j)
+  /// @param afDest[] will store the result after filtering <==> g(j)
+  /// @param afMask[]==0 whenever we want to ignore entries in afSource[]. Optional.
+  /// @param normalize  This boolean parameter = true if you want to divide g(i) by the sum of the weights considered. Optional.
+  /// (useful if the sum of your filter elements, h(j), is 1, and if the sum was
+  ///  not complete because some entries lie outside the mask or the boundary.)
+
+  void Apply(Integer const size_source, 
+             RealNum const *afSource,
              RealNum *afDest,
              RealNum const *afMask = NULL,
              bool normalize = false) const
-             //bool precompute_mask_times_source = true) const
   {
+    RealNum *afDenominator = NULL;
+    if (normalize)
+      afDenominator = new RealNum[size_source];
 
-    // Apply the filter to the original tomogram data. (Store in afSource)
-    //        ___
-    //        \
-    // g(i) = /__  h(j) * f(i-j)
-    //         j
-    //
-    // where: f(i) is the original density of the tomogram at position ix,iy
-    //        h(j) is the filter (smoothing function)
-    //       
-    //  Note on mask functions:
-    //     When summing over j, we ignore contributions from voxels where
-    //     mask(i-j) is zero.  We don't count them in the average.
-    //     Because h(j) is not necessarily normalized, g(i) is later divided by
-    //     the area under the curve h(j)*mask(i-j)    (as a function of j)
-    //     
+    Apply(size_source, 
+          afSource,
+          afDest,
+          afMask,
+          afDenominator);
 
-    // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
-    // Multiplying the density in the tomogram by the mask removes some of 
-    // the voxels from consideration later on when we do the filtering.
-    // (Later, we will adjust the weight of the average we compute when we
-    //  apply the filter in order to account for the voxels we deleted now.)
-    // Precomupting the mask product is faster but modifies the source image.
+    if (normalize) {
+      for (int i=0; i < size_source; i++)
+        if (afDenominator[i] > 0.0)
+          afDest[i] /= afDenominator[i];
+      delete [] afDenominator;
+    }
+  }
 
-    //if (afMask && precompute_mask_times_source)
-    if (afMask) 
-      for (int ix=0; ix<size_source; ix++)
-        afSource[ix] *= afMask[ix];
 
+  /// @brief  Apply the filter to data in the original source array ("afSource")
+  ///         This version is identical to the other version of Apply()
+  ///         except that this version both d(i) and g(i) whenever
+  ///         you supply a non-NULL afDenominator[] argument (see below).
+  ///         It also does not normalize the result (by dividing g(i) / d(i)).
+  /// @code
+  /// If afMask == NULL, then filter computes g(i):
+  ///        ___
+  ///        \
+  /// g(i) = /__  h(j) * f(i-j)
+  ///         j
+  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes g(i), d(i)
+  ///        ___
+  ///        \
+  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)
+  ///         j
+  ///        ___
+  ///        \
+  /// d(i) = /__  h(j) * mask(i-j)
+  ///         j
+  ///
+  /// where: f(i) is the original array of (source) data at position i
+  ///        g(i) is the data after the filter has been applied
+  ///        h(j) is the filter
+  ///        mask(i) is usually either 0 or 1
+  ///        d(i) is the "denominator" = sum of the filter weights after masking
+  /// @endcode
+  ///       
+  ///  Note on mask functions:
+  ///     When summing over j, we ignore contributions from positions where
+  ///     mask(i-j) is zero.  We don't count them in the average.
+  ///
+  /// @param size_source contains size of the source image (in the x,y directions)
+  /// @param afSource[] is the original source data <==> h(j)
+  /// @param afDest[] will store the result after filtering <==> g(j)
+  /// @param afMask[]==0 whenever we want to ignore entries in afSource[]. Optional.
+  /// @param afDenominator[] will store d(i) if you supply a non-NULL pointer.
+
+
+  void Apply(Integer const size_source, 
+             RealNum const *afSource,
+             RealNum *afDest,
+             RealNum const *afMask = NULL,
+             RealNum *afDenominator = NULL) const
+  {
     for (Integer ix=0; ix<size_source; ix++) {
 
       if ((afMask) && (afMask[ix] == 0.0)) {
@@ -76,40 +136,51 @@ public:
 
       for (Integer jx=-halfwidth; jx<=halfwidth; jx++) {
 
-        if ((ix-jx < 0) || (size_source <= ix-jx))
+        int ix_jx = ix-jx;
+
+        if ((ix_jx < 0) || (size_source <= ix_jx))
           continue;
 
-        RealNum delta_g = afH[jx+halfwidth] * afSource[ix-jx];
+        RealNum filter_val = afH[jx];
+        if (afMask)
+          filter_val *= afMask[ix_jx];
+          //Note: The "filter_val" also is needed to calculate
+          //      the denominator used in normalization.
+          //      It is unusual to use a mask unless you intend
+          //      to normalize the result later, but I don't enforce this
 
-        //if (! precompute_mask_times_source)
-        //  delta_g *= afMask[ix-jx];
+        RealNum delta_g = filter_val * afSource[ix_jx];
 
         g += delta_g;
-          // Note: We previously applied the mask by multiplying
-          //          aDensity[ix]
-          //         by afMask[ix]   (if present)
-        if (normalize) {
-          if (afMask)
-            denominator += afMask[ix-jx] * afH[jx+halfwidth];
-          else
-            denominator += afH[jx+halfwidth];
-        }
-                                          
-        // Note: If there were no mask, and if the filter is normalized
-        // then denominator=1 always, and we could skip the line above.
+
+        if (afDenominator)
+          denominator += filter_val;
       }
 
-      if (normalize) {
-        if (denominator > 0.0)
-          g /= denominator;
-        else
-          //Otherwise, this position lies outside the mask region.
-          g = 0.0;
-      }
+      if (afDenominator)
+        afDenominator[ix] = denominator;
 
       afDest[ix] = g;
     }
   } //Apply()
+
+
+  
+  void Normalize() {
+    // Make sure the sum of the filter weights is 1
+    RealNum total = 0.0;
+    for (Integer ix=-halfwidth; ix<=halfwidth; ix++)
+      total += afH[ix];
+    for (Integer ix=-halfwidth; ix<=halfwidth; ix++)
+      afH[ix] /= total;
+  }
+
+
+  void Init() {
+    halfwidth = -1;
+    afH = NULL;
+  }
+
 
   void Alloc(Integer set_halfwidth) {
     halfwidth = set_halfwidth;
@@ -117,11 +188,18 @@ public:
     afH = new RealNum [array_size];
     for (int i = 0; i < array_size; i++)
       afH[i] = -1.0e38; //(if uninitiliazed memory read, we will know)
+
+    //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
+    afH += halfwidth;
   }
 
+
   void Dealloc() {
-    if (afH)
+    if (afH) {
+      //indexing starts at -halfwidth shift pointers back to normal
+      afH -= halfwidth;
       delete [] afH;
+    }
     halfwidth = -1;
     array_size = -1;
   }
@@ -133,49 +211,45 @@ public:
   }
 
 
-  inline Filter1D<RealNum, Integer>&
-    operator = (const Filter1D<RealNum, Integer>& source) {
-    Resize(source.halfwidth); // allocates and initializes af and afH
-    //for(Int ix=-halfwidth; ix<=halfwidth; ix++)
-    //  afH[ix] = source.afH[ix];
-    // Use memcpy() instead:
-    memcpy(afH,
-           source.afH,
-           (1+2*halfwidth) * sizeof(RealNum));
-  } // operator = ()
-
-
-  void Init() {
-    halfwidth = -1;
-    afH = NULL;
-  }
-
   Filter1D() {
     Init();
   }
+
 
   Filter1D(Integer halfwidth) {
     Init();
     Resize(halfwidth);
   }
 
-  Filter1D(const Filter1D<RealNum, Integer>& f) {
+
+  inline Filter1D(const Filter1D<RealNum, Integer>& source) {
     Init();
-    *this = f;
+    Resize(source.halfwidth); // allocates and initializes afH
+    //for(Int ix=-halfwidth; ix<=halfwidth; ix++)
+    //  afH[ix] = source.afH[ix];
+    // -- Use memcpy() instead: --
+    //memcpy(afH,
+    //       source.afH,
+    //       array_size * sizeof(RealNum));
+    // -- Use std:copy() instead: --
+    std::copy(source.afH, source.afH + array_size, afH);
   }
+
 
   ~Filter1D() {
     Dealloc();
   }
 
+  inline void swap(Filter1D<RealNum, Integer> &other) {
+    std::swap(afH, other.afH);
+    std::swap(halfwidth, other.halfwidth);
+    std::swap(array_size, other.array_size);
+  }
 
-  void Normalize() {
-    // Make sure the sum of the filter weights is 1
-    RealNum total = 0.0;
-    for (Integer ix=-halfwidth; ix<=halfwidth; ix++)
-      total += afH[ix+halfwidth];
-    for (Integer ix=-halfwidth; ix<=halfwidth; ix++)
-      afH[ix+halfwidth] /= total;
+  inline Filter1D<RealNum, Integer>&
+    operator = (Filter1D<RealNum, Integer> source) {
+    this->swap(source);
+    return *this;
   }
 
 
@@ -183,15 +257,20 @@ public:
 
 
 
+//void swap(Filter1D<RealNum, Integer> &a, Filter1D<RealNum, Integer> &b) {
+//  a.swap(b);
+//}
+
+
 
 template<class RealNum>
 // GenFilterGauss1D generates a 1-D filter and fills its array with values
 // corresponding to a normalized Gaussian evaluated at evenly spaced intervals.
-// The caller must specify the "sigma" parameter (width of the Gaussian,
+// The caller must specify the "σ" parameter (width of the Gaussian,
 // in units of pixels/voxels), in addition to the "halfwidth" parameter, which
 // indicates the number of entries in the array (in units of pixels/voxels).
 Filter1D<RealNum, int>
-GenFilterGauss1D(RealNum sigma,  // The "sigma" paramgeter in the Gaussian
+GenFilterGauss1D(RealNum sigma,  // The "σ" paramgeter in the Gaussian
                  int halfwidth,  // number of entries in the filter array / 2
                  ostream *pReportProgress = NULL)
 {
@@ -199,57 +278,18 @@ GenFilterGauss1D(RealNum sigma,  // The "sigma" paramgeter in the Gaussian
 
   RealNum sum = 0.0;
   for (int i=-halfwidth; i<=halfwidth; i++) {
-    if (sigma == 0.0) //(don't crash when sigma=0)
-      filter.afH[i+halfwidth] = ((i == 0) ? 1.0 : 0.0);
+    if (sigma == 0.0) //(When sigma==0, use a Kronecker delta function)
+      filter.afH[i] = ((i == 0) ? 1.0 : 0.0);
     else
-      //filter.afH[i+halfwidth] = exp(-0.5*(i*i)/(sigma*sigma));
-      filter.afH[i+halfwidth] = exp(-(i*i)/(2.0*sigma*sigma));
-    sum += filter.afH[i+halfwidth];
+      filter.afH[i] = exp(-(i*i)/(2.0*sigma*sigma)); // will normalize later
+    sum += filter.afH[i];
   }
 
-  //Normalize:
-  for (int i=-halfwidth; i<=halfwidth; i++) {
-    filter.afH[i+halfwidth] /= sum;
-
-    //FOR DEBUGGING REMOVE EVENTUALLY:
-    if (pReportProgress)
-      *pReportProgress <<"Gauss1D: afH["<<i<<"] = "
-                       << filter.afH[i+halfwidth] << endl;
-  }
+  // normalize:
+  for (int i=-halfwidth; i<=halfwidth; i++)
+    filter.afH[i] /= sum;
   return filter;
 } //GenFilterGauss1D(sigma, halfwidth)
-
-
-
-
-// REMOVE THIS CRUFT EVENTUALLY:
-//
-//template<class RealNum>
-//// This function generates a 1-D filter and fills its array with values
-//// corresponding to a normalized Gaussian evaluated at evenly spaced intervals
-//// The caller must specify the "sigma" parameter (width of the Gaussian).
-//// and a fractional number between 0 and 1 which indicate how far the
-//// filter can decay.  Only voxels whose Gaussian intensity decays by less
-//// than this threshold (relative to the central peak) will be kept.
-//Filter1D<RealNum, int>
-//GenFilterGauss1DThresh(RealNum sigma,
-//                       RealNum truncate_threshold,
-//                       ostream *pReportProgress = NULL)
-//{
-//  // How wide should the filter be?
-//  int halfwidth;
-//  assert(truncate_threshold > 0.0);
-//
-//  // Choose the filter domain window based on the "truncate_threshold"
-//
-//  //    truncate_threshold = exp(-0.5*(halfwidth/sigma)^2);
-//  //    -> (halfwidth/sigma)^2 = -2*log(truncate_threshold)
-//  halfwidth = floor(sigma * sqrt(-2*log(truncate_threshold)));
-//
-//  return GenFilterGauss1D(sigma/sqrt(2.0), halfwidth, pReportProgress);
-//} //GenFilterGauss1D(sigma, truncate_threshold)
-
-
 
 
 

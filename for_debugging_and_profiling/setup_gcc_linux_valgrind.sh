@@ -9,7 +9,7 @@ export L_COMP="ar rs"
 # http://stackoverflow.com/questions/7506134/valgrind-errors-when-linked-with-static-why
 export LFLAGS=""
 
-export MY_FLAGS="-std=c++11 -g -Og"
+export MY_FLAGS="-std=c++11 -g -Og -DDISABLE_OPENMP"
 export CFLAGS="-c $MY_FLAGS"
 export CPP_PRELINKER_COMMAND="echo"
 export COMPILER_TEMP_FILES=""

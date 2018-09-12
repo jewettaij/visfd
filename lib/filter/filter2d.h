@@ -13,53 +13,117 @@ template<class RealNum, class Integer>
 
 class Filter2D {
 public:
-  RealNum *af;
+  RealNum *afH;
   RealNum **aafH;
   Integer halfwidth[2]; //num pixels from filter center to edge in x,y directions
   Integer array_size[2]; //size of the array in x,y directions (in voxels)
 
 
 
-  // Apply the filter to tomographic data in the "aafSource" array
-  // Save the results in the "aafDest" array.  (A "mask" is optional.)
-  // All arrays are 2D and assumed to be the same size
+  /// @brief  Apply the filter to a 2D image (aafSource[][]).
+  /// Save the results in the "aafDest" array.  (A "mask" is optional.)
+  /// All arrays are 2D and assumed to be the same size.
+  ///     
+  /// @code
+  /// If aafMask == NULL, then filter computes g(i):
+  ///        ___
+  ///        \
+  /// g(i) = /__  h(j) * f(i-j)
+  ///         j
+  /// Otherwise, if afMask!=NULL and normalize == true, it computes
+  ///        ___                               /  ___
+  ///        \                                /   \
+  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)  /    /__  h(j) * mask(i-j)
+  ///         j                             /      j
+  ///
+  /// where: f(i) is the original image at position i (ix, iy)
+  ///          i  is shorthand for ix,iy
+  ///        g(i) is the image after the filter has been applied
+  ///        h(j) is the filter
+  ///        mask(i) selects the pixels we care about (usually either 0 or 1)
+  /// @endcode
+  ///
+  /// @param size_source contains size of the source image (in the x,y directions)
+  /// @param aafSource[][] is the source array (source image) <==> f(i)
+  /// @param aafDest[][] will store the image after filtering <==> g(i)
+  /// @param aafMask[][]==0 whenever we want to ignore entries in afSource[]. Optional.
+  /// @param normalize  This boolean parameter = true if you want to divide g(i) by the sum of the weights considered. Optional.
+  /// (useful if the sum of your filter elements, h(j), is 1, and if the sum was
+  ///  not complete because some entries lie outside the mask or the boundary.)
+
   void Apply(Integer const size_source[2],
-             RealNum **aafSource,
+             RealNum const *const *aafSource,
              RealNum **aafDest,
-             RealNum **aafMask = NULL,
+             RealNum const *const *aafMask = NULL,
              bool normalize = false) const
+  {
+    RealNum *afDenominator = NULL;
+    RealNum **aafDenominator = NULL;
+    if (normalize)
+      Alloc2D(size_source, &afDenominator, &aafDenominator);
+
+    Apply(size_source,
+          aafSource,
+          aafDest,
+          aafMask,
+          aafDenominator);
+
+    if (normalize) {
+      for (int iy=0; iy < size_source[1]; iy++)
+        for (int ix=0; ix < size_source[0]; ix++)
+          if (aafDenominator[iy][ix] > 0.0)
+            aafDest[iy][ix] /= aafDenominator[iy][ix];
+      Dealloc2D(size_source, &afDenominator, &aafDenominator);
+    }
+  }
+
+
+
+  /// @brief  Apply the filter to a 2D image (aafSource[][]).
+  ///         This version is identical to the other version of Apply()
+  ///         except that this version both d(i) and g(i) whenever
+  ///         you supply a non-NULL afDenominator[] argument (see below).
+  ///         It also does not normalize the result (by dividing g(i) / d(i)).
+  ///     
+  /// @code
+  /// If afMask == NULL, then filter computes g(i):
+  ///        ___
+  ///        \
+  /// g(i) = /__  h(j) * f(i-j)
+  ///         j
+  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes g(i), d(i)
+  ///        ___
+  ///        \
+  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)
+  ///         j
+  ///        ___
+  ///        \
+  /// d(i) = /__  h(j) * mask(i-j)
+  ///         j
+  ///
+  /// where: f(i) is the original array of (source) data at position i (ix,iy)
+  ///          i  is shorthand for ix,iy
+  ///        g(i) is the data after the filter has been applied
+  ///        h(j) is the filter
+  ///        mask(i) is usually either 0 or 1
+  ///        d(i) is the "denominator" = sum of the filter weights after masking
+  /// @endcode
+  ///
+  /// @param size_source contains size of the source image (in the x,y directions)
+  /// @param aafSource[][] is the source array (source image) <==> g(i)
+  /// @param aafDest[][] will store the image after filtering <==> g(i)
+  /// @param aafMask[][]==0 whenever we want to ignore entries in afSource[][]. Optional.
+  /// @param aafDenominator[][] will store d(i) if you supply a non-NULL pointer
+
+  void Apply(Integer const size_source[2],
+             RealNum const *const *aafSource,
+             RealNum **aafDest,
+             RealNum const *const *aafMask = NULL,
+             RealNum **aafDenominator = NULL) const
              //bool precompute_mask_times_source = true) const
   {
 
-    // Apply the filter to the original tomogram data. (Store in aafSource)
-    //        ___
-    //        \
-    // g(i) = /__  h(j) * f(i-j)
-    //         j
-    //
-    // where: f(i) is the original density of the tomogram at position ix,iy
-    //        h(j) is the filter (smoothing function)
-    //       
-    //  Note on mask functions:
-    //     When summing over j, we ignore contributions from voxels where
-    //     mask(i-j) is zero.  We don't count them in the average.
-    //     Because h(j) is not necessarily normalized, g(i) is later divided by
-    //     the area under the curve h(j)*mask(i-j)    (as a function of j)
-    //     
-
-    // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
-    // Multiplying the density in the tomogram by the mask removes some of 
-    // the voxels from consideration later on when we do the filtering.
-    // (Later, we will adjust the weight of the average we compute when we
-    //  apply the filter in order to account for the voxels we deleted now.)
-    // Precomupting the mask product is faster but modifies the source image.
-
-    //if (aafMask && precompute_mask_times_source)
-    if (aafMask) 
-      for (int iy=0; iy<size_source[1]; iy++)
-        for (int ix=0; ix<size_source[0]; ix++)
-          aafSource[iy][ix] *= aafMask[iy][ix];
-
+    #pragma omp parallel for collapse(2)
     for (Integer iy=0; iy<size_source[1]; iy++) {
 
       for (Integer ix=0; ix<size_source[0]; ix++) {
@@ -74,54 +138,54 @@ public:
 
         for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
 
-          if ((iy-jy < 0) || (size_source[1] <= iy-jy))
+          int iy_jy = iy-jy;
+          if ((iy_jy < 0) || (size_source[1] <= iy_jy))
             continue;
 
           for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
 
-            if ((ix-jx < 0) || (size_source[0] <= ix-jx))
+            int ix_jx = ix-jx;
+            if ((ix_jx < 0) || (size_source[0] <= ix_jx))
               continue;
 
-            if ((jx == 0) && (jy == 0)) {
-              g += 1.0;
-              g -= 1.0;
-            }
-            RealNum delta_g = 
-              aafH[jy+halfwidth[1]][jx+halfwidth[0]] * aafSource[iy-jy][ix-jx];
+            RealNum filter_val = aafH[jy][jx];
 
-            //if (! precompute_mask_times_source)
-            //  delta_g *= aafMask[iy-jy][ix-jx];
+            if (aafMask)
+              filter_val *= aafMask[iy_jy][ix_jx];
+              //Note: The "filter_val" also is needed to calculate
+              //      the denominator used in normalization.
+              //      It is unusual to use a mask unless you intend
+              //      to normalize the result later, but I don't enforce this
+
+            RealNum delta_g = 
+              filter_val * aafSource[iy_jy][ix_jx];
 
             g += delta_g;
-              // Note: We previously applied the mask by multiplying
-              //          aaDensity[iy][ix]
-              //         by aafMask[iy][ix]   (if present)
-            if (normalize) {
-              if (aafMask)
-                denominator +=
-                  aafMask[iy-jy][ix-jx] * aafH[jy+halfwidth[1]][jx+halfwidth[0]];
-                                               
-              else
-                denominator += aafH[jy+halfwidth[1]][jx+halfwidth[0]];
-            }
-                                          
-            // Note: If there were no mask, and if the filter is normalized
-            // then denominator=1 always, and we could skip the line above.
+
+            if (aafDenominator)
+              denominator += filter_val;
           }
         }
 
-        if (normalize) {
-          if (denominator != 0.0)
-            g /= denominator;
-          else
-            //Otherwise, this position lies outside the mask region.
-            g = 0.0;
-        }
+        if (aafDenominator)
+          aafDenominator[ix][iy] = denominator;
 
         aafDest[iy][ix] = g;
       }
     }
   } //Apply()
+
+
+  void Normalize() {
+    // Make sure the sum of the filter weights is 1
+    RealNum total = 0.0;
+    for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+      for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+        total += aafH[iy][ix];
+    for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+      for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+        aafH[iy][ix] /= total;
+  }
 
 
   void Alloc(Integer const set_halfwidth[2]) {
@@ -130,11 +194,17 @@ public:
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    Alloc2D(array_size, &af, &aafH);
+    Alloc2D(array_size, &afH, &aafH);
     for (int iy = 0; iy < array_size[1]; iy++)
       for (int ix = 0; ix < array_size[0]; ix++)
         aafH[iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
+
+    //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
+    aafH += halfwidth[1];
+    for (int iy = 0; iy < array_size[1]; iy++)
+      aafH[iy] += halfwidth[0];
   }
+
 
   void Dealloc() {
     //Integer array_size[2];
@@ -142,7 +212,12 @@ public:
       array_size[d] = 1 + 2*halfwidth[d];
       halfwidth[d] = -1;
     }
-    Dealloc2D(array_size, &af, &aafH);
+    //shift pointers back to normal
+    aafH -= halfwidth[1];
+    for (int iy = 0; iy < array_size[1]; iy++)
+      aafH[iy] -= halfwidth[0];
+    //then deallocate
+    Dealloc2D(array_size, &afH, &aafH);
     for(Integer d=0; d < 2; d++)
       array_size[d] = -1;
   }
@@ -150,65 +225,73 @@ public:
 
   void Resize(Integer const set_halfwidth[2]) {
     //Integer array_size[2];
-    if (af && aafH) {
+    if (afH && aafH) {
       for(Integer d=0; d < 2; d++)
         array_size[d] = 1 + 2*halfwidth[d];
-      Dealloc2D(array_size, &af, &aafH);
+      Dealloc2D(array_size, &afH, &aafH);
     }
     for(Integer d=0; d < 2; d++) {
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    Alloc2D(array_size, &af, &aafH);
+    Alloc2D(array_size, &afH, &aafH);
   }
 
-  inline Filter2D<RealNum, Integer>&
-    operator = (const Filter2D<RealNum, Integer>& source) {
-    Resize(source.halfwidth); // allocates and initializes af and aaafH
+
+  inline Filter2D(const Filter2D<RealNum, Integer>& source) {
+    Init();
+    Resize(source.halfwidth); // allocates and initializes afH and aafH
     //for(Int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
     //  for(Int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
     //    aafH[iy][ix] = source.aafH[iy][ix];
-    // Use memcpy() instead:
-    memcpy(af,
-           source.af,
-           ((1+2*halfwidth[0]) * (1+2*halfwidth[1]))
-           *sizeof(RealNum));
-  } // operator = ()
+    // -- Use memcpy() instead: --
+    //memcpy(afH,
+    //       source.afH,
+    //       (array_size[0] * array_size[1])
+    //       *sizeof(RealNum));
+    // -- Use std:copy() instead: --
+    std::copy(source.afH,
+              source.afH + (array_size[0] * array_size[1]),
+              afH);
+  }
+
 
   void Init() {
     halfwidth[0] = -1;
     halfwidth[1] = -1;
-    af = NULL;
+    afH = NULL;
     aafH = NULL;
   }
+
 
   Filter2D(Integer const set_halfwidth[2]) {
     Init();
     Resize(set_halfwidth);
   }
 
+
   Filter2D() {
     Init();
   }
 
-  Filter2D(const Filter2D<RealNum, Integer>& f) {
-    Init();
-    *this = f;
-  }
 
   ~Filter2D() {
     Dealloc();
   }
 
-  void Normalize() {
-    // Make sure the sum of the filter weights is 1
-    RealNum total = 0.0;
-    for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-      for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-        total += aafH[iy+halfwidth[1]][ix+halfwidth[0]];
-    for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-      for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-        aafH[iy+halfwidth[1]][ix+halfwidth[0]] /= total;
+
+  inline void swap(Filter2D<RealNum, Integer> &other) {
+    std::swap(afH, other.afH);
+    std::swap(aafH, other.aafH);
+    std::swap(halfwidth, other.halfwidth);
+    std::swap(array_size, other.array_size);
+  }
+
+
+  inline Filter2D<RealNum, Integer>&
+    operator = (Filter2D<RealNum, Integer> source) {
+    this->swap(source);
+    return *this;
   }
 
 }; // class Filter2D
@@ -218,14 +301,14 @@ public:
 
 
 template<class RealNum>
-// Create a 2-D filter and fill it with a "generalized Gaussian" function:
+// Create a 2D filter and fill it with a "generalized Gaussian" function:
 //    h_xy(r) = A*exp(-r^m)
-// where   r  = sqrt((x/s_x)^2 + (y/s_y)^2)
+// where   r  = sqrt((x/σ_x)^2 + (y/σ_y)^2)
 //   and   A  is determined by normalization of the discrete sum
 // Note: "A" is equal to the value stored in the middle of the array,
 //       The caller can determine what "A" is by looking at this value.
 Filter2D<RealNum, int>
-GenFilterGenGauss2D(RealNum width[2],    //"s_x", "s_y" parameters
+GenFilterGenGauss2D(RealNum width[2],    //"σ_x", "σ_y" parameters
                     RealNum m_exp,       //"m" exponent parameter
                     int halfwidth[2],
                     RealNum *pA=NULL,    //optional:report A coeff to user
@@ -237,6 +320,7 @@ GenFilterGenGauss2D(RealNum width[2],    //"s_x", "s_y" parameters
     if (h < window_threshold)
       window_threshold = h;
   }
+
   Filter2D<RealNum, int> filter(halfwidth);
   RealNum total = 0;
   for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
@@ -247,22 +331,23 @@ GenFilterGenGauss2D(RealNum width[2],    //"s_x", "s_y" parameters
         h = 0.0; // this eliminates corner entries which fall below threshold
                  // (and eliminates anisotropic artifacts due to these corners)
                  // There's no reason to keep any entries less than min value.
-      filter.aafH[iy+halfwidth[1]]
-                 [ix+halfwidth[0]] = h;
+
+      filter.aafH[iy][ix] = h;
+                 
       total += h;
     }
   }
+
   // normalize:
   for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
     for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
-      filter.aafH[iy+halfwidth[1]]
-                 [ix+halfwidth[0]] /= total;
+      filter.aafH[iy][ix] /= total;
+                 
       //FOR DEBUGGING REMOVE EVENTUALLY
       if (pReportProgress)
         *pReportProgress << "GenGauss2D:" //<< window_threshold
                          <<" aafH["<<iy<<"]["<<ix<<"] = "
-                         << filter.aafH[iy+halfwidth[1]]
-                                       [ix+halfwidth[0]] << endl;
+                         << filter.aafH[iy][ix] << endl;
     }
   }
   return filter;
@@ -300,7 +385,7 @@ GenFilterGenGauss2D(RealNum width[2],            //"s_x", "s_y" parameters
 
 
 template<class RealNum>
-// Create a 2-D filter and fill it with a difference of (generalized) Gaussians:
+// Create a 2D filter and fill it with a difference of (generalized) Gaussians:
 // This version requires that the caller has already created individual
 // filters for the two gaussians.
 // All this function does is subtract one filter from the other (and rescale).
@@ -315,15 +400,11 @@ _GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
                  RealNum *pB=NULL, //optional:report A,B coeffs to user
                  ostream *pReportProgress = NULL)
 {
+
   RealNum A, B;
   //A, B = height of the central peak
-  //       The central peak is located in the middle of the filter's array
-  //       (at position "halfwidth")
-  A = filterXY_A.aafH[filterXY_A.halfwidth[0]]
-                     [filterXY_A.halfwidth[1]];
-  B = filterXY_B.aafH[filterXY_B.halfwidth[0]]
-                     [filterXY_B.halfwidth[1]];
-
+  A = filterXY_A.aafH[0][0];
+  B = filterXY_B.aafH[0][0];
 
   // The "difference of gaussians" filter is the difference between
   // these two (generalized) gaussian filters.
@@ -337,8 +418,7 @@ _GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
 
   for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
     for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
-      filter.aafH[iy+halfwidth[1]]
-                 [ix+halfwidth[0]] = 0.0;
+      filter.aafH[iy][ix] = 0.0;
 
       // The two filters may have different widths, so we have to check
       // that ix and iy lie within the domain of these two filters before
@@ -346,29 +426,24 @@ _GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
       if (((-filterXY_A.halfwidth[0]<=ix) && (ix<=filterXY_A.halfwidth[0])) &&
           ((-filterXY_A.halfwidth[1]<=iy) && (iy<=filterXY_A.halfwidth[1])))
 
-        filter.aafH[iy+halfwidth[1]]
-                   [ix+halfwidth[0]] +=
-          filterXY_A.aafH[iy+filterXY_A.halfwidth[1]]
-                         [ix+filterXY_A.halfwidth[0]];   //  /  (A-B); COMMENTING OUT
+        filter.aafH[iy][ix] +=filterXY_A.aafH[iy][ix]; // /(A-B); COMMENTING OUT
+                         
       // COMMENTING OUT: (The factor of 1/(A-B) insures that the central peak has height 1)
 
       if (((-filterXY_B.halfwidth[0]<=ix) && (ix<=filterXY_B.halfwidth[0])) &&
           ((-filterXY_B.halfwidth[1]<=iy) && (iy<=filterXY_B.halfwidth[1])))
 
-        filter.aafH[iy+halfwidth[1]]
-                   [ix+halfwidth[0]] -=
-          filterXY_B.aafH[iy+filterXY_B.halfwidth[1]]
-                         [ix+filterXY_B.halfwidth[0]];   //  /  (A-B); COMMENTING OUT
+        filter.aafH[iy][ix] -=filterXY_B.aafH[iy][ix]; // /(A-B); COMMENTING OUT
+                         
 
 
       //FOR DEBUGGING REMOVE EVENTUALLY
       if (pReportProgress)
         *pReportProgress << "GenDogg2D: aafH["<<iy<<"]["<<ix<<"] = "
-                         << filter.aafH[iy+halfwidth[1]]
-                                       [ix+halfwidth[0]] << endl;
+                         << filter.aafH[iy][ix] << endl;
 
-      // *pReportProgress  << aafH[iy+halfwidth[1]][ix+halfwidth[0]];
-      //if (ix == halfwidth[0])
+      // *pReportProgress  << aafH[iy][ix];
+      //if (ix == 0)
       //  *pReportProgress << "\n";
       //else
       //  *pReportProgress << " ";
@@ -392,7 +467,7 @@ _GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
 
 
 template<class RealNum>
-// Create a 2-D filter and fill it with a difference of (generalized) Gaussians:
+// Create a 2D filter and fill it with a difference of (generalized) Gaussians:
 Filter2D<RealNum, int> 
 GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
                 RealNum width_b[2],  //"b" parameter in formula

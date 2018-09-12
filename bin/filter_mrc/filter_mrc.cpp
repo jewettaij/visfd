@@ -11,6 +11,11 @@
 #include <array>
 //#include <fftw3.h>  not needed yet
 using namespace std;
+
+#ifndef DISABLE_OPENMP
+#include <omp.h>       // (OpenMP-specific)
+#endif
+
 #include <err_report.h>
 #include <alloc2d.h>
 #include <alloc3d.h>
@@ -25,15 +30,24 @@ using namespace std;
 
 
 
+/// @brief This is a version of the function of the same name defined in 
+/// "filter2d.h".  This version allows the user to control the width of the 
+/// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
+/// which specifies the width of the interval in units of the "width[]"
+/// (ie. σ_x, σ_y) parameters, OR the "filter_truncate_threshold" which 
+/// specifies how much the filter must decay before the filter is cutoff.
+/// This function was not intended for public use.
 
 template<class RealNum>
-Filter2D<RealNum, int>
-GenFilterGenGauss2D(RealNum width[2],    //"s_x", "s_y" parameters
-                    RealNum m_exp,       //"m" parameter in formula
-                    RealNum filter_truncate_ratio, //controls window width
-                    RealNum filter_truncate_threshold, //controls window width
-                    RealNum *pA=NULL,    //optional:report A coeff to user
-                    ostream *pReportEquation = NULL)
+static Filter2D<RealNum, int>
+GenFilterGenGauss2D(RealNum width[2],    //!< "s_x", "s_y" parameters
+                    RealNum m_exp,       //!< "m" parameter in formula
+                    RealNum filter_truncate_ratio, //!< controls window width
+                    RealNum filter_truncate_threshold, //!< controls window width
+                    RealNum *pA=NULL,    //!< optional:report A coeff to user
+                    ostream *pReportEquation = NULL //!< optional: print equation to the terminal
+                    )
+                    
 {
   // choose the filter window width based on the filter_truncate_threshold
   int halfwidth[2];
@@ -56,15 +70,23 @@ GenFilterGenGauss2D(RealNum width[2],    //"s_x", "s_y" parameters
 
 
 
+/// @brief This is a version of the function of the same name defined in 
+/// "filter3d.h".  This version allows the user to control the width of the 
+/// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
+/// which specifies the width of the interval in units of the "width[]"
+/// (ie. σ_x, σ_y, σ_z) parameters, OR the "filter_truncate_threshold" which 
+/// specifies how much the filter must decay before the filter is cutoff.
+/// This function was not intended for public use.
 
 template<class RealNum>
-Filter3D<RealNum, int>
-GenFilterGenGauss3D(RealNum width[3],    //"s_x", "s_y", "s_z", parameters
-                    RealNum m_exp,       //"m" parameter in formula
-                    RealNum filter_truncate_ratio, //controls window width
-                    RealNum filter_truncate_threshold, //controls window width
-                    RealNum *pA=NULL,    //optional:report A coeff to user
-                    ostream *pReportEquation = NULL)
+static Filter3D<RealNum, int>
+GenFilterGenGauss3D(RealNum width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
+                    RealNum m_exp,       //!<"m" parameter in formula
+                    RealNum filter_truncate_ratio, //!<controls window width
+                    RealNum filter_truncate_threshold, //!<controls window width
+                    RealNum *pA=NULL,    //!<optional:report A coeff to user
+                    ostream *pReportEquation = NULL  //!< optional: print equation to the terminal
+                    )
 {
   // choose the filter window width based on the filter_truncate_threshold
   int halfwidth[3];
@@ -81,24 +103,31 @@ GenFilterGenGauss3D(RealNum width[3],    //"s_x", "s_y", "s_z", parameters
                              filter_truncate_ratio,
                              pA,
                              pReportEquation);
-} //GenFilterGenGauss2D(...,filter_truncate_ratio, filter_truncate_thresh,...)
+} //GenFilterGenGauss3D(...,filter_truncate_ratio, filter_truncate_thresh,...)
 
 
 
 
+/// @brief This is a version of the function of the same name defined in 
+/// "filter2d.h".  This version allows the user to control the width of the 
+/// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
+/// which specifies the width of the interval in units of the "width_a/b[]"
+/// (ie. a_x, b_x, ...) parameters, OR the "filter_truncate_threshold" which 
+/// specifies how much the filter must decay before the filter is cutoff.
+/// This function was not intended for public use.
 
 template<class RealNum>
-// Create a 2-D filter and fill it with a difference of (generalized) Gaussians:
-Filter2D<RealNum, int> 
-GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
-                RealNum width_b[2],  //"b" parameter in formula
-                RealNum m_exp,       //"m" parameter in formula
-                RealNum n_exp,       //"n" parameter in formula
+static Filter2D<RealNum, int> 
+GenFilterDogg2D(RealNum width_a[2],  //!< "a" parameter in formula
+                RealNum width_b[2],  //!< "b" parameter in formula
+                RealNum m_exp,       //!< "m" parameter in formula
+                RealNum n_exp,       //!< "n" parameter in formula
                 RealNum filter_truncate_ratio,//how many sigma before cutoff?
                 RealNum filter_truncate_threshold,//cutoff when decay below threshold
-                RealNum *pA=NULL, //optional:report A,B coeffs to user
-                RealNum *pB=NULL, //optional:report A,B coeffs to user
-                ostream *pReportProgress = NULL)
+                RealNum *pA=NULL, //!< optional:report A,B coeffs to user
+                RealNum *pB=NULL, //!< optional:report A,B coeffs to user
+                ostream *pReportProgress = NULL  //!< optional: print equation to the terminal
+                )
 {
   RealNum filter_truncate_ratio_A = filter_truncate_ratio;
   RealNum filter_truncate_ratio_B = filter_truncate_ratio;
@@ -133,19 +162,27 @@ GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
 
 
 
+/// @brief This is a version of the function of the same name defined in 
+/// "filter3d.h".  This version allows the user to control the width of the 
+/// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
+/// which specifies the width of the interval in units of the "width_a/b[]"
+/// (ie. a_x, b_x, ...) parameters, OR the "filter_truncate_threshold" which 
+/// specifies how much the filter must decay before the filter is cutoff.
+/// This function was not intended for public use.
 
 template<class RealNum>
 // Create a 3-D filter and fill it with a difference of (generalized) Gaussians:
-Filter3D<RealNum, int> 
+static Filter3D<RealNum, int> 
 GenFilterDogg3D(RealNum width_a[3],  //"a" parameter in formula
                 RealNum width_b[3],  //"b" parameter in formula
                 RealNum m_exp,       //"m" parameter in formula
                 RealNum n_exp,       //"n" parameter in formula
                 RealNum filter_truncate_ratio,//how many sigma before cutoff?
                 RealNum filter_truncate_threshold,//cutoff when decay below threshold
-                RealNum *pA=NULL, //optional:report A,B coeffs to user
-                RealNum *pB=NULL, //optional:report A,B coeffs to user
-                ostream *pReportProgress = NULL)
+                RealNum *pA = NULL, //optional:report A,B coeffs to user
+                RealNum *pB = NULL, //optional:report A,B coeffs to user
+                ostream *pReportProgress = NULL  //!< optional: print equation to the terminal
+                )
 {
   RealNum filter_truncate_ratio_A = filter_truncate_ratio;
   RealNum filter_truncate_ratio_B = filter_truncate_ratio;
@@ -186,13 +223,20 @@ GenFilterDogg3D(RealNum width_a[3],  //"a" parameter in formula
 
 
 
+/// @brief This is a version of the function of the same name defined in 
+/// "filter3d.h".  This version allows the user to control the width of the 
+/// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
+/// which specifies the width of the interval in units of the "width[]"
+/// (ie. σ_x, σ_y, σ_z) parameters, OR the "filter_truncate_threshold" which 
+/// specifies how much the filter must decay before the filter is cutoff.
+/// This function was not intended for public use.
 
 template<class RealNum>
-RealNum
+static RealNum
 ApplyGauss3D(int const image_size[3], 
-             RealNum ***aaafSource,
+             RealNum const *const* const *aaafSource,
              RealNum ***aaafDest,
-             RealNum ***aaafMask,
+             RealNum const *const *const *aaafMask,
              RealNum const sigma[3],
              RealNum filter_truncate_ratio,
              RealNum filter_truncate_threshold,
@@ -221,13 +265,20 @@ ApplyGauss3D(int const image_size[3],
 
 
 
+/// @brief This is a version of the function of the same name defined in 
+/// "filter3d.h".  This version allows the user to control the width of the 
+/// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
+/// which specifies the width of the interval in units of the "sigma_a/b[]"
+/// (ie. a_x, b_x, ...) parameters, OR the "filter_truncate_threshold" which 
+/// specifies how much the filter must decay before the filter is cutoff.
+/// This function was not intended for public use.
 
 template<class RealNum>
 void
 ApplyDog3D(int const image_size[3], //source image size
-           RealNum ***aaafSource,   //source image
+           RealNum const *const *const *aaafSource,  //source image
            RealNum ***aaafDest,     //save results here
-           RealNum ***aaafMask,     //ignore voxels where mask==0
+           RealNum const *const *const *aaafMask,  //ignore voxels where mask==0
            RealNum sigma_a[3],
            RealNum sigma_b[3],
            RealNum filter_truncate_ratio,
@@ -290,9 +341,9 @@ ApplyDog3D(int const image_size[3], //source image size
 template<class RealNum>
 void
 ApplyDogScaleFree3D(int const image_size[3], //source image size
-                    RealNum ***aaafSource,   //source image
+                    RealNum const *const *const *aaafSource,   //source image
                     RealNum ***aaafDest,     //save results here
-                    RealNum ***aaafMask,     //ignore voxels where mask==0
+                    RealNum const *const *const *aaafMask,     //ignore voxels where mask==0
                     RealNum const sigma[3],  //Gaussian width in x,y,z drections
                     RealNum delta_sigma_over_sigma, //difference in Gauss widths
                     RealNum filter_truncate_ratio,
@@ -325,7 +376,7 @@ ApplyDogScaleFree3D(int const image_size[3], //source image size
 
 
 
-void
+static void
 HandleGGauss(Settings settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
@@ -344,7 +395,7 @@ HandleGGauss(Settings settings,
                tomo_in.aaafI,
                tomo_out.aaafI,
                mask.aaafI,
-               false,
+               true,
                &cerr);
 
 } //HandleGGauss()
@@ -352,7 +403,7 @@ HandleGGauss(Settings settings,
 
 
 
-void
+static void
 HandleGauss(Settings settings,
             MrcSimple &tomo_in,
             MrcSimple &tomo_out,
@@ -375,10 +426,9 @@ HandleGauss(Settings settings,
 
       
   cerr << " Filter Used:\n"
-    " h(x,y,z)   = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^))\n"
-    //" h(x,y,z)   = A*exp(-((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
+    " h(x,y,z)   = A*exp(-0.5*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^))\n"
     " ... where  A = " << A << "\n" 
-    "   (a_x, a_y, a_z) = "
+    "   (σ_x, σ_y, σ_z) = "
        << "(" << settings.width_a[0]
        << " " << settings.width_a[1]
        << " " << settings.width_a[2] << ")\n";
@@ -398,7 +448,7 @@ HandleGauss(Settings settings,
 
 
 
-void
+static void
 HandleDogg(Settings settings,
            MrcSimple &tomo_in,
            MrcSimple &tomo_out,
@@ -431,7 +481,7 @@ HandleDogg(Settings settings,
 
 
 
-void
+static void
 HandleDoggXY(Settings settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
@@ -576,7 +626,7 @@ HandleDoggXY(Settings settings,
 
 
 
-void
+static void
 HandleDog(Settings settings,
           MrcSimple &tomo_in,
           MrcSimple &tomo_out,
@@ -600,10 +650,8 @@ HandleDog(Settings settings,
 
   cerr << " Filter Used:\n"
     " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
-    //" h_a(x,y,z) = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
-    " h_a(x,y,z) = A*exp(-((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
-    //" h_b(x,y,z) = B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
-    " h_b(x,y,z) = B*exp(-((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
+    " h_a(x,y,z) = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
+    " h_b(x,y,z) = B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
     "  ... where      A = " << A << "\n"
     "                 B = " << B << "\n" 
     "   (a_x, a_y, a_z) = "
@@ -631,7 +679,7 @@ HandleDog(Settings settings,
 
 
 
-void
+static void
 HandleDogScaleFree(Settings settings,
                    MrcSimple &tomo_in,
                    MrcSimple &tomo_out,
@@ -658,31 +706,10 @@ HandleDogScaleFree(Settings settings,
                       &cerr);
 
 
-  // REMOVE THIS CRUFT EVENTUALLY:
-  //for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
-  //  for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
-  //    for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
-  //      // Note: the DOG filter we used above is (in this case)
-  //      // approximation of the LOG filter, (Laplacian-of-Gaussian),
-  //      // which is the second derivative of the image intensity
-  //      // after convolution with a Gaussian.
-  //      // The ApplyDogScaleFree3D() function is not aware of the physical
-  //      // size of each voxel, so it measures distance in voxels.
-  //      // To report the 2nd derivative (with respect to position) in physical
-  //      // units (instead of voxels) we need to divide by voxel_width^2
-  //
-  //     tomo_out.aaafI[iz][iy][ix] /= SQR(voxel_width[0]);
-  //
-  //      // Here we assume the voxel width is the same in x,y,z directions
-  //      // and equals voxel_width[0].
-
-
   cerr << " Filter Used:\n"
     " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
-    //" h_a(x,y,z) = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
-    " h_a(x,y,z) = A*exp(-((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
-    //" h_b(x,y,z) = B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
-    " h_b(x,y,z) = B*exp(-((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
+    " h_a(x,y,z) = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
+    " h_b(x,y,z) = B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
     "  ... where      A = " << A << "\n"
     "                 B = " << B << "\n" 
     "   (a_x, a_y, a_z) = "
@@ -716,12 +743,13 @@ HandleDogScaleFree(Settings settings,
 /// This version refers to blobs by their diameter (instead of "sigma").
 /// This version can discard blobs which overlap with existing blobs.
 /// (This is sometimes called "non-max suppression".)
+/// This function is not intended for public use.
 
 template<class RealNum>
-void
+static void
 BlobDogNM(int const image_size[3], //!<source image size
-          RealNum ***aaafSource,   //!<source image
-          RealNum ***aaafMask,     //!<ignore voxels where mask==0
+          RealNum const *const *const *aaafSource,   //!<source image
+          RealNum const *const *const *aaafMask,     //!<ignore voxels where mask==0
           const vector<RealNum>& blob_diameters, //!< blob widths to try, ordered
           vector<array<RealNum,3> >& minima_crds, //!<store minima x,y,z coords here
           vector<array<RealNum,3> >& maxima_crds, //!<store maxima x,y,z coords here
@@ -813,8 +841,8 @@ template<class RealNum>
 static
 void
 _BlobDogNM(int const image_size[3], //!<source image size
-           RealNum ***aaafSource,   //!<source image
-           RealNum ***aaafMask,     //!<ignore voxels where mask==0
+           RealNum const *const *const *aaafSource,   //!<source image
+           RealNum const *const *const *aaafMask,     //!<ignore voxels where mask==0
            const vector<RealNum>& blob_diameters, //!<list of diameters to try (ordered)
            vector<array<RealNum,3> >& minima_crds, //!<store minima x,y,z coords here
            vector<array<RealNum,3> >& maxima_crds, //!<store maxima x,y,z coords here
@@ -871,7 +899,7 @@ _BlobDogNM(int const image_size[3], //!<source image size
 
 
 
-void
+static void
 HandleMinDistance(Settings settings,
                   MrcSimple &tomo_in,
                   MrcSimple &tomo_out,
@@ -956,7 +984,7 @@ HandleMinDistance(Settings settings,
 
 
 
-void
+static void
 HandleBlobsNonmaxSuppression(Settings settings,
                              float voxel_width[3],
                              vector<array<float,3> >& crds,
@@ -1087,7 +1115,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
 
-void
+static void
 HandleVisualizeBlobs(Settings settings,
                      MrcSimple &tomo_in,
                      MrcSimple &tomo_out,
@@ -1159,7 +1187,7 @@ HandleVisualizeBlobs(Settings settings,
 
 
 
-void
+static void
 HandleBlobDetector(Settings settings,
                    MrcSimple &tomo_in,
                    MrcSimple &tomo_out,
@@ -1237,16 +1265,12 @@ HandleBlobDetector(Settings settings,
     minima_crds[i][1] = minima_crds_voxels[i][1] * voxel_width[1];
     minima_crds[i][2] = minima_crds_voxels[i][2] * voxel_width[2];
     minima_diameters[i] *= voxel_width[0];      //Gaussian width has units of length
-    // REMOVE THIS CRUFT EVENTUALLY:
-    //minima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
   }
   for (int i = 0; i < n_maxima; i++) {
     maxima_crds[i][0] = maxima_crds_voxels[i][0] * voxel_width[0];
     maxima_crds[i][1] = maxima_crds_voxels[i][1] * voxel_width[1];
     maxima_crds[i][2] = maxima_crds_voxels[i][2] * voxel_width[2];
     maxima_diameters[i] *= voxel_width[0];      //Gaussian width has units of length
-    // REMOVE THIS CRUFT EVENTUALLY:
-    //maxima_scores[i] /= SQR(voxel_width[0]);//"score"~=Laplacian_of_Gaussian and
   }
 
   //string out_file_name_base = settings.out_file_name;
@@ -1382,14 +1406,6 @@ HandleBlobDetector(Settings settings,
             &aaaafI[2]);
 
 
-  // REMOVE THIS CRUFT EVENTUALLY:
-  //for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
-  //  for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
-  //    for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
-  //      // Here we assume the voxel width is the same in x,y,z directions
-  //      // and equals voxel_width[0].
-  //      tomo_out.aaafI[iz][iy][ix] /= SQR(voxel_width[0]);
-
 } //HandleBlobDetector()
 
 
@@ -1397,7 +1413,7 @@ HandleBlobDetector(Settings settings,
 
 
 
-void
+static void
 HandleThresholds(Settings settings,
                  MrcSimple &tomo_in,
                  MrcSimple &tomo_out,
@@ -1413,23 +1429,6 @@ HandleThresholds(Settings settings,
     float ave_intensity = AverageArr(tomo_out.header.nvoxels,
                                      tomo_out.aaafI,
                                      mask.aaafI);
-
-    // REMOVE THIS CRUFT LATER:
-    //size_t *histY;
-    //float *histX;
-    //int nbins = -1;
-    //float hist_bin_width = 1.0;
-    //HistogramArr(&histX,
-    //             &histY,
-    //             nbins,
-    //             hist_bin_width,
-    //             tomo_out.header.nvoxels,
-    //             tomo_out.aaafI,
-    //             mask.aaafI);
-    //for (int i=0; i < nbins; i++)
-    //  cerr << histX[i] << " " << histY[i] << endl;
-    //delete [] histX;
-    //delete [] histY;
 
     settings.out_threshold_01_a = ave_intensity +
       settings.out_threshold_01_a * stddev_intensity;
@@ -1477,7 +1476,7 @@ HandleThresholds(Settings settings,
 
 
 
-void
+static void
 HandleExtrema(Settings settings,
               MrcSimple &tomo_in,
               MrcSimple &tomo_out,
@@ -1829,7 +1828,7 @@ HandleExtrema(Settings settings,
 
 
 
-void
+static void
 HandleTemplateGGauss(Settings settings,
                      MrcSimple &tomo_in,
                      MrcSimple &tomo_out,
@@ -1852,7 +1851,7 @@ HandleTemplateGGauss(Settings settings,
   // So, we can undo this normalization by dividing all the w_i weights
   // by their maximum value max(w_i)    (at the central peak, at halfwidth).
   // This will mean the maximum w_i is 1, and the others decay to 0, as we want
-  float wpeak = w.aaafH[w.halfwidth[2]][w.halfwidth[1]][w.halfwidth[0]];
+  float wpeak = w.aaafH[0][0][0];
   w.MultiplyScalar(1.0 / wpeak);
 
   // Template function, Q:
@@ -1930,18 +1929,8 @@ HandleTemplateGGauss(Settings settings,
   for (int jz=-w.halfwidth[2]; jz<=w.halfwidth[2]; jz++)
     for (int jy=-w.halfwidth[1]; jy<=w.halfwidth[1]; jy++)
       for (int jx=-w.halfwidth[0]; jx<=w.halfwidth[0]; jx++)
-        Q_times_w.aaafH[jz+w.halfwidth[2]]
-                       [jy+w.halfwidth[1]]
-                       [jx+w.halfwidth[0]]
-          = 
-          (w.aaafH[jz+w.halfwidth[2]]
-                  [jy+w.halfwidth[1]]
-                  [jx+w.halfwidth[0]]
-           *
-           Q.aaafH[jz+w.halfwidth[2]]
-                  [jy+w.halfwidth[1]]
-                  [jx+w.halfwidth[0]]
-           );
+        Q_times_w.aaafH[jz][jy][jx] = 
+          w.aaafH[jz][jy][jx] * Q.aaafH[jz][jy][jx];
                
 
   // Calculate P_dot_Q = <P_, Q_> = sum_i (Q_times_w_i * P_i)
@@ -2081,7 +2070,7 @@ HandleTemplateGGauss(Settings settings,
   Q_mrc.Write("Q.mrc");
 
 
-  //{ // FOR DEBUGGING ONLY:
+  //{//FOR DEBUGGING ONLY: GENERATE NOISY SIGNAL WITH KNOWN AMPLITUDE AND WIDTH
   //  int Q_rand_halfwidth[3];
   //  Q_rand_halfwidth[0] = floor(2 * w.halfwidth[0]);
   //  Q_rand_halfwidth[1] = floor(2 * w.halfwidth[1]);
@@ -2099,12 +2088,8 @@ HandleTemplateGGauss(Settings settings,
   //  for (int jz=-Q_rand.halfwidth[2]; jz<=Q_rand.halfwidth[2]; jz++) {
   //    for (int jy=-Q_rand.halfwidth[1]; jy<=Q_rand.halfwidth[1]; jy++) {
   //      for (int jx=-Q_rand.halfwidth[0]; jx<=Q_rand.halfwidth[0]; jx++) {
-  //        Q_rand_mrc.aaafI[jz+Q_rand.halfwidth[2]]
-  //                        [jy+Q_rand.halfwidth[1]]
-  //                        [jx+Q_rand.halfwidth[0]] *= 0.5;
-  //        Q_rand_mrc.aaafI[jz+Q_rand.halfwidth[2]]
-  //                        [jy+Q_rand.halfwidth[1]]
-  //                        [jx+Q_rand.halfwidth[0]] += 0.2*RANDOM_GAUSSIAN();
+  //        Q_rand_mrc.aaafI[jz][jy][jx] *= 0.5;
+  //        Q_rand_mrc.aaafI[jz][jy][jx] += 0.2*RANDOM_GAUSSIAN();
   //      }
   //    }
   //  }
@@ -2119,7 +2104,7 @@ HandleTemplateGGauss(Settings settings,
 
 
 
-void
+static void
 HandleTemplateGauss(Settings settings,
                     MrcSimple &tomo_in,
                     MrcSimple &tomo_out,
@@ -2141,7 +2126,7 @@ HandleTemplateGauss(Settings settings,
   // So, we can undo this normalization by dividing all the w_i weights
   // by their maximum value max(w_i)    (at the central peak, at halfwidth).
   // This will mean the maximum w_i is 1, and the others decay to 0, as we want
-  float wpeak = w.aaafH[w.halfwidth[2]][w.halfwidth[1]][w.halfwidth[0]];
+  float wpeak = w.aaafH[0][0][0];
   w.MultiplyScalar(1.0 / wpeak);
 
   // Template function, Q:
@@ -2233,18 +2218,8 @@ HandleTemplateGauss(Settings settings,
   //for (int jz=-w.halfwidth[2]; jz<=w.halfwidth[2]; jz++)
   //  for (int jy=-w.halfwidth[1]; jy<=w.halfwidth[1]; jy++)
   //    for (int jx=-w.halfwidth[0]; jx<=w.halfwidth[0]; jx++)
-  //      Q_times_w.aaafH[jz+w.halfwidth[2]]
-  //                     [jy+w.halfwidth[1]]
-  //                     [jx+w.halfwidth[0]]
-  //        = 
-  //        (w.aaafH[jz+w.halfwidth[2]]
-  //                [jy+w.halfwidth[1]]
-  //                [jx+w.halfwidth[0]]
-  //         *
-  //         Q.aaafH[jz+w.halfwidth[2]]
-  //                [jy+w.halfwidth[1]]
-  //                [jx+w.halfwidth[0]]
-  //         );
+  //      Q_times_w.aaafH[jz][jy][jx] =
+  //        w.aaafH[jz][jy][jx] * Q.aaafH[jz][jy][jx];
                
 
 
@@ -2289,15 +2264,12 @@ HandleTemplateGauss(Settings settings,
   // central peak has a height of 1.  What we want to do instead is convolve
   // it with a Gaussian whose central peak has a height equal to the height
   // of the "Q" gaussian.  This number is in the middle of the Q.aaafH array
-  float qpeak = q.aaafH[Q.halfwidth[2]]
-                       [Q.halfwidth[1]]
-                       [Q.halfwidth[0]];
+  float qpeak = q.aaafH[0][0][0];
+
 
 
   //  REMOVE THIS CRUFT:
-  //float q_times_w_peak = Q_times_w.aaafH[Q_times_w.halfwidth[2]]
-  //                                      [Q_times_w.halfwidth[1]]
-  //                                      [Q_times_w.halfwidth[0]];
+  //float q_times_w_peak = Q_times_w.aaafH[0][0][0]
   ////should be the same, since w peaked at 1
   //assert((abs(qpeak-qave)-abs(q_times_w_peak)) < 0.001*abs(q_times_w_peak));
 
@@ -2464,7 +2436,7 @@ HandleTemplateGauss(Settings settings,
 
 
 
-void
+static void
 HandleLocalFluctuations(Settings settings,
                         MrcSimple &tomo_in,
                         MrcSimple &tomo_out,
@@ -2486,9 +2458,9 @@ HandleLocalFluctuations(Settings settings,
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
   // So, we can undo this normalization by dividing all the w_i weights
-  // by their maximum value max(w_i)    (at the central peak, at halfwidth).
+  // by their maximum value max(w_i)    (at the central peak)
   // This will mean the maximum w_i is 1, and the others decay to 0, as we want
-  float wpeak = w.aaafH[w.halfwidth[2]][w.halfwidth[1]][w.halfwidth[0]];
+  float wpeak = w.aaafH[0][0][0];
   w.MultiplyScalar(1.0 / wpeak);
 
 
@@ -2625,7 +2597,7 @@ HandleLocalFluctuations(Settings settings,
 template<class RealNum>
 void
 ScrambleImage3D(int image_size[3],
-                RealNum const ***aaafSource,
+                RealNum const *const *const *aaafSource,
                   //(ellipsoidal) scramble radius in x,y,z directions:
                 int const scramble_radius[3], 
                 RealNum ***aaafDest)
@@ -2657,11 +2629,11 @@ ScrambleImage3D(int image_size[3],
 
 
 
-void
+static void
 HandleBootstrapDogg(Settings settings,
-                     MrcSimple &tomo_in,
-                     MrcSimple &tomo_out,
-                     MrcSimple &mask);
+                    MrcSimple &tomo_in,
+                    MrcSimple &tomo_out,
+                    MrcSimple &mask);
 {
   cerr << "filter_type = Difference-of-Generalized-Gaussians with BOOTSTRAPPING\n"
        << "              (BOOTSTRAP_DOGG)\n";
@@ -2793,6 +2765,23 @@ int main(int argc, char **argv) {
   try {
     Settings settings; // parse the command-line argument list from the shell
     settings.ParseArgs(argc, argv);
+
+    #ifndef DISABLE_OPENMP
+    #pragma omp parallel
+    {
+      int rank, nthr;
+      rank = omp_get_thread_num();
+      //cerr << "rank=" << rank << endl;
+      if (rank == 0) {
+        nthr = omp_get_num_threads();
+        cerr << " (Parallel version using " << nthr << " threads.\n"
+             << "  You can reduce this using the \"-np n\" argument, or\n"
+             << "  by setting the OMP_NUM_THREADS environment variable.)" << endl;
+      }
+    }
+    #else
+    cerr << " (Serial version)" << endl;
+    #endif //#ifndef DISABLE_OPENMP
 
     MrcSimple tomo_in;
     if (settings.in_file_name != "") {

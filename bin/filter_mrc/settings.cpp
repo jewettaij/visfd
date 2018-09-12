@@ -5,6 +5,10 @@
 #include <cmath>      //(defines "HUGE_VALF")
 using namespace std;
 
+#ifndef DISABLE_OPENMP
+#include <omp.h>       // (OpenMP-specific)
+#endif
+
 #include <err_report.h>
 #include "settings.h"
 
@@ -1548,6 +1552,28 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-sphere01") || (vArgs[i] == "-sphere-01")) {
       sphere_decals_foreground_norm = false;
       num_arguments_deleted = 1;
+    }
+
+    else if (vArgs[i] == "-np") {
+      #ifdef DISABLE_OPENMP
+      throw InputErr("Error: The " + vArgs[i] + 
+                     " argument is only available if program was compiled\n"
+                     " with support for OpenMP (multiprocessor support).\n");
+      #else
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        int num_threads = stoi(vArgs[i+1]);
+        omp_set_num_threads(num_threads);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a positive integer, the\n"
+                       "       number of threads (processors) requested.\n");
+      }
+      #endif //#ifdef DISABLE_OPENMP
+      num_arguments_deleted = 2;
     }
 
 

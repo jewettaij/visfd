@@ -134,7 +134,7 @@ The user has the option to discard poor scoring minima or maxima,
 or minima and maxima which are too close together.
 
 
-The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be emphasized or selected using this filter.  Unfortunately, the computation is slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
+The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Unfortunately, the computation is slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
 
 
 The "**-dog**"" filter uses a (band-pass)
