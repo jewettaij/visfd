@@ -3,7 +3,13 @@
 mrc_simple_filter
 ===========
 
-This is a collection of programs (mainly "filter_mrc" and "combine_mrc") for 3-D image processing using the MRC file format.
+This is a C++ template library for 3D image processing
+("[filter3d.h](./lib/filter/filter3d.h)")
+as well as reading & writing image files using the the MRC file format
+("[mrc_simple.h](.lib/mrc_simple/mrc_simple.h").
+It is also a collection of stand-alone programs 
+(mainly "filter_mrc" and "combine_mrc") which use this library.
+Parallel acceleration is implemented using OpenMP.
 
 ## programs included with this repository:
 
@@ -31,8 +37,14 @@ voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.)
 A list of detected objects can be saved to a text file.
 Annotated images can be saved to a new MRC/REC file.
-Documentation for this program is located
+Documentation for this *stand-alone program* is located
 [here](./doc/doc_filter_mrc.md).
+The *source code* for the filters used by this program
+is located here
+[here](./lib/filter/filter3d.h).
+(This code is commented with Doxygen.  It uses C++ templates so it can easily
+ be applied to other 3D image formats which use different numeric precision.)
+
 
 
 ## combine_mrc
@@ -86,18 +98,54 @@ arguments may change in the future.
 
 ## Windows 10:
 
-Install the Windows Subsystem for Linux (WSL) and run
+Install the *Windows Subsystem for Linux (WSL)* and run
 
     sudo apt-get install build-essential
 
 and then follow the instructions above for linux.
-(Older windows users can install Cygwin or MinGW.)
+(Older windows users can install *Cygwin* or *MinGW*.)
 
-## Apple OSX:
+Alternatively, if you need support for programs that use a
+graphical user interface, you can install *virtualbox*
+and the newest version of *xubuntu*, and then follow the instructions above.
+
+## Apple Mac:
 
     cd src
-    source setup_gcc_OSX.sh
+    source setup_gcc_mac_serial.sh
     make
+
+NOTE: This will compile the (slow) serial version.
+To take advantage of multicore processors, you will have to
+[install support for OpenMP](https://stackoverflow.com/questions/29057437/compile-openmp-programs-with-gcc-compiler-on-os-x-yosemite)
+
+*The following proceedure has not been tested:*
+
+Apparently, one way to do this is to install homebrew, and then use:
+
+    brew install gcc
+
+Homebrew typically installs a version of g++ with an alternate name, such as
+"g++-8" (for example).
+You can either edit the "setup_gcc_mac_serial.sh"
+file and replace "g++" with "g++-8" beforehand,
+***...or*** 
+add the following line:
+
+    alias g++='g++-8'
+
+... to your ~/.bashrc file (and open a new terminal).
+Then use:
+
+    cd src
+    source setup_gcc_mac.sh
+    make
+
+Alternatively, if you prefer to avoid homebrew, it is possible to
+[use OpenMP with the clang compiler.](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/)
+(You will need to modify the "setup_gcc_mac_serial.sh" file accordingly.
+ One day, perhaps I will learn how to make this less painful.)
+
 
 ## Requirements:
 
