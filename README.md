@@ -37,13 +37,12 @@ voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.)
 A list of detected objects can be saved to a text file.
 Annotated images can be saved to a new MRC/REC file.
-Documentation for this *stand-alone program* is located
+Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 The *source code* for the filters used by this program
 is located here
 [here](./lib/filter/filter3d.h).
-(This code is commented with Doxygen.  It uses C++ templates so it can easily
- be applied to other 3D image formats which use different numeric precision.)
+(Doxygen comments are used throughout.)
 
 
 

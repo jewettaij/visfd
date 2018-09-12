@@ -25,8 +25,7 @@ using namespace std;
 ///
 /// @note  In practice, this class is not used often because separable filters
 ///        based on Gaussians are much much faster.
-/// @note  The "template" features are not yet intended for public use.
-///        -A 2018-7-27
+///        -A 2018-9-11
 
 template<class RealNum, class Integer>
 
@@ -36,75 +35,6 @@ public:
   RealNum ***aaafH;     //!< the same array which can be indexed using [i][j][k] notation
   Integer halfwidth[3]; //!< num pixels from filter center to edge in x,y,z directions
   Integer array_size[3]; //!<size of the array in x,y,z directions (2*halfwidth+1)
-
-
- private:
-  /// @brief Apply a filter to a single voxel from the source image (aaafSource)
-  ///         This function was not intended for public use.
-  /// @param ix  the voxel's position in that 3D image
-  /// @param iy  the voxel's position in that 3D image
-  /// @param iz  the voxel's position in that 3D image
-  /// @param size_source contains size of the source image (in the x,y,z directions)
-  /// @param aaafSource[][][] is the source image
-  /// @param optional. aaafMask[i][j][k]==0 for voxels we want to exclude from consideration
-  /// @param pDenominator=if you want to store the sum of the weights considered, pass a pointer to a number
-  /// (useful if the sum was not complete due to some voxels being masked out,
-  ///  or because the filter extends beyond the boundaries of the image)
-  RealNum ApplyToVoxel(Integer ix,
-                       Integer iy,
-                       Integer iz,
-                       Integer const size_source[3],
-                       RealNum const *const *const *aaafSource,
-                       RealNum const *const *const *aaafMask = NULL,
-                       RealNum *pDenominator = NULL) const
-
-  {
-    RealNum g = 0.0;
-    RealNum denominator = 0.0;
-
-    for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
-      int iz_jz = iz-jz;
-      if ((iz_jz < 0) || (size_source[2] <= iz_jz))
-        continue;
-
-      for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
-        int iy_jy = iy-jy;
-        if ((iy_jy < 0) || (size_source[1] <= iy_jy))
-          continue;
-
-        for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
-          int ix_jx = ix-jx;
-          if ((ix_jx < 0) || (size_source[0] <= ix_jx))
-            continue;
-
-          RealNum filter_val = aaafH[jz][jy][jx];
-
-          if (aaafMask)
-              filter_val *= aaafMask[iz_jz][iy_jy][ix_jx];
-              //Note: The "filter_val" also is needed to calculate
-              //      the denominator used in normalization.
-              //      It is unusual to use a mask unless you intend
-              //      to normalize the result later, but I don't enforce this
-
-          RealNum delta_g = 
-            filter_val * aaafSource[iz_jz][iy_jy][ix_jx];
-
-          g += delta_g;
-
-          if (pDenominator)
-            denominator += filter_val;
-        }
-      }
-    }
-
-    if (pDenominator)
-      *pDenominator = denominator;
-
-    return g;
-  } // ApplyToVoxel()
-
-
-
 
  public:
 
@@ -255,6 +185,249 @@ public:
 
 
 
+  inline Filter3D(const Filter3D<RealNum, Integer>& source) {
+    Init();
+    Resize(source.halfwidth); // allocates and initializes afH and aaafH
+    //for(Int iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+    //  for(Int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+    //    for(Int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+    //      aaafH[iz][iy][ix] = source.aaafH[iz][iy][ix];
+    // -- Use memcpy() instead: --
+    //memcpy(afH,
+    //       source.afH,
+    //       array_size[0] * array_size[1] * array_size[2],
+    //       *sizeof(RealNum));
+    // -- Use std:copy() instead: --
+    std::copy(source.afH,
+              source.afH + (array_size[0] * array_size[1] * array_size[2]),
+              afH);
+  }
+
+
+  Filter3D(Integer const set_halfwidth[3]) {
+    Init();
+    Resize(set_halfwidth);
+  }
+
+
+  Filter3D() {
+    Init();
+  }
+
+
+  ~Filter3D() {
+    Dealloc();
+  }
+
+
+  inline void swap(Filter3D<RealNum, Integer> &other) {
+    std::swap(afH, other.afH);
+    std::swap(aaafH, other.aaafH);
+    std::swap(halfwidth, other.halfwidth);
+    std::swap(array_size, other.array_size);
+  }
+
+
+  inline Filter3D<RealNum, Integer>&
+    operator = (Filter3D<RealNum, Integer> source) {
+    this->swap(source);
+    return *this;
+  }
+
+
+  /// @ brief   Make sure the sum of the filter weights (in aaafH) is 1
+  void Normalize() {
+    RealNum total = 0.0;
+    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+          total += aaafH[iz][iy][ix];
+            
+    assert(total > 0.0);
+    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+          aaafH[iz][iy][ix] /= total;
+  }
+
+  /// @brief Calculate the (weighted) average value of the filter array aaafH
+  /// @param aaafW optional weights used when calculating the averages
+  /// @return the (weighted) average value of the filter array aaafH
+  RealNum Average(RealNum const *const *const *aaafW=NULL) const {
+    return AverageArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) average squared values in the filter array, aaafH
+  /// @param aaafW optional weights used when calculating the averages
+  /// @return the (weighted) average squared values in the filter array aaafH
+  RealNum AverageSqr(RealNum const *const *const *aaafW=NULL) const {
+    return _AveSqrArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) standard deviation of the filter array values
+  /// @param aaafW optional weights used when calculating the standard deviation
+  /// @return the (weighted) standard deviation of the filter array aaafH
+  RealNum StdDev(RealNum const *const *const *aaafW=NULL) const {
+    return StdDevArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) sum of the filter array values, aaafH
+  /// @param aaafW optional weights used when calculating the sum
+  /// @return the (weighted) sum of the filter array values
+  RealNum Sum(RealNum const *const *const *aaafW=NULL) const {
+    return _SumArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Calculate the (weighted) sum of the squared filter array values
+  /// @param aaafW optional weights used when calculating the sum
+  /// @return the (weighted) sum of the squared filter array values
+  RealNum SumSqr(RealNum const *const *const *aaafW=NULL) const {
+    return _SumSqrArr(array_size, aaafH, aaafW);
+  }
+
+  /// @brief Add a number to all of the filter array values, aaafH
+  /// @param offset  the number to add
+  void AddScalar(RealNum offset) {
+    _AddScalarArr(offset, array_size, aaafH);
+  }
+
+  /// @brief multiply all of the filter array values (aaafH) by a number
+  /// @param offset  the number to multiply
+  void MultiplyScalar(RealNum scale) {
+    _MultiplyScalarArr(scale, array_size, aaafH);
+  }
+
+
+
+ private:
+  /// @brief Apply a filter to the source image (aaafSource) at a particular
+  ///        voxel location.  This function was not intended for public use.
+  /// @param ix  the voxel's position in that 3D image
+  /// @param iy  the voxel's position in that 3D image
+  /// @param iz  the voxel's position in that 3D image
+  /// @param size_source contains size of the source image (in the x,y,z directions)
+  /// @param aaafSource[][][] is the source image
+  /// @param optional. aaafMask[i][j][k]==0 for voxels we want to exclude from consideration
+  /// @param pDenominator=if you want to store the sum of the weights considered, pass a pointer to a number
+  /// (useful if the sum was not complete due to some voxels being masked out,
+  ///  or because the filter extends beyond the boundaries of the image)
+  RealNum ApplyToVoxel(Integer ix,
+                       Integer iy,
+                       Integer iz,
+                       Integer const size_source[3],
+                       RealNum const *const *const *aaafSource,
+                       RealNum const *const *const *aaafMask = NULL,
+                       RealNum *pDenominator = NULL) const
+
+  {
+    RealNum g = 0.0;
+    RealNum denominator = 0.0;
+
+    for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
+      int iz_jz = iz-jz;
+      if ((iz_jz < 0) || (size_source[2] <= iz_jz))
+        continue;
+
+      for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
+        int iy_jy = iy-jy;
+        if ((iy_jy < 0) || (size_source[1] <= iy_jy))
+          continue;
+
+        for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
+          int ix_jx = ix-jx;
+          if ((ix_jx < 0) || (size_source[0] <= ix_jx))
+            continue;
+
+          RealNum filter_val = aaafH[jz][jy][jx];
+
+          if (aaafMask)
+              filter_val *= aaafMask[iz_jz][iy_jy][ix_jx];
+              //Note: The "filter_val" also is needed to calculate
+              //      the denominator used in normalization.
+              //      It is unusual to use a mask unless you intend
+              //      to normalize the result later, but I don't enforce this
+
+          RealNum delta_g = 
+            filter_val * aaafSource[iz_jz][iy_jy][ix_jx];
+
+          g += delta_g;
+
+          if (pDenominator)
+            denominator += filter_val;
+        }
+      }
+    }
+
+    if (pDenominator)
+      *pDenominator = denominator;
+
+    return g;
+  } // ApplyToVoxel()
+
+
+
+  /// @brief allocate space for the filter array
+  void Alloc(Integer const set_halfwidth[3]) {
+    //Integer array_size[3];
+    for(Integer d=0; d < 3; d++) {
+      halfwidth[d] = set_halfwidth[d];
+      array_size[d] = 1 + 2*halfwidth[d];
+    }
+    Alloc3D(array_size, &afH, &aaafH);
+    for (int iz = 0; iz < array_size[2]; iz++)
+      for (int iy = 0; iy < array_size[1]; iy++)
+        for (int ix = 0; ix < array_size[0]; ix++)
+          aaafH[iz][iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
+
+    //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
+    aaafH += halfwidth[2];
+    for (int iz = 0; iz < array_size[2]; iz++) {
+      aaafH[iz] += halfwidth[1];
+      for (int iy = 0; iy < array_size[1]; iy++) {
+        aaafH[iz][iy] += halfwidth[0];
+      }
+    }
+  }
+
+
+  /// @brief allocate space used by the filter array
+  void Dealloc() {
+    //Integer array_size[3];
+    for(Integer d=0; d < 3; d++) {
+      array_size[d] = 1 + 2*halfwidth[d];
+      halfwidth[d] = -1;
+    }
+    //shift pointers back to normal
+    aaafH -= halfwidth[2];
+    for (int iz = 0; iz < array_size[2]; iz++) {
+      aaafH[iz] -= halfwidth[1];
+      for (int iy = 0; iy < array_size[1]; iy++) {
+        aaafH[iz][iy] -= halfwidth[0];
+      }
+    }
+    //then deallocate
+    Dealloc3D(array_size, &afH, &aaafH);
+    for(Integer d=0; d < 3; d++)
+      array_size[d] = -1;
+  }
+
+
+  void Resize(Integer const set_halfwidth[3]) {
+    Dealloc();
+    Alloc(set_halfwidth);
+  }
+
+
+  void Init() {
+    halfwidth[0] = -1;
+    halfwidth[1] = -1;
+    halfwidth[2] = -1;
+    afH = NULL;
+    aaafH = NULL;
+  }
+  
+
+
 
   #ifndef DISABLE_TEMPLATE_MATCHING
 private:
@@ -269,6 +442,7 @@ private:
   ///         err_exponent, which is 2 by default) summed over all entries
   ///         in the template.  Weights are typically chosen so that they
   ///         decay to 0 near the boundaries of the aaafH array.
+  ///         This function is not yet intended for public use.
   RealNum
   _TemplateError(Integer ix, //!< voxel's position in the x,y,z directions
                  Integer iy, //!< voxel's position in the x,y,z directions
@@ -399,186 +573,6 @@ private:
   } //_ScanTemplateError()
 
   #endif //#ifndef DISABLE_TEMPLATE_MATCHING
-
-
-
- private:
-
-  /// @brief allocate space for the filter array
-  void Alloc(Integer const set_halfwidth[3]) {
-    //Integer array_size[3];
-    for(Integer d=0; d < 3; d++) {
-      halfwidth[d] = set_halfwidth[d];
-      array_size[d] = 1 + 2*halfwidth[d];
-    }
-    Alloc3D(array_size, &afH, &aaafH);
-    for (int iz = 0; iz < array_size[2]; iz++)
-      for (int iy = 0; iy < array_size[1]; iy++)
-        for (int ix = 0; ix < array_size[0]; ix++)
-          aaafH[iz][iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
-
-    //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
-    aaafH += halfwidth[2];
-    for (int iz = 0; iz < array_size[2]; iz++) {
-      aaafH[iz] += halfwidth[1];
-      for (int iy = 0; iy < array_size[1]; iy++) {
-        aaafH[iz][iy] += halfwidth[0];
-      }
-    }
-  }
-
-
-  /// @brief allocate space used by the filter array
-  void Dealloc() {
-    //Integer array_size[3];
-    for(Integer d=0; d < 3; d++) {
-      array_size[d] = 1 + 2*halfwidth[d];
-      halfwidth[d] = -1;
-    }
-    //shift pointers back to normal
-    aaafH -= halfwidth[2];
-    for (int iz = 0; iz < array_size[2]; iz++) {
-      aaafH[iz] -= halfwidth[1];
-      for (int iy = 0; iy < array_size[1]; iy++) {
-        aaafH[iz][iy] -= halfwidth[0];
-      }
-    }
-    //then deallocate
-    Dealloc3D(array_size, &afH, &aaafH);
-    for(Integer d=0; d < 3; d++)
-      array_size[d] = -1;
-  }
-
-
-  void Resize(Integer const set_halfwidth[3]) {
-    Dealloc();
-    Alloc(set_halfwidth);
-  }
-
-
-  void Init() {
-    halfwidth[0] = -1;
-    halfwidth[1] = -1;
-    halfwidth[2] = -1;
-    afH = NULL;
-    aaafH = NULL;
-  }
-  
-
- public:
-
-  inline Filter3D(const Filter3D<RealNum, Integer>& source) {
-    Init();
-    Resize(source.halfwidth); // allocates and initializes afH and aaafH
-    //for(Int iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-    //  for(Int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-    //    for(Int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-    //      aaafH[iz][iy][ix] = source.aaafH[iz][iy][ix];
-    // -- Use memcpy() instead: --
-    //memcpy(afH,
-    //       source.afH,
-    //       array_size[0] * array_size[1] * array_size[2],
-    //       *sizeof(RealNum));
-    // -- Use std:copy() instead: --
-    std::copy(source.afH,
-              source.afH + (array_size[0] * array_size[1] * array_size[2]),
-              afH);
-  }
-
-
-  Filter3D(Integer const set_halfwidth[3]) {
-    Init();
-    Resize(set_halfwidth);
-  }
-
-
-  Filter3D() {
-    Init();
-  }
-
-
-  ~Filter3D() {
-    Dealloc();
-  }
-
-
-  inline void swap(Filter3D<RealNum, Integer> &other) {
-    std::swap(afH, other.afH);
-    std::swap(aaafH, other.aaafH);
-    std::swap(halfwidth, other.halfwidth);
-    std::swap(array_size, other.array_size);
-  }
-
-
-  inline Filter3D<RealNum, Integer>&
-    operator = (Filter3D<RealNum, Integer> source) {
-    this->swap(source);
-    return *this;
-  }
-
-
-  /// @ brief   Make sure the sum of the filter weights (in aaafH) is 1
-  void Normalize() {
-    RealNum total = 0.0;
-    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-          total += aaafH[iz][iy][ix];
-            
-    assert(total > 0.0);
-    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-          aaafH[iz][iy][ix] /= total;
-  }
-
-  /// @brief Calculate the (weighted) average value of the filter array aaafH
-  /// @param aaafW optional weights used when calculating the averages
-  /// @return the (weighted) average value of the filter array aaafH
-  RealNum Average(RealNum const *const *const *aaafW=NULL) const {
-    return AverageArr(array_size, aaafH, aaafW);
-  }
-
-  /// @brief Calculate the (weighted) average squared values in the filter array, aaafH
-  /// @param aaafW optional weights used when calculating the averages
-  /// @return the (weighted) average squared values in the filter array aaafH
-  RealNum AverageSqr(RealNum const *const *const *aaafW=NULL) const {
-    return _AveSqrArr(array_size, aaafH, aaafW);
-  }
-
-  /// @brief Calculate the (weighted) standard deviation of the filter array values
-  /// @param aaafW optional weights used when calculating the standard deviation
-  /// @return the (weighted) standard deviation of the filter array aaafH
-  RealNum StdDev(RealNum const *const *const *aaafW=NULL) const {
-    return StdDevArr(array_size, aaafH, aaafW);
-  }
-
-  /// @brief Calculate the (weighted) sum of the filter array values, aaafH
-  /// @param aaafW optional weights used when calculating the sum
-  /// @return the (weighted) sum of the filter array values
-  RealNum Sum(RealNum const *const *const *aaafW=NULL) const {
-    return _SumArr(array_size, aaafH, aaafW);
-  }
-
-  /// @brief Calculate the (weighted) sum of the squared filter array values
-  /// @param aaafW optional weights used when calculating the sum
-  /// @return the (weighted) sum of the squared filter array values
-  RealNum SumSqr(RealNum const *const *const *aaafW=NULL) const {
-    return _SumSqrArr(array_size, aaafH, aaafW);
-  }
-
-  /// @brief Add a number to all of the filter array values, aaafH
-  /// @param offset  the number to add
-  void AddScalar(RealNum offset) {
-    _AddScalarArr(offset, array_size, aaafH);
-  }
-
-  /// @brief multiply all of the filter array values (aaafH) by a number
-  /// @param offset  the number to multiply
-  void MultiplyScalar(RealNum scale) {
-    _MultiplyScalarArr(scale, array_size, aaafH);
-  }
-
 
 }; // class Filter
 
@@ -898,6 +892,7 @@ GenFilterDogg3D(RealNum width_a[3],   //!< "a" parameter in formula
 //        It assumes separate Filter1D objects have already been created 
 //        which will blur the image in each direction (x,y,z).
 //        This function was not intended for public use
+//        Please use "ApplyGauss3d()" instead.  (See below.)
 template<class RealNum>
 static
 RealNum
@@ -1149,6 +1144,7 @@ _ApplyGauss3D(int const image_size[3],
   return A_coeff;
 
 } //_ApplyGauss3D(aFilter)
+
 
 
 
