@@ -100,9 +100,9 @@ public:
 
   /// @brief  Apply the filter to a 3D image (aaafSource[][][]).
   ///         This version is identical to the other version of Apply()
-  ///         except that this version both d(i) and g(i) whenever
+  ///         except that this version returns both d(i) and g(i) whenever
   ///         you supply a non-NULL afDenominator[] argument (see below).
-  ///         It also does not normalize the result (by dividing g(i) / d(i)).
+  ///         It also does NOT normalize the result (by dividing g(i) / d(i)).
   ///     
   /// @code
   /// If afMask == NULL, then filter computes g(i):
