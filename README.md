@@ -11,7 +11,7 @@ It is also a collection of stand-alone programs
 (mainly "[filter_mrc](./doc/doc_filter_mrc.md)" and
  "[combine_mrc](./doc/doc_combine_mrc.md))")
 which use this library.
-Parallel acceleration is implemented using OpenMP.
+Multiprocessor support is implemented using OpenMP.
 
 ## programs included with this repository:
 

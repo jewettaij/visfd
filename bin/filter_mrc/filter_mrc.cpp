@@ -28,6 +28,11 @@ using namespace std;
 #include "settings.h"
 
 
+string g_program_name("filter_mrc.cpp");
+string g_version_string("0.8.0");
+string g_date_string("2018-9-17");
+
+
 
 
 /// @brief This is a version of the function of the same name defined in 
@@ -2760,8 +2765,9 @@ HandleBootstrapDogg(Settings settings,
 
 
 
-
 int main(int argc, char **argv) {
+  cerr << g_program_name << " v" << g_version_string << ", " 
+       << g_date_string << "\n" << flush;
   try {
     Settings settings; // parse the command-line argument list from the shell
     settings.ParseArgs(argc, argv);
@@ -2774,9 +2780,8 @@ int main(int argc, char **argv) {
       //cerr << "rank=" << rank << endl;
       if (rank == 0) {
         nthr = omp_get_num_threads();
-        cerr << " (Parallel version using " << nthr << " threads.\n"
-             << "  You can reduce this using the \"-np n\" argument, or\n"
-             << "  by setting the OMP_NUM_THREADS environment variable.)" << endl;
+        cerr << "   (Using " << nthr << " threads (cpu cores).  You can change this using the \"-np n\"\n"
+             << "    argument, or by setting the OMP_NUM_THREADS environment variable.)" << endl;
       }
     }
     #else

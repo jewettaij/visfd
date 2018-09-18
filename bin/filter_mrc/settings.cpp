@@ -28,7 +28,7 @@ Settings::Settings() {
   mask_select = 1;
   use_mask_select = false;
   mask_out = 0.0;
-  use_mask_out = false;
+  use_mask_out = true;
   voxel_width = 0.0;    // How many nm per voxel? (if 0 then read from tomogram)
   voxel_width_divide_by_10 = false;
   filter_type = NONE;

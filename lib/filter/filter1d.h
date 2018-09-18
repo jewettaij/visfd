@@ -26,18 +26,86 @@ public:
 
 
   /// @brief  Apply the filter to data in the original source array ("afSource")
-  /// Save the results in the "aafDest" array.  (A "mask" is optional.)
-  ///
   /// @code
-  /// If afMask == NULL, then filter computes g(i):
   ///        ___
   ///        \
-  /// g(i) = /__  h(j) * f(i-j)
+  /// g[i] = /__  h[j] * f[i-j]
   ///         j
-  /// Otherwise, if afMask!=NULL and normalize == true, it computes
+  /// @endcode
+  /// Save the results in the "afDest" array.
+  /// (Sparse input optimizations: Array entries far away from non-zero f[i] 
+  ///  values are skipped and set to 0, without performing any filtering.
+  ///  This adds a small amount of overhead when filtering normal arrays.)
+
+  void Apply(Integer const size_source, 
+             RealNum const *afSource,
+             RealNum *afDest)
+  {
+
+    // -- Sparse input optimaztion: --
+    // Scan along the entries of afSource[] array, using a for loop of the form
+    //   for (I=0, I<size_source; I++)
+    // Let "m" denote the number entries visited since we last encountered
+    // a non-zero entry in the afSource[] array.
+
+    Integer m = array_size; // initialize with a large number
+
+    // Once "m" reaches "array_size"(a precomputed value equaling 2*halfwidth+1)
+    // THEN we know that the array entry located at position "i", defined as:
+    //   i = I - halfwidth
+    // is at least "halfwidth" entries away from the nearest non-zero afSource[]
+    // array entry.  In that case we don't need to apply the fiter at this
+    // location (i), because any array entries which could effect the result
+    // at (i) lie beyond the range of the filter.
+   
+    // First look-ahead "halfwidth" entries to calculate "m" beforehand:
+    Integer init_width = halfwidth;
+    if (init_width > size_source)
+      init_width = size_source;
+    for (Integer I=0; I<init_width; I++) {
+      if (afSource[I] != 0.0)
+        m = 0;
+      else
+        m++;
+    }
+
+    // Then loop over the entries in the table, updating "m" and performing
+    // the filtering operation (sum) only when necessary.
+    Integer I =  halfwidth;
+    for (Integer i=0; i<size_source; i++) {
+
+      // update m
+      if ((I < size_source) && (afSource[I] != 0.0))
+        m = 0;
+      else
+        m++;
+      I++;
+      if (m >= array_size) {
+        afDest[i] = 0.0;
+        continue;
+      }
+      RealNum g = 0.0;
+      for (Integer j=-halfwidth; j<=halfwidth; j++) {
+        int i_j = i-j;
+        if ((i_j < 0) || (size_source <= i_j))
+          continue;
+        g += afH[j] * afSource[i_j];
+      }
+      afDest[i] = g;
+    }
+  } //Apply()
+
+
+
+
+  /// @brief  Apply the filter to data in the original source array ("afSource")
+  /// Save the results in the "aafDest" array.
+  ///
+  /// @code
+  /// This function computes g[i] where:
   ///        ___                               /  ___
   ///        \                                /   \
-  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)  /    /__  h(j) * mask(i-j)
+  /// g[i] = /__  h[j] * f[i-j] * mask[i-j]  /    /__  h[j] * mask[i-j]
   ///         j                             /      j
   ///
   /// where: f(i) is the original array of (source) data at position i
@@ -50,15 +118,17 @@ public:
   /// @param afSource[] is the original source data <==> h(j)
   /// @param afDest[] will store the result after filtering <==> g(j)
   /// @param afMask[]==0 whenever we want to ignore entries in afSource[]. Optional.
-  /// @param normalize  This boolean parameter = true if you want to divide g(i) by the sum of the weights considered. Optional.
+  /// @param normalize  This boolean parameter = true if you want to
+  ///  divide g(i) by the sum of the weights considered. Optional.
   /// (useful if the sum of your filter elements, h(j), is 1, and if the sum was
   ///  not complete because some entries lie outside the mask or the boundary.)
+
 
   void Apply(Integer const size_source, 
              RealNum const *afSource,
              RealNum *afDest,
-             RealNum const *afMask = NULL,
-             bool normalize = false) const
+             RealNum const *afMask,
+             bool normalize) const
   {
     RealNum *afDenominator = NULL;
     if (normalize)
@@ -80,24 +150,19 @@ public:
 
 
   /// @brief  Apply the filter to data in the original source array ("afSource")
-  ///         This version is identical to the other version of Apply()
-  ///         except that this version both d(i) and g(i) whenever
+  ///         This version is identical to the other version of Apply() except
+  ///         that this version returns g[i] AND the normalization d[i] whenever
   ///         you supply a non-NULL afDenominator[] argument (see below).
-  ///         It also does not normalize the result (by dividing g(i) / d(i)).
+  ///         This version does NOT normalize the result (by dividing g[i]/d[i])
   /// @code
-  /// If afMask == NULL, then filter computes g(i):
+  /// This function computes both g[i] and d[i]  (d[i] is optional)  where:
   ///        ___
   ///        \
-  /// g(i) = /__  h(j) * f(i-j)
-  ///         j
-  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes g(i), d(i)
-  ///        ___
-  ///        \
-  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)
+  /// g[i] = /__  h[j] * mask[i-j] * f[i-j]
   ///         j
   ///        ___
   ///        \
-  /// d(i) = /__  h(j) * mask(i-j)
+  /// d[i] = /__  h[j] * mask[i-j]
   ///         j
   ///
   /// where: f(i) is the original array of (source) data at position i
@@ -121,35 +186,77 @@ public:
   void Apply(Integer const size_source, 
              RealNum const *afSource,
              RealNum *afDest,
-             RealNum const *afMask = NULL,
+             RealNum const *afMask,
              RealNum *afDenominator = NULL) const
   {
-    for (Integer ix=0; ix<size_source; ix++) {
 
-      if ((afMask) && (afMask[ix] == 0.0)) {
-        afDest[ix] = 0.0;
+    // -- Sparse input optimaztion: --
+    // Scan along the entries of afMask[] array, using a for loop of the form
+    //   for (I=0, I<size_source; I++)
+    // Let "m" denote the number entries visited since we last encountered
+    // a non-zero entry in the afMask[] array.
+
+    Integer m = array_size; // initialize with a large number
+
+    // Once "m" reaches "array_size"(a precomputed value equaling 2*halfwidth+1)
+    // THEN we know that the array entry located at position "i", defined as:
+    //   i = I - halfwidth
+    // is at least "halfwidth" entries away from the nearest non-zero afMask[]
+    // array entry.  In that case we don't need to apply the fiter at this
+    // location (i), because any array entries which could effect the result
+    // at (i) lie beyond the range of the filter.
+    
+    // First look-ahead "halfwidth" entries to calculate "m" beforehand:
+    Integer init_width = halfwidth;
+    if (init_width > size_source)
+      init_width = size_source;
+    for (Integer I=0; I<init_width; I++) {
+      if ((afMask == NULL) || (afMask[I] != 0.0))
+        m = 0;
+      else
+        m++;
+    }
+
+    // Then loop over the entries in the table, updating "m" and performing
+    // the filtering operation (sum) only when necessary.
+    Integer I =  halfwidth;
+    for (Integer i=0; i<size_source; i++) {
+
+      // update m
+      if ((I < size_source) && ((afMask == NULL) || (afMask[I] != 0.0)))
+        m = 0;
+      else
+        m++;
+      I++;
+      if (m >= array_size) {
+        afDest[i] = 0.0;
         continue;
       }
-          
-      RealNum g = 0.0;
-      RealNum denominator = 0.0;
 
-      for (Integer jx=-halfwidth; jx<=halfwidth; jx++) {
+      // If we got this far, then there is a nearby non-zero entry in the
+      // afMask[] array, so we proceed to apply the filter at this location, i
 
-        int ix_jx = ix-jx;
+      RealNum g = 0.0;           // g[i], the result after filtering
+      RealNum denominator = 0.0; // "d[i]" in the comments above
 
-        if ((ix_jx < 0) || (size_source <= ix_jx))
+      // Inner loop:
+
+      for (Integer j=-halfwidth; j<=halfwidth; j++) {
+
+        int i_j = i-j;
+
+        if ((i_j < 0) || (size_source <= i_j))
           continue;
 
-        RealNum filter_val = afH[jx];
+        RealNum filter_val = afH[j];
         if (afMask)
-          filter_val *= afMask[ix_jx];
+          filter_val *= afMask[i_j];
           //Note: The "filter_val" also is needed to calculate
           //      the denominator used in normalization.
           //      It is unusual to use a mask unless you intend
           //      to normalize the result later, but I don't enforce this
 
-        RealNum delta_g = filter_val * afSource[ix_jx];
+        RealNum delta_g = filter_val * afSource[i_j];
 
         g += delta_g;
 
@@ -158,10 +265,11 @@ public:
       }
 
       if (afDenominator)
-        afDenominator[ix] = denominator;
+        afDenominator[i] = denominator;
 
-      afDest[ix] = g;
-    }
+      afDest[i] = g;
+    } //for (Integer i=0; i<size_source; i++)
+
   } //Apply()
 
 
@@ -169,10 +277,10 @@ public:
   void Normalize() {
     // Make sure the sum of the filter weights is 1
     RealNum total = 0.0;
-    for (Integer ix=-halfwidth; ix<=halfwidth; ix++)
-      total += afH[ix];
-    for (Integer ix=-halfwidth; ix<=halfwidth; ix++)
-      afH[ix] /= total;
+    for (Integer i=-halfwidth; i<=halfwidth; i++)
+      total += afH[i];
+    for (Integer i=-halfwidth; i<=halfwidth; i++)
+      afH[i] /= total;
   }
 
 
@@ -225,8 +333,8 @@ public:
   inline Filter1D(const Filter1D<RealNum, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH
-    //for(Int ix=-halfwidth; ix<=halfwidth; ix++)
-    //  afH[ix] = source.afH[ix];
+    //for(Int i=-halfwidth; i<=halfwidth; i++)
+    //  afH[i] = source.afH[i];
     // -- Use memcpy() instead: --
     //memcpy(afH,
     //       source.afH,
@@ -252,14 +360,15 @@ public:
     return *this;
   }
 
-
 }; // class Filter1D
+
 
 
 
 //void swap(Filter1D<RealNum, Integer> &a, Filter1D<RealNum, Integer> &b) {
 //  a.swap(b);
 //}
+
 
 
 

@@ -1,7 +1,7 @@
 ///   @file filter3d.h
-///   @brief a collection of functions for applying common filters to 3D arrays
+///   @brief a collection of common filters for 3D arrays
 ///   @author Andrew Jewett
-///   @date 2018-7-26
+///   @date 2018-9-14
 
 #ifndef _FILTER3D_H
 #define _FILTER3D_H
@@ -967,6 +967,8 @@ _ApplyGauss3D(int const image_size[3],
           afSource_tmp[iz] = aaafDest[iz][iy][ix];  //copy from prev aaafDest
           if (aaafMask)
             afMask_tmp[iz] = aaafMask[iz][iy][ix];
+          if (normalize)
+            afDenom_tmp[iz] = aaafDenom[iz][iy][ix];
         }
 
         // apply the filter to the 1-D temporary array (afSource_tmp)
@@ -980,7 +982,7 @@ _ApplyGauss3D(int const image_size[3],
         for (int iz = 0; iz < image_size[2]; iz++) {
           aaafDest[iz][iy][ix] = afDest_tmp[iz];
           if (normalize)
-            aaafDenom[iz][iy][ix] *= afDenom_tmp[iz]; //copy back into aaafDenom
+            aaafDenom[iz][iy][ix] = afDenom_tmp[iz]; //copy back into aaafDenom
         }
       } //for (int ix = 0; ix < image_size[0]; ix++)
     } //for (int iy = 0; iy < image_size[1]; iy++)
@@ -1010,12 +1012,15 @@ _ApplyGauss3D(int const image_size[3],
     // Then use a simple 1-D filter on that array and copy the results back.
     RealNum *afDest_tmp   = new RealNum [image_size[d]];
     RealNum *afSource_tmp = new RealNum [image_size[d]];
-    RealNum *afMask_tmp   = NULL;
-    if (aaafMask)
-      afMask_tmp = new RealNum [image_size[d]];
+    //RealNum *afMask_tmp   = NULL;
+    //if (aaafMask)
+    //  afMask_tmp = new RealNum [image_size[d]];
+    RealNum *afDenom_src_tmp = NULL;
     RealNum *afDenom_tmp = NULL;
-    if (normalize)
-      afDenom_tmp = new RealNum [image_size[d]];
+    if (normalize) {
+      afDenom_src_tmp = new RealNum [image_size[d]];
+      afDenom_tmp     = new RealNum [image_size[d]];
+    }
 
     #pragma omp for collapse(2)
     for (int iz = 0; iz < image_size[2]; iz++) {
@@ -1024,22 +1029,27 @@ _ApplyGauss3D(int const image_size[3],
         // copy the data we need to the temporary arrays
         for (int iy = 0; iy < image_size[1]; iy++) {
           afSource_tmp[iy] = aaafDest[iz][iy][ix];  //copy from prev aaafDest
-          if (aaafMask)
-            afMask_tmp[iy] = aaafMask[iz][iy][ix];
+          //if (aaafMask)
+          //  afMask_tmp[iy] = aaafMask[iz][iy][ix];
+          if (normalize)
+            afDenom_src_tmp[iy] = aaafDenom[iz][iy][ix];
         }
 
         // apply the filter to the 1-D temporary array (afSource_tmp)
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
-                         afDest_tmp,  //<-store filtered result here
-                         afMask_tmp,
-                         afDenom_tmp);//<-store sum of weights considered here
+                         afDest_tmp); //<-store filtered result here
+        if (normalize)
+          // apply the filter to the 1-D array for the denominator as well
+          aFilter[d].Apply(image_size[d],
+                           afDenom_src_tmp, //<-weights so far (summed along z)
+                           afDenom_tmp);//<-store sum of weights considered here
 
         // copy the results from the temporary filters back into the 3D arrays
         for (int iy = 0; iy < image_size[1]; iy++) {
           aaafDest[iz][iy][ix] = afDest_tmp[iy];
           if (normalize)
-            aaafDenom[iz][iy][ix] *= afDenom_tmp[iy]; //copy back into aaafDenom
+            aaafDenom[iz][iy][ix] = afDenom_tmp[iy]; //copy back into aaafDenom
         }
       } //for (int ix = 0; ix < image_size[0]; ix++)
     } //for (int iz = 0; iz < image_size[2]; iz++)
@@ -1047,12 +1057,11 @@ _ApplyGauss3D(int const image_size[3],
     // delete the temporary arrays
     delete [] afSource_tmp;
     delete [] afDest_tmp;
-    if (afMask_tmp)
-      delete [] afMask_tmp;
+    //if (afMask_tmp)
+    //  delete [] afMask_tmp;
     if (afDenom_tmp)
       delete [] afDenom_tmp;
   } //#pragma omp parallel private(afDest_tmp, ...)
-
 
 
   // Finally apply the filter in the X direction (d=0):
@@ -1070,12 +1079,15 @@ _ApplyGauss3D(int const image_size[3],
     // Then use a simple 1-D filter on that array and copy the results back.
     RealNum *afDest_tmp   = new RealNum [image_size[d]];
     RealNum *afSource_tmp = new RealNum [image_size[d]];
-    RealNum *afMask_tmp   = NULL;
-    if (aaafMask)
-      afMask_tmp = new RealNum [image_size[d]];
+    //RealNum *afMask_tmp   = NULL;
+    //if (aaafMask)
+    //  afMask_tmp = new RealNum [image_size[d]];
+    RealNum *afDenom_src_tmp = NULL;
     RealNum *afDenom_tmp = NULL;
-    if (normalize)
-      afDenom_tmp = new RealNum [image_size[d]];
+    if (normalize) {
+      afDenom_src_tmp = new RealNum [image_size[d]];
+      afDenom_tmp     = new RealNum [image_size[d]];
+    }
 
     #pragma omp for collapse(2)
     for (int iz = 0; iz < image_size[2]; iz++) {
@@ -1084,22 +1096,27 @@ _ApplyGauss3D(int const image_size[3],
         // copy the data we need to the temporary arrays
         for (int ix = 0; ix < image_size[0]; ix++) {
           afSource_tmp[ix] = aaafDest[iz][iy][ix];  //copy from prev aaafDest
-          if (aaafMask)
-            afMask_tmp[ix] = aaafMask[iz][iy][ix];
+          //if (aaafMask)
+          //  afMask_tmp[ix] = aaafMask[iz][iy][ix];
+          if (normalize)
+            afDenom_src_tmp[ix] = aaafDenom[iz][iy][ix];
         }
 
         // apply the filter to the 1-D temporary array (afSource_tmp)
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
-                         afDest_tmp,  //<-store filtered result here
-                         afMask_tmp,
-                         afDenom_tmp);//<-store sum of weights considered here
+                         afDest_tmp); //<-store filtered result here
+        if (normalize)
+          // apply the filter to the 1-D array for the denominator as well
+          aFilter[d].Apply(image_size[d],
+                           afDenom_src_tmp, //<-weights so far (summed along z)
+                           afDenom_tmp);//<-store sum of weights considered here
 
         // copy the results from the temporary filters back into the 3D arrays
         for (int ix = 0; ix < image_size[0]; ix++) {
           aaafDest[iz][iy][ix] = afDest_tmp[ix];
           if (normalize)
-            aaafDenom[iz][iy][ix] *= afDenom_tmp[ix]; //copy back into aaafDenom
+            aaafDenom[iz][iy][ix] = afDenom_tmp[ix]; //copy back into aaafDenom
         }
       } //for (int iy = 0; iy < image_size[1]; iy++)
     } //for (int iz = 0; iz < image_size[2]; iz++)
@@ -1107,13 +1124,11 @@ _ApplyGauss3D(int const image_size[3],
     // delete the temporary arrays
     delete [] afSource_tmp;
     delete [] afDest_tmp;
-    if (afMask_tmp)
-      delete [] afMask_tmp;
+    //if (afMask_tmp)
+    //  delete [] afMask_tmp;
     if (afDenom_tmp)
       delete [] afDenom_tmp;
   } //#pragma omp parallel private(afDest_tmp, ...)
-
-
 
 
 
