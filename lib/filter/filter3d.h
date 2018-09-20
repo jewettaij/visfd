@@ -43,27 +43,33 @@ public:
   /// All arrays are 3D and assumed to be the same size.
   ///     
   /// @code
-  /// If aafMask == NULL, then filter computes g(i):
+  /// If (normalize == false), the filter computes the convolution of h and f:
   ///        ___
   ///        \
-  /// g(i) = /__  h(j) * f(i-j)
+  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
   ///         j
-  /// Otherwise, if afMask!=NULL and normalize == true, it computes
+  ///     (sum over the width of the filter)
+  /// Otherwise, if (normalize == true) it computes:
   ///        ___                               /  ___
   ///        \                                /   \
-  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)  /    /__  h(j) * mask(i-j)
+  /// g[i] = /__  h[j] * f[i-j] * mask[i-j]  /    /__  h[j] * mask[i-j]
   ///         j                             /      j
   ///
-  /// where: f(i) is the original image at position i (ix,iy,iz)
-  ///          i  is shorthand for ix,iy,iz
-  ///        g(i) is the image after the filter has been applied
-  ///        h(j) is the filter
-  ///        mask(i) selects the pixels we care about (usually either 0 or 1)
+  /// where: f[i] is the original image at position i (ix,iy,iz)
+  ///      i = shorthand for (ix,iy,iz) = a location in the filtered image
+  ///      j = shorthand for (jx,jy,jz) is summed over the entries in the filter
+  ///    i-j = shorthand for (ix-jx, iy-jy, iz-jz)
+  ///        g[i] is the image after the filter has been applied
+  ///        h[j] is the filter
+  ///        mask[i] selects the pixels we care about (usually either 0 or 1)
+  ///          (If not supplied, assumed it is 1 everywhere inside, 0 outside)
+  ///        Theta[i] = 1 if i is inside the image boundaries, 0 otherwise.
+  ///          (In other words, we only consider voxels within the image.)
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y,z directions)
-  /// @param aaafSource[][][] is the source array (source image) <==> f(i)
-  /// @param aaafDest[][][] will store the image after filtering <==> g(i)
+  /// @param aaafSource[][][] is the source array (source image) <==> "f[i]"
+  /// @param aaafDest[][][] will store the image after filtering <==> "g[i]"
   /// @param aaafMask[][][]==0 whenever we want to ignore entries in afSource[]. Optional.
   /// @param normalize  This boolean parameter = true if you want to divide g(i) by the sum of the weights considered. Optional.
   /// (useful if the sum of your filter elements, h(j), is 1, and if the sum was
@@ -105,34 +111,44 @@ public:
   ///         It also does NOT normalize the result (by dividing g(i) / d(i)).
   ///     
   /// @code
-  /// If afMask == NULL, then filter computes g(i):
+  /// If afMask == NULL, then filter computes g[i] and d[i]:
   ///        ___
   ///        \
-  /// g(i) = /__  h(j) * f(i-j)
-  ///         j
-  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes g(i), d(i)
-  ///        ___
-  ///        \
-  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)
+  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
   ///         j
   ///        ___
   ///        \
-  /// d(i) = /__  h(j) * mask(i-j)
+  /// d[i] = /__  h[j] * Theta[i-j]
+  ///         j
+  ///     (sum over the width of the filter)
+  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes:
+  ///        ___
+  ///        \
+  /// g[i] = /__  h[j] * f[i-j] * mask[i-j]
+  ///         j
+  ///        ___
+  ///        \
+  /// d[i] = /__  h[j] * mask[i-j]
   ///         j
   ///
-  /// where: f(i) is the original array of (source) data at position i
-  ///          i  is shorthand for ix,iy,iz
-  ///        g(i) is the data after the filter has been applied
-  ///        h(j) is the filter
-  ///        mask(i) is usually either 0 or 1
-  ///        d(i) is the "denominator" = sum of the filter weights after masking
+  /// where: f[i] is the original array of (source) data at position i
+  ///      i = shorthand for (ix,iy,iz) = a location in the filtered image
+  ///      j = shorthand for (jx,jy,jz) is summed over the entries in the filter
+  ///    i-j = shorthand for (ix-jx, iy-jy, iz-jz)
+  ///        g[i] is the data after the filter has been applied
+  ///        h[j] is the filter
+  ///        d[i] is the "denominator" = sum of the filter weights considered
+  ///        mask[i] selects the pixels we care about (usually either 0 or 1)
+  ///          (If not supplied, assumed it is 1 everywhere inside, 0 outside]
+  ///        Theta[i] = 1 if i is inside the image boundaries, 0 otherwise.
+  ///          (In other words, we only consider voxels within the image.)
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y,z directions)
-  /// @param aaafSource[][][] is the source array (source image) <==> g(i)
-  /// @param aaafDest[][][] will store the image after filtering <==> g(i)
+  /// @param aaafSource[][][] is the source array (source image) <==> "f[i]"
+  /// @param aaafDest[][][] will store the image after filtering <==> "g[i]"
   /// @param aaafMask[][][]==0 whenever we want to ignore entries in afSource[][]. Optional.
-  /// @param aaafDenominator[][][] will store d(i) if you supply a non-NULL pointer
+  /// @param aaafDenominator[][][] will store d[i] if you supply a non-NULL pointer
 
   void Apply(Integer const size_source[3],
              RealNum const *const *const *aaafSource,
@@ -922,18 +938,44 @@ _ApplyGauss3D(int const image_size[3],
       for (int ix = 0; ix < image_size[0]; ix++)
         aaafDest[iz][iy][ix] = aaafSource[iz][iy][ix];
 
+  // Gaussian filters are a form of weighted averaging of nearby voxels.
+  // However sometimes these nearby voxels are unavailable because they either
+  // lie outside the boundaries of the image, or they lie outside the mask.
+  // In that case, we can "normalize" the resulting filtered image by dividing
+  // the weighted average brightness of the voxels near a particular location,
+  // ...by the sum of the weights which were used to calculate that average.
+  // (at that location).  The sum of those weights are called the "denominator".
   // Create an array to store the denominator.
-  // (The "denominator" stores the normalization used when aaafMask != NULL)
+  // First create the 3D version of the denominator array:
   RealNum ***aaafDenom;
   RealNum *afDenom;
+  // When the user did not supply a aaafMask array, then the image boundary
+  // is rectangular.  In that case we can take a shortcut (see below):
+  RealNum *aafDenom_precomputed[3];
+
   if (normalize) {
     Alloc3D(image_size, &afDenom, &aaafDenom);
     for (int iz = 0; iz < image_size[2]; iz++)
       for (int iy = 0; iy < image_size[1]; iy++)
         for (int ix = 0; ix < image_size[0]; ix++)
           aaafDenom[iz][iy][ix] = 1.0; //(default value)
-  }
-
+    if (! aaafMask) {
+      // If there is no mask, but the user wants the result to be normalized,
+      // then we convolve the filter with the rectangular box.  This is cheaper
+      // because the convolution of a Gaussian with a rectangular box shaped
+      // function is the product of the convolution with three 1-D functions
+      // which are 1 from 0..image_size[d], and 0 everywhere else.
+      for (int d=0; d<3; d++) {
+        RealNum *afAllOnes = new RealNum [image_size[d]];
+        aafDenom_precomputed[d] = new RealNum [image_size[d]];
+        for (int i=0; i < image_size[d]; i++)
+          afAllOnes[i] = 1.0;
+        aFilter[d].Apply(image_size[d], afAllOnes, aafDenom_precomputed[d]);
+        delete [] afAllOnes;
+      }
+    }
+  } // if (normalize) 
+  
   int d; //direction where we are applying the filter (x<==>0, y<==>1, z<==>2)
 
   // First, apply the filter in the Z direction (d=2):
@@ -962,7 +1004,7 @@ _ApplyGauss3D(int const image_size[3],
     for (int iy = 0; iy < image_size[1]; iy++) {
       for (int ix = 0; ix < image_size[0]; ix++) {
 
-        // copy the data we need to the temporary arrays
+        // Copy the data we need to the temporary arrays
         for (int iz = 0; iz < image_size[2]; iz++) {
           afSource_tmp[iz] = aaafDest[iz][iy][ix];  //copy from prev aaafDest
           if (aaafMask)
@@ -971,7 +1013,13 @@ _ApplyGauss3D(int const image_size[3],
             afDenom_tmp[iz] = aaafDenom[iz][iy][ix];
         }
 
-        // apply the filter to the 1-D temporary array (afSource_tmp)
+        // Apply the filter to the 1-D temporary arrays which contain the source
+        // image data (afSource_tmp), as well as the mask data (afMask_tmp,
+        // if applicable).  The following version of the "Apply()" function 
+        // can apply the filter to both of these signals.  In this case, the 
+        // computational overhead required for filtering both signals is only 
+        // slightly higher than the cost required for filtering only one of them
+        // (Later this won't be true and we will have to filter them separately)
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
                          afDest_tmp,  //<-store filtered result here
@@ -996,13 +1044,12 @@ _ApplyGauss3D(int const image_size[3],
       delete [] afDenom_tmp;
   } //#pragma omp parallel private(afDest_tmp, ...)
 
-
   // Then apply the filter in the Y direction (d=1):
   d = 1;
   if (pReportProgress)
     *pReportProgress << "  progress: Applying Y filter"// Processing XZ plane#"
                      << endl;
-  
+
   #pragma omp parallel
   {
     // Don't want to create unnecessary 3D arrays to store the entire image 
@@ -1017,7 +1064,7 @@ _ApplyGauss3D(int const image_size[3],
     //  afMask_tmp = new RealNum [image_size[d]];
     RealNum *afDenom_src_tmp = NULL;
     RealNum *afDenom_tmp = NULL;
-    if (normalize) {
+    if (normalize && aaafMask) {
       afDenom_src_tmp = new RealNum [image_size[d]];
       afDenom_tmp     = new RealNum [image_size[d]];
     }
@@ -1031,16 +1078,25 @@ _ApplyGauss3D(int const image_size[3],
           afSource_tmp[iy] = aaafDest[iz][iy][ix];  //copy from prev aaafDest
           //if (aaafMask)
           //  afMask_tmp[iy] = aaafMask[iz][iy][ix];
-          if (normalize)
+          if (normalize && aaafMask)
             afDenom_src_tmp[iy] = aaafDenom[iz][iy][ix];
         }
 
-        // apply the filter to the 1-D temporary array (afSource_tmp)
+        // At this point, the convolution of the 1-D Gaussian filter along
+        // the Z direction on the afSource[][][] array is stored in both 
+        // aaafDeest[][][] and also afSource_tmp[].  Now we want to
+        // apply the 1-D Gaussian filter along the Y direction to that data.
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
                          afDest_tmp); //<-store filtered result here
-        if (normalize)
-          // apply the filter to the 1-D array for the denominator as well
+
+        if (normalize && aaafMask)
+          // At this point, the convolution of the 1-D Gaussian filter along
+          // the Z direction on the aaafMask[][][] array is stored in both 
+          // aaafDenom[][][] and also afDenom_src_tmp[].  Now we want to
+          // apply the 1-D Gaussian filter along the Y direction to that data
+          // (Note: Skip this if no such array was specified,IE if aaafMask=NULL
+          //  In that case, we have a more efficient way to calculate aaafDenom)
           aFilter[d].Apply(image_size[d],
                            afDenom_src_tmp, //<-weights so far (summed along z)
                            afDenom_tmp);//<-store sum of weights considered here
@@ -1048,8 +1104,14 @@ _ApplyGauss3D(int const image_size[3],
         // copy the results from the temporary filters back into the 3D arrays
         for (int iy = 0; iy < image_size[1]; iy++) {
           aaafDest[iz][iy][ix] = afDest_tmp[iy];
-          if (normalize)
-            aaafDenom[iz][iy][ix] = afDenom_tmp[iy]; //copy back into aaafDenom
+          if (normalize) {
+            if (aaafMask)
+              //copy the weights from afDenom_tmp[] into aaafDenom[][][]
+              aaafDenom[iz][iy][ix] = afDenom_tmp[iy];
+            else
+              //otherwise use a trick to precompute the filter of a 3D rectangle
+              aaafDenom[iz][iy][ix] *= aafDenom_precomputed[d][iy];
+          }
         }
       } //for (int ix = 0; ix < image_size[0]; ix++)
     } //for (int iz = 0; iz < image_size[2]; iz++)
@@ -1084,7 +1146,7 @@ _ApplyGauss3D(int const image_size[3],
     //  afMask_tmp = new RealNum [image_size[d]];
     RealNum *afDenom_src_tmp = NULL;
     RealNum *afDenom_tmp = NULL;
-    if (normalize) {
+    if (normalize && aaafMask) {
       afDenom_src_tmp = new RealNum [image_size[d]];
       afDenom_tmp     = new RealNum [image_size[d]];
     }
@@ -1098,25 +1160,40 @@ _ApplyGauss3D(int const image_size[3],
           afSource_tmp[ix] = aaafDest[iz][iy][ix];  //copy from prev aaafDest
           //if (aaafMask)
           //  afMask_tmp[ix] = aaafMask[iz][iy][ix];
-          if (normalize)
+          if (normalize && aaafMask)
             afDenom_src_tmp[ix] = aaafDenom[iz][iy][ix];
         }
 
-        // apply the filter to the 1-D temporary array (afSource_tmp)
+        // At this point, the convolution of the 1-D Gaussian filter along both
+        // the Y and Z directions on the afSource[][][] array is stored in both 
+        // aaafDeest[][][] and also afSource_tmp[].  Now we want to
+        // apply the 1-D Gaussian filter along the X direction to that data.
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
                          afDest_tmp); //<-store filtered result here
-        if (normalize)
-          // apply the filter to the 1-D array for the denominator as well
+
+        if (normalize && aaafMask)
+          // At this point, the convolution of the 1-D Gaussian filter along the
+          // Y and Z directions on the aaafMask[][][] array is stored in both 
+          // aaafDenom[][][] and also afDenom_src_tmp[].  Now we want to
+          // apply the 1-D Gaussian filter along the X direction to that data
+          // (Note: Skip this if no such array was specified,IE if aaafMask=NULL
+          //  In that case, we have a more efficient way to calculate aaafDenom)
           aFilter[d].Apply(image_size[d],
-                           afDenom_src_tmp, //<-weights so far (summed along z)
+                           afDenom_src_tmp, //<-weights so far(summed along y,z)
                            afDenom_tmp);//<-store sum of weights considered here
 
         // copy the results from the temporary filters back into the 3D arrays
         for (int ix = 0; ix < image_size[0]; ix++) {
           aaafDest[iz][iy][ix] = afDest_tmp[ix];
-          if (normalize)
-            aaafDenom[iz][iy][ix] = afDenom_tmp[ix]; //copy back into aaafDenom
+          if (normalize) {
+            if (aaafMask)
+              //copy the weights from afDenom_tmp[] into aaafDenom[][][]
+              aaafDenom[iz][iy][ix] = afDenom_tmp[ix];
+            else
+              //otherwise use a trick to precompute the filter of a 3D rectangle
+              aaafDenom[iz][iy][ix] *= aafDenom_precomputed[d][ix];
+          }
         }
       } //for (int iy = 0; iy < image_size[1]; iy++)
     } //for (int iz = 0; iz < image_size[2]; iz++)
@@ -1141,6 +1218,11 @@ _ApplyGauss3D(int const image_size[3],
             aaafDest[iz][iy][ix] /= aaafDenom[iz][iy][ix];
     // Cleanup
     Dealloc3D(image_size, &afDenom, &aaafDenom);
+    if (! aaafMask) {
+      // delete the array we created for storing the precomputed denominator:
+      for (int d=0; d<3; d++)
+        delete [] aafDenom_precomputed[d];
+    }
   }
 
   // Optional: filter(x) =  A  * exp(-(1/2)*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
@@ -1164,12 +1246,19 @@ _ApplyGauss3D(int const image_size[3],
 
 
 /// @brief Apply a Gaussian filter (blur) to an image
-///
 /// @code h(x,y,z)=A*exp(-0.5*((x/σ_x)^2+(y/σ_y)^2+(z/σ_z)^2) @endcode
 /// In this version, the user manually specifies the filter window width.
 /// Voxels outside the boundary of the image or outside the mask are not
-/// considered during the averaging (blurring) process, and the resulting
-/// after blurring is weighted accordingly.  (normalize=true by default)
+/// considered during the averaging (blurring) process, and the result after
+/// blurring is weighted accordingly (if normalize=true, which it is default).
+///    An explanation of normalization:
+/// Gaussian filters are a form of weighted averaging of nearby voxels.
+/// However sometimes these nearby voxels are unavailable because they either
+/// lie outside the boundaries of the image, or they lie outside the mask.
+/// In that case, we can "normalize" the resulting filtered image by dividing
+/// this weighted average brightness of the voxels near a particular location,
+/// ...by the sum of the weights which were used to calculate that average.
+/// (at that location).
 ///
 /// @returns the "A" coefficient (determined by normalization)
 

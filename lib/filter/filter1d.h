@@ -25,22 +25,25 @@ public:
   Integer array_size; //size of the array in x,y directions (in voxels)
 
 
-  /// @brief  Apply the filter to data in the original source array ("afSource")
+  /// @brief  Calculate the convolution of f[] (afSource) and h[] (afH):
   /// @code
   ///        ___
   ///        \
-  /// g[i] = /__  h[j] * f[i-j]
+  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
   ///         j
+  ///     (sum over the width of the filter)
+  ///     Theta[i] = 1 if inside the array (0<=i<size_source), 0 otherwise
   /// @endcode
-  /// Save the results in the "afDest" array.
+  /// Save the results ("g[i]") in the "afDest" array.
   /// (Sparse input optimizations: Array entries far away from non-zero f[i] 
-  ///  values are skipped and set to 0, without performing any filtering.
-  ///  This adds a small amount of overhead when filtering normal arrays.)
+  ///  values are skipped and set to 0, without performing any filtering. This
+  ///  only adds a small amount of overhead when filtering non-sparse arrays.)
 
   void Apply(Integer const size_source, 
              RealNum const *afSource,
              RealNum *afDest)
   {
+    assert(afDest != afSource);
 
     // -- Sparse input optimaztion: --
     // Scan along the entries of afSource[] array, using a for loop of the form
@@ -102,16 +105,23 @@ public:
   /// Save the results in the "aafDest" array.
   ///
   /// @code
-  /// This function computes g[i] where:
+  /// If (normalize == false), the filter computes the convolution of h and f:
+  ///        ___
+  ///        \
+  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
+  ///         j
+  ///     (sum over the width of the filter)
+  /// Otherwise, if (normalize == true) it computes:
   ///        ___                               /  ___
   ///        \                                /   \
   /// g[i] = /__  h[j] * f[i-j] * mask[i-j]  /    /__  h[j] * mask[i-j]
   ///         j                             /      j
   ///
-  /// where: f(i) is the original array of (source) data at position i
-  ///        g(i) is the data after the filter has been applied
-  ///        h(j) is the filter
-  ///        mask(i) selects the entries we care about (usually either 0 or 1)
+  /// where: f[i] is the original array of (source) data at position i
+  ///        g[i] is the data after the filter has been applied
+  ///        h[j] is the filter
+  ///        mask[i] selects the entries we care about (usually either 0 or 1)
+  ///        Theta[i] = 1 if inside the array (0<=i<size_source), 0 otherwise
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y directions)
@@ -164,11 +174,13 @@ public:
   ///        \
   /// d[i] = /__  h[j] * mask[i-j]
   ///         j
+  ///     (sum over the width of the filter)
   ///
   /// where: f(i) is the original array of (source) data at position i
   ///        g(i) is the data after the filter has been applied
   ///        h(j) is the filter
-  ///        mask(i) is usually either 0 or 1
+  ///        mask(i) selects the pixels we care about (usually either 0 or 1)
+  ///          (If a mask was not supplied, it is assumed to be 1 everywhere)
   ///        d(i) is the "denominator" = sum of the filter weights after masking
   /// @endcode
   ///       
@@ -189,6 +201,8 @@ public:
              RealNum const *afMask,
              RealNum *afDenominator = NULL) const
   {
+    assert(afDest != afSource);
+    assert(afDest != afMask);
 
     // -- Sparse input optimaztion: --
     // Scan along the entries of afMask[] array, using a for loop of the form

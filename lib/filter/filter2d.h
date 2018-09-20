@@ -25,30 +25,36 @@ public:
   /// All arrays are 2D and assumed to be the same size.
   ///     
   /// @code
-  /// If aafMask == NULL, then filter computes g(i):
+  /// If (normalize == false), the filter computes the convolution of h and f:
   ///        ___
   ///        \
-  /// g(i) = /__  h(j) * f(i-j)
+  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
   ///         j
-  /// Otherwise, if afMask!=NULL and normalize == true, it computes
+  ///     (sum over the width of the filter)
+  /// Otherwise, if (normalize == true) it computes:
   ///        ___                               /  ___
   ///        \                                /   \
-  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)  /    /__  h(j) * mask(i-j)
+  /// g[i] = /__  h[j] * f[i-j] * mask[i-j]  /    /__  h[j] * mask[i-j]
   ///         j                             /      j
   ///
-  /// where: f(i) is the original image at position i (ix, iy)
-  ///          i  is shorthand for ix,iy
-  ///        g(i) is the image after the filter has been applied
-  ///        h(j) is the filter
-  ///        mask(i) selects the pixels we care about (usually either 0 or 1)
+  /// where: f[i] is the original image at position i (ix, iy)
+  ///         i = shorthand for (ix,iy) = a location in the filtered image
+  ///         j = shorthand for (jx,jy) is summed over the entries in the filter
+  ///       i-j = shorthand for (ix-jx, iy-jy)
+  ///        g[i] is the data after the filter has been applied
+  ///        h[j] is the filter
+  ///        mask[i] selects the pixels we care about (usually either 0 or 1)
+  ///          (If not supplied, assumed it is 1 everywhere inside, 0 outside)
+  ///        Theta[i] = 1 if i is inside the image boundaries, 0 otherwise.
+  ///          (In other words, we only consider pixels within the image.)
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y directions)
-  /// @param aafSource[][] is the source array (source image) <==> f(i)
-  /// @param aafDest[][] will store the image after filtering <==> g(i)
+  /// @param aafSource[][] is the source array (source image) <==> "f[i]"
+  /// @param aafDest[][] will store the image after filtering <==> "g[i]"
   /// @param aafMask[][]==0 whenever we want to ignore entries in afSource[]. Optional.
-  /// @param normalize  This boolean parameter = true if you want to divide g(i) by the sum of the weights considered. Optional.
-  /// (useful if the sum of your filter elements, h(j), is 1, and if the sum was
+  /// @param normalize  This boolean parameter = true if you want to divide g[i] by the sum of the weights considered. Optional.
+  /// (useful if the sum of your filter elements, h[j], is 1, and if the sum was
   ///  not complete because some entries lie outside the mask or the boundary.)
 
   void Apply(Integer const size_source[2],
@@ -81,39 +87,49 @@ public:
 
   /// @brief  Apply the filter to a 2D image (aafSource[][]).
   ///         This version is identical to the other version of Apply()
-  ///         except that this version both d(i) and g(i) whenever
+  ///         except that this version both d[i] and g[i] whenever
   ///         you supply a non-NULL afDenominator[] argument (see below).
-  ///         It also does not normalize the result (by dividing g(i) / d(i)).
+  ///         It also does not normalize the result (by dividing g[i] / d[i]].
   ///     
   /// @code
-  /// If afMask == NULL, then filter computes g(i):
+  /// If afMask == NULL, then filter computes g[i] and d[i]:
   ///        ___
   ///        \
-  /// g(i) = /__  h(j) * f(i-j)
-  ///         j
-  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes g(i), d(i)
-  ///        ___
-  ///        \
-  /// g(i) = /__  h(j) * f(i-j) * mask(i-j)
+  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
   ///         j
   ///        ___
   ///        \
-  /// d(i) = /__  h(j) * mask(i-j)
+  /// d[i] = /__  h[j] * Theta[i-j]
+  ///         j
+  ///     (sum over the width of the filter)
+  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes:
+  ///        ___
+  ///        \
+  /// g[i] = /__  h[j] * f[i-j] * mask[i-j]
+  ///         j
+  ///        ___
+  ///        \
+  /// d[i] = /__  h[j] * mask[i-j]
   ///         j
   ///
-  /// where: f(i) is the original array of (source) data at position i (ix,iy)
-  ///          i  is shorthand for ix,iy
-  ///        g(i) is the data after the filter has been applied
-  ///        h(j) is the filter
-  ///        mask(i) is usually either 0 or 1
-  ///        d(i) is the "denominator" = sum of the filter weights after masking
+  /// where: f[i] is the original array of (source) data at position i (ix,iy)
+  ///         i = shorthand for (ix,iy) = a location in the filtered image
+  ///         j = shorthand for (jx,jy) is summed over the entries in the filter
+  ///       i-j = shorthand for (ix-jx, iy-jy)
+  ///        g[i] is the data after the filter has been applied
+  ///        h[j] is the filter
+  ///        d[i] is the "denominator" = sum of the filter weights considered
+  ///        mask[i] selects the pixels we care about (usually either 0 or 1)
+  ///          (If not supplied, assumed it is 1 everywhere inside, 0 outside)
+  ///        Theta[i] = 1 if i is inside the image boundaries, 0 otherwise.
+  ///          (In other words, we only consider pixels within the image.)
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y directions)
-  /// @param aafSource[][] is the source array (source image) <==> g(i)
-  /// @param aafDest[][] will store the image after filtering <==> g(i)
+  /// @param aafSource[][] is the source array (source image) <==> "f[i]"
+  /// @param aafDest[][] will store the image after filtering <==> "g[i]"
   /// @param aafMask[][]==0 whenever we want to ignore entries in afSource[][]. Optional.
-  /// @param aafDenominator[][] will store d(i) if you supply a non-NULL pointer
+  /// @param aafDenominator[][] will store d[i] if you supply a non-NULL pointer
 
   void Apply(Integer const size_source[2],
              RealNum const *const *aafSource,
