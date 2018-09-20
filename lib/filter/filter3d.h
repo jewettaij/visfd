@@ -947,32 +947,16 @@ _ApplyGauss3D(int const image_size[3],
   // (at that location).  The sum of those weights are called the "denominator".
   // Create an array to store the denominator.
   // First create the 3D version of the denominator array:
-  RealNum ***aaafDenom;
-  RealNum *afDenom;
-  // When the user did not supply a aaafMask array, then the image boundary
-  // is rectangular.  In that case we can take a shortcut (see below):
-  RealNum *aafDenom_precomputed[3];
+  RealNum ***aaafDenom = NULL;
+  RealNum *afDenom = NULL;
 
   if (normalize) {
-    Alloc3D(image_size, &afDenom, &aaafDenom);
-    for (int iz = 0; iz < image_size[2]; iz++)
-      for (int iy = 0; iy < image_size[1]; iy++)
-        for (int ix = 0; ix < image_size[0]; ix++)
-          aaafDenom[iz][iy][ix] = 1.0; //(default value)
-    if (! aaafMask) {
-      // If there is no mask, but the user wants the result to be normalized,
-      // then we convolve the filter with the rectangular box.  This is cheaper
-      // because the convolution of a Gaussian with a rectangular box shaped
-      // function is the product of the convolution with three 1-D functions
-      // which are 1 from 0..image_size[d], and 0 everywhere else.
-      for (int d=0; d<3; d++) {
-        RealNum *afAllOnes = new RealNum [image_size[d]];
-        aafDenom_precomputed[d] = new RealNum [image_size[d]];
-        for (int i=0; i < image_size[d]; i++)
-          afAllOnes[i] = 1.0;
-        aFilter[d].Apply(image_size[d], afAllOnes, aafDenom_precomputed[d]);
-        delete [] afAllOnes;
-      }
+    if (aaafMask) {
+      Alloc3D(image_size, &afDenom, &aaafDenom);
+      for (int iz = 0; iz < image_size[2]; iz++)
+        for (int iy = 0; iy < image_size[1]; iy++)
+          for (int ix = 0; ix < image_size[0]; ix++)
+            aaafDenom[iz][iy][ix] = 1.0; //(default value)
     }
   } // if (normalize) 
   
@@ -997,7 +981,7 @@ _ApplyGauss3D(int const image_size[3],
     if (aaafMask)
       afMask_tmp = new RealNum [image_size[d]];
     RealNum *afDenom_tmp = NULL;
-    if (normalize)
+    if (normalize && aaafMask)
       afDenom_tmp = new RealNum [image_size[d]];
 
     #pragma omp for collapse(2)
@@ -1009,8 +993,6 @@ _ApplyGauss3D(int const image_size[3],
           afSource_tmp[iz] = aaafDest[iz][iy][ix];  //copy from prev aaafDest
           if (aaafMask)
             afMask_tmp[iz] = aaafMask[iz][iy][ix];
-          if (normalize)
-            afDenom_tmp[iz] = aaafDenom[iz][iy][ix];
         }
 
         // Apply the filter to the 1-D temporary arrays which contain the source
@@ -1029,8 +1011,9 @@ _ApplyGauss3D(int const image_size[3],
         // copy the results from the temporary filters back into the 3D arrays
         for (int iz = 0; iz < image_size[2]; iz++) {
           aaafDest[iz][iy][ix] = afDest_tmp[iz];
-          if (normalize)
+          if (normalize && aaafMask)
             aaafDenom[iz][iy][ix] = afDenom_tmp[iz]; //copy back into aaafDenom
+            // (Note: if aaafMask==NULL then we normalize using a faster method)
         }
       } //for (int ix = 0; ix < image_size[0]; ix++)
     } //for (int iy = 0; iy < image_size[1]; iy++)
@@ -1043,6 +1026,8 @@ _ApplyGauss3D(int const image_size[3],
     if (afDenom_tmp)
       delete [] afDenom_tmp;
   } //#pragma omp parallel private(afDest_tmp, ...)
+
+
 
   // Then apply the filter in the Y direction (d=1):
   d = 1;
@@ -1095,8 +1080,6 @@ _ApplyGauss3D(int const image_size[3],
           // the Z direction on the aaafMask[][][] array is stored in both 
           // aaafDenom[][][] and also afDenom_src_tmp[].  Now we want to
           // apply the 1-D Gaussian filter along the Y direction to that data
-          // (Note: Skip this if no such array was specified,IE if aaafMask=NULL
-          //  In that case, we have a more efficient way to calculate aaafDenom)
           aFilter[d].Apply(image_size[d],
                            afDenom_src_tmp, //<-weights so far (summed along z)
                            afDenom_tmp);//<-store sum of weights considered here
@@ -1104,14 +1087,10 @@ _ApplyGauss3D(int const image_size[3],
         // copy the results from the temporary filters back into the 3D arrays
         for (int iy = 0; iy < image_size[1]; iy++) {
           aaafDest[iz][iy][ix] = afDest_tmp[iy];
-          if (normalize) {
-            if (aaafMask)
-              //copy the weights from afDenom_tmp[] into aaafDenom[][][]
-              aaafDenom[iz][iy][ix] = afDenom_tmp[iy];
-            else
-              //otherwise use a trick to precompute the filter of a 3D rectangle
-              aaafDenom[iz][iy][ix] *= aafDenom_precomputed[d][iy];
-          }
+          if (normalize && aaafMask)
+            //copy the weights from afDenom_tmp[] into aaafDenom[][][]
+            // (Note: if aaafMask==NULL then we normalize using a faster method)
+            aaafDenom[iz][iy][ix] = afDenom_tmp[iy];
         }
       } //for (int ix = 0; ix < image_size[0]; ix++)
     } //for (int iz = 0; iz < image_size[2]; iz++)
@@ -1124,6 +1103,8 @@ _ApplyGauss3D(int const image_size[3],
     if (afDenom_tmp)
       delete [] afDenom_tmp;
   } //#pragma omp parallel private(afDest_tmp, ...)
+
+
 
 
   // Finally apply the filter in the X direction (d=0):
@@ -1177,8 +1158,6 @@ _ApplyGauss3D(int const image_size[3],
           // Y and Z directions on the aaafMask[][][] array is stored in both 
           // aaafDenom[][][] and also afDenom_src_tmp[].  Now we want to
           // apply the 1-D Gaussian filter along the X direction to that data
-          // (Note: Skip this if no such array was specified,IE if aaafMask=NULL
-          //  In that case, we have a more efficient way to calculate aaafDenom)
           aFilter[d].Apply(image_size[d],
                            afDenom_src_tmp, //<-weights so far(summed along y,z)
                            afDenom_tmp);//<-store sum of weights considered here
@@ -1186,14 +1165,10 @@ _ApplyGauss3D(int const image_size[3],
         // copy the results from the temporary filters back into the 3D arrays
         for (int ix = 0; ix < image_size[0]; ix++) {
           aaafDest[iz][iy][ix] = afDest_tmp[ix];
-          if (normalize) {
-            if (aaafMask)
-              //copy the weights from afDenom_tmp[] into aaafDenom[][][]
-              aaafDenom[iz][iy][ix] = afDenom_tmp[ix];
-            else
-              //otherwise use a trick to precompute the filter of a 3D rectangle
-              aaafDenom[iz][iy][ix] *= aafDenom_precomputed[d][ix];
-          }
+          if (normalize && aaafMask)
+            //copy the weights from afDenom_tmp[] into aaafDenom[][][]
+            // (Note: if aaafMask==NULL then we normalize using a faster method)
+            aaafDenom[iz][iy][ix] = afDenom_tmp[ix];
         }
       } //for (int iy = 0; iy < image_size[1]; iy++)
     } //for (int iz = 0; iz < image_size[2]; iz++)
@@ -1210,22 +1185,50 @@ _ApplyGauss3D(int const image_size[3],
 
 
   if (normalize) {
-    assert(aaafDenom);
-    for (int iz = 0; iz < image_size[2]; iz++)
-      for (int iy = 0; iy < image_size[1]; iy++)
-        for (int ix = 0; ix < image_size[0]; ix++)
-          if (aaafDenom[iz][iy][ix] > 0.0)
-            aaafDest[iz][iy][ix] /= aaafDenom[iz][iy][ix];
-    // Cleanup
-    Dealloc3D(image_size, &afDenom, &aaafDenom);
-    if (! aaafMask) {
+    if (aaafMask) {
+      assert(aaafDenom);
+      for (int iz = 0; iz < image_size[2]; iz++)
+        for (int iy = 0; iy < image_size[1]; iy++)
+          for (int ix = 0; ix < image_size[0]; ix++)
+            if (aaafDenom[iz][iy][ix] > 0.0)
+              aaafDest[iz][iy][ix] /= aaafDenom[iz][iy][ix];
+      // Cleanup
+      Dealloc3D(image_size, &afDenom, &aaafDenom);
+    }
+    else {
+      // Optimization when no mask is supplied:
+      // If there is no mask, but the user wants the result to be normalized,
+      // then we convolve the filter with the rectangular box.  This is cheaper
+      // because the convolution of a Gaussian with a rectangular box shaped
+      // function is the product of the convolution with three 1-D functions
+      // which are 1 from 0..image_size[d], and 0 everywhere else.
+      RealNum *aafDenom_precomputed[3];
+      for (int d=0; d<3; d++) {
+        RealNum *afAllOnes = new RealNum [image_size[d]];
+        aafDenom_precomputed[d] = new RealNum [image_size[d]];
+        for (int i=0; i < image_size[d]; i++)
+          afAllOnes[i] = 1.0;
+        aFilter[d].Apply(image_size[d], afAllOnes, aafDenom_precomputed[d]);
+        delete [] afAllOnes;
+      }
+      for (int iz = 0; iz < image_size[2]; iz++) {
+        for (int iy = 0; iy < image_size[1]; iy++) {
+          for (int ix = 0; ix < image_size[0]; ix++) {
+            RealNum denominator = (aafDenom_precomputed[0][ix] *
+                                   aafDenom_precomputed[1][iy] *
+                                   aafDenom_precomputed[2][iz]);
+            aaafDest[iz][iy][ix] /= denominator;
+          }
+        }
+      }
       // delete the array we created for storing the precomputed denominator:
       for (int d=0; d<3; d++)
         delete [] aafDenom_precomputed[d];
-    }
-  }
+    } // else clause for "if (aaafMask)"
+  } // if (normalize)
 
-  // Optional: filter(x) =  A  * exp(-(1/2)*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
+
+  // Recall:   filter(x) =  A  * exp(-(1/2)*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
   //                     = A_x * exp(-(1/2)*(x/σ_x)^2) *
   //                       A_y * exp(-(1/2)*(y/σ_y)^2) *
   //                       A_z * exp(-(1/2)*(z/σ_z)^2)
