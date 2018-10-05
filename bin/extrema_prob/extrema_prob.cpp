@@ -118,8 +118,6 @@ int main(int argc, char **argv) {
       settings.num_particles = sum;
     }
 
-    // Now blur the original image (if the user did not do it already)
-
     // First we must allocate a new array to store the filtered image.
     MrcSimple tomo_out = tomo_in;
 
@@ -181,7 +179,10 @@ int main(int argc, char **argv) {
 
       float num_bins = vol_total / volume_gaussian_bin;
 
-      if (! settings.precomputed_gaussian_blur) {
+      // Now blur the original image (if the user did not do it already)
+      if ((! settings.precomputed_gaussian_blur) ||
+          (settings.vfSigma.size() > 1)) {
+
         ApplyGauss3D(tomo_in.header.nvoxels,
                      tomo_in.aaafI,
                      tomo_out.aaafI,
