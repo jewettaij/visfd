@@ -364,7 +364,7 @@ are needed before you get visually pleasing results.
 ```
    -spheres-nonmax  orig_blobs.txt  selected_blobs.txt
 ```
-When *filter_mrc* is run using the " "**-spheres-nonmax**" argument,
+When *filter_mrc* is run using the "**-spheres-nonmax**" argument,
 no image processing is done on the source image.
 Instead, *filter_mrc* will read the list of blobs reported in a file
 (created by running *filter_mrc* with the *-blob* argument),

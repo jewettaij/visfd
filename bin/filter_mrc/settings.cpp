@@ -29,8 +29,8 @@ Settings::Settings() {
   use_mask_select = false;
   mask_out = 0.0;
   use_mask_out = true;
-  voxel_width = 0.0;    // How many nm per voxel? (if 0 then read from tomogram)
-  voxel_width_divide_by_10 = false;
+  voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
+  voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
   filter_type = NONE;
 
   // The code is a little bit confusing because I tried to cram as much
@@ -728,6 +728,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (growth_ratio <= 1.0)
           throw invalid_argument("");
         int N = ceil( log(blob_width_max/blob_width_min) / log(growth_ratio) );
+        growth_ratio = pow(blob_width_max/blob_width_min, 1.0/N);
         blob_diameters.resize(N);
 
         // REMOVE THIS CRUFT:
@@ -1668,7 +1669,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       vArgs.erase(vArgs.begin()+i, vArgs.begin()+i+num_arguments_deleted);
       --i; //rewind by one so that when we invoke ++i
       //at the end of this loop, i's value will not change.
-      //This will point us to the next un-read argument.
+      //This will point us to the next unread argument.
     }
 
   } // loop over arguments "for (int i=1; i < vArgs.size(); ++i)"

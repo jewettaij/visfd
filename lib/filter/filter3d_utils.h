@@ -1,5 +1,11 @@
 #ifndef _FILTER3D_UTILS_H
 
+#include <cassert>
+using namespace std;
+#include <alloc3d.h>
+
+
+
 // This file contains simple functions which operate on 3D arrays.
 // They are not specific to filtering, but are used in "filter3d.h".
 
@@ -17,15 +23,15 @@ RealNum AverageArr(Integer const array_size[3],
                    RealNum const *const *const *aaafH,
                    RealNum const *const *const *aaafW = NULL) 
 {
-  double total = 0.0;
-  double denom = 0.0;
+  RealNum total = 0.0;
+  RealNum denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        double h = aaafH[iz][iy][ix];
+        RealNum h = aaafH[iz][iy][ix];
         if (aaafW) {
-          double w = aaafW[iz][iy][ix];
+          RealNum w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -54,17 +60,17 @@ RealNum _AveSqrArr(Integer const array_size[3],
                   RealNum const *const *const *aaafH,
                   RealNum const *const *const *aaafW = NULL) 
 {
-  double total = 0.0;
-  double denom = 0.0;
+  RealNum total = 0.0;
+  RealNum denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        double h = aaafH[iz][iy][ix];
+        RealNum h = aaafH[iz][iy][ix];
         h *= h;
 
         if (aaafW) {
-          double w = aaafW[iz][iy][ix];
+          RealNum w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -94,18 +100,18 @@ RealNum StdDevArr(Integer const array_size[3],
                   RealNum const *const *const *aaafH,
                   RealNum const *const *const *aaafW = NULL) 
 {
-  double ave = AverageArr(array_size, aaafH, aaafW);
-  double total = 0.0;
-  double denom = 0.0;
+  RealNum ave = AverageArr(array_size, aaafH, aaafW);
+  RealNum total = 0.0;
+  RealNum denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        double h = (aaafH[iz][iy][ix] - ave);
+        RealNum h = (aaafH[iz][iy][ix] - ave);
         h *= h;
 
         if (aaafW) {
-          double w = aaafW[iz][iy][ix];
+          RealNum w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -135,13 +141,13 @@ RealNum _SumArr(Integer const array_size[3],
                RealNum const *const *const *aaafH,
                RealNum const *const *const *aaafW = NULL) 
 {
-  double total = 0.0;
-  double denom = 0.0;
+  RealNum total = 0.0;
+  RealNum denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        double h = aaafH[iz][iy][ix];
+        RealNum h = aaafH[iz][iy][ix];
         total += h;
         if (aaafW)
           h *= aaafW[iz][iy][ix];
@@ -169,13 +175,13 @@ RealNum _SumSqrArr(Integer const array_size[3],
                   RealNum const *const *const *aaafH,
                   RealNum const *const *const *aaafW = NULL) 
 {
-  double total = 0.0;
-  double denom = 0.0;
+  RealNum total = 0.0;
+  RealNum denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        double h = aaafH[iz][iy][ix];
+        RealNum h = aaafH[iz][iy][ix];
         h *= h;
         if (aaafW)
           h *= aaafW[iz][iy][ix];
@@ -227,38 +233,66 @@ void _MultiplyScalarArr(RealNum scale,
 
 
 
-/// @brief  Find the minimum and maximum entries in a 3D array.
+
+
+/// @brief  Find the minimum entries in a 3D array.
 ///         This function was not intended for public use.
-/// @param  min         the mininum entry will be stored here
-/// @param  max         the maxinum entry will be stored here
 /// @param  array_size  an array of 3 integers storing the size of the array
-/// @param  aaafH       the 3D array containing the entries
+/// @param  aaafI       the 3D array containing the entries
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
+/// @return the minimum entry in the aaafI array (not ignored by the mask)
 
 template<class RealNum, class Integer>
 static
-void _MinMaxArr(RealNum& min,
-               RealNum& max,
-               Integer const array_size[3],
-               RealNum ***aaafH,
-               RealNum const *const *const *aaafMask = NULL) 
+RealNum _MinArr(Integer const array_size[3],
+                RealNum const *const *const *aaafI,
+                RealNum const *const *const *aaafMask = NULL) 
 {
-  bool first = true;
+  RealNum min_I = -1.0; //this suspicious value gets returned if mask is empty
+  bool first_iter = true;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
         if ((aaafMask) and (aaafMask[iz][iy][ix] == 0.0))
           continue;
-        if (first || (aaafH[iz][iy][ix] > max))
-          max = aaafH[iz][iy][ix];
-        if (first || (aaafH[iz][iy][ix] < min))
-          min = aaafH[iz][iy][ix];
-        first = false;
+        if ((aaafI[iz][iy][ix] < min_I) || (first_iter))
+            min_I = aaafI[iz][iy][ix];
+        first_iter = false;
       }
     }
   }
-} //void _MinMaxArr()
+  return min_I;
+} //void _MinArr()
 
+
+/// @brief  Find the maximum and maximum entries in a 3D array.
+///         This function was not intended for public use.
+/// @param  array_size  an array of 3 integers storing the size of the array
+/// @param  aaafI       the 3D array containing the entries
+/// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
+/// @return the maximum entry in the aaafI array (not ignored by the mask)
+
+template<class RealNum, class Integer>
+static
+RealNum _MaxArr(Integer const array_size[3],
+                RealNum const *const *const *aaafI,
+                RealNum const *const *const *aaafMask = NULL) 
+{
+  RealNum max_I = -1.0; //this suspicious value gets returned if mask is empty
+  bool first_iter = true;
+  for (Integer iz = 0; iz < array_size[2]; iz++) {
+    for (Integer iy = 0; iy < array_size[1]; iy++) {
+      for (Integer ix = 0; ix < array_size[0]; ix++) {
+        if ((aaafMask) and (aaafMask[iz][iy][ix] == 0.0))
+          continue;
+        if ((aaafI[iz][iy][ix] < max_I) || (first_iter))
+          max_I = aaafI[iz][iy][ix];
+        first_iter = false;
+      }
+    }
+  }
+  return max_I;
+} //void _MaxArr()
 
 
 
@@ -328,5 +362,6 @@ HistogramArr(RealNum **paHistX,
     }
   }
 } //void HistogramArr()
+
 
 #endif //#ifndef _FILTER3D_UTILS_H

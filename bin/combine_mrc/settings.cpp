@@ -128,7 +128,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       vArgs.erase(vArgs.begin()+i, vArgs.begin()+i+num_arguments_deleted);
       --i; //rewind by one so that when we invoke ++i
       //at the end of this loop, i's value will not change.
-      //This will point us to the next un-read argument.
+      //This will point us to the next unread argument.
     }
     
   } // loop over arguments "for (int i=1; i < vArgs.size(); ++i)"

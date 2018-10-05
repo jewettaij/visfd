@@ -65,8 +65,8 @@ using namespace std;
 class Settings {
  public:
 
-  float voxel_width; //width of each voxel in nm (assumed to be same for x,y,z)
-  bool  voxel_width_divide_by_10 = false;
+  float voxel_width;  //physical width of each voxel (for example in Angstroms)
+  bool voxel_width_divide_by_10; //Use nm instead of Angstroms?
 
   string in_file_name;
   string out_file_name;

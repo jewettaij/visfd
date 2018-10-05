@@ -25,40 +25,40 @@ $(INTERNAL_LIB_PATH)/mrc_simple/libmrc_simple.a
 INCLUDES = \
 -I$(INTERNAL_LIB_PATH)/err \
 -I$(INTERNAL_LIB_PATH)/alloc \
--I$(INTERNAL_LIB_PATH)/mrc_simple \
--I$(INTERNAL_LIB_PATH)/threshold
+-I$(INTERNAL_LIB_PATH)/filter \
+-I$(INTERNAL_LIB_PATH)/mrc_simple
 
 
-OBJECT_FILES = sum_voxels.o settings.o
+OBJECT_FILES = extrema_prob.o settings.o
 
 
-OBJECT_SRC = sum_voxels.cpp settings.cpp
+OBJECT_SRC = extrema_prob.cpp settings.cpp
 
 
 
-#Default target: the sum_voxels binary
-#                "sum_voxels" is the lattice polymer simulator
-sum_voxels: $(OBJECT_FILES) $(LIB_FILES)
-	$(ANSI_CPP) $(LFLAGS) -o sum_voxels \
+#Default target: the extrema_prob binary
+#                "extrema_prob" is the lattice polymer simulator
+extrema_prob: $(OBJECT_FILES) $(LIB_FILES)
+	$(ANSI_CPP) $(LFLAGS) -o extrema_prob \
 	$(OBJECT_FILES) \
 	$(LIBS)
 
 
 install:
-	$(MAKE) ANSI_C="$(ANSI_C)" ANSI_CPP="$(ANSI_CPP)" L_COMP="$(L_COMP)" CFLAGS="$(CFLAGS)" LFLAGS="$(LFLAGS)" INSTALL_PATH="$(INSTALL_PATH)" sum_voxels
-	cp -f sum_voxels $(INSTALL_PATH)
-	#cp -f ../doc/doc_sum_voxels.md $(INSTALL_PATH)
+	$(MAKE) ANSI_C="$(ANSI_C)" ANSI_CPP="$(ANSI_CPP)" L_COMP="$(L_COMP)" CFLAGS="$(CFLAGS)" LFLAGS="$(LFLAGS)" INSTALL_PATH="$(INSTALL_PATH)" extrema_prob
+	cp -f extrema_prob $(INSTALL_PATH)
+        #cp -f ../doc/doc_extrema_prob.md $(INSTALL_PATH)
 
 
-GENERATED_FILES = *.o *.a core sum_voxels $(COMPILER_TEMP_FILES) $(LINKER_TEMP_FILES)
+GENERATED_FILES = *.o *.a core extrema_prob $(COMPILER_TEMP_FILES) $(LINKER_TEMP_FILES)
 
 clean:
 	rm -f $(GENERATED_FILES)
 
 distclean:
 	$(MAKE) clean
-	rm -f $(INSTALL_PATH)/sum_voxels
-	#rm -f $(INSTALL_PATH)/doc_sum_voxels.md
+	rm -f $(INSTALL_PATH)/extrema_prob
+	#rm -f $(INSTALL_PATH)/doc_extrema_prob.md
 
 depend:
 	mv Makefile Makefile.tmp

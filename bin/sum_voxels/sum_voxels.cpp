@@ -83,11 +83,17 @@ int main(int argc, char **argv) {
       throw InputErr("Error in tomogram header: Invalid voxel width(s).\n"
                      "Use the -w argument to specify the voxel width.");
 
-    if (abs((voxel_width[0] - voxel_width[1])
-            /
-            (0.5*(voxel_width[0] + voxel_width[1]))) > 0.0001)
-      throw InputErr("Error in tomogram header: Unequal voxel widths in the x and y directions.\n"
+    //if (abs((voxel_width[0] - voxel_width[1])
+    //        /
+    //        (0.5*(voxel_width[0] + voxel_width[1]))) > 0.0001)
+    //  throw InputErr("Error in tomogram header: Unequal voxel widths in the x and y directions.\n"
+    //                 "Use the -w argument to specify the voxel width.");
+
+    if ((voxel_width[0] != voxel_width[1]) ||
+        (voxel_width[1] != voxel_width[2]))
+      throw InputErr("Error in tomogram header: Unequal voxel widths in the x, y and directions.\n"
                      "Use the -w argument to specify the voxel width.");
+
 
     float voxel_volume = voxel_width[0] * voxel_width[1] * voxel_width[2];
 
@@ -131,14 +137,14 @@ int main(int argc, char **argv) {
     }
 
     double sum = 0.0;
-    double denominator = 0.0;
+    //double denominator = 0.0;
     for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
       for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
         for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
           if (mask.aaafI) {
-            // Else, compute a weighted sum using the mask values for weights
+            // compute a weighted sum using the mask values for weights
             sum += tomo_in.aaafI[iz][iy][ix] * mask.aaafI[iz][iy][ix];
-            denominator += 1.0;
+            //denominator += 1.0;
           }
           else
             sum += tomo_in.aaafI[iz][iy][ix];
@@ -146,8 +152,8 @@ int main(int argc, char **argv) {
       }
     }
 
-    if (mask.aaafI)
-      sum /= denominator; // divide by the sum of the weights (mask values)
+    //if (mask.aaafI)
+    //  sum /= denominator; // divide by the sum of the weights (mask values)
 
     cout << sum * sum_multiplier << endl;
 

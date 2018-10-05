@@ -17,8 +17,8 @@ Settings::Settings() {
   use_mask_select = false;
 
   multiply_by_voxel_volume = false;
-  voxel_width = 0.0;    // How many nm per voxel? (if 0 then read from tomogram)
-  voxel_width_divide_by_10 = false;
+  voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
+  voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
 
   use_thresholds = false;
   use_dual_thresholds = false;
@@ -81,7 +81,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by voxel width.\n");
       }
       num_arguments_deleted = 2;
-    } // if (vArgs[i] == "-mask")
+    } // if (vArgs[i] == "-w")
 
 
     else if ((vArgs[i] == "-a2nm") || (vArgs[i] == "-ang-to-nm"))
@@ -89,6 +89,32 @@ Settings::ParseArgs(vector<string>& vArgs)
       voxel_width_divide_by_10 = true;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-a2nm")
+
+
+    else if (vArgs[i] == "-mask")
+    {
+      if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a file name.\n");
+      mask_file_name = vArgs[i+1];
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-mask")
+
+
+    else if (vArgs[i] == "-mask-select")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        use_mask_select = true;
+        mask_select = stoi(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by an integer.\n");
+      }
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-mask-select")
 
 
     else if ((vArgs[i] == "-no-rescale") || (vArgs[i] == "-norescale"))
@@ -144,13 +170,15 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+
+
     //Delete all the arguments we have processed in this iteration (if any)
     if (num_arguments_deleted > 0)
     {
       vArgs.erase(vArgs.begin()+i, vArgs.begin()+i+num_arguments_deleted);
       --i; //rewind by one so that when we invoke ++i
       //at the end of this loop, i's value will not change.
-      //This will point us to the next un-read argument.
+      //This will point us to the next unread argument.
     }
 
   } // loop over arguments "for (int i=1; i < vArgs.size(); ++i)"
@@ -161,8 +189,8 @@ Settings::ParseArgs(vector<string>& vArgs)
   if (vArgs.size() > 2) {
     stringstream err_msg;
     err_msg << "Error: Too many arguments or mistake in argument syntax. Unrecognized args:\n";
-    for (int i = 1; i < vArgs.size(); i++)
-      err_msg << "       \"" << vArgs[2] << "\"\n";
+    for (int i = 2; i < vArgs.size(); i++)
+      err_msg << "       \"" << vArgs[i] << "\"\n";
     throw InputErr(err_msg.str());
   }
 

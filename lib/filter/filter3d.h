@@ -12,6 +12,7 @@
 #include <vector>
 #include <tuple>
 using namespace std;
+#include <alloc3d.h>
 #include <filter1d.h>  // defines "Filter1D" (used in "ApplyGauss()")
 #include <filter3d_utils.h> // defines "AverageArr()", and similar functions...
 
@@ -453,7 +454,6 @@ private:
   ///         be stored in the "aaafH" filter array member for this class).
   ///         It is assumed that the weighted average of both the
   ///          source and template arrays is 0 before calling this function.
-  ///         This function was not intended for public use.
   /// @return the weighted sum of the error (raised to the power of
   ///         err_exponent, which is 2 by default) summed over all entries
   ///         in the template.  Weights are typically chosen so that they
@@ -615,7 +615,9 @@ GenFilterGenGauss3D(RealNum width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 {
   RealNum window_threshold = 1.0;
   for (int d=0; d<3; d++) {
-    RealNum h = ((width[d]>0) ? exp(-pow(truncate_halfwidth[d]/width[d], m_exp)) : 1.0);
+    RealNum h = ((width[d]>0)
+                 ? exp(-pow(truncate_halfwidth[d]/width[d], m_exp))
+                 : 1.0);
     if (h < window_threshold)
       window_threshold = h;
   }
@@ -741,7 +743,7 @@ GenFilterGenGauss3D(RealNum width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 /// This version requires that the caller has already created individual
 /// filters for the two gaussians.
 /// All this function does is subtract one filter from the other (and rescale).
-/// This function was not intended for public use
+/// This function was not intended for public use.
 
 template<class RealNum>
 static
@@ -804,11 +806,6 @@ _GenFilterDogg3D(RealNum width_a[3],  //!< "a" parameter in formula
           filter.aaafH[iz][iy][ix] -=
             filter_B.aaafH[iz][iy][ix];     //  /(A-B);  COMMENTING OUT
 
-        //FOR DEBUGGING REMOVE EVENTUALLY
-        if (pReportEquation)
-          *pReportEquation << "GenDogg: aaafH["<<iz<<"]["<<iy<<"]["<<ix<<"] = "
-                           << filter.aaafH[iz][iy][ix] << endl;
-
         //*pReportEquation << aaafH[iz][iy][ix];
         //                         
         //if (ix == 0) pReportEquation << "\n"; else pReportEquation << " ";
@@ -817,10 +814,6 @@ _GenFilterDogg3D(RealNum width_a[3],  //!< "a" parameter in formula
     } // for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
   } // for (int iz=-halfwidth[2]; iz<=halfwidth[2]; iz++) {
 
-
-  //FOR DEBUGGING REMOVE EVENTUALLY
-  if (pReportEquation)
-    *pReportEquation << "\n";
 
   // COMMENTING OUT the factor of 1/(A-B):
   //A = A/(A-B);
@@ -832,6 +825,7 @@ _GenFilterDogg3D(RealNum width_a[3],  //!< "a" parameter in formula
   }
 
   if (pReportEquation) {
+    *pReportEquation << "\n";
     *pReportEquation << " Filter Used:\n"
       " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
       " h_a(x,y,z) = A*exp(-((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2)^(m/2))\n"
@@ -869,6 +863,10 @@ _GenFilterDogg3D(RealNum width_a[3],  //!< "a" parameter in formula
 
 
 /// @brief Create a 3D filter and fill it with a difference of (generalized) Gaussians
+///   @verbatim h(x,y,z) = A*exp(-(r/a)^m) - B*exp(-(r/b)^n)  @endverbatim
+/// where  @verbatim r = sqrt(x^2 + y^2 + z^2) @endverbatim
+///   and "A" and "B" are determined by normalization of each term independently
+/// (It's not clear whether this kind of filter is useful when m>2 or n>2)
 template<class RealNum>
 Filter3D<RealNum, int> 
 GenFilterDogg3D(RealNum width_a[3],   //!< "a" parameter in formula
@@ -904,21 +902,22 @@ GenFilterDogg3D(RealNum width_a[3],   //!< "a" parameter in formula
 
 
 
-// @brief _ApplyGauss3D applies a Gaussian filter on a 3D array.
+
+
+// @brief ApplySeparable3D applies a separable filter on a 3D array.
 //        It assumes separate Filter1D objects have already been created 
 //        which will blur the image in each direction (x,y,z).
-//        This function was not intended for public use
-//        Please use "ApplyGauss3d()" instead.  (See below.)
+//        This function was not intended for public use.
 template<class RealNum>
 static
 RealNum
-_ApplyGauss3D(int const image_size[3], 
-              RealNum const *const *const *aaafSource,
-              RealNum ***aaafDest,
-              RealNum const *const *const *aaafMask,
-              Filter1D<RealNum, int> aFilter[3], //preallocated 1D filters
-              bool normalize = true,
-              ostream *pReportProgress = NULL)
+ApplySeparable3D(int const image_size[3], 
+                 RealNum const *const *const *aaafSource,
+                 RealNum ***aaafDest,
+                 RealNum const *const *const *aaafMask,
+                 Filter1D<RealNum, int> aFilter[3], //preallocated 1D filters
+                 bool normalize = true,
+                 ostream *pReportProgress = NULL)
 {
   assert(aaafSource);
   assert(aaafDest);
@@ -938,7 +937,9 @@ _ApplyGauss3D(int const image_size[3],
       for (int ix = 0; ix < image_size[0]; ix++)
         aaafDest[iz][iy][ix] = aaafSource[iz][iy][ix];
 
-  // Gaussian filters are a form of weighted averaging of nearby voxels.
+  // Some filters, (such as Gaussian filters) are normalizable.
+  // That means these filters are weighted averaging of nearby voxels
+  // (with nonnegative weights).
   // However sometimes these nearby voxels are unavailable because they either
   // lie outside the boundaries of the image, or they lie outside the mask.
   // In that case, we can "normalize" the resulting filtered image by dividing
@@ -1067,19 +1068,19 @@ _ApplyGauss3D(int const image_size[3],
             afDenom_src_tmp[iy] = aaafDenom[iz][iy][ix];
         }
 
-        // At this point, the convolution of the 1-D Gaussian filter along
+        // At this point, the convolution of the 1-D filter along
         // the Z direction on the afSource[][][] array is stored in both 
         // aaafDeest[][][] and also afSource_tmp[].  Now we want to
-        // apply the 1-D Gaussian filter along the Y direction to that data.
+        // apply the 1-D filter along the Y direction to that data.
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
                          afDest_tmp); //<-store filtered result here
 
         if (normalize && aaafMask)
-          // At this point, the convolution of the 1-D Gaussian filter along
+          // At this point, the convolution of the 1-D filter along
           // the Z direction on the aaafMask[][][] array is stored in both 
           // aaafDenom[][][] and also afDenom_src_tmp[].  Now we want to
-          // apply the 1-D Gaussian filter along the Y direction to that data
+          // apply the 1-D filter along the Y direction to that data
           aFilter[d].Apply(image_size[d],
                            afDenom_src_tmp, //<-weights so far (summed along z)
                            afDenom_tmp);//<-store sum of weights considered here
@@ -1145,19 +1146,19 @@ _ApplyGauss3D(int const image_size[3],
             afDenom_src_tmp[ix] = aaafDenom[iz][iy][ix];
         }
 
-        // At this point, the convolution of the 1-D Gaussian filter along both
+        // At this point, the convolution of the 1-D filter along both
         // the Y and Z directions on the afSource[][][] array is stored in both 
         // aaafDeest[][][] and also afSource_tmp[].  Now we want to
-        // apply the 1-D Gaussian filter along the X direction to that data.
+        // apply the 1-D filter along the X direction to that data.
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
                          afDest_tmp); //<-store filtered result here
 
         if (normalize && aaafMask)
-          // At this point, the convolution of the 1-D Gaussian filter along the
+          // At this point, the convolution of the 1-D filter along the
           // Y and Z directions on the aaafMask[][][] array is stored in both 
           // aaafDenom[][][] and also afDenom_src_tmp[].  Now we want to
-          // apply the 1-D Gaussian filter along the X direction to that data
+          // apply the 1-D filter along the X direction to that data
           aFilter[d].Apply(image_size[d],
                            afDenom_src_tmp, //<-weights so far(summed along y,z)
                            afDenom_tmp);//<-store sum of weights considered here
@@ -1199,9 +1200,9 @@ _ApplyGauss3D(int const image_size[3],
       // Optimization when no mask is supplied:
       // If there is no mask, but the user wants the result to be normalized,
       // then we convolve the filter with the rectangular box.  This is cheaper
-      // because the convolution of a Gaussian with a rectangular box shaped
-      // function is the product of the convolution with three 1-D functions
-      // which are 1 from 0..image_size[d], and 0 everywhere else.
+      // because the convolution of a separable filter with a rectangular box 
+      // shaped function is the product of the convolution with three 1-D 
+      // functions which are 1 from 0..image_size[d], and 0 everywhere else.
       RealNum *aafDenom_precomputed[3];
       for (int d=0; d<3; d++) {
         RealNum *afAllOnes = new RealNum [image_size[d]];
@@ -1228,7 +1229,11 @@ _ApplyGauss3D(int const image_size[3],
   } // if (normalize)
 
 
-  // Recall:   filter(x) =  A  * exp(-(1/2)*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
+  // Estimate the peak of the filter.
+  //    (Currently, below, I assume the peak is located at the center,
+  //     of the filter window, but perhaps I should relax that assumption.)
+  // Here's an example of a Gaussian filter:
+  //           filter(x) =  A  * exp(-(1/2)*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
   //                     = A_x * exp(-(1/2)*(x/σ_x)^2) *
   //                       A_y * exp(-(1/2)*(y/σ_y)^2) *
   //                       A_z * exp(-(1/2)*(z/σ_z)^2)
@@ -1243,7 +1248,7 @@ _ApplyGauss3D(int const image_size[3],
 
   return A_coeff;
 
-} //_ApplyGauss3D(aFilter)
+} //ApplySeparable3D(aFilter)
 
 
 
@@ -1257,16 +1262,18 @@ _ApplyGauss3D(int const image_size[3],
 ///    An explanation of normalization:
 /// Gaussian filters are a form of weighted averaging of nearby voxels.
 /// However sometimes these nearby voxels are unavailable because they either
-/// lie outside the boundaries of the image, or they lie outside the mask.
+/// lie outside the boundaries of the image, or they lie outside the mask
+///   (ie. in regions where 0 <= aaafMask[iz][iy][ix] < 1.0).
 /// In that case, we can "normalize" the resulting filtered image by dividing
 /// this weighted average brightness of the voxels near a particular location,
 /// ...by the sum of the weights which were used to calculate that average.
 /// (at that location).
+/// This function was not intended for public use.
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
 template<class RealNum>
-RealNum
+static RealNum
 ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
              RealNum const *const *const *aaafSource,   //!< source image (3D array)
              RealNum ***aaafDest,     //!< filtered (blurred) image stored here
@@ -1285,15 +1292,62 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
   for (int d=0; d < 3; d++)
     aFilter[d] = GenFilterGauss1D(sigma[d], truncate_halfwidth[d]);
 
-  return _ApplyGauss3D(image_size, 
-                       aaafSource,
-                       aaafDest,
-                       aaafMask,
-                       aFilter,
-                       normalize,
-                       pReportProgress);
+  return ApplySeparable3D(image_size, 
+                          aaafSource,
+                          aaafDest,
+                          aaafMask,
+                          aFilter,
+                          normalize,
+                          pReportProgress);
 
 } //ApplyGauss3D(sigma, truncate_halfwidth, ...)
+
+
+
+/// @brief Apply a Gaussian filter (blur) to an image
+/// @code h(x,y,z)=A*exp(-0.5*(x^2+y^2+z^2)/σ^2) @endcode
+/// In this version, the user manually specifies the filter window width.
+/// Voxels outside the boundary of the image or outside the mask are not
+/// considered during the averaging (blurring) process, and the result after
+/// blurring is weighted accordingly (if normalize=true, which it is default).
+///    An explanation of normalization:
+/// Gaussian filters are a form of weighted averaging of nearby voxels.
+/// However sometimes these nearby voxels are unavailable because they either
+/// lie outside the boundaries of the image, or they lie outside the mask
+///   (ie. in regions where 0 <= aaafMask[iz][iy][ix] < 1.0).
+/// In that case, we can "normalize" the resulting filtered image by dividing
+/// this weighted average brightness of the voxels near a particular location,
+/// ...by the sum of the weights which were used to calculate that average.
+/// (at that location).
+///
+/// @returns the "A" coefficient (determined by normalization)
+template<class RealNum>
+static RealNum
+ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
+             RealNum const *const *const *aaafSource,   //!< source image (3D array)
+             RealNum ***aaafDest,     //!< filtered (blurred) image stored here
+             RealNum const *const *const *aaafMask, //!< ignore voxels if aaafMask[i][j][k]==0
+             RealNum sigma,                   //!< Gaussian sigma parameter σ
+             int     truncate_halfwidth,      //!< the filter window width
+
+             bool normalize = true,           //!< normalize the average?
+             ostream *pReportProgress = NULL  //!< print progress to the user?
+             )
+{
+  RealNum afSigma[3] = {sigma, sigma, sigma};
+  int afTruncateHalfwidth[3] = {truncate_halfwidth,
+                                truncate_halfwidth,
+                                truncate_halfwidth};
+  ApplyGauss3D(image_size,
+               aaafSource,
+               aaafDest,
+               aaafMask,
+               afSigma,
+               afTruncateHalfwidth,
+               normalize,
+               pReportProgress);
+}
+
 
 
 
@@ -1306,11 +1360,12 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 /// Voxels outside the boundary of the image or outside the mask are not
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
+/// This function was not intended for public use.
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
 template<class RealNum>
-RealNum
+static RealNum
 ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
              RealNum const *const *const *aaafSource,   //!< source image (3D array)
              RealNum ***aaafDest,     //!< filtered (blurred) image stored here
@@ -1339,6 +1394,40 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 } // ApplyGauss3D(..., truncate_ratio, ...)
 
 
+
+/// @brief Apply a Gaussian filter (blur) to a 3D image
+///
+/// @code h(x,y,z)=A*exp(-0.5*((x^2+y^2+z^2)/σ^2) @endcode
+/// The constant "A" is determined by normalization.
+/// In this version, the user specifies the filter window-width in units of σ
+/// Voxels outside the boundary of the image or outside the mask are not
+/// considered during the averaging (blurring) process, and the resulting
+/// after blurring is weighted accordingly.  (normalize=true by default)
+///
+/// @returns the "A" coefficient (determined by normalization)
+
+template<class RealNum>
+RealNum
+ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
+             RealNum const *const *const *aaafSource,   //!< source image (3D array)
+             RealNum ***aaafDest,     //!< filtered (blurred) image stored here
+             RealNum const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+             RealNum sigma,                 //!< Gaussian sigma parameter σ
+             RealNum truncate_ratio = 2.5,  //!< how many sigma before truncating?
+             bool normalize = true,           //!< normalize the average?
+             ostream *pReportProgress = NULL  //!< print progress to the user?
+             )
+{
+  RealNum afSigma[3] = {sigma, sigma, sigma};
+  ApplyGauss3D(image_size,
+               aaafSource,
+               aaafDest,
+               aaafMask,
+               afSigma,
+               truncate_ratio,
+               normalize,
+               pReportProgress);
+}
 
 
 
