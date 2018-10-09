@@ -4,7 +4,7 @@
 #include <iostream>
 using namespace std;
 
-//#include <boost/math/special_functions/gamma.hpp>
+#include <boost/math/special_functions/gamma.hpp>
 
 #include <err_report.h>
 #include <mrc_simple.h>
@@ -157,23 +157,30 @@ int main(int argc, char **argv) {
       }
       int filter_truncate_halfwidth = floor(sigma *
                                             settings.filter_truncate_ratio);
-      Filter1D<float, int> aFilter[3];
-      for (int d=0; d < 3; d++)
-        aFilter[d] = GenFilterGauss1D(sigma,
-                                      filter_truncate_halfwidth);
-      // GenFilterGauss1D generates a 1D discrete normalized Gaussian
-      // (located in afH[]) member.  afH[0] is the height at the central peak
-      // These 3 filters can be used to perform a 3D Gaussian blur on the image
-      // by exploiting the fact that 3D Gaussians are "seperable" filters.
-      // However, for now I just use them to estimate the height of the Gaussian
-      // peak.
 
-      float gauss_peak_height_3D = (aFilter[0].afH[0] *
-                                    aFilter[1].afH[0] *
-                                    aFilter[2].afH[0]);
-      // (I admit there's no reason to create 3 filters. They are all identical)
+      float gauss_peak_height_3D;
+
+      {
+        // GenFilterGauss1D generates a 1D discrete normalized Gaussian (located
+        // in the afH[]) member. afH[0] is the height at the central peak. 
+        // However, for now I just use them to estimate the height of the 
+        // Gaussian peak.  (See below)
+        Filter1D<float, int> filter1D =
+          GenFilterGauss1D(sigma, filter_truncate_halfwidth);
+
+        // A 3D Gaussian blur can be performed by expoiting the fact that
+        // multidimensional Gaussians are "seperable" filters:  You can blur
+        // in the X direction, then in the Y direcion, then in the Z direction.
+        // The result is the same that you would get from a 3D filter Gaussian
+        // which is the product of Gaussians in the X,Y,Z directions.
+        // So the peak height is the product of the 3 1D Gaussian peak heights.
+        float gauss_peak_height_3D =
+          (filter1D.afH[0] *
+           filter1D.afH[0] *
+           filter1D.afH[0]);
+      }
     
-      // At any rate, the Gaussian peak's height is 1/volume.  Solve for volume:
+      // The Gaussian peak's height is 1/volume.
 
       float volume_gaussian_bin = 1.0 / gauss_peak_height_3D;
 
@@ -209,50 +216,108 @@ int main(int argc, char **argv) {
       float ave_density = settings.num_particles / vol_total;
 
 
-      // What is the probability that a single region whose volume matches
-      // "volume_gaussian_bin" contains no more than "extreme_density" particles?
-      // This is given by the (cumulative) Poisson distribution.
-      // The discrete version of this distribution is given by
+      // Suppose you divide the volume of the region (ie. cell, compartment...)
+      // into equal size "bins" of equal size ("volume_gaussian_bin").
+      // A fixed number of particles lie within this volume.
+      // ...What is the probability that the number of particles in a bin
+      //    does not exceed "extreme_density"?
+      //  This is given by the (cumulative) Poisson distribution:
       //     prob = lambda^k * exp(-lambda) / k!
-      //          = lambda^k * exp(-lambda) / Gamma(k+1)
+      //          = lambda^k * exp(-lambda) / Gamma(k+1)  <-continuous version
       // "k" is the number of particles in this Gaussian-shaped "bin"
       float k = extreme_density * volume_gaussian_bin;
       // "lambda" is the expected number of particles in this "bin"
       float lambda = ave_density * volume_gaussian_bin;
 
-      // Calculate the culmulative probability of seeing less than this many
-      // particles in the bin.
 
-      // Test.  First do it the obvious way:
       double prob_cdf_obvious_way = 0.0;
-      for (long i=0; i < floor(k-1); i++)
-        prob_cdf_obvious_way += pow(lambda, i) * exp(-lambda) / tgamma(i+1.0);
-      // The cumulative distribution of the Poisson distribution
-      // is also given by the upper incomplete Gamma function
-      //double prob_cdf = gamma_q(floor(k)+1, lambda);
-      double prob_cdf = prob_cdf_obvious_way;
+      if (settings.use_min_density)
+        // Calculate the culmulative probability of seeing this many
+        // particles in the bin or less.  First try it the obvious way:
+        for (long i=0; i <= floor(k); i++)
+          prob_cdf_obvious_way += pow(lambda, i) * exp(-lambda) / tgamma(i+1.0);
+      else {
+      // Calculate the culmulative probability of seeing this many
+      // particles in the bin or more.  First try it the obvious way:
+        for (long i=0; i < floor(k); i++)
+          prob_cdf_obvious_way += pow(lambda, i) * exp(-lambda) / tgamma(i+1.0);
+        prob_cdf_obvious_way = 1.0 - prob_cdf_obvious_way;
+      }
+
       cerr << "####################################" << endl;
       cerr << "## DEBUG MESSAGES (PLEASE IGNORE) ##" << endl;
       cerr << "## num_in_bin = " << k << endl;
-      cerr << "## prob_cdf = " << prob_cdf << endl;
       cerr << "## prob_cdf_obvious_way = " << prob_cdf_obvious_way << endl;
       cerr << "####################################" << endl;
-      // If these two numbers agree, comment out this code (above)
+
+      double prob_cdf;
 
       // However, in our case the number of particles in this "bin" is not (k)
-      // necessarily an integer.
-      // The continuous version of the cumulative Poisson distribution is:
-      //double prob_cdf = gamma_q(k+1,lambda); //(gamma_q() is defined in boost)
+      // necessarily an integer.  In that case use the continuous version of
+      // (the cumulative distribution) of the Poisson distributio.
+      // COMMENTING OUT: This requires the BOOST libraries
+      // COMMENTING OUT: if (use_min_density)
+      // COMMENTING OUT:   prob_cdf = gamma_q(k+1,lambda);
+      // COMMENTING OUT: else
+      // COMMENTING OUT:   prob_cdf = 1.0 - gamma_q(k,lambda);
+      // /(gamma_q() is defined in boost)
 
-      // What is the probability that no other "bins" have a density which
-      // is that extreme (ie that high or that low)?   (1-prob)^(num_bins-1)
-      // ...Hence the probability that the minimum (or maximum)
-      // density of particles among "num_bins" volumes of that size is:
+      // The cumulative distribution of the Poisson distribution
+      // is also given by the upper incomplete Gamma function
+      // COMMENTING OUT: USE THE BOOST LIBRARY
+      //double prob_cdf = gamma_q(floor(k)+1, lambda);
+      // Unfortunately the  BOOST library can not be easily distributed with
+      // this code.  (Even if I throw away most ofthe BOOST code using the
+      // "bcp" utility, the remaining BOOST code exceeds the size of this
+      // the code for this project by a factor of 50.)
+      // Hence we will use the integer approximation ("obvious_way"):
 
-      double prob_total = num_bins*prob_cdf*pow((1-prob_cdf), num_bins-1);
+      prob_cdf = prob_cdf_obvious_way;
+
+      // ...Now what is the probability that the number of particles
+      //    in ANY OF THE BINS does not exceed "extreme_density"?
+
+      double prob_total = 1.0 - pow((1.0 - prob_cdf), num_bins);
 
       cout << pow(volume_gaussian_bin, 1.0/3) * voxel_width[0]
            << " " << prob_total << endl;
+
+      // What is the expected value of "prob_total" for a randomly distributed
+      // particles in the same number of bins.
+      //
+      // Answer: 0.5
+      //
+      // Proof:
+      //
+      // Let "c" be the cumulative probability distrubution for the entire
+      // system (in this "prob_total", but it could also be "prob_cdf")
+      //
+      // Let C(x) be the cumulative distribution of measuring < x
+      // (in this case the probability that none of the bins have
+      //  a density exceeding x)  In terms of the probability density
+      //
+      // C(X) = \int_{-\infty}^X  dx  p(x)
+      //
+      // Let C^{-1}(c) = x  denote the inverse of C(x) = c
+      //
+      // What is the expected value of c?  0.
+      //
+      // <c> = \int_0^1 dc * c * Probability(c)
+      //
+      //     = \int_0^1 dc * c * p( C^{-1}(c) ) * (d/dc) C^{-1}(c)
+      //
+      //     = \int_0^1 dc * c * p( C^{-1}(c) ) * ( 1 / (d/dx) C( C^{-1}(c) ) )
+      //
+      //     = \int_0^1 dc * c * p( C^{-1}(c) ) * ( 1 / p( C^{-1}(c) ) )
+      //
+      //     = \int_0^1 dc * c
+      //
+      //     = 0.5
+      //
+      // What is the expected value if we repeat this N times and pick 
+      // the lowest value?  
+      //     = <c> - std_dev(c) / sqrt(N)
+      //     < 0.5 - 0.5 * / sqrt(N)
 
     } // for (int i_sig = 0; i_sig < vfSigma.size(); i_sig++) {...
 
