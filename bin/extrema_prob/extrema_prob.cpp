@@ -260,7 +260,7 @@ int main(int argc, char **argv) {
       // COMMENTING OUT:   prob_cdf = gamma_q(k+1,lambda);
       // COMMENTING OUT: else
       // COMMENTING OUT:   prob_cdf = 1.0 - gamma_q(k,lambda);
-      // /(gamma_q() is defined in boost)
+      //    (gamma_q() is defined in boost)
 
       // The cumulative distribution of the Poisson distribution
       // is also given by the upper incomplete Gamma function
@@ -282,42 +282,52 @@ int main(int argc, char **argv) {
       cout << pow(volume_gaussian_bin, 1.0/3) * voxel_width[0]
            << " " << prob_total << endl;
 
+      // Discussion:
+      //      What do we expect this number to be?
       // What is the expected value of "prob_total" for a randomly distributed
       // particles in the same number of bins.
       //
       // Answer: 0.5
+      //
+      // The proof is not specific to the kind of distribution we are using.
+      // (a Poisson distribution)
       //
       // Proof:
       //
       // Let "c" be the cumulative probability distrubution for the entire
       // system (in this "prob_total", but it could also be "prob_cdf")
       //
-      // Let C(x) be the cumulative distribution of measuring < x
+      // Let p(x) be the probability density of measuring x.
+      //
+      // Let C(x) be the cumulative distribution of measuring something <= x.
       // (in this case the probability that none of the bins have
-      //  a density exceeding x)  In terms of the probability density
+      //  a density exceeding x)  This means that:
       //
       // C(X) = \int_{-\infty}^X  dx  p(x)
       //
-      // Let C^{-1}(c) = x  denote the inverse of C(x) = c
+      // Let C^{-1}(c)  denote the inverse of C(x)
+      // ==> C^{-1}(c) = x   if   C(x) = c
       //
-      // What is the expected value of c?  0.
+      // What is the average value of c?
       //
-      // <c> = \int_0^1 dc * c * Probability(c)
+      // <c> = \int_{-infty}^{\infty} * c(x) * p(x) * dx
       //
-      //     = \int_0^1 dc * c * p( C^{-1}(c) ) * (d/dc) C^{-1}(c)
+      //     = \int_0^1         c *  p(x(c)) * dx(c)/dc * dc
       //
-      //     = \int_0^1 dc * c * p( C^{-1}(c) ) * ( 1 / (d/dx) C( C^{-1}(c) ) )
+      //     = \int_0^1 c * p( C^{-1}(c) ) * (d/dc) C^{-1}(c)  * dc
       //
-      //     = \int_0^1 dc * c * p( C^{-1}(c) ) * ( 1 / p( C^{-1}(c) ) )
+      //     = \int_0^1 c * p( C^{-1}(c) ) * ( 1 / (d/dx) C( C^{-1}(c) ) ) * dc
       //
-      //     = \int_0^1 dc * c
+      //     = \int_0^1 c * p( C^{-1}(c) ) * ( 1 / p( C^{-1}(c) ) )  * dc
+      //
+      //     = \int_0^1 c * dc
       //
       //     = 0.5
       //
-      // What is the expected value if we repeat this N times and pick 
-      // the lowest value?  
-      //     = <c> - std_dev(c) / sqrt(N)
-      //     < 0.5 - 0.5 * / sqrt(N)
+      // However this number will be lower if you repeat this multiple times
+      // (using different bin-sizes ("sigma" values), for example)
+      // because by repeating, you give it more opportunities to find
+      // a more extreme value.  (Here we scan over a range of "sigma" values.)
 
     } // for (int i_sig = 0; i_sig < vfSigma.size(); i_sig++) {...
 
