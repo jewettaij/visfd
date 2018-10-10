@@ -12,6 +12,7 @@ using namespace std;
 class Settings {
  public:
   string in_file_name;
+  string in_coords_file_name;
   bool rescale01_in;
   string mask_file_name;
   int mask_select;

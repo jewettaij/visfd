@@ -15,6 +15,7 @@ using namespace std;
 Settings::Settings() {
   // Default settings
   in_file_name = "";
+  in_coords_file_name = "";
   rescale01_in = false;
   mask_file_name = "";
   mask_select = 1;
@@ -81,6 +82,21 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
 
     } // if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
+
+
+    else if (vArgs[i] == "-coords") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        in_coords_file_name = vArgs[i+1];
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a file name\n");
+      }
+      num_arguments_deleted = 2;
+    }
 
 
     else if (vArgs[i] == "-w") {

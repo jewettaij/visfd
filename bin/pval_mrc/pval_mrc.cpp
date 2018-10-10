@@ -2,6 +2,7 @@
 #include <cmath>
 #include <string>
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 #include <boost/math/special_functions/gamma.hpp>
@@ -78,6 +79,35 @@ int main(int argc, char **argv) {
                      "Use the -w argument to specify the voxel width.");
 
 
+    if (settings.in_coords_file_name != "") {
+      for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
+        for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
+          for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
+            tomo_in.aaafI[iz][iy][ix] = 0.0;
+      fstream coords_file;
+      coords_file.open(settings.in_coords_file_name.c_str(), ios::in);
+      if (! coords_file)
+        throw InputErr("Error: unable to open \""+
+                       settings.in_coords_file_name +"\" for reading.\n");
+      while (coords_file) {
+        float x, y, z;
+        coords_file >> x;
+        coords_file >> y;
+        coords_file >> z;
+        int ix, iy, iz;
+        ix = static_cast<int>(x / voxel_width[0]);
+        iy = static_cast<int>(y / voxel_width[1]);
+        iz = static_cast<int>(z / voxel_width[2]);
+        if (((0 <= ix) && (ix <= tomo_in.header.nvoxels[0])) &&
+            ((0 <= iy) && (iy <= tomo_in.header.nvoxels[1])) &&
+            ((0 <= iz) && (iz <= tomo_in.header.nvoxels[2])))
+          tomo_in.aaafI[iz][iy][ix] = 1.0;
+      }
+    } //if (settings.in_coords_file_name != "") {
+
+
+
+    
     float vol_total = settings.compartment_volume;
     if (settings.compartment_volume < 0) {
       if (mask.aaafI) {
