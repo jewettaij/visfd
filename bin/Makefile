@@ -5,7 +5,7 @@ SHELL = /bin/sh
 #including the "ndlattice" binary.
 #This makefile constructs each binary from the code in these directories
 
-SRC_DIRS = convert_to_float print_mrc_stats crop_mrc combine_mrc sum_voxels filter_mrc histogram_mrc extrema_prob
+SRC_DIRS = convert_to_float print_mrc_stats crop_mrc combine_mrc sum_voxels filter_mrc histogram_mrc pval_mrc
 
 #Right now there is only one ("ndlattice"), but in the past, there were many
 #different binary executables which share the same libraries located here.
