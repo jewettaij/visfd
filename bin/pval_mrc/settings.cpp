@@ -8,8 +8,9 @@ using namespace std;
 #include "settings.h"
 
 //  Example usage:
-// extrema_prob -w 19.2 -i image.rec -mask mask.rec -gauss 545.0 -pg -n 7145 -v 4.89109e+07
-// extrema_prob -w 19.2 -i image.rec -mask mask.rec -scan 300.0 700.0 1.02 -pg -n 7145 -v 4.89109e+07
+// pval_mrc -w 19.2 -i image.rec -coords crds.txt -bin-width 300.0 
+// pval_mrc -w 19.2 -i image.rec -mask mask.rec -gauss 545.0 -pg -n 7145 -v 4.89109e+07
+// pval_mrc -w 19.2 -i image.rec -mask mask.rec -scan 300.0 700.0 1.02
 
 
 Settings::Settings() {
@@ -84,7 +85,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
 
 
-    else if (vArgs[i] == "-coords") {
+    else if ((vArgs[i] == "-coords") || (vArgs[i] == "-crds")) {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
