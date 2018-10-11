@@ -181,7 +181,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-scan")
     {
       try {
-        if ((i+4 >= vArgs.size()) ||
+        if ((i+3 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
             (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
@@ -221,8 +221,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by a file name, and 3 positive numbers:\n"
-                       "      file_name.txt  bin_width_min  bin_width_max  N\n");
+                       " argument must be followed by 3 positive numbers:\n"
+                       "      bin_width_min  bin_width_max  growth_ratio N\n");
       }
       num_arguments_deleted = 4;
     } //if (vArgs[i] == "-scan")
