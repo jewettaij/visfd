@@ -277,6 +277,7 @@ int main(int argc, char **argv) {
       cerr << "####################################" << endl;
       cerr << "## DEBUG MESSAGES (PLEASE IGNORE) ##" << endl;
       cerr << "## num_in_bin = " << k << endl;
+      cerr << "## num_expected_in_bin = " << lambda << endl;
       cerr << "## prob_cdf_obvious_way = " << prob_cdf_obvious_way << endl;
       cerr << "####################################" << endl;
 

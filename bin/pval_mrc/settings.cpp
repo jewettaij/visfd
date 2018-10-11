@@ -227,7 +227,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         //  <==> sigma = bin_width / sqrt(2*pi);
         float first_bin_width = bin_width_min;
         float first_sigma = first_bin_width;
-        if (vargs[i] != '-scan-gauss')
+        if (vArgs[i] != "-scan-gauss")
           first_sigma /= sqrt(2*M_PI);
         vfSigma[0] = first_sigma;
         for (int n = 1; n < N; n++) {
