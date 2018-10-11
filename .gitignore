@@ -1,6 +1,7 @@
 # C extensions
 *.so
 *.o
+*.a
 
 combine_mrc
 convert_to_float
