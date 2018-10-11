@@ -98,9 +98,9 @@ int main(int argc, char **argv) {
         ix = static_cast<int>(x / voxel_width[0]);
         iy = static_cast<int>(y / voxel_width[1]);
         iz = static_cast<int>(z / voxel_width[2]);
-        if (((0 <= ix) && (ix <= tomo_in.header.nvoxels[0])) &&
-            ((0 <= iy) && (iy <= tomo_in.header.nvoxels[1])) &&
-            ((0 <= iz) && (iz <= tomo_in.header.nvoxels[2])))
+        if (((0 <= ix) && (ix < tomo_in.header.nvoxels[0])) &&
+            ((0 <= iy) && (iy < tomo_in.header.nvoxels[1])) &&
+            ((0 <= iz) && (iz < tomo_in.header.nvoxels[2])))
           tomo_in.aaafI[iz][iy][ix] = 1.0;
       }
     } //if (settings.in_coords_file_name != "") {
