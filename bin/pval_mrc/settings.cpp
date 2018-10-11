@@ -188,7 +188,10 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-bin-width")
 
 
-    else if (vArgs[i] == "-scan")
+    else if ((vArgs[i] == "-scan") ||
+             (vArgs[i] == "-scan-bin") ||
+             (vArgs[i] == "-scan-bin-width") ||
+             (vArgs[i] == "-scan-gauss"))
     {
       try {
         if ((i+3 >= vArgs.size()) ||
@@ -223,7 +226,9 @@ Settings::ParseArgs(vector<string>& vArgs)
         // bin_width = bin_vol ^ 1/3
         //  <==> sigma = bin_width / sqrt(2*pi);
         float first_bin_width = bin_width_min;
-        float first_sigma = first_bin_width / sqrt(2*M_PI);
+        float first_sigma = first_bin_width;
+        if (vargs[i] != '-scan-gauss')
+          first_sigma /= sqrt(2*M_PI);
         vfSigma[0] = first_sigma;
         for (int n = 1; n < N; n++) {
           vfSigma[n] = vfSigma[n-1] * growth_ratio;
