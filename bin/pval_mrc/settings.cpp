@@ -121,6 +121,16 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-a2nm")
 
 
+    else if (vArgs[i] == "-mask")
+    {
+      if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a file name.\n");
+      mask_file_name = vArgs[i+1];
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-mask")
+
+
     else if (vArgs[i] == "-mask-select")
     {
       try {
