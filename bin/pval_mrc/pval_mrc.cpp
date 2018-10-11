@@ -233,14 +233,17 @@ int main(int argc, char **argv) {
       // After bluring the image, find the lowest density:
     
       float extreme_density;
+      int afXextreme[3];
       if (settings.use_min_density)
         extreme_density = _MinArr(tomo_out.header.nvoxels,
                                   tomo_out.aaafI,
-                                  mask.aaafI);
+                                  mask.aaafI,
+                                  afXextreme);
       else
         extreme_density = _MaxArr(tomo_out.header.nvoxels,
                                   tomo_out.aaafI,
-                                  mask.aaafI);
+                                  mask.aaafI,
+                                  afXextreme);
       
 
       float ave_density = settings.num_particles / vol_total;
@@ -276,6 +279,10 @@ int main(int argc, char **argv) {
 
       cerr << "####################################" << endl;
       cerr << "## DEBUG MESSAGES (PLEASE IGNORE) ##" << endl;
+      cerr << "## location (in voxels) = ("
+           << afXextreme[0] << ","
+           << afXextreme[1] << ","
+           << afXextreme[2] << ")" << endl;
       cerr << "## num_in_bin = " << k << endl;
       cerr << "## num_expected_in_bin = " << lambda << endl;
       cerr << "## prob_cdf_obvious_way = " << prob_cdf_obvious_way << endl;

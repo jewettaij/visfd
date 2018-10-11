@@ -246,7 +246,8 @@ template<class RealNum, class Integer>
 static
 RealNum _MinArr(Integer const array_size[3],
                 RealNum const *const *const *aaafI,
-                RealNum const *const *const *aaafMask = NULL) 
+                RealNum const *const *const *aaafMask = NULL,
+                Integer *afLocation = NULL)
 {
   RealNum min_I = -1.0; //this suspicious value gets returned if mask is empty
   bool first_iter = true;
@@ -255,8 +256,14 @@ RealNum _MinArr(Integer const array_size[3],
       for (Integer ix = 0; ix < array_size[0]; ix++) {
         if ((aaafMask) and (aaafMask[iz][iy][ix] == 0.0))
           continue;
-        if ((aaafI[iz][iy][ix] < min_I) || (first_iter))
-            min_I = aaafI[iz][iy][ix];
+        if ((aaafI[iz][iy][ix] < min_I) || (first_iter)) {
+          min_I = aaafI[iz][iy][ix];
+          if (afLocation) {
+            afLocation[0] = ix;
+            afLocation[1] = iy;
+            afLocation[2] = iz;
+          }
+        }
         first_iter = false;
       }
     }
@@ -276,7 +283,8 @@ template<class RealNum, class Integer>
 static
 RealNum _MaxArr(Integer const array_size[3],
                 RealNum const *const *const *aaafI,
-                RealNum const *const *const *aaafMask = NULL) 
+                RealNum const *const *const *aaafMask = NULL,
+                Integer *afLocation = NULL)
 {
   RealNum max_I = -1.0; //this suspicious value gets returned if mask is empty
   bool first_iter = true;
@@ -285,8 +293,14 @@ RealNum _MaxArr(Integer const array_size[3],
       for (Integer ix = 0; ix < array_size[0]; ix++) {
         if ((aaafMask) and (aaafMask[iz][iy][ix] == 0.0))
           continue;
-        if ((aaafI[iz][iy][ix] < max_I) || (first_iter))
+        if ((aaafI[iz][iy][ix] < max_I) || (first_iter)) {
           max_I = aaafI[iz][iy][ix];
+          if (afLocation) {
+            afLocation[0] = ix;
+            afLocation[1] = iy;
+            afLocation[2] = iz;
+          }
+        }
         first_iter = false;
       }
     }
