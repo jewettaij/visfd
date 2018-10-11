@@ -163,5 +163,4 @@ requires python, numpy, and matplotlib.
 ## License
 
 These programs are available under the terms of the open-source 3-clause BSD
-license.  (See `LICENSE.md`.)
-("[LICENSE.md](./LICENSE.md)")
+license.  (See "[LICENSE.md](./LICENSE.md)")
