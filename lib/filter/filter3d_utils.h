@@ -240,7 +240,9 @@ void _MultiplyScalarArr(RealNum scale,
 /// @param  array_size  an array of 3 integers storing the size of the array
 /// @param  aaafI       the 3D array containing the entries
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
+/// @param  afLocation  (optional) report the location of the minima (ix,iy,iz)
 /// @return the minimum entry in the aaafI array (not ignored by the mask)
+///         (or HUGE_VALF, if the aaafMask array has no non-zero entries)
 
 template<class RealNum, class Integer>
 static
@@ -249,7 +251,7 @@ RealNum _MinArr(Integer const array_size[3],
                 RealNum const *const *const *aaafMask = NULL,
                 Integer *afLocation = NULL)
 {
-  RealNum min_I = -1.0; //this suspicious value gets returned if mask is empty
+  RealNum min_I = HUGE_VALF; //return this suspicious value if mask is empty
   bool first_iter = true;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
@@ -277,7 +279,9 @@ RealNum _MinArr(Integer const array_size[3],
 /// @param  array_size  an array of 3 integers storing the size of the array
 /// @param  aaafI       the 3D array containing the entries
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
-/// @return the maximum entry in the aaafI array (not ignored by the mask)
+/// @param  afLocation  (optional) report the location of the maxima (ix,iy,iz)
+/// @return the minimum entry in the aaafI array (not ignored by the mask)
+///         (or -HUGE_VALF, if the aaafMask array has no non-zero entries)
 
 template<class RealNum, class Integer>
 static
@@ -286,7 +290,7 @@ RealNum _MaxArr(Integer const array_size[3],
                 RealNum const *const *const *aaafMask = NULL,
                 Integer *afLocation = NULL)
 {
-  RealNum max_I = -1.0; //this suspicious value gets returned if mask is empty
+  RealNum max_I = -HUGE_VALF; //return this suspicious value if mask is empty
   bool first_iter = true;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
