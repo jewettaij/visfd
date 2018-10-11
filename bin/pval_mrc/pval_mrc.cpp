@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 
 
     
-    float vol_total = settings.compartment_volume;
+    double vol_total = settings.compartment_volume;
     if (settings.compartment_volume < 0) {
       if (mask.aaafI) {
         for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
         // The result is the same that you would get from a 3D filter Gaussian
         // which is the product of Gaussians in the X,Y,Z directions.
         // So the peak height is the product of the 3 1D Gaussian peak heights.
-        float gauss_peak_height_3D =
+        gauss_peak_height_3D =
           (filter1D.afH[0] *
            filter1D.afH[0] *
            filter1D.afH[0]);
