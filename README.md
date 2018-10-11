@@ -36,7 +36,9 @@ and
 filters, and others.
 A image *mask* can be used to exclude certain
 voxels or regions from consideration.
-(Typically these are voxels which have been characterized previously.)
+(Typically these are voxels which have been characterized previously.
+The contributions from remaining voxels are normalized, so that objects
+located within narrow confined spaces can still be detected accurately.)
 A list of detected objects can be saved to a text file.
 Annotated images can be saved to a new MRC/REC file.
 Documentation for this program is located
@@ -162,3 +164,4 @@ requires python, numpy, and matplotlib.
 
 These programs are available under the terms of the open-source 3-clause BSD
 license.  (See `LICENSE.md`.)
+("[LICENSE.md](./LICENSE.md)")
