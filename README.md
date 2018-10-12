@@ -20,7 +20,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 ## filter_mrc
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
-![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)
+![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)  *<-- 2D slice through a 3D tomogram:*
 
 **filter_mrc** detects features and applies simple filters to 3D images.
 It supports 
@@ -36,9 +36,9 @@ and
 filters, and others.
 A image *mask* can be used to exclude certain
 voxels or regions from consideration.
-(Typically these are voxels which have been characterized previously.
+*(Typically these are voxels which have been characterized previously.
 The contributions from remaining voxels are normalized, so that objects
-located within narrow confined spaces can still be detected accurately.)
+located within narrow confined spaces can still be detected accurately.)*
 A list of detected objects can be saved to a text file.
 Annotated images can be saved to a new MRC/REC file.
 Documentation for this program is located
