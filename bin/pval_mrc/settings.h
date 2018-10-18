@@ -17,6 +17,7 @@ class Settings {
   string mask_file_name;
   int mask_select;
   bool use_mask_select;
+  bool randomize_input_image;
 
 
   float voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)

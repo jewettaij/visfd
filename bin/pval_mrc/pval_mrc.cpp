@@ -3,9 +3,14 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 using namespace std;
 
-#include <boost/math/special_functions/gamma.hpp>
+#ifndef DISABLE_OPENMP
+#include <omp.h>       // (OpenMP-specific)
+#endif
+
+//#include <boost/math/special_functions/gamma.hpp>
 
 #include <err_report.h>
 #include <mrc_simple.h>
@@ -20,6 +25,24 @@ int main(int argc, char **argv) {
 
     Settings settings; // parse the command-line argument list from the shell
     settings.ParseArgs(argc, argv);
+
+
+    #ifndef DISABLE_OPENMP
+    #pragma omp parallel
+    {
+      int rank, nthr;
+      rank = omp_get_thread_num();
+      //cerr << "rank=" << rank << endl;
+      if (rank == 0) {
+        nthr = omp_get_num_threads();
+        cerr << "   (Using " << nthr << " threads (cpu cores).  You can change this using the \"-np n\"\n"
+             << "    argument, or by setting the OMP_NUM_THREADS environment variable.)" << endl;
+      }
+    }
+    #else
+    cerr << " (Serial version)" << endl;
+    #endif //#ifndef DISABLE_OPENMP
+
 
     // Read the input tomogram
     cerr << "Reading tomogram \""<<settings.in_file_name<<"\"" << endl;
@@ -147,6 +170,43 @@ int main(int argc, char **argv) {
       }
       settings.num_particles = sum;
     }
+
+
+    // DEBUG: The next if-then statement is for debugging only.
+    if (settings.randomize_input_image) {
+      size_t nparticles = floor(settings.num_particles);
+      size_t nvoxels;
+      if (mask.aaafI) {
+        for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
+          for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
+            for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
+              if (mask.aaafI[iz][iy][ix] != 0.0)
+                nvoxels += 1;
+      }
+      else {
+        nvoxels = (tomo_in.header.nvoxels[0] *
+                   tomo_in.header.nvoxels[1] *
+                   tomo_in.header.nvoxels[2]);
+      }
+      vector<bool> random_bit_list(nvoxels, false);
+      for (size_t i=0; i < nparticles; i++)
+        random_bit_list[i] = true;
+      random_shuffle(random_bit_list.begin(), random_bit_list.end());
+      size_t i=0;
+      for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++) {
+        for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++) {
+          for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++) {
+            tomo_in.aaafI[iz][iy][ix] = 0.0;
+            if ((! mask.aaafI) || mask.aaafI[iz][iy][ix] != 0.0) {
+              tomo_in.aaafI[iz][iy][ix] = random_bit_list[i];
+              i++;
+            }
+          }
+        }
+      }
+    } //if (settings.randomize_input_image)
+
+
 
     // First we must allocate a new array to store the filtered image.
     MrcSimple tomo_out = tomo_in;

@@ -2772,6 +2772,7 @@ int main(int argc, char **argv) {
     Settings settings; // parse the command-line argument list from the shell
     settings.ParseArgs(argc, argv);
 
+
     #ifndef DISABLE_OPENMP
     #pragma omp parallel
     {
@@ -2787,6 +2788,7 @@ int main(int argc, char **argv) {
     #else
     cerr << " (Serial version)" << endl;
     #endif //#ifndef DISABLE_OPENMP
+
 
     MrcSimple tomo_in;
     if (settings.in_file_name != "") {

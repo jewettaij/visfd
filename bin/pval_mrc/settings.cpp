@@ -4,6 +4,10 @@
 #include <cassert>
 using namespace std;
 
+#ifndef DISABLE_OPENMP
+#include <omp.h>       // (OpenMP-specific)
+#endif
+
 #include <err_report.h>
 #include "settings.h"
 
@@ -117,6 +121,15 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if ((vArgs[i] == "-a2nm") || (vArgs[i] == "-ang-to-nm"))
     {
       voxel_width_divide_by_10 = true;
+      num_arguments_deleted = 1;
+    } // if (vArgs[i] == "-a2nm")
+
+    
+    else if ((vArgs[i] == "-randomize") ||
+             (vArgs[i] == "-rand") ||
+             (vArgs[i] == "-rand"))
+    {
+      randomize_input_image = true;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-a2nm")
 
@@ -340,6 +353,29 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-min")
 
+
+
+    else if (vArgs[i] == "-np") {
+      #ifdef DISABLE_OPENMP
+      throw InputErr("Error: The " + vArgs[i] + 
+                     " argument is only available if program was compiled\n"
+                     " with support for OpenMP (multiprocessor support).\n");
+      #else
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        int num_threads = stoi(vArgs[i+1]);
+        omp_set_num_threads(num_threads);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a positive integer, the\n"
+                       "       number of threads (processors) requested.\n");
+      }
+      #endif //#ifdef DISABLE_OPENMP
+      num_arguments_deleted = 2;
+    }
 
     //Delete all the arguments we have processed in this iteration (if any)
     if (num_arguments_deleted > 0)
