@@ -960,7 +960,7 @@ ApplySeparable3D(int const image_size[3],
             aaafDenom[iz][iy][ix] = 1.0; //(default value)
     }
   } // if (normalize) 
-  
+
   int d; //direction where we are applying the filter (x<==>0, y<==>1, z<==>2)
 
   // First, apply the filter in the Z direction (d=2):
@@ -988,6 +988,9 @@ ApplySeparable3D(int const image_size[3],
     #pragma omp for collapse(2)
     for (int iy = 0; iy < image_size[1]; iy++) {
       for (int ix = 0; ix < image_size[0]; ix++) {
+
+        //CONTINUEHERE: std::bad_alloc() exception here using OpenMP 2018-10-18!
+
 
         // Copy the data we need to the temporary arrays
         for (int iz = 0; iz < image_size[2]; iz++) {

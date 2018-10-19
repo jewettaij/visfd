@@ -89,6 +89,18 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
 
 
+    else if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
+    {
+      if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a file name.\n");
+      out_file_name = vArgs[i+1];
+
+      num_arguments_deleted = 2;
+
+    } // if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
+
+
     else if ((vArgs[i] == "-coords") || (vArgs[i] == "-crds")) {
       try {
         if ((i+1 >= vArgs.size()) ||
@@ -129,8 +141,12 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-rand") ||
              (vArgs[i] == "-rand"))
     {
+      if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a positive integer.\n");
       randomize_input_image = true;
-      num_arguments_deleted = 1;
+      random_seed = stoi(vArgs[i+1]);
+      num_arguments_deleted = 2;
     } // if (vArgs[i] == "-a2nm")
 
 
@@ -227,7 +243,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (bin_width_min == bin_width_max)
           N = 1;
         else {
-          N = ceil( log(bin_width_max/bin_width_min) / log(growth_ratio) );
+          N = 1 + ceil( log(bin_width_max/bin_width_min) / log(growth_ratio) );
           growth_ratio = pow(bin_width_max/bin_width_min, 1.0/N);
         }
 
@@ -250,7 +266,9 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by 3 positive numbers:\n"
-                       "      bin_width_min  bin_width_max  growth_ratio N\n");
+                       "      bin_width_min  bin_width_max  growth_ratio N\n"
+                       " The first two numbers should be in increasing order\n"
+                       " and the last number should be > 1.0\n");
       }
       num_arguments_deleted = 4;
     } //if (vArgs[i] == "-scan")

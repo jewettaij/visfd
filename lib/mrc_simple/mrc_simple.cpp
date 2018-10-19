@@ -341,10 +341,10 @@ void MrcSimple::Write(ostream& mrc_file) {
   // header. So we make a copy of the original header and modify it accordingly:
   // As of 2015-4-16, regardless of the original header, I save the list
   // of numbers in "float" format.  This means I must change mrc.mode.
-  MrcHeader new_header = header;
-  new_header.mode = MrcHeader::MRC_MODE_FLOAT;
 
   FindMinMaxMean(); // calculates the "dmin", "dmax", and "dmean" member values
+  MrcHeader new_header = header;
+  new_header.mode = MrcHeader::MRC_MODE_FLOAT;
   new_header.Write(mrc_file);
 
   // Finally, write the array of densities:

@@ -4,6 +4,9 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <random>
+#include <ctime>              // required for "struct timezone" and
+                              // "gettimeofday()" used to set the randomseed
 using namespace std;
 
 #ifndef DISABLE_OPENMP
@@ -16,6 +19,7 @@ using namespace std;
 #include <mrc_simple.h>
 #include <filter3d.h>
 #include "settings.h"
+
 
 // (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)
 
@@ -130,7 +134,6 @@ int main(int argc, char **argv) {
 
 
 
-    
     double vol_total = settings.compartment_volume;
     if (settings.compartment_volume < 0) {
       if (mask.aaafI) {
@@ -191,7 +194,14 @@ int main(int argc, char **argv) {
       vector<bool> random_bit_list(nvoxels, false);
       for (size_t i=0; i < nparticles; i++)
         random_bit_list[i] = true;
-      random_shuffle(random_bit_list.begin(), random_bit_list.end());
+
+      long random_seed = settings.random_seed;
+      if (random_seed <= 0) {
+        random_seed = time(NULL);
+        cerr << "(random_seed = " << random_seed << ")" << endl;
+      }
+      shuffle(random_bit_list.begin(), random_bit_list.end(),
+              default_random_engine(random_seed));
       size_t i=0;
       for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++) {
         for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++) {
@@ -318,17 +328,19 @@ int main(int argc, char **argv) {
       //     prob = lambda^k * exp(-lambda) / k!
       //          = lambda^k * exp(-lambda) / Gamma(k+1)  <-continuous version
       // "k" is the number of particles in this Gaussian-shaped "bin"
-      float k = extreme_density * volume_gaussian_bin;
+      long double k = extreme_density * volume_gaussian_bin;
       // "lambda" is the expected number of particles in this "bin"
-      float lambda = ave_density * volume_gaussian_bin;
+      long double lambda = ave_density * volume_gaussian_bin;
 
 
-      double prob_cdf_obvious_way = 0.0;
-      if (settings.use_min_density)
+      long double prob_cdf_obvious_way = 0.0;
+      if (settings.use_min_density) {
         // Calculate the culmulative probability of seeing this many
         // particles in the bin or less.  First try it the obvious way:
+
         for (long i=0; i <= floor(k); i++)
           prob_cdf_obvious_way += pow(lambda, i) * exp(-lambda) / tgamma(i+1.0);
+      }
       else {
       // Calculate the culmulative probability of seeing this many
       // particles in the bin or more.  First try it the obvious way:
@@ -348,7 +360,7 @@ int main(int argc, char **argv) {
       cerr << "## prob_cdf_obvious_way = " << prob_cdf_obvious_way << endl;
       cerr << "####################################" << endl;
 
-      double prob_cdf;
+      long double prob_cdf;
 
       // However, in our case the number of particles in this "bin" is not (k)
       // necessarily an integer.  In that case use the continuous version of
@@ -375,7 +387,7 @@ int main(int argc, char **argv) {
       // ...Now what is the probability that the number of particles
       //    in ANY OF THE BINS does not exceed "extreme_density"?
 
-      double prob_total = 1.0 - pow((1.0 - prob_cdf), num_bins);
+      long double prob_total = 1.0 - pow((1.0 - prob_cdf), num_bins);
 
       cout << pow(volume_gaussian_bin, 1.0/3) * voxel_width[0]
            << " " << prob_total << endl;
@@ -427,7 +439,15 @@ int main(int argc, char **argv) {
       // because by repeating, you give it more opportunities to find
       // a more extreme value.  (Here we scan over a range of "sigma" values.)
 
-    } // for (int i_sig = 0; i_sig < vfSigma.size(); i_sig++) {...
+    } // for (int i_sig = 0; i_sig < settings.vfSigma.size(); i_sig++) {...
+
+    if ((settings.out_file_name != "") && (settings.vfSigma.size() == 1)) {
+      // Write the image file containing the filtered version for that sigma
+      cerr << "writing tomogram (in 32-bit float mode)" << endl;
+      //tomo_out.FindMinMaxMean();
+      tomo_out.Write(settings.out_file_name);
+      // (You can also use "tomo_out.Write(cout);" or "cout<<tomo_out;")
+    }
 
   } //try {
   catch (InputErr& e) {

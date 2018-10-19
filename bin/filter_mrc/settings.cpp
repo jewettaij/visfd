@@ -727,7 +727,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         float growth_ratio = stof(vArgs[i+4]);
         if (growth_ratio <= 1.0)
           throw invalid_argument("");
-        int N = ceil( log(blob_width_max/blob_width_min) / log(growth_ratio) );
+        int N = 1+ceil(log(blob_width_max/blob_width_min) / log(growth_ratio));
         growth_ratio = pow(blob_width_max/blob_width_min, 1.0/N);
         blob_diameters.resize(N);
 

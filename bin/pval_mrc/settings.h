@@ -12,12 +12,14 @@ using namespace std;
 class Settings {
  public:
   string in_file_name;
+  string out_file_name;
   string in_coords_file_name;
   bool rescale01_in;
   string mask_file_name;
   int mask_select;
   bool use_mask_select;
   bool randomize_input_image;
+  long random_seed = -1;
 
 
   float voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
