@@ -8,10 +8,10 @@ This is a C++ template library for 3D image processing
 as well as reading & writing image files using the the MRC file format
 ("[mrc_simple.h](./lib/mrc_simple/mrc_simple.h)").
 It is also a collection of stand-alone programs 
-which use this library.
-(eg. "[filter_mrc](./doc/doc_filter_mrc.md)", 
+which use this library
+(including "[filter_mrc](./doc/doc_filter_mrc.md)", 
  "[combine_mrc](./doc/doc_combine_mrc.md)", 
- "pval_mrc", ...)
+ and "pval_mrc").
 Multiprocessor support is implemented using OpenMP.
 
 ## programs included with this repository:
