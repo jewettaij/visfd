@@ -27,6 +27,7 @@ INCLUDES = \
 -I$(INTERNAL_LIB_PATH)/err \
 -I$(INTERNAL_LIB_PATH)/alloc \
 -I$(INTERNAL_LIB_PATH)/random_gen \
+-I$(INTERNAL_LIB_PATH)/eigen_simple \
 -I$(INTERNAL_LIB_PATH)/filter \
 -I$(INTERNAL_LIB_PATH)/threshold \
 -I$(INTERNAL_LIB_PATH)/mrc_simple

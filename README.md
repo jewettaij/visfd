@@ -46,7 +46,6 @@ Documentation for this program is located
 The *source code* for the filters used by this program
 is located here
 [here](./lib/filter/filter3d.h).
-(Doxygen comments are used throughout.)
 
 
 

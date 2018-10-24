@@ -45,6 +45,8 @@ Settings::Settings() {
   precomputed_gaussian_blur=false; //did the user already use a Gaussian blur?
   num_particles = -1.0;      //impossible value
   use_min_density = true;
+  randomize_input_image = false;
+  random_seed = 0;
 }
 
 
