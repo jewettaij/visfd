@@ -12,7 +12,9 @@ which use this library
 (including "[filter_mrc](./doc/doc_filter_mrc.md)", 
  "[combine_mrc](./doc/doc_combine_mrc.md)", 
  and "pval_mrc").
-Multiprocessor support is implemented using OpenMP.
+Multiprocessor support is implemented using
+[OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
+
 
 ## programs included with this repository:
 
