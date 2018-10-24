@@ -1106,6 +1106,8 @@ ApplySeparable3D(int const image_size[3],
     //  delete [] afMask_tmp;
     if (afDenom_tmp)
       delete [] afDenom_tmp;
+    if (afDenom_src_tmp)
+      delete [] afDenom_src_tmp;
   } //#pragma omp parallel private(afDest_tmp, ...)
 
 
@@ -1184,6 +1186,8 @@ ApplySeparable3D(int const image_size[3],
     //  delete [] afMask_tmp;
     if (afDenom_tmp)
       delete [] afDenom_tmp;
+    if (afDenom_src_tmp)
+      delete [] afDenom_src_tmp;
   } //#pragma omp parallel private(afDest_tmp, ...)
 
 
