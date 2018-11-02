@@ -15,7 +15,7 @@ using namespace std;
 #include <alloc3d.h>
 #include <filter1d.h>  // defines "Filter1D" (used in "ApplyGauss()")
 #include <filter3d_utils.h> // defines "AverageArr()", and similar functions...
-
+#include <eigen3_simple.h>
 
 
 
@@ -305,13 +305,13 @@ public:
   /// @brief Add a number to all of the filter array values, aaafH
   /// @param offset  the number to add
   void AddScalar(RealNum offset) {
-    _AddScalarArr(offset, array_size, aaafH);
+    AddScalarArr(offset, array_size, aaafH);
   }
 
   /// @brief multiply all of the filter array values (aaafH) by a number
   /// @param offset  the number to multiply
   void MultiplyScalar(RealNum scale) {
-    _MultiplyScalarArr(scale, array_size, aaafH);
+    MultiplyScalarArr(scale, array_size, aaafH);
   }
 
 
@@ -358,11 +358,11 @@ public:
           RealNum filter_val = aaafH[jz][jy][jx];
 
           if (aaafMask)
-              filter_val *= aaafMask[iz_jz][iy_jy][ix_jx];
-              //Note: The "filter_val" also is needed to calculate
-              //      the denominator used in normalization.
-              //      It is unusual to use a mask unless you intend
-              //      to normalize the result later, but I don't enforce this
+            filter_val *= aaafMask[iz_jz][iy_jy][ix_jx];
+            //Note: The "filter_val" also is needed to calculate
+            //      the denominator used in normalization.
+            //      It is unusual to use a mask unless you intend
+            //      to normalize the result later, but I don't enforce this
 
           RealNum delta_g = 
             filter_val * aaafSource[iz_jz][iy_jy][ix_jx];
@@ -907,6 +907,11 @@ GenFilterDogg3D(RealNum width_a[3],   //!< "a" parameter in formula
 // @brief ApplySeparable3D applies a separable filter on a 3D array.
 //        It assumes separate Filter1D objects have already been created 
 //        which will blur the image in each direction (x,y,z).
+//        This function supports masks (which exclude voxels from consideration)
+//        One major feature of this function is its ability to efficiently
+//        normalize the resulting filtered image in the presence of a mask
+//        (as well as near the image boundaries). Consequently, the image does
+//        not fade to black near the boundaries of the image or the mask.
 //        This function was not intended for public use.
 template<class RealNum>
 static
@@ -1472,9 +1477,9 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
 
   if (pReportProgress)
     *pReportProgress
-      << " -- Attempting to allocate space for one more image. --\n"
-      << " -- (If this crashes your computer, find a computer  --\n"
-      << " --  with more RAM and use \"ulimit\")                 --\n";
+      << " -- Attempting to allocate space for one more image.       --\n"
+      << " -- (If this crashes your computer, find a computer with   --\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
 
   Alloc3D(image_size,
           &afTemp,
@@ -1714,9 +1719,9 @@ BlobDog(int const image_size[3], //!< source image size
 
   if (pReportProgress)
     *pReportProgress
-      << " -- Attempting to allocate space for 3 more images.  --\n"
-      << " -- (If this crashes your computer, find a computer  --\n"
-      << " --  with more RAM and use \"ulimit\")               --\n";
+      << " -- Attempting to allocate space for 3 more images.        --\n"
+      << " -- (If this crashes your computer, find a computer with   --\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
 
   bool preallocated = ! (aaaafI == NULL);
 
@@ -2398,9 +2403,9 @@ DiscardOverlappingBlobs(vector<array<RealNum,3> >& blob_crds,
 
   if (pReportProgress)
     *pReportProgress
-      << "     -- Attempting to allocate space for one more image map --\n"
-      << "     -- (If this crashes your computer, find a computer     --\n"
-      << "     --  with more RAM and use \"ulimit\")                    --\n";
+      << " -- Attempting to allocate space for one more image.       --\n"
+      << " -- (If this crashes your computer, find a computer with   --\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
 
   // Occupancy table
   //     (originally named "bool ***aaabOcc")
@@ -2551,6 +2556,818 @@ DiscardOverlappingBlobs(vector<array<RealNum,3> >& blob_crds,
     *pReportProgress << " done.                                 \n";
 } //DiscardOverlappingBlobs()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class RealNum>
+
+class CompactMultiChannelImage3D
+{
+
+private:
+
+  RealNum **aafI;
+  RealNum *afI;
+  size_t n_good_voxels;
+  int n_channels_per_voxel;
+  int image_size[3];
+
+public:
+
+  RealNum ****aaaafI; // Stores the image data
+
+
+  inline int
+  nchannels() {
+    return n_channels_per_voxel;
+  }
+
+  CompactMultiChannelImage3D(int set_n_channels_per_voxel) {
+    n_channels_per_voxel = set_n_channels_per_voxel;
+    n_good_voxels = 0;
+    aaaafI = NULL;
+  }
+
+  CompactMultiChannelImage3D(int set_n_channels_per_voxel,
+                             int const set_image_size[3],
+                             RealNum const *const *const *aaafMask = NULL,
+                             ostream *pReportProgress = NULL  //!< print progress to the user?
+                             )
+  {
+    n_channels_per_voxel = set_n_channels_per_voxel;
+    n_good_voxels = 0;
+    aaaafI = NULL;
+    Resize(image_size, aaafMask, pReportProgress);
+  }
+
+  inline void
+  Resize(int const set_image_size[3],
+         RealNum const *const *const *aaafMask = NULL,
+         ostream *pReportProgress = NULL  //!< print progress to the user?
+         )
+  {
+    if (aaaafI)
+      Dealloc();
+    Alloc(set_image_size, aaafMask, pReportProgress);
+  }
+
+  ~CompactMultiChannelImage3D() {
+    Dealloc();
+  }
+
+private:
+
+  inline void
+  Alloc(int const set_image_size[3],
+        RealNum const *const *const *aaafMask = NULL,
+        ostream *pReportProgress = NULL  //!< print progress to the user?
+        )
+  {
+    image_size[0] = set_image_size[0];
+    image_size[1] = set_image_size[1];
+    image_size[2] = set_image_size[2];
+
+    if (pReportProgress)
+      *pReportProgress
+        << "     -- Attempting to allocate space for an "
+        << n_channels_per_voxel << "-channel image\n"
+        << "     -- (If this crashes your computer, find a computer with\n"
+        << "     --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
+    Alloc3D(image_size,
+            &aafI,
+            &aaaafI);
+    for (int iz = 0; iz < image_size[2]; iz++)
+      for (int iy = 0; iy < image_size[1]; iy++)
+        for (int ix = 0; ix < image_size[0]; ix++)
+          aaaafI[iz][iy][ix] = NULL;
+
+    for (int iz = 1; iz < image_size[2]-1; iz++) {
+      for (int iy = 1; iy < image_size[1]-1; iy++) {
+        for (int ix = 1; ix < image_size[0]-1; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
+          n_good_voxels++;
+        }
+      }
+    }
+    afI = new RealNum[n_good_voxels * n_channels_per_voxel];
+    int n = 0;
+    for (int iz = 1; iz < image_size[2]-1; iz++) {
+      for (int iy = 1; iy < image_size[1]-1; iy++) {
+        for (int ix = 1; ix < image_size[0]-1; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
+          aaaafI[iz][iy][ix] =
+            &(afI[n * n_channels_per_voxel]);
+        }
+      }
+    }
+
+    if (pReportProgress)
+      *pReportProgress
+        << "        done\n" << endl;
+  } //Alloc()
+
+
+  inline void
+  Dealloc()
+  {
+    delete [] afI;
+
+    // Now delete the array of pointers (aaaafI, which pointed to afI)
+    Dealloc3D(image_size,
+              &aafI,
+              &aaaafI);
+    afI = NULL;
+    aafI = NULL;
+    aaaafI = NULL;
+  }
+
+}; //class CompactMultiChannelImage3D
+
+
+
+
+using namespace selfadjoint_eigen3;
+
+
+template<class RealNum>
+void
+CalcHessian3D(int const image_size[3], //!< source image size
+              RealNum const *const *const *aaafSource, //!< source image
+              CompactMultiChannelImage3D<RealNum> *pHessian, //!< save results here (if not NULL)
+              CompactMultiChannelImage3D<RealNum> *pGradient, //!< save results here (if not NULL)
+              RealNum const *const *const *aaafMask,  //!< ignore voxels where mask==0
+              RealNum sigma,  //!< Gaussian width in x,y,z drections
+              RealNum truncate_ratio=2.5,  //!< how many sigma before truncating?
+              ostream *pReportProgress = NULL  //!< print progress to the user?
+              )
+{
+  assert(aaafSource);
+  
+  if (pHessian) {
+    assert(pHessian->nchannels() == 7);
+    pHessian->Resize(image_size, aaafMask, pReportProgress);
+  }
+  if (pGradient) {
+    assert(pGradient->nchannels() == 3);
+    pGradient->Resize(image_size, aaafMask, pReportProgress);
+  }
+
+  int truncate_halfwidth = floor(sigma * truncate_ratio);
+
+  // Here we use the fast, sloppy way to compute gradients and Hessians:
+  // First smooth the image,
+  // Then infer derivatives from finite differences.
+  //
+  // This only works for large sigma (sigma at least 1.0).
+  //
+  // A slower, more rigorous approach would be to convolve the image
+  // with the derivatives of a Gaussian.  (If we need to analyze images
+  // with very thin, closely spaced objects, we can try that way later.)
+
+  // First, apply the Gaussian filter to the image
+  if (pReportProgress)
+    *pReportProgress
+      << " -- Attempting to allocate space for one more images.        --\n"
+      << " -- (If this crashes your computer, find a computer with   --\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
+
+  RealNum ***aaafSmoothed;
+  RealNum *afSmoothed;
+  Alloc3D(image_size,
+          &afSmoothed,
+          &aaafSmoothed);
+  
+  ApplyGauss3D(image_size,
+               aaafSource,
+               aaafSmoothed,
+               aaafMask,
+               sigma,
+               truncate_halfwidth,
+               false,
+               pReportProgress);
+
+  assert(image_size[0] >= 3);
+  assert(image_size[1] >= 3);
+  assert(image_size[2] >= 3);
+
+  if (pReportProgress && pHessian)
+    *pReportProgress << "\n"
+      "---- Diagonalizing the hessian everywhere (within the mask)... "
+                     << flush;
+
+  // Now compute gradients and hessians
+
+  #pragma omp parallel for collapse(2)
+  for (int iz = 1; iz < image_size[2]-1; iz++) {
+    for (int iy = 1; iy < image_size[1]-1; iy++) {
+      for (int ix = 1; ix < image_size[0]-1; ix++) {
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
+
+        if (pGradient) {
+          RealNum gradient[3];
+          gradient[0]=0.5*(aaafSmoothed[iz][iy][ix+1] - 
+                           aaafSmoothed[iz][iy][ix-1]);
+          gradient[1]=0.5*(aaafSmoothed[iz][iy+1][ix] - 
+                           aaafSmoothed[iz][iy-1][ix]);
+          gradient[2]=0.5*(aaafSmoothed[iz+1][iy][ix] - 
+                           aaafSmoothed[iz-1][iy][ix]);
+
+          // Optional: Insure that the resulting gradient is dimensionless:
+          // (Lindeberg 1993 "On Scale Selection for Differential Operators")
+          gradient[0] *= sigma;
+          gradient[1] *= sigma;
+          gradient[2] *= sigma;
+          
+          pGradient->aaaafI[iz][iy][ix][0] = gradient[0];
+          pGradient->aaaafI[iz][iy][ix][1] = gradient[1];
+          pGradient->aaaafI[iz][iy][ix][2] = gradient[2];
+        }
+
+        if (pHessian) {
+          RealNum hessian[3][3];
+          hessian[0][0] = (aaafSmoothed[iz][iy][ix+1] + 
+                           aaafSmoothed[iz][iy][ix-1] - 
+                           2*aaafSmoothed[iz][iy][ix]);
+          hessian[1][1] = (aaafSmoothed[iz][iy+1][ix] + 
+                           aaafSmoothed[iz][iy-1][ix] - 
+                           2*aaafSmoothed[iz][iy][ix]);
+          hessian[2][2] = (aaafSmoothed[iz+1][iy][ix] + 
+                           aaafSmoothed[iz-1][iy][ix] - 
+                           2*aaafSmoothed[iz][iy][ix]);
+
+          hessian[0][1] = 0.25 * (aaafSmoothed[iz][iy+1][ix+1] + 
+                                  aaafSmoothed[iz][iy-1][ix-1] - 
+                                  aaafSmoothed[iz][iy-1][ix+1] - 
+                                  aaafSmoothed[iz][iy+1][ix-1]);
+          hessian[1][0] = hessian[0][1];
+
+          hessian[1][2] = 0.25 * (aaafSmoothed[iz+1][iy+1][ix] + 
+                                  aaafSmoothed[iz-1][iy-1][ix] - 
+                                  aaafSmoothed[iz-1][iy+1][ix] - 
+                                  aaafSmoothed[iz+1][iy-1][ix]);
+          hessian[2][1] = hessian[1][2];
+
+          hessian[2][0] = 0.25 * (aaafSmoothed[iz+1][iy][ix+1] + 
+                                  aaafSmoothed[iz-1][iy][ix-1] - 
+                                  aaafSmoothed[iz+1][iy][ix-1] - 
+                                  aaafSmoothed[iz-1][iy][ix+1]);
+          hessian[0][2] = hessian[2][0];
+
+
+          // Optional: Insure that the result is dimensionless:
+          // (Lindeberg 1993 "On Scale Selection for Differential Operators")
+          for (int i=0; i < 3; i++)
+            for (int j=0; j < 3; j++)
+              hessian[i][j] *= sigma*sigma;
+
+
+          RealNum eivals[3];
+          RealNum eivects[3][3];
+
+          Diagonalize3(hessian, eivals, eivects);
+
+          // The Diagonalize3() function sorts the eigenvalues (and vectors)
+          // in increasing order.  We want it in decreasing order.  
+          // Swap the first and last eigenvalues:
+          swap(eivals[0], eivals[2]);
+          // Swap the first and last eigenvectors:
+          for (int d=0; d<3; d++)
+            swap(eivects[0][d], eivects[2][d]);
+
+          // Convert to quaternions:
+          // There are 3 eigenvectors, each containing 3 numbers (9 total).
+          // We will store the eigenvectors and eigenvalues for every voxel
+          // in the image in a large (4-dimensional) array.
+          // Allocating space for these huge arrays is a serious problem.
+          // Rotation matrices can be represented using quaternions.
+          // So we convert the eigenvects into quaternion format in order
+          // to reduce the space needed from 9=3x3 numbers down to 4 (per voxel)
+          // (I suppose I could use Euler angles or Shoemake coordinates,
+          //  to reduce this down to 3, but I'm too lazy to be bothered.)
+
+          // Problem:
+          // The eigenvectors are orthonormal, but not necessarily a rotation.
+          // If the determinant is negative, then flip one of the eigenvectors
+          // to insure the determinant is positive.  Handle this below:
+          if (Determinant3(eivects) < 0.0) {
+            for (int d=0; d<3; d++)
+              eivects[0][d] *= -1.0;
+          }
+
+          RealNum quat[4];
+          Matrix2Quaternion(eivects, quat);
+
+          assert(pHessian->aaaafI[iz][iy][ix]);
+
+          pHessian->aaaafI[iz][iy][ix][0] = eivals[0];
+          pHessian->aaaafI[iz][iy][ix][1] = eivals[1];
+          pHessian->aaaafI[iz][iy][ix][2] = eivals[2];
+          pHessian->aaaafI[iz][iy][ix][3] = quat[0];
+          pHessian->aaaafI[iz][iy][ix][4] = quat[1];
+          pHessian->aaaafI[iz][iy][ix][5] = quat[2];
+          pHessian->aaaafI[iz][iy][ix][6] = quat[3];
+        } //if (pHessian)
+      } //for (int ix = 1; ix < image_size[0]-1; ix++) {
+    } //for (int iy = 1; iy < image_size[1]-1; iy++) {
+  } //for (int iz = 1; iz < image_size[2]-1; iz++) {
+
+  Dealloc3D(image_size,
+            &afSmoothed,
+            &aaafSmoothed);
+
+  if (pReportProgress)
+    *pReportProgress << "done ----" << endl;
+
+} //CalcHessian3D()
+
+
+
+/// CalcInertiaTensor3D()
+/// This is almost certainly algebraically equivalent to CalcHessian3D()
+/// However this version of the function is more robust for small ridges.
+/// (This is because I apply the derivative to the Gaussian filter
+///  before applying the filter, ...INSTEAD of applying the Gaussian filter
+///  and then taking differences afterwards.  If the width of the object being
+///  detected is not much more than 3-voxel wide, the 3-voxel wide differences
+///  used in the other implementation are a large source of error.)
+/// Unfortunately this version is slower and needs much more memory however.
+/// Eventually, I might elliminate one of these implementations.
+
+template<class RealNum>
+void
+CalcInertiaTensor3D(int const image_size[3], //!< source image size
+                    RealNum const *const *const *aaafSource, //!< source image
+                    CompactMultiChannelImage3D<RealNum> *pSecondMoment, //!< save results here (if not NULL)
+                    CompactMultiChannelImage3D<RealNum> *pFirstMoment, //!< save results here (if not NULL)
+                    RealNum const *const *const *aaafMask,  //!< ignore voxels where mask==0
+                    RealNum sigma,  //!< Gaussian width in x,y,z drections
+                    RealNum truncate_ratio=2.5,  //!< how many sigma before truncating?
+                    ostream *pReportProgress = NULL  //!< print progress to the user?
+                    )
+{
+  assert(aaafSource);
+  if (pSecondMoment) {
+    assert(pSecondMoment->nchannels() == 7);
+    pSecondMoment->Resize(image_size, aaafMask, pReportProgress);
+  }
+  if (pFirstMoment) {
+    assert(pSecondMoment->nchannels() == 3);
+    pFirstMoment->Resize(image_size, aaafMask, pReportProgress);
+  }
+  
+  int truncate_halfwidth = floor(sigma * truncate_ratio);
+
+  //calculate the filter used for the 0'th moment (ordinary Gaussian filter)
+  Filter1D<RealNum, int> filter0 = GenFilterGauss1D(sigma,
+                                                    truncate_halfwidth);
+
+  //calculate the filter used for the 1st moment (Guassian(x) * x)
+  Filter1D<RealNum, int> filter1 = GenFilterGauss1D(sigma,
+                                                    truncate_halfwidth);
+  for (int i = -truncate_halfwidth; i <= truncate_halfwidth; i++)
+    filter1.afW[i] *= i;
+
+
+  //calculate the filter used for the 2nd moment (Guassian(x) * x^2)
+  Filter1D<RealNum, int> filter2 = GenFilterGauss1D(sigma,
+                                                    truncate_halfwidth);
+  for (int i = -truncate_halfwidth; i <= truncate_halfwidth; i++)
+    filter2.afW[i] *= i*i;
+
+
+  RealNum ***aaafNorm;
+  RealNum *afNorm;
+  Alloc3D(image_size,
+          &afNorm,
+          &aaafNorm);
+
+  if (aaafMask) {
+    // Calculate the normalization we need by blurring the mask by the Gaussian
+    ApplyGauss3D(image_size,
+                 aaafMask,   // <-- use the mask as the source image
+                 aaafNorm,   // <-- save result here
+                 aaafMask,
+                 sigma, // width of Gaussian
+                 truncate_halfwidth,
+                 true,
+                 pReportProgress);
+  }
+
+
+  Filter1D<RealNum, int> aFilter[3];
+
+
+  if (pFirstMoment) {
+
+    if (pReportProgress)
+      *pReportProgress
+        << " -- Attempting to allocate space for 3 more images.        --\n"
+        << " -- (If this crashes your computer, find a computer with   --\n"
+        << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
+
+    RealNum ***aaafIx;
+    RealNum *afIx;
+    Alloc3D(image_size,
+            &afIx,
+            &aaafIx);
+
+    RealNum ***aaafIy;
+    RealNum *afIy;
+    Alloc3D(image_size,
+            &afIy,
+            &aaafIy);
+
+    RealNum ***aaafIz;
+    RealNum *afIz;
+    Alloc3D(image_size,
+            &afIz,
+            &aaafIz);
+
+    // calculate the x moment (=x^1 * y^0 * z^0)
+    aFilter[0] = filter1;  // x^1
+    aFilter[1] = filter0;  // y^0
+    aFilter[2] = filter0;  // z^0
+    return ApplySeparable3D(image_size, 
+                            aaafSource,
+                            aaafIx,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask == NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    // calculate the y moment (=x^0 * y^1 * z^0)
+    aFilter[0] = filter0;  // x^0
+    aFilter[1] = filter1;  // y^1
+    aFilter[2] = filter0;  // z^0
+    return ApplySeparable3D(image_size, 
+                            aaafSource,
+                            aaafIy,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask == NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    // calculate the x moment (=x^0 * y^0 * z^1)
+    aFilter[0] = filter0;  // x^0
+    aFilter[1] = filter0;  // y^0
+    aFilter[2] = filter1;  // z^1
+    return ApplySeparable3D(image_size, 
+                            aaafSource,
+                            aaafIz,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask == NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    if (aaafMask) {
+      // If a mask was specified, then divide by the contribution from the mask
+      // (An infinite sized mask should result in a contribution/weight of 1)
+      for(int iz=0; iz<image_size[2]; iz++) {
+        for(int iy=0; iy<image_size[1]; iy++) {
+          for(int ix=0; ix<image_size[0]; ix++) {
+            if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+              continue;
+            assert(aaafNorm[iz][iy][ix] > 0.0);
+            aaafIx[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+            aaafIy[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+            aaafIz[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+          }
+        }
+      }
+    }
+
+    for (int iz = 1; iz < image_size[2]-1; iz++) {
+      for (int iy = 1; iy < image_size[1]-1; iy++) {
+        for (int ix = 1; ix < image_size[0]-1; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
+          RealNum first_deriv[3];
+          first_deriv[0] = aaafIx[iz][iy][ix];
+          first_deriv[1] = aaafIy[iz][iy][ix];
+          first_deriv[2] = aaafIz[iz][iy][ix];
+
+          // Optional: Insure that the resulting first_deriv is dimensionless:
+          // (Lindeberg 1993 "On Scale Selection for Differential Operators")
+          first_deriv[0] *= sigma;
+          first_deriv[1] *= sigma;
+          first_deriv[2] *= sigma;
+          
+          pFirstMoment->aaaafI[iz][iy][ix][0] = first_deriv[0];
+          pFirstMoment->aaaafI[iz][iy][ix][1] = first_deriv[1];
+          pFirstMoment->aaaafI[iz][iy][ix][2] = first_deriv[2];
+        }
+      }
+    }
+    Dealloc3D(image_size,
+              &afIx,
+              &aaafIx);
+    Dealloc3D(image_size,
+              &afIy,
+              &aaafIy);
+    Dealloc3D(image_size,
+              &afIz,
+              &aaafIz);
+  } //if (pFirstMoment)
+
+
+
+  if (pSecondMoment) {
+    if (pReportProgress)
+      *pReportProgress << "\n"
+        " ------ Calculating the average of nearby voxels: ------\n";
+    // P = original image (after subtracting average nearby intensities):
+
+    RealNum ***aaafP;
+    RealNum *afP;
+    Alloc3D(image_size,
+            &afP,
+            &aaafP);
+
+    ApplyGauss3D(image_size,
+                 aaafSource,
+                 aaafP,   // <-- save result here
+                 aaafMask,
+                 sigma, // width of Gaussian
+                 truncate_halfwidth,
+                 true,
+                 pReportProgress);
+
+    // Subtract the average value from the image intensity, and store in P:
+    for(int iz=0; iz<image_size[2]; iz++)
+      for(int iy=0; iy<image_size[1]; iy++)
+        for(int ix=0; ix<image_size[0]; ix++)
+          aaafP[iz][iy][ix] = aaafSource[iz][iy][ix] - aaafP[iz][iy][ix];
+
+    if (pReportProgress)
+      *pReportProgress
+        << " -- Attempting to allocate space for 6 more images.        --\n"
+        << " -- (If this crashes your computer, find a computer with   --\n"
+        << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
+
+    RealNum ***aaafIxx;
+    RealNum *afIxx;
+    Alloc3D(image_size,
+            &afIxx,
+            &aaafIxx);
+
+    RealNum ***aaafIyy;
+    RealNum *afIyy;
+    Alloc3D(image_size,
+            &afIyy,
+            &aaafIyy);
+
+    RealNum ***aaafIzz;
+    RealNum *afIzz;
+    Alloc3D(image_size,
+            &afIzz,
+            &aaafIzz);
+
+    RealNum ***aaafIxy;
+    RealNum *afIxy;
+    Alloc3D(image_size,
+            &afIxy,
+            &aaafIxy);
+
+    RealNum ***aaafIyz;
+    RealNum *afIyz;
+    Alloc3D(image_size,
+            &afIyz,
+            &aaafIyz);
+
+    RealNum ***aaafIxz;
+    RealNum *afIxz;
+    Alloc3D(image_size,
+            &afIxz,
+            &aaafIxz);
+
+    // calculate the x*x moment of the innertia (=x^2 * y^0 * z^0)
+    aFilter[0] = filter2;  // x^2
+    aFilter[1] = filter0;  // y^0
+    aFilter[2] = filter0;  // z^0
+    return ApplySeparable3D(image_size, 
+                            aaafP,
+                            aaafIxx,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask == NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    // calculate the y*y moment of the innertia (=x^0 * y^2 * z^0)
+    aFilter[0] = filter0;  // x^0
+    aFilter[1] = filter2;  // y^2
+    aFilter[2] = filter0;  // z^0
+    return ApplySeparable3D(image_size, 
+                            aaafP,
+                            aaafIyy,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask == NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    // calculate the z*z moment of the innertia (=x^0 * y^0 * z^2)
+    aFilter[0] = filter0;  // x^0
+    aFilter[1] = filter0;  // y^0
+    aFilter[2] = filter2;  // z^2
+    return ApplySeparable3D(image_size, 
+                            aaafP,
+                            aaafIzz,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask==NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    // calculate the x*y moment of the innertia (=x^1 * y^1 * z^0)
+    aFilter[0] = filter1;  // x^1
+    aFilter[1] = filter1;  // y^1
+    aFilter[2] = filter0;  // z^0
+    return ApplySeparable3D(image_size, 
+                            aaafP,
+                            aaafIxy,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask==NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    // calculate the y*z moment of the innertia (=x^0 * y^1 * z^1)
+    aFilter[0] = filter0;  // x^0
+    aFilter[1] = filter1;  // y^1
+    aFilter[2] = filter1;  // z^1
+    return ApplySeparable3D(image_size, 
+                            aaafP,
+                            aaafIyz,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask==NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    // calculate the x*z moment of the innertia (=x^1 * y^0 * z^1)
+    aFilter[0] = filter1;  // x^1
+    aFilter[1] = filter0;  // y^0
+    aFilter[2] = filter1;  // z^1
+    return ApplySeparable3D(image_size, 
+                            aaafP,
+                            aaafIxz,
+                            aaafMask,
+                            aFilter,
+                            (aaafMask==NULL), //don't normalize if theres a mask
+                            pReportProgress);
+
+    if (aaafMask) {
+      // If a mask was specified, then divide by the contribution from the mask
+      // (An infinite sized mask should result in a contribution/weight of 1)
+      for(int iz=0; iz<image_size[2]; iz++) {
+        for(int iy=0; iy<image_size[1]; iy++) {
+          for(int ix=0; ix<image_size[0]; ix++) {
+            if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+              continue;
+            assert(aaafNorm[iz][iy][ix] > 0.0);
+            aaafIxx[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+            aaafIyy[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+            aaafIzz[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+            aaafIxy[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+            aaafIyz[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+            aaafIxz[iz][iy][ix] /= aaafNorm[iz][iy][ix];
+          }
+        }
+      }
+    }
+
+
+    // Now compute eigenvalues and eigenvectors of the second moment
+
+    if (pReportProgress)
+      *pReportProgress << "\n"
+        "---- Diagonalizing the 2nd moment everywhere (within the mask) ----"
+                       << flush;
+
+    #pragma omp parallel for collapse(2)
+    for (int iz = 1; iz < image_size[2]-1; iz++) {
+      for (int iy = 1; iy < image_size[1]-1; iy++) {
+        for (int ix = 1; ix < image_size[0]-1; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
+
+          if (pSecondMoment) {
+            RealNum second_deriv[3][3];
+            second_deriv[0][0] = aaafIxx[iz][iy][ix];
+            second_deriv[1][1] = aaafIyy[iz][iy][ix];
+            second_deriv[2][2] = aaafIzz[iz][iy][ix];
+
+            second_deriv[0][1] = aaafIxy[iz][iy][ix];
+            second_deriv[1][0] = second_deriv[0][1];
+            second_deriv[1][2] = aaafIyz[iz][iy][ix];
+            second_deriv[2][1] = second_deriv[1][2];
+            second_deriv[2][0] = aaafIxz[iz][iy][ix];
+            second_deriv[0][2] = second_deriv[2][0];
+
+            // Optional: Insure that the result is dimensionless:
+            // (Lindeberg 1993 "On Scale Selection for Differential Operators")
+            for (int i=0; i < 3; i++)
+              for (int j=0; j < 3; j++)
+                second_deriv[i][j] *= sigma*sigma;
+
+
+            RealNum eivals[3];
+            RealNum eivects[3][3];
+
+            Diagonalize3(second_deriv, eivals, eivects);
+
+            // The Diagonalize3() function sorts the eigenvalues (and vectors)
+            // in increasing order.  We want it in decreasing order.  
+            // Swap the first and last eigenvalues:
+            swap(eivals[0], eivals[2]);
+            // Swap the first and last eigenvectors:
+            for (int d=0; d<3; d++)
+              swap(eivects[0][d], eivects[2][d]);
+
+            // Convert to quaternions:
+            // There are 3 eigenvectors, each containing 3 numbers (9 total).
+            // We will store the eigenvectors and eigenvalues for every voxel
+            // in the image in a large (4-dimensional) array.
+            // Allocating space for these huge arrays is a serious problem.
+            // Rotation matrices can be represented using quaternions.
+            // So we convert the eigenvects into quaternion format in order to
+            // reduce the space needed from 9=3x3 numbers down to 4 (per voxel)
+            // (I suppose I could use Euler angles or Shoemake coordinates,
+            //  to reduce this down to 3, but I'm too lazy to be bothered.)
+
+            // Problem:
+            // The eigenvectors are orthonormal, but not necessarily a rotation.
+            // If the determinant is negative, then flip one of the eigenvectors
+            // to insure the determinant is positive.  Handle this below:
+            if (Determinant3(eivects) < 0.0) {
+              for (int d=0; d<3; d++)
+                eivects[0][d] *= -1.0;
+            }
+
+            RealNum quat[4];
+            Matrix2Quaternion(eivects, quat);
+
+            assert(second_deriv.aaaafI[iz][iy][ix]);
+
+            pSecondMoment->aaaafI[iz][iy][ix][0] = eivals[0];
+            pSecondMoment->aaaafI[iz][iy][ix][1] = eivals[1];
+            pSecondMoment->aaaafI[iz][iy][ix][2] = eivals[2];
+            pSecondMoment->aaaafI[iz][iy][ix][3] = quat[0];
+            pSecondMoment->aaaafI[iz][iy][ix][4] = quat[1];
+            pSecondMoment->aaaafI[iz][iy][ix][5] = quat[2];
+            pSecondMoment->aaaafI[iz][iy][ix][6] = quat[3];
+          } //if (pSecondMoment)
+        } //for (int ix = 1; ix < image_size[0]-1; ix++) {
+      } //for (int iy = 1; iy < image_size[1]-1; iy++) {
+    } //for (int iz = 1; iz < image_size[2]-1; iz++) {
+
+    if (pReportProgress)
+      *pReportProgress << "done ----" << endl;
+
+    Dealoc3D(image_size,
+             &afP,
+             &aaafP);
+
+    Dealloc3D(image_size,
+              &afIxx,
+              &aaafIxx);
+    Dealloc3D(image_size,
+              &afIyy,
+              &aaafIyy);
+    Dealloc3D(image_size,
+              &afIzz,
+              &aaafIzz);
+    Dealloc3D(image_size,
+              &afIxy,
+              &aaafIxy);
+    Dealloc3D(image_size,
+              &afIxz,
+              &aaafIxz);
+    Dealloc3D(image_size,
+              &afIyz,
+              &aaafIyz);
+  } //if (pSecondMoment)
+
+  Dealloc3D(image_size,
+            &afNorm,
+            &aaafNorm);
+
+} // CalcInertiaTensor3D()
 
 
 

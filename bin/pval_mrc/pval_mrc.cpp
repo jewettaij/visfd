@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -49,11 +50,20 @@ int main(int argc, char **argv) {
 
 
     // Read the input tomogram
-    cerr << "Reading tomogram \""<<settings.in_file_name<<"\"" << endl;
     MrcSimple tomo_in;
-    tomo_in.Read(settings.in_file_name, false);
-    // (Note: You can also use "tomo_in.Read(cin);" or "cin >> tomo;")
-    tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
+
+    if (settings.in_file_name != "") {
+      cerr << "Reading tomogram \""<<settings.in_file_name<<"\"" << endl;
+      tomo_in.Read(settings.in_file_name, false);
+      // (Note: You can also use "tomo_in.Read(cin);" or "cin >> tomo;")
+      tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
+    }
+    else {
+      assert((settings.image_size[0] > 0) &&
+             (settings.image_size[1] > 0) &&
+             (settings.image_size[2] > 0));
+      tomo_in.Resize(settings.image_size);
+    }
 
     // ---- mask ----
 
@@ -65,7 +75,7 @@ int main(int argc, char **argv) {
       if ((mask.header.nvoxels[0] != tomo_in.header.nvoxels[0]) ||
           (mask.header.nvoxels[1] != tomo_in.header.nvoxels[1]) ||
           (mask.header.nvoxels[2] != tomo_in.header.nvoxels[2]))
-        throw InputErr("Error: The size of the mask does not match the size of the tomogram.\n");
+        throw InputErr("Error: The size of the mask image does not match the size of the input image.\n");
     }
 
     // ---- Voxel size? ----
@@ -147,6 +157,7 @@ int main(int argc, char **argv) {
                      tomo_in.header.nvoxels[1] *
                      tomo_in.header.nvoxels[2]);
       }
+      vol_total *= (voxel_width[0]*voxel_width[1]*voxel_width[2]);
     }
 
     if (settings.num_particles < 0) {
@@ -283,6 +294,7 @@ int main(int argc, char **argv) {
       // The Gaussian peak's height is 1/volume.
 
       float volume_gaussian_bin = 1.0 / gauss_peak_height_3D;
+      volume_gaussian_bin *= (voxel_width[0]*voxel_width[1]*voxel_width[2]);
 
       float num_bins = vol_total / volume_gaussian_bin;
 
@@ -292,29 +304,89 @@ int main(int argc, char **argv) {
 
         ApplyGauss3D(tomo_in.header.nvoxels,
                      tomo_in.aaafI,
-                     tomo_out.aaafI,
+                     tomo_out.aaafI, //<-store resulting image here
                      mask.aaafI,
                      sigma,
                      filter_truncate_halfwidth,
                      true,
                      &cerr);
+
+        // Densities everywhere are assumed to be in physical units
+        // (ie. of 1/Angstroms^3),  NOT   1/voxels^3
+        // The Gaussian blur computes densities in 1/voxels^3
+        // To compensate for this, divide the densities by voxel_width^3
+        MultiplyScalarArr(static_cast<float>(
+                          1.0/(voxel_width[0]*voxel_width[1]*voxel_width[2])),
+                          tomo_out.header.nvoxels,
+                          tomo_out.aaafI);
       }
 
       // After bluring the image, find the lowest density:
     
       float extreme_density;
-      int afXextreme[3];
-      if (settings.use_min_density)
-        extreme_density = _MinArr(tomo_out.header.nvoxels,
-                                  tomo_out.aaafI,
-                                  mask.aaafI,
-                                  afXextreme);
-      else
-        extreme_density = _MaxArr(tomo_out.header.nvoxels,
-                                  tomo_out.aaafI,
-                                  mask.aaafI,
-                                  afXextreme);
-      
+      int afXextreme[3] = {-1, -1, -1};
+      float global_minima;
+      float global_maxima;
+
+      // Find the voxels with the minima and maxima intensities.
+      // Discard global minima or maxima which lie on the boundary
+      // The safe, careful way to do this is to only consider
+      // voxels which are surrounded by other voxels and are
+      // local minima or maxima.
+      for (int iz=1; iz < tomo_out.header.nvoxels[2]-1; iz++) {
+        for (int iy=1; iy < tomo_out.header.nvoxels[1]-1; iy++) {
+          for (int ix=1; ix < tomo_out.header.nvoxels[0]-1; ix++) {
+            bool is_local_minima = true;
+            bool is_local_maxima = true;
+            float center_val = tomo_out.aaafI[iz][iy][ix];
+            for (int jz=-1; jz<=1; jz++) {
+              for (int jy=-1; jy<=1; jy++) {
+                for (int jx=-1; jx<=1; jx++) {
+                  if (mask.aaafI && (mask.aaafI[iz+jz][iy+jy][ix+jx] == 0.0)) {
+                    is_local_minima = false;
+                    is_local_maxima = false;
+                  }
+                  if (tomo_out.aaafI[iz+jz][iy+jy][ix+jx] <= center_val)
+                    is_local_minima = false;
+                  if (tomo_out.aaafI[iz+jz][iy+jy][ix+jx] >= center_val)
+                    is_local_maxima = false;
+                }
+              }
+            }
+            if ((center_val < global_minima) || (afXextreme[0] == -1)) {
+              global_minima = center_val;
+              if (settings.use_min_density) {
+                extreme_density = global_minima;
+                afXextreme[0] = ix;
+                afXextreme[1] = iy;
+                afXextreme[2] = iz;
+              }
+            }
+            if ((center_val > global_maxima) || (afXextreme[0] == -1)) {
+              global_maxima = center_val;
+              if (! settings.use_min_density) {
+                extreme_density = global_maxima;
+                afXextreme[0] = ix;
+                afXextreme[1] = iy;
+                afXextreme[2] = iz;
+              }
+            }
+          } //for (int ix=1; ix < tomo_out.header.nvoxels[0]-1; ix++)
+        } //for (int iy=1; iy < tomo_out.header.nvoxels[1]-1; iy++)
+      } //for (int iz=1; iz < tomo_out.header.nvoxels[2]-1; iz++)
+
+
+      // Did we fail to find any local minima or maxima densities?
+      if (afXextreme[0] == -1) {
+        string extrema_type = "minina";
+        if (! settings.use_min_density)
+          extrema_type = "maxima";
+        stringstream msg_ss;
+        msg_ss << "Error: There are no local density " << extrema_type << "\n"
+               << "       in the image (at scale sigma = " << sigma << ")\n"
+               << "       Aborting...\n";
+        throw InputErr(msg_ss.str());
+      }
 
       float ave_density = settings.num_particles / vol_total;
 
@@ -389,8 +461,15 @@ int main(int argc, char **argv) {
 
       long double prob_total = 1.0 - pow((1.0 - prob_cdf), num_bins);
 
-      cout << pow(volume_gaussian_bin, 1.0/3) * voxel_width[0]
-           << " " << prob_total << endl;
+      double effective_bin_size = (pow(volume_gaussian_bin, 1.0/3) *
+                                   voxel_width[0]);
+      cout << prob_total
+           << " " << extreme_density
+           << " " << afXextreme[0]
+           << " " << afXextreme[1]
+           << " " << afXextreme[2]
+           << " " << effective_bin_size
+           << endl;
 
       // Discussion:
       //      What do we expect this number to be?
@@ -441,12 +520,15 @@ int main(int argc, char **argv) {
 
     } // for (int i_sig = 0; i_sig < settings.vfSigma.size(); i_sig++) {...
 
-    if ((settings.out_file_name != "") && (settings.vfSigma.size() == 1)) {
+
+    if ((settings.out_file_name != "") && (settings.vfSigma.size() == 1))
+    {
       // Write the image file containing the filtered version for that sigma
-      cerr << "writing tomogram (in 32-bit float mode)" << endl;
-      //tomo_out.FindMinMaxMean();
+      cerr << "writing a tomogram containing the most recently calculated density cloud"
+           << endl;
+
       tomo_out.Write(settings.out_file_name);
-      // (You can also use "tomo_out.Write(cout);" or "cout<<tomo_out;")
+      // (You can also use "file_stream << tomo_out;")
     }
 
   } //try {

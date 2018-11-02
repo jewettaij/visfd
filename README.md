@@ -11,7 +11,9 @@ It is also a collection of stand-alone programs
 which use this library
 (including "[filter_mrc](./doc/doc_filter_mrc.md)", 
  "[combine_mrc](./doc/doc_combine_mrc.md)", 
- and "pval_mrc").
+ and
+ "[pval_mrc](./doc/doc_pval_mrc.md)")
+They are documented [here](./doc).
 Multiprocessor support is implemented using
 [OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
 
@@ -27,7 +29,9 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 **filter_mrc** detects features and applies simple filters to 3D images.
 It supports 
-[3D scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
+[3D scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection),
+[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+filters (for *membrane detection*),
 and local minima/maxima finding (with non-max suppresion).
 Filters include
 thresholding,
@@ -35,8 +39,8 @@ low-pass, high-pass,
 [generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 and
-[DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
-filters, and others.
+[DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians), 
+and others.
 A image *mask* can be used to exclude certain
 voxels or regions from consideration.
 *(Typically these are voxels which have been characterized previously.
@@ -77,13 +81,26 @@ and computes the sum of all the voxel intensities.
 (Typically the voxel intensities are either 1 or 0.
  The resulting sums can be converted into volumes
  either by multiplying by the volume-per-voxel,
- or by specifying the voxel width using the "-w" argument.)
+ or by specifying the voxel width using the "-w" argument,
+ and including the "-volume" argument.)
 For convenience, threshold operation can be applied
 (using the "-thresh", "-thresh2", and "-thresh4" arguments)
 so that the voxels intensities vary between 0 and 1
 before the sum is calculated.
 The sum can be restricted to certain regions
 (by using the "-mask" and "-mask-select" arguments).
+Documentation for this program is located
+[here](./doc/doc_sum_voxels.md).
+
+
+## pval_mrc
+**pval_mrc** is a program for estimating the probability
+that a cloud of points in an image are distributed randomly.
+It looks for regions of high (or low) density in an image.
+(The user can specify a *-mask* argument to perform the analysis
+ in small, confined, irregularly-shaped subvolumes from a larger image.)
+Documentation for this program is located
+[here](./doc/doc_pval_mrc.md).
 
 
 ## Development Status: *alpha*

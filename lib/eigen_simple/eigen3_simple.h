@@ -45,12 +45,12 @@ namespace selfadjoint_eigen3
     // and in solving the equation for the roots in closed form.
     Scalar c2_over_3 = c2*s_inv3;
     Scalar a_over_3 = (c2*c2_over_3 - c1)*s_inv3;
-    a_over_3 = std::max(a_over_3, 0.0);
+    a_over_3 = std::max(a_over_3, static_cast<Scalar>(0.0));
  
     Scalar half_b = 0.5*(c0 + c2_over_3*(2.0*c2_over_3*c2_over_3 - c1));
  
     Scalar q = a_over_3*a_over_3*a_over_3 - half_b*half_b;
-    q = std::max(q, 0.0);
+    q = std::max(q, static_cast<Scalar>(0.0));
  
     // Compute the eigenvalues by solving for the roots of the polynomial.
     Scalar rho = std::sqrt(a_over_3);
@@ -128,7 +128,7 @@ namespace selfadjoint_eigen3
     const Scalar EPSILON = std::numeric_limits<Scalar>::epsilon();
     // Shift the matrix to the mean eigenvalue and map the matrix
     // coefficients to [-1:1] to avoid over- and underflow.
-    Scalar shift = trace3(mat) / 3.0;
+    Scalar shift = Trace3(mat) / 3.0;
     Scalar scaledMat[3][3];
     Copy3(mat, scaledMat);
     // Apply the shift
@@ -175,10 +175,7 @@ namespace selfadjoint_eigen3
         if(d0 > d1)
         {
           d0 = d1;
-          // swap k and l
-          int _k = l;
-          l = k;
-          k = _k;
+          swap(k, l);
         }
  
         Scalar tmp[3][3];

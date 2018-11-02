@@ -97,7 +97,8 @@ class Settings {
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
     MIN_DISTANCE,    //voxel intensity = distance to nearest object
     SPHERE_DECALS,   //voxel intensity = 1 if within R from the nearest object
-    SPHERE_NONMAX_SUPPRESSION
+    SPHERE_NONMAX_SUPPRESSION,
+    RIDGE_PLANAR
   } FilterType; 
   
   FilterType filter_type;
@@ -187,6 +188,9 @@ class Settings {
   float sphere_decals_shell_thickness_min;
   bool sphere_decals_shell_thickness_is_ratio;
 
+  string out_normals_fname;
+  float planar_threshold;
+ 
   // not used (yet):
   //float missing_wedge_min[2];  //range of angles sampled (around x and y axis)
   //float missing_wedge_max[2];  //range of angles sampled (around x and y axis)

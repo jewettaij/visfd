@@ -12,6 +12,7 @@ using namespace std;
 class Settings {
  public:
   string in_file_name;
+  int image_size[3];
   string out_file_name;
   string in_coords_file_name;
   bool rescale01_in;

@@ -201,10 +201,9 @@ RealNum _SumSqrArr(Integer const array_size[3],
 /// @param  aaafH       the 3D array containing the entries to be modified
 
 template<class RealNum, class Integer>
-static
-void _AddScalarArr(RealNum offset,
-                   Integer const array_size[3],
-                   RealNum ***aaafH)
+void AddScalarArr(RealNum offset,
+                  Integer const array_size[3],
+                  RealNum ***aaafH)
 {
   for (Integer iz = 0; iz < array_size[2]; iz++)
     for (Integer iy = 0; iy < array_size[1]; iy++)
@@ -220,10 +219,9 @@ void _AddScalarArr(RealNum offset,
 /// @param  aaafH       the 3D array containing the entries to be modified
 
 template<class RealNum, class Integer>
-static
-void _MultiplyScalarArr(RealNum scale,
-                        Integer const array_size[3],
-                        RealNum ***aaafH)
+void MultiplyScalarArr(RealNum scale,
+                       Integer const array_size[3],
+                       RealNum ***aaafH)
 {
   for (Integer iz = 0; iz < array_size[2]; iz++)
     for (Integer iy = 0; iy < array_size[1]; iy++)

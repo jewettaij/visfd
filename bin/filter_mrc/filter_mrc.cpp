@@ -22,6 +22,7 @@ using namespace std;
 #include <filter1d.h>
 #include <filter2d.h>
 #include <filter3d.h>
+#include <lin3_utils.h>
 #include <threshold.h>
 #include <mrc_simple.h>
 #include <random_gen.h>
@@ -29,8 +30,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc.cpp");
-string g_version_string("0.8.2");
-string g_date_string("2018-9-20");
+string g_version_string("0.9.0");
+string g_date_string("2018-11-02");
 
 
 
@@ -1887,7 +1888,9 @@ HandleTemplateGGauss(Settings settings,
 
   float template_background_sigma[3];
   for (int d = 0; d < 3; d++)
-    template_background_sigma[d] = settings.template_background_radius[d] / sqrt(2);
+    template_background_sigma[d] = (settings.template_background_radius[d]
+                                    /
+                                    sqrt(3.0));
 
   // P = original image (after subtracting average nearby intensities):
 
@@ -2186,7 +2189,9 @@ HandleTemplateGauss(Settings settings,
 
   float template_background_sigma[3];
   for (int d = 0; d < 3; d++)
-    template_background_sigma[d] = settings.template_background_radius[d] / sqrt(2);
+    template_background_sigma[d] = (settings.template_background_radius[d]
+                                    /
+                                    sqrt(3.0));
 
   ApplyGauss3D(tomo_in.header.nvoxels,
                tomo_in.aaafI,
@@ -2253,7 +2258,7 @@ HandleTemplateGauss(Settings settings,
       sqrt(1.0 / (1.0 / SQR(settings.width_a[d])
                   +
                   1.0 / SQR(settings.template_background_radius[d])));
-    sigma_Q_times_w[d] = radius_Q_times_w[d] / sqrt(2);
+    sigma_Q_times_w[d] = radius_Q_times_w[d] / sqrt(3.0);
   }
   // We can use the faster "ApplyGauss3D()" to perform the convolution
   ApplyGauss3D(P.header.nvoxels, // = tomo_in.header.nvoxels,
@@ -2476,7 +2481,9 @@ HandleLocalFluctuations(Settings settings,
 
   float template_background_sigma[3];
   for (int d = 0; d < 3; d++)
-    template_background_sigma[d] = settings.template_background_radius[d] / sqrt(2);
+    template_background_sigma[d] = (settings.template_background_radius[d]
+                                    /
+                                    sqrt(3.0));
 
   // First, let's calculate the weighted average voxel intensity in the 
   // source image
@@ -2758,7 +2765,214 @@ HandleBootstrapDogg(Settings settings,
 #endif //#ifndef DISABLE_BOOTSTRAPPING
 
 
-    
+
+
+
+
+
+
+
+
+
+
+template <typename T> int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
+
+
+template<class RealNum>
+static void
+WriteBNPTSfile(string filename,
+               vector<array<RealNum,3> > coords,
+               vector<array<RealNum,3> > norms)
+{
+  assert(coords.size() == norms.size());
+  size_t n = coords.size();
+  fstream bnpts_file;
+  bnpts_file.open(filename.c_str(), ios::out | ios::binary);
+  for (size_t i=0; i < n; i++) {
+    float xyz[3];
+    xyz[0] = coords[i][0];  //(convert from "RealNum" to float)
+    xyz[1] = coords[i][1];
+    xyz[2] = coords[i][2];
+    float norm[3];
+    norm[0] = norms[i][0];  //(convert from "RealNum" to float)
+    norm[1] = norms[i][1];
+    norm[2] = norms[i][2];
+    bnpts_file.write((char*)&(xyz[0]), sizeof(float));
+    bnpts_file.write((char*)&(xyz[1]), sizeof(float));
+    bnpts_file.write((char*)&(xyz[2]), sizeof(float));
+    bnpts_file.write((char*)&(norm[0]), sizeof(float));
+    bnpts_file.write((char*)&(norm[1]), sizeof(float));
+    bnpts_file.write((char*)&(norm[2]), sizeof(float));
+  }
+  bnpts_file.close();
+}
+
+
+template<class RealNum>
+static void
+WriteOrientedPointCloud(string pointcloud_file_name,
+                        const int image_size[3],
+                        RealNum const *const *const *aaafImage,
+                        CompactMultiChannelImage3D<RealNum> &hessian,
+                        RealNum threshold)
+{
+  assert(aaafImage);
+  vector<array<RealNum,3> > coords;
+  vector<array<RealNum,3> > norms;
+  for (int iz=0; iz < image_size[2]; iz++) {
+    for (int iy=0; iy < image_size[1]; iy++) {
+      for (int ix=0; ix < image_size[0]; ix++) {
+        RealNum metric = aaafImage[iz][iy][ix];
+        if ((abs(metric) >= abs(threshold)) &&
+            (metric*threshold > 0.0)) //same sign
+        {
+          // check if this is one of the voxels we want to consider
+          if (! hessian.aaaafI[iz][iy][ix])
+            // (if not, then this voxel lies outside the mask, so skip it)
+            continue;
+
+          array<RealNum,3> xyz;
+          xyz[0] = ix;
+          xyz[1] = iy;
+          xyz[2] = iz;
+          coords.push_back(xyz);
+
+          array<RealNum,3> norm;
+          RealNum quat[4];
+          quat[0] = hessian.aaaafI[iz][iy][ix][3];
+          quat[1] = hessian.aaaafI[iz][iy][ix][4];
+          quat[2] = hessian.aaaafI[iz][iy][ix][5];
+          quat[3] = hessian.aaaafI[iz][iy][ix][6];
+
+          RealNum eigenvects[3][3];
+          Quaternion2Matrix(quat, eigenvects);
+          norm[0] = eigenvects[0][0];
+          norm[1] = eigenvects[0][1];
+          norm[2] = eigenvects[0][2];
+          norms.push_back(norm);
+        }
+      }
+    }
+  }
+
+  WriteBNPTSfile(pointcloud_file_name,
+                 coords,
+                 norms);
+
+} //WriteOrientedPointCloud()
+
+
+
+static void
+HandleRidgeDetectorPlanar(Settings settings,
+                          MrcSimple &tomo_in,
+                          MrcSimple &tomo_out,
+                          MrcSimple &mask,
+                          float voxel_width[3])
+{
+  cerr << "filter_type = planar ridge detector\n";
+
+  float sigma = settings.width_a[0];
+
+  CompactMultiChannelImage3D<float> c_hessian(7);
+  CompactMultiChannelImage3D<float> c_gradient(3);
+  c_hessian.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  c_gradient.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+
+  CalcHessian3D(tomo_in.header.nvoxels,
+                tomo_in.aaafI,
+                &c_hessian,
+                &c_gradient,
+                mask.aaafI,
+                sigma,
+                settings.filter_truncate_ratio,
+                &cerr);
+
+  for(int iz=0; iz<=tomo_in.header.nvoxels[2]; iz++) {
+    for(int iy=0; iy<=tomo_in.header.nvoxels[1]; iy++) {
+      for(int ix=0; ix<=tomo_in.header.nvoxels[0]; ix++) {
+        float lambda1 = c_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
+        float lambda2 = c_hessian.aaaafI[iz][iy][ix][1];
+        float lambda3 = c_hessian.aaaafI[iz][iy][ix][2]; //minimum eigenvalue
+        float eivects[3][3]; //eivect[i]=i'th quaternion (these are row vectors)
+        // To save space the eigenvectors were stored as a quaternion 
+        // instead of a 3x3 matrix.  So we must unpack the eigenvectors.
+        float quat[3]; // <- the eigenvectors stored in quaternion format
+        quat[0]       = c_hessian.aaaafI[iz][iy][ix][3];
+        quat[1]       = c_hessian.aaaafI[iz][iy][ix][4];
+        quat[2]       = c_hessian.aaaafI[iz][iy][ix][5];
+        quat[3]       = c_hessian.aaaafI[iz][iy][ix][6];
+        Quaternion2Matrix(quat, eivects); //convert to 3x3 matrix
+        float grad[3];
+        grad[0] = c_gradient.aaaafI[iz][iy][ix][0];
+        grad[1] = c_gradient.aaaafI[iz][iy][ix][1];
+        grad[2] = c_gradient.aaaafI[iz][iy][ix][2];
+        float grad_sqd = DotProduct3(grad, grad);
+
+        // Now compute the "score". (The score is the number used to
+        // determine how plane-like the image is at this voxel location.)
+        //
+        // The score_ratio variable is the score used in Eq(5) of
+        // Martinez-Sanchez++Fernandez_JStructBiol2013
+        float score_ratio;
+        if (grad_sqd > 0.0) {
+          float score_ratio  = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
+                                /
+                                //(grad_sqd/(sigma*sigma)));  <- not needed
+                                grad_sqd);
+          // (The factor of sigma*sigma no longer needs to be added to insure 
+          //  the result is dimensionless <==> independent of image resolution.
+          //  This is because earlier I absorbed the factof of "sigma" into the
+          //  derivative used to calculate the gradient and hessian.  See:
+          //  Lindeberg 1993 "On Scale Selection for Differential Operators")
+          score_ratio *= score_ratio;
+        }
+        else
+          score_ratio = HUGE_VALF;
+
+        float gradient_along_v1 = DotProduct3(grad, eivects[0]);
+        float distance_to_ridge;
+        if (lambda1 != 0)
+          distance_to_ridge = abs(gradient_along_v1 / lambda1);
+        else
+          distance_to_ridge = HUGE_VALF;
+
+        bool ridge_located_in_same_voxel = true;
+        for (int d=0; d<3; d++) {
+          float ridge_voxel_location = eivects[0][d] * distance_to_ridge;
+          if (abs(ridge_voxel_location) > 0.5)
+            ridge_located_in_same_voxel = false;
+        }
+        //if (distance_to_ridge < settings.ridge_detector_search_width * 0.5)
+        if (ridge_located_in_same_voxel)
+          tomo_out.aaafI[iz][iy][ix] = score_ratio * sgn(lambda1);
+        else
+          tomo_out.aaafI[iz][iy][ix] = 0.0;
+      }
+    }
+  }
+
+
+  //Did the user ask us to generate any output files?
+  if ((settings.out_normals_fname == "") &&
+      (settings.out_file_name != ""))
+    settings.out_normals_fname =
+      settings.out_file_name + string(".bnpts");
+
+  //Did the user ask us to generate output files containing surface orientation?
+  if (settings.out_normals_fname != "")
+    WriteOrientedPointCloud(settings.out_normals_fname,
+                            tomo_out.header.nvoxels,
+                            tomo_out.aaafI,
+                            c_hessian,
+                            settings.planar_threshold);
+                
+} //HandleRidgeDetectorPlanar()
+
+
 
 
 
@@ -2809,7 +3023,7 @@ int main(int argc, char **argv) {
       if ((mask.header.nvoxels[0] != tomo_in.header.nvoxels[0]) ||
           (mask.header.nvoxels[1] != tomo_in.header.nvoxels[1]) ||
           (mask.header.nvoxels[2] != tomo_in.header.nvoxels[2]))
-        throw InputErr("Error: The size of the mask does not match the size of the tomogram.\n");
+        throw InputErr("Error: The size of the mask image does not match the size of the input image.\n");
       // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
       if (settings.use_mask_select) {
         for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
@@ -2978,14 +3192,6 @@ int main(int argc, char **argv) {
     } //if (settings.filter_type == Settings::DOG)
 
 
-    else if (settings.filter_type == Settings::TEMPLATE_GGAUSS) {
-
-      #ifndef DISABLE_TEMPLATE_MATCHING
-      HandleTemplateGGauss(settings, tomo_in, tomo_out, mask, voxel_width);
-      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
-
-    } //else if (settings.filter_type == Settings::TEMPLATE_GGAUSS)
-
 
     else if (settings.filter_type == Settings::LOCAL_FLUCTUATIONS) {
 
@@ -2993,6 +3199,29 @@ int main(int argc, char **argv) {
 
     } //else if (settings.filter_type == Settings::TEMPLATE_GGAUSS)
 
+
+
+    // ----- find planar ridges (ie membranes or wide tubes) -----
+
+    else if (settings.filter_type == Settings::RIDGE_PLANAR) {
+
+      HandleRidgeDetectorPlanar(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+
+
+    // ----- template matching with error reporting (probably not useful) -----
+
+
+    else if (settings.filter_type == Settings::TEMPLATE_GGAUSS) {
+
+      #ifndef DISABLE_TEMPLATE_MATCHING
+      HandleTemplateGGauss(settings, tomo_in, tomo_out, mask, voxel_width);
+      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
+
+    } //else if (settings.filter_type == Settings::TEMPLATE_GGAUSS)
 
 
 
@@ -3113,7 +3342,7 @@ int main(int argc, char **argv) {
     if (settings.out_file_name != "") {
       cerr << "writing tomogram (in 32-bit float mode)" << endl;
       tomo_out.Write(settings.out_file_name);
-      //(You can also use "tomo_out.Write(cout);" or "cout<<tomo_out;")
+      // (You can also use "file_stream << tomo_out;")
     }
 
   } // try {

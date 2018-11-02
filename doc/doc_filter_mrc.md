@@ -10,11 +10,12 @@ brightness inversions,
 [generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
+[Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 and
-[Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian) filters.
+3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+filters.
 Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
-Both isotropic and anisotropic filters are supported.
 
 **filter_mrc** can also be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
@@ -565,6 +566,7 @@ radii (*2\*radius*) then the poorer scoring minima will be discarded.
 
 
 
+
 #### Recommendation:
 
 Blob-detection is computationally expensive,
@@ -668,6 +670,26 @@ of the Gaussian independently in the x,y,z directions:
  accomplishes the same goal and is much more
  [computationally efficient](https://en.wikipedia.org/wiki/Separable_filter).)*
 
+
+### -distance  COORDINATE_FILE
+
+The **-distance** argument reads a file containing a list of 3D coordinates
+and generates an image whose voxel intensities equal the *distance* to the
+nearest point.
+(The size of the image matches the size of the image
+ specified with the the "**-in**" argument.
+ The points should lie within the boundaries of this image.)
+The file should contain at least 3 numbers per line
+(the x,y,z coordinates of that point, one point per line).
+The x,y,z coordinates are assumed to be in physical units
+(ie Angstroms) not voxels, *unless* the "**-w 1**" argument was also used.
+Example:
+
+```
+   -distance coordinates.txt
+```
+(As of 2018-10-31, the calculation is quite slow.
+It has not been optimized for speed.)
 
 
 ### -template-gauss

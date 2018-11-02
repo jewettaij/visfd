@@ -41,12 +41,12 @@ Settings::Settings() {
   //
   // Default values of a_x, a_y, a_z, b_x, b_y, b_z, m, n are:
 
-  width_a[0] = 70.0;  // a_x = 12.0  gaussian width in x direction
-  width_a[1] = 70.0;  // a_y = 12.0  gaussian width in y direction
-  width_a[2] = 110.0; // a_z = 24.0  gaussian width in z direction
-  width_b[0] = 90.0;  // b_x = 15.0  gaussian width in x direction
-  width_b[1] = 90.0;  // b_y = 15.0  gaussian width in y direction
-  width_b[2] = 130.0; // b_z = -1.0  gaussian width in z direction (<0 disables)
+  width_a[0] = 70.0;  // a_x =70.0 gaussian width in x direction(physical units)
+  width_a[1] = 70.0;  // a_y = 70.0  gaussian width in y direction
+  width_a[2] = 110.0; // a_z = 110.0  gaussian width in z direction
+  width_b[0] = 90.0;  // b_x = 90.0  2nd (outer) gaussian width in x direction
+  width_b[1] = 90.0;  // b_y = 905.0  gaussian width in y direction
+  width_b[2] = 130.0; // b_z = 130.0  gaussian width in z direction(<0 disables)
   m_exp = 2.0;       // exponent in generalized Gaussian formula (width a)
   n_exp = 2.0;       // exponent in generalized Gaussian formula (width b)
 
@@ -103,6 +103,9 @@ Settings::Settings() {
   nonmax_max_volume_overlap_small = 1.0;
   nonmax_max_volume_overlap_large = 1.0;
  
+  out_normals_fname = "";
+  planar_threshold = 0.0;
+
   use_thresholds = false;
   use_dual_thresholds = false;
   out_threshold_01_a = 1.0;
@@ -1553,6 +1556,40 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-sphere01") || (vArgs[i] == "-sphere-01")) {
       sphere_decals_foreground_norm = false;
       num_arguments_deleted = 1;
+    }
+
+    else if (vArgs[i] == "-planar") {
+      filter_type = RIDGE_PLANAR;
+      num_arguments_deleted = 1;
+    }
+
+    else if (vArgs[i] == "-planar-threshold") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        planar_threshold = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number, the threshold\n"
+                       "       for deciding whether to compute the surface normal there.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-planar-bnpts") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        out_normals_fname = vArgs[i+1];
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a file name.\n");
+      }
+      num_arguments_deleted = 2;
     }
 
     else if (vArgs[i] == "-np") {

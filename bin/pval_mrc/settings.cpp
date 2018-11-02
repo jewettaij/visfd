@@ -20,6 +20,9 @@ using namespace std;
 Settings::Settings() {
   // Default settings
   in_file_name = "";
+  image_size[0] = 0;
+  image_size[1] = 0;
+  image_size[2] = 0;
   in_coords_file_name = "";
   rescale01_in = false;
   mask_file_name = "";
@@ -42,7 +45,7 @@ Settings::Settings() {
                             //(Setting this to a number < 0 disables it.)
 
   compartment_volume = -1.0; //impossible value
-  precomputed_gaussian_blur=false; //did the user already use a Gaussian blur?
+  precomputed_gaussian_blur=false; //user already created a blurred density-map?
   num_particles = -1.0;      //impossible value
   use_min_density = true;
   randomize_input_image = false;
@@ -85,6 +88,27 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a file name.\n");
       in_file_name = vArgs[i+1];
+
+      num_arguments_deleted = 2;
+
+    } // if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
+
+    if (vArgs[i] == "-image-size")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
+          throw invalid_argument("");
+        image_size[0] = stoi(vArgs[i+1]);
+        image_size[1] = stoi(vArgs[i+2]);
+        image_size[2] = stoi(vArgs[i+3]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 3 positive integers.\n");
+      }
 
       num_arguments_deleted = 2;
 
@@ -417,18 +441,12 @@ Settings::ParseArgs(vector<string>& vArgs)
   }
 
 
-  // REMOVE THIS CRUFT:
-  //if (vArgs.size() < 2) {
-  //  throw InputErr("Error: Expected a file name.\n");
-  //}
-  //if (vArgs.size() > 2) {
-  //  stringstream err_msg;
-  //  err_msg << "Error: Too many arguments or mistake in argument syntax. Unrecognized args:\n";
-  //  for (int i = 2; i < vArgs.size(); i++)
-  //    err_msg << "       \"" << vArgs[i1] << "\"\n";
-  //  throw InputErr(err_msg.str());
-  //}
-  //in_file_name = vArgs[1];
+  if ((in_file_name == "") &&
+      ((image_size[0] == 0) || (image_size[1]==0) || (image_size[2]==0)))
+    throw InputErr("Error: You need to specify the size of the image that will be used to\n"
+                   "       created to contain the density cloud.  You can EITHER specify this\n"
+                   "       using the \"-in filename\" OR \"-image-size Nx Ny Nz\" arguments.\n");
+
 
 
   if (vfSigma.size() == 0) {
