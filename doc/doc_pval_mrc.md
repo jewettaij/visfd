@@ -23,7 +23,8 @@ The **pval_mrc** program does the following:
    then steps 1-3 are repeated for each resolution requested by the user.
 
 
-This program requires:
+###This program requires:
+
 * a multi-column text file containing a
    **list of 3D coordinates** (typically in units of Angstroms)
    corresponding the the centers of objects that were detected in an image file.
@@ -39,8 +40,9 @@ This program requires:
    ```
    These files are typically generated using "*filter_mrc -blob ...*".
    (See the docs for "[filter_mrc](./doc_filter_mrc.md)" for details.
-   Note: If you use the "*-w 1*" argument, then these numbers will 
-   be positive integers.  See below.)
+   *Note:* These coordinates are in physical units by default.
+   If you use the "*-w 1*" argument, these numbers will be in units of voxels
+   and will be positive integers.)
 * an **image file** (containing the image from which the objects were detected,
    specified using the "*-in*" argument)
 * a **resolution, δ**.
@@ -66,7 +68,7 @@ The program will print 6 numbers to the standard out:
      whose density exceeded the observed minimum density (at this resolution)
      **(This is the P-value.)**
 2.   the minimum (or maximum) density at that resolution (bin-size),
-3.   the x,
+3.   x,
 4.   y,
 5.   z coordinates of the global minima (or maxima) of the density
      (typically expressed in Angstroms).

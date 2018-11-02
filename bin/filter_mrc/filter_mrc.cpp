@@ -2956,11 +2956,12 @@ HandleRidgeDetectorPlanar(Settings settings,
   }
 
 
-  //Did the user ask us to generate any output files?
-  if ((settings.out_normals_fname == "") &&
-      (settings.out_file_name != ""))
-    settings.out_normals_fname =
-      settings.out_file_name + string(".bnpts");
+  ////Did the user ask us to generate any output files?
+  //if ((settings.out_normals_fname == "") &&
+  //    (settings.out_file_name != ""))
+  //  settings.out_normals_fname =
+  //    settings.out_file_name + string(".bnpts");
+
 
   //Did the user ask us to generate output files containing surface orientation?
   if (settings.out_normals_fname != "")
