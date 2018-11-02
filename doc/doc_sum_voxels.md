@@ -18,7 +18,7 @@ sum_voxels
 #### -mask-select  INTENSITY_VALUE
 
 If the **-mask-select** argument is specified, then instead of considering all
-voxels with non-zero values from the "mask" image/tomogram,
+voxels with non-zero values from the "mask" image,
 only voxels whose mask intensity equals the number following
 this argument will belong to the mask.
 All other voxels will be ignored during filtering.
@@ -28,8 +28,8 @@ All other voxels will be ignored during filtering.
 
 #### -volume
 The **-volume** argument will multiply the resulting sum by the
-volume of each voxel.  The width of each voxel is *either* inferred from
-the input file *or* specified manually using the **-w** argument.
+volume of each voxel.  The width of each voxel is either inferred from
+the input file or specified manually using the **-w** argument.
 
 #### -w VOXELWIDTH
 The **-w VOXELWIDTH** argument allows the user to specify the width

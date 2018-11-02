@@ -1042,7 +1042,7 @@ If you are using "-rescale", then
    -mask-select  intensity_value
 ```
 If the "-mask-select" argument is specified, then instead of considering all
-voxels with non-zero values from the "mask" image/tomogram,
+voxels with non-zero values from the "mask" image,
 only voxels whose mask intensity equals the number following
 this argument will belong to the mask.
 All other voxels will be ignored during filtering.

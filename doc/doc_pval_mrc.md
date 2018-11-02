@@ -66,7 +66,9 @@ The program will print 6 numbers to the standard out:
      whose density exceeded the observed minimum density (at this resolution)
      **(This is the P-value.)**
 2.   the minimum (or maximum) density at that resolution (bin-size),
-3-5. the x,y,z coordinates of the global minima (or maxima) of the density
+3.   the x,
+4.   y,
+5.   z coordinates of the global minima (or maxima) of the density
      (typically expressed in Angstroms).
 6.   the resolution (bin-size) considered (in Angstroms)
 
@@ -185,7 +187,7 @@ increasing the bin width by a factor of 1.1 (10%) each time.
 #### -mask-select  intensity_value
 
 If the "*-mask-select*" argument is specified, then instead of considering all
-voxels with non-zero values from the "mask" image/tomogram,
+voxels with non-zero values from the "mask" image,
 only voxels whose mask intensity equals the number following
 this argument will belong to the mask.
 All other voxels will be ignored during filtering.
