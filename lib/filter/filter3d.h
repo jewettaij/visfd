@@ -1477,9 +1477,9 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
 
   if (pReportProgress)
     *pReportProgress
-      << " -- Attempting to allocate space for one more image.       --\n"
-      << " -- (If this crashes your computer, find a computer with   --\n"
-      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
+      << " -- Attempting to allocate space for one more image.\n"
+      << " -- (If this crashes your computer, find a computer with\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
 
   Alloc3D(image_size,
           &afTemp,
@@ -1721,7 +1721,7 @@ BlobDog(int const image_size[3], //!< source image size
     *pReportProgress
       << " -- Attempting to allocate space for 3 more images.        --\n"
       << " -- (If this crashes your computer, find a computer with   --\n"
-      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
   bool preallocated = ! (aaaafI == NULL);
 
@@ -2405,7 +2405,7 @@ DiscardOverlappingBlobs(vector<array<RealNum,3> >& blob_crds,
     *pReportProgress
       << " -- Attempting to allocate space for one more image.       --\n"
       << " -- (If this crashes your computer, find a computer with   --\n"
-      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
   // Occupancy table
   //     (originally named "bool ***aaabOcc")
@@ -2645,10 +2645,10 @@ private:
 
     if (pReportProgress)
       *pReportProgress
-        << "     -- Attempting to allocate space for an "
+        << " -- Attempting to allocate space for a "
         << n_channels_per_voxel << "-channel image\n"
-        << "     -- (If this crashes your computer, find a computer with\n"
-        << "     --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
+        << " -- (If this crashes your computer, find a computer with\n"
+        << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
     Alloc3D(image_size,
             &aafI,
             &aaaafI);
@@ -2675,6 +2675,7 @@ private:
             continue;
           aaaafI[iz][iy][ix] =
             &(afI[n * n_channels_per_voxel]);
+          n++;
         }
       }
     }
@@ -2745,16 +2746,19 @@ CalcHessian3D(int const image_size[3], //!< source image size
   // First, apply the Gaussian filter to the image
   if (pReportProgress)
     *pReportProgress
-      << " -- Attempting to allocate space for one more images.        --\n"
+      << " -- Attempting to allocate space for one more image.      --\n"
       << " -- (If this crashes your computer, find a computer with   --\n"
-      << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
   RealNum ***aaafSmoothed;
   RealNum *afSmoothed;
   Alloc3D(image_size,
           &afSmoothed,
           &aaafSmoothed);
-  
+
+  if (pReportProgress)
+    *pReportProgress << "\n";
+
   ApplyGauss3D(image_size,
                aaafSource,
                aaafSmoothed,
@@ -2770,7 +2774,7 @@ CalcHessian3D(int const image_size[3], //!< source image size
 
   if (pReportProgress && pHessian)
     *pReportProgress << "\n"
-      "---- Diagonalizing the hessian everywhere (within the mask)... "
+      "---- Diagonalizing the Hessian everywhere (within the mask)... "
                      << flush;
 
   // Now compute gradients and hessians
@@ -2793,6 +2797,7 @@ CalcHessian3D(int const image_size[3], //!< source image size
 
           // Optional: Insure that the resulting gradient is dimensionless:
           // (Lindeberg 1993 "On Scale Selection for Differential Operators")
+
           gradient[0] *= sigma;
           gradient[1] *= sigma;
           gradient[2] *= sigma;
@@ -2800,6 +2805,14 @@ CalcHessian3D(int const image_size[3], //!< source image size
           pGradient->aaaafI[iz][iy][ix][0] = gradient[0];
           pGradient->aaaafI[iz][iy][ix][1] = gradient[1];
           pGradient->aaaafI[iz][iy][ix][2] = gradient[2];
+
+          if ((ix==image_size[0]/4)&&(iy==image_size[1]/4)&&(iz==image_size[2]/4))
+            pHessian->aaaafI[iz][iy][ix][0] = -1.0;     
+          if ((ix==image_size[0]/3)&&(iy==image_size[1]/3)&&(iz==image_size[2]/3))
+            pHessian->aaaafI[iz][iy][ix][0] = -1.0;     
+          if ((ix==image_size[0]/2)&&(iy==image_size[1]/2)&&(iz==image_size[2]/2))
+            pHessian->aaaafI[iz][iy][ix][0] = -1.0;     
+
         }
 
         if (pHessian) {
@@ -2831,7 +2844,6 @@ CalcHessian3D(int const image_size[3], //!< source image size
                                   aaafSmoothed[iz+1][iy][ix-1] - 
                                   aaafSmoothed[iz-1][iy][ix+1]);
           hessian[0][2] = hessian[2][0];
-
 
           // Optional: Insure that the result is dimensionless:
           // (Lindeberg 1993 "On Scale Selection for Differential Operators")
@@ -2885,6 +2897,7 @@ CalcHessian3D(int const image_size[3], //!< source image size
           pHessian->aaaafI[iz][iy][ix][4] = quat[1];
           pHessian->aaaafI[iz][iy][ix][5] = quat[2];
           pHessian->aaaafI[iz][iy][ix][6] = quat[3];
+
         } //if (pHessian)
       } //for (int ix = 1; ix < image_size[0]-1; ix++) {
     } //for (int iy = 1; iy < image_size[1]-1; iy++) {

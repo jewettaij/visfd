@@ -23,7 +23,7 @@ The **pval_mrc** program does the following:
    then steps 1-3 are repeated for each resolution requested by the user.
 
 
-###This program requires:
+### This program requires:
 
 * a multi-column text file containing a
    **list of 3D coordinates** (typically in units of Angstroms)
@@ -77,7 +77,7 @@ The program will print 6 numbers to the standard out:
 *If* the user wants to repeat the analysis at multiple resolutions
 (using the "*-scan-bin*" or "*-scan-gauss*" arguments),
 then it will print all these numbers on separate lines,
-once line per resolution.
+one line per resolution.
 
 
 ### Examples:

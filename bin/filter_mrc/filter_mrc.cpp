@@ -2775,7 +2775,8 @@ HandleBootstrapDogg(Settings settings,
 
 
 
-template <typename T> int sgn(T val) {
+template <typename T>
+static int sgn(T val) {
   return (T(0) < val) - (val < T(0));
 }
 
@@ -2879,8 +2880,18 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   CompactMultiChannelImage3D<float> c_hessian(7);
   CompactMultiChannelImage3D<float> c_gradient(3);
-  c_hessian.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
-  c_gradient.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+
+  // REMOVE THIS CRUFT:  (commenting out: harmless but not necessary)
+  //c_hessian.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  //c_gradient.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+
+  // How did the user specify how wide to make the filter window?
+  if (settings.filter_truncate_ratio <= 0) {
+    assert(settings.filter_truncate_threshold > 0.0);
+    //    filter_truncate_threshold = exp(-(1/2)*filter_truncate_ratio^2);
+    //    -> filter_truncate_ratio^2 = -2*log(filter_truncate_threshold)
+    settings.filter_truncate_ratio = sqrt(-2*log(settings.filter_truncate_threshold));
+  }
 
   CalcHessian3D(tomo_in.header.nvoxels,
                 tomo_in.aaafI,
@@ -2891,9 +2902,18 @@ HandleRidgeDetectorPlanar(Settings settings,
                 settings.filter_truncate_ratio,
                 &cerr);
 
-  for(int iz=0; iz<=tomo_in.header.nvoxels[2]; iz++) {
-    for(int iy=0; iy<=tomo_in.header.nvoxels[1]; iy++) {
-      for(int ix=0; ix<=tomo_in.header.nvoxels[0]; ix++) {
+  for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
+    for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
+      for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
+        tomo_out.aaafI[iz][iy][ix] = 0.0;
+
+  for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+    for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+      for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+
+        if (! c_hessian.aaaafI[iz][iy][ix]) //ignore voxels that are either
+          continue;                         //in the mask or on the boundary
+
         float lambda1 = c_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
         float lambda2 = c_hessian.aaaafI[iz][iy][ix][1];
         float lambda3 = c_hessian.aaaafI[iz][iy][ix][2]; //minimum eigenvalue
@@ -2912,6 +2932,13 @@ HandleRidgeDetectorPlanar(Settings settings,
         grad[2] = c_gradient.aaaafI[iz][iy][ix][2];
         float grad_sqd = DotProduct3(grad, grad);
 
+        if ((ix == tomo_in.header.nvoxels[0]/4) && (iy == tomo_in.header.nvoxels[1]/4) && (iz == tomo_in.header.nvoxels[2]/4))
+          eivects[0][0]=-1.0;
+        if ((ix == tomo_in.header.nvoxels[0]/3) && (iy == tomo_in.header.nvoxels[1]/3) && (iz == tomo_in.header.nvoxels[2]/3))
+          eivects[0][0]=-1.0;
+        if ((ix == tomo_in.header.nvoxels[0]/2) && (iy == tomo_in.header.nvoxels[1]/2) && (iz == tomo_in.header.nvoxels[2]/2))
+          eivects[0][0]=-1.0;
+
         // Now compute the "score". (The score is the number used to
         // determine how plane-like the image is at this voxel location.)
         //
@@ -2919,10 +2946,12 @@ HandleRidgeDetectorPlanar(Settings settings,
         // Martinez-Sanchez++Fernandez_JStructBiol2013
         float score_ratio;
         if (grad_sqd > 0.0) {
-          float score_ratio  = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
-                                /
-                                //(grad_sqd/(sigma*sigma)));  <- not needed
-                                grad_sqd);
+
+          score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
+                         //       );
+                           /
+                        //   (grad_sqd/(sigma*sigma)));  <- not needed
+                        grad_sqd);
           // (The factor of sigma*sigma no longer needs to be added to insure 
           //  the result is dimensionless <==> independent of image resolution.
           //  This is because earlier I absorbed the factof of "sigma" into the
@@ -2946,11 +2975,12 @@ HandleRidgeDetectorPlanar(Settings settings,
           if (abs(ridge_voxel_location) > 0.5)
             ridge_located_in_same_voxel = false;
         }
+
         //if (distance_to_ridge < settings.ridge_detector_search_width * 0.5)
-        if (ridge_located_in_same_voxel)
+        //if (ridge_located_in_same_voxel)
           tomo_out.aaafI[iz][iy][ix] = score_ratio * sgn(lambda1);
-        else
-          tomo_out.aaafI[iz][iy][ix] = 0.0;
+        //else
+        //  tomo_out.aaafI[iz][iy][ix] = 0.0;
       }
     }
   }

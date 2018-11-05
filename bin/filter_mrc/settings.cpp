@@ -272,7 +272,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-rescale")
     {
-      if (filter_type = NONE) {
+      if (filter_type == NONE) {
         rescale01_in = true;
         out_threshold_01_a = 0.0;
         out_threshold_01_b = 1.0;
@@ -1558,9 +1558,26 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 1;
     }
 
-    else if (vArgs[i] == "-planar") {
+    else if ((vArgs[i] == "-planar") ||
+             (vArgs[i] == "-plane") ||
+             (vArgs[i] == "-membrane"))
+    {
       filter_type = RIDGE_PLANAR;
-      num_arguments_deleted = 1;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        width_a[0] = stof(vArgs[i+1]);
+        width_a[1] = width_a[0];
+        width_a[2] = width_a[0];
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number: the width\n"
+                       "       (σ) of the Gaussian used beforehand for smoothing (in physical units).\n"
+                       "       (This selects the scale or resolution of the filter.)\n");
+      }
+      num_arguments_deleted = 2;
     }
 
     else if (vArgs[i] == "-planar-threshold") {
