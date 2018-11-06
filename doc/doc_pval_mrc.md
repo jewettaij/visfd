@@ -53,7 +53,7 @@ The **pval_mrc** program does the following:
    and it typically has units of Angstroms.  We denote it using "δ" below.)
    
 * Optionally, you can also supply
-  a **mask file** countaining another image of the same size.
+  a **mask file** countaining another image of the *same size*.
   Any voxels in *this* image with brightness 0 correspond to 
   regions of space that you wish to *ignore* from the original image.
   (These voxels typically lie outside the region of interest.
@@ -69,13 +69,13 @@ The program will print 6 numbers to the standard out:
      whose density exceeded the observed minimum density (at this resolution)
      **(This is the P-value.)**
 2.   the minimum (or maximum) density at that resolution (bin-size),
-3.   x,
-4.   y,
-5.   z coordinates of the global minima (or maxima) of the density
-     (typically expressed in Angstroms).
-6.   the resolution (bin-size) considered (in Angstroms)
+3.   x (location coordinate),
+4.   y (location coordinate),
+5.   z (location coordinate) of the global minima (or maxima) of the density
+     (typically in Angstroms).
+6.   the resolution (bin-size) considered (typically in Angstroms)
 
-*If* the user wants to repeat the analysis at multiple resolutions
+If the user wants to repeat the analysis at multiple resolutions
 (using the "*-scan-bin*" or "*-scan-gauss*" arguments),
 then it will print all these numbers on separate lines,
 one line per resolution.
