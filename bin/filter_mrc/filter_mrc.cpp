@@ -30,7 +30,7 @@ using namespace std;
 
 
 string g_program_name("filter_mrc.cpp");
-string g_version_string("0.9.1");
+string g_version_string("0.9.0");
 string g_date_string("2018-11-05");
 
 
@@ -2941,26 +2941,34 @@ HandleRidgeDetectorPlanar(Settings settings,
 
         // Now compute the "score". (The score is the number used to
         // determine how plane-like the image is at this voxel location.)
-        //
+
+        // REMOVE THIS CRUFT
+        //  THE FOLLOWING METRIC PERFORMS EXTREMELY POORLY.  DON'T USE:
         // The score_ratio variable is the score used in Eq(5) of
         // Martinez-Sanchez++Fernandez_JStructBiol2013
-        float score_ratio;
-        if (grad_sqd > 0.0) {
+        //float score_ratio;
+        //if (grad_sqd > 0.0) {
+        //  score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
+        //                 / grad_sqd);
+        //  score_ratio *= score_ratio;
+        //}
+        //else
+        //  score_ratio = HUGE_VALF;
+        //score_ratio = ((std::max(lambda1,0.0f) - std::max(lambda2, 0.0f))
+        //               / (std::max(lambda1,0.0f)));
+        //score_ratio *= score_ratio;
 
-          score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
-                         //       );
-                           /
-                        //   (grad_sqd/(sigma*sigma)));  <- not needed
-                        grad_sqd);
-          // (The factor of sigma*sigma no longer needs to be added to insure 
-          //  the result is dimensionless <==> independent of image resolution.
-          //  This is because earlier I absorbed the factof of "sigma" into the
-          //  derivative used to calculate the gradient and hessian.  See:
-          //  Lindeberg 1993 "On Scale Selection for Differential Operators")
-          score_ratio *= score_ratio;
-        }
-        else
-          score_ratio = HUGE_VALF;
+        
+        // I decided to try the "Ngamma_norm" metric proposed on p.26 of
+        // Lindeberg Int.J.ComputVis.1998,
+        // "Edge and ridge detection with automatic scale selection"
+        float Nnorm = lambda1*lambda1 - lambda2*lambda2;
+        Nnorm *= Nnorm;
+        float score = Nnorm;
+
+        //alternative scoring method I might eventually try (sketch only)
+        //peak_height = aaafSmoothed[iz][iy][ix] - aaafBackground[iz][iy][ix];
+        //float score = peak_height * Nnorm; // * sgn(lambda1);
 
         float gradient_along_v1 = DotProduct3(grad, eivects[0]);
         float distance_to_ridge;
@@ -2978,7 +2986,7 @@ HandleRidgeDetectorPlanar(Settings settings,
 
         //if (distance_to_ridge < settings.ridge_detector_search_width * 0.5)
         //if (ridge_located_in_same_voxel)
-          tomo_out.aaafI[iz][iy][ix] = score_ratio * sgn(lambda1);
+          tomo_out.aaafI[iz][iy][ix] = score;
         //else
         //  tomo_out.aaafI[iz][iy][ix] = 0.0;
       }
