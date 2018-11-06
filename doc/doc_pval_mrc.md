@@ -44,7 +44,8 @@ The **pval_mrc** program does the following:
    If you use the "*-w 1*" argument, these numbers will be in units of voxels
    and will be positive integers.)
 * an **image file** (containing the image from which the objects were detected,
-   specified using the "*-in*" argument)
+  specified using the "*-in*" argument). Alternatively, you can specify the size
+  of the image (using the "*-image-size*" argument) without specifying a file.
 * a **resolution, δ**.
   This is the resolution at which you want to calculate the density.
   (It is specified with the
