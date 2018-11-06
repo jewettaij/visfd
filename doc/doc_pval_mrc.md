@@ -53,7 +53,7 @@ The **pval_mrc** program does the following:
    and it typically has units of Angstroms.  We denote it using "δ" below.)
    
 * Optionally, you can also supply
-  a **mask file** countaining another image.  
+  a **mask file** countaining another image of the same size.
   Any voxels in *this* image with brightness 0 correspond to 
   regions of space that you wish to *ignore* from the original image.
   (These voxels typically lie outside the region of interest.
