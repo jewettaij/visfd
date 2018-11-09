@@ -42,7 +42,7 @@ The **pval_mrc** program does the following:
    (See the docs for "[filter_mrc](./doc_filter_mrc.md)" for details.
    *Note:* These coordinates are in physical units by default.
    If you use the "*-w 1*" argument, these numbers will be in units of voxels
-   and will be positive integers.)
+   and will typically be positive integers.)
 * an **image file** (containing the image from which the objects were detected,
   specified using the "*-in*" argument). Alternatively, you can specify the size
   of the image (using the "*-image-size*" argument) without specifying a file.
@@ -247,7 +247,7 @@ All other voxels will be ignored during filtering.
 
 Note: The **-w**, **-in**, **-out**, **-mask**, and **-mask-select** arguments
 are shared with the *filter_mrc* program
-and are explained in more detail [here](./doc_filter_mrc.md).
+and are also explained [here](./doc_filter_mrc.md).
 
 
 ## Details:

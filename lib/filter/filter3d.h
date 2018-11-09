@@ -3385,5 +3385,4 @@ CalcInertiaTensor3D(int const image_size[3], //!< source image size
 
 
 
-
 #endif //#ifndef _FILTER3D_H

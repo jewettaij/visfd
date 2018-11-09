@@ -1570,6 +1570,31 @@ Settings::ParseArgs(vector<string>& vArgs)
         width_a[0] = stof(vArgs[i+1]);
         width_a[1] = width_a[0];
         width_a[2] = width_a[0];
+        width_b[0] = 0.0;
+        width_b[1] = 0.0;
+        width_b[2] = 0.0;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number: the width\n"
+                       "       (σ) of the Gaussian used beforehand for smoothing (in physical units).\n"
+                       "       (This selects the scale or resolution of the filter.)\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if ((vArgs[i] == "-planar-background") ||
+             (vArgs[i] == "-plane-background") ||
+             (vArgs[i] == "-membrane-background"))
+    {
+      filter_type = RIDGE_PLANAR;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        width_b[0] = stof(vArgs[i+1]);
+        width_b[1] = width_b[0];
+        width_b[2] = width_b[0];
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 

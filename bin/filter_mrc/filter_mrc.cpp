@@ -2893,6 +2893,33 @@ HandleRidgeDetectorPlanar(Settings settings,
     settings.filter_truncate_ratio = sqrt(-2*log(settings.filter_truncate_threshold));
   }
 
+  MrcSimple tomo_background;
+  bool subtract_background = (settings.width_b[0] > 0.0);
+  if (subtract_background) {
+    tomo_background = tomo_in;
+    int truncate_halfwidth = floor(settings.width_b[0] *
+                                   settings.filter_truncate_ratio);
+    ApplyGauss3D(tomo_in.header.nvoxels,
+                 tomo_in.aaafI,
+                 tomo_background.aaafI,
+                 mask.aaafI,
+                 settings.width_b[0],
+                 truncate_halfwidth,
+                 true,
+                 &cerr);
+
+    truncate_halfwidth = floor(settings.width_a[0] *
+                               settings.filter_truncate_ratio);
+    ApplyGauss3D(tomo_in.header.nvoxels,
+                 tomo_in.aaafI,
+                 tomo_out.aaafI,
+                 mask.aaafI,
+                 settings.width_a[0],
+                 truncate_halfwidth,
+                 true,
+                 &cerr);
+  }
+
   CalcHessian3D(tomo_in.header.nvoxels,
                 tomo_in.aaafI,
                 &c_hessian,
@@ -2913,6 +2940,8 @@ HandleRidgeDetectorPlanar(Settings settings,
 
         if (! c_hessian.aaaafI[iz][iy][ix]) //ignore voxels that are either
           continue;                         //in the mask or on the boundary
+
+        float score;
 
         float lambda1 = c_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
         float lambda2 = c_hessian.aaaafI[iz][iy][ix][1];
@@ -2943,8 +2972,8 @@ HandleRidgeDetectorPlanar(Settings settings,
         // determine how plane-like the image is at this voxel location.)
 
         // REMOVE THIS CRUFT
-        //  THE FOLLOWING METRIC PERFORMS EXTREMELY POORLY.  DON'T USE:
-        // The score_ratio variable is the score used in Eq(5) of
+        //  THE "score_ratio" METRIC PERFORMS EXTREMELY POORLY.  DON'T USE IT:
+        // The "score_ratio" variable is the score function used in Eq(5) of
         // Martinez-Sanchez++Fernandez_JStructBiol2013
         //float score_ratio;
         //if (grad_sqd > 0.0) {
@@ -2958,17 +2987,28 @@ HandleRidgeDetectorPlanar(Settings settings,
         //               / (std::max(lambda1,0.0f)));
         //score_ratio *= score_ratio;
 
+
+        // REMOVE THIS CRUFT:
+        // The following "linear" metric produces interesting results, but
+        // the resulting membrane structures that are detected are not well
+        // separated from the huge amount of background noise.  DON'T USE:
+        //float Linear_norm = lambda1 - lambda2;
+        //score = Linear_norm / grad_sqd;
         
         // I decided to try the "Ngamma_norm" metric proposed on p.26 of
         // Lindeberg Int.J.ComputVis.1998,
         // "Edge and ridge detection with automatic scale selection"
         float Nnorm = lambda1*lambda1 - lambda2*lambda2;
         Nnorm *= Nnorm;
-        float score = Nnorm;
+        score = Nnorm;
 
-        //alternative scoring method I might eventually try (sketch only)
-        //peak_height = aaafSmoothed[iz][iy][ix] - aaafBackground[iz][iy][ix];
-        //float score = peak_height * Nnorm; // * sgn(lambda1);
+        // Additionally, you can weight whatever Hessian score metric you
+        // are using by height of the peak.  (shallow peaks get a lower score)
+        if (subtract_background) {
+          float peak_height = (tomo_out.aaafI[iz][iy][ix] -
+                               tomo_background.aaafI[iz][iy][ix]);
+          score = peak_height * score;
+        }
 
         float gradient_along_v1 = DotProduct3(grad, eivects[0]);
         float distance_to_ridge;
