@@ -30,8 +30,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc.cpp");
-string g_version_string("0.9.2");
-string g_date_string("2018-11-06");
+string g_version_string("0.9.3");
+string g_date_string("2018-11-08");
 
 
 
@@ -2971,20 +2971,13 @@ HandleRidgeDetectorPlanar(Settings settings,
         // Now compute the "score". (The score is the number used to
         // determine how plane-like the image is at this voxel location.)
 
+
         // REMOVE THIS CRUFT
-        //  THE "score_ratio" METRIC PERFORMS EXTREMELY POORLY.  DON'T USE IT:
         // The "score_ratio" variable is the score function used in Eq(5) of
-        // Martinez-Sanchez++Fernandez_JStructBiol2013
+        // Martinez-Sanchez++Fernandez_JStructBiol2011.  IT PERFORMS POORLY.
         //float score_ratio;
-        //if (grad_sqd > 0.0) {
-        //  score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
-        //                 / grad_sqd);
-        //  score_ratio *= score_ratio;
-        //}
-        //else
-        //  score_ratio = HUGE_VALF;
-        //score_ratio = ((std::max(lambda1,0.0f) - std::max(lambda2, 0.0f))
-        //               / (std::max(lambda1,0.0f)));
+        //score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
+        //               / grad_sqd);
         //score_ratio *= score_ratio;
 
 

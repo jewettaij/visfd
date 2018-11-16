@@ -135,12 +135,12 @@ The user has the option to discard poor scoring minima or maxima,
 or minima and maxima which are too close together.
 
 
-The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Unfortunately, the computation is slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
+The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
 
 
-The "**-dog**"" filter uses a (band-pass)
+The "**-dog**"" filter uses a
 [Difference-Of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
-filter which can be used as a frequency band-pass filter (for both high and low frequency removal).
+filter which can be used as a frequency band-pass filter (for high and/or low frequency removal).
 (The "**-dog-aniso**" filter allows you to modify the properties of the filter in the X,Y,Z directions.  Filter sharpness can be customized using the "-exponents" argument.)
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
