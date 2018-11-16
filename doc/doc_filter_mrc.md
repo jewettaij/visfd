@@ -117,7 +117,7 @@ using command line arguments.
 The "**-invert**" filter exchanges bright and dark voxels (while keeping the average voxel intensity and standard deviation the same).
 
 
-The "**-thresh**", "**-thresh2**", "**-thresh4**",
+The "**-thresh**", "**-thresh2**", "**-thresh4**", and "**-clip**"
 filters are used to clip and rescale voxel intensities,
 or to select voxels whose intensities lie within in a certain range.
 
