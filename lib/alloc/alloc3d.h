@@ -11,7 +11,8 @@
 template<class Entry, class Integer>
 void Alloc3D(Integer const size[3], 
              Entry **paX,       // <--pointer to 1-D contiguous-memory array
-             Entry ****paaaX) { // <--pointer to 3-D multidimensional array
+             Entry ****paaaX)   // <--pointer to 3-D multidimensional array
+{
   if (! paX)
     return;
 

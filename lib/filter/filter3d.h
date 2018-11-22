@@ -31,13 +31,12 @@ using namespace std;
 template<class RealNum, class Integer>
 
 class Filter3D {
+
 public:
   RealNum *afH;         //!< contiguous block of memory storing the filter array
   RealNum ***aaafH;     //!< the same array which can be indexed using [i][j][k] notation
   Integer halfwidth[3]; //!< num pixels from filter center to edge in x,y,z directions
   Integer array_size[3]; //!<size of the array in x,y,z directions (2*halfwidth+1)
-
- public:
 
   /// @brief  Apply the filter to a 3D image (aaafSource[][][]).
   /// Save the results in the "aafDest" array.  (A "mask" is optional.)
@@ -96,9 +95,9 @@ public:
           pReportProgress);
 
     if (normalize) {
-      for (int iz=0; iz < size_source[2]; iz++)
-        for (int iy=0; iy < size_source[1]; iy++)
-          for (int ix=0; ix < size_source[0]; ix++)
+      for (Integer iz=0; iz < size_source[2]; iz++)
+        for (Integer iy=0; iy < size_source[1]; iy++)
+          for (Integer ix=0; ix < size_source[0]; ix++)
             if (aaafDenominator[iz][iy][ix] > 0.0)
               aaafDest[iz][iy][ix] /= aaafDenominator[iz][iy][ix];
       Dealloc3D(size_source, &afDenominator, &aaafDenominator);
@@ -205,9 +204,9 @@ public:
   inline Filter3D(const Filter3D<RealNum, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH and aaafH
-    //for(Int iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-    //  for(Int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-    //    for(Int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+    //for(Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+    //  for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+    //    for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
     //      aaafH[iz][iy][ix] = source.aaafH[iz][iy][ix];
     // -- Use memcpy() instead: --
     //memcpy(afH,
@@ -341,17 +340,17 @@ public:
     RealNum denominator = 0.0;
 
     for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
-      int iz_jz = iz-jz;
+      Integer iz_jz = iz-jz;
       if ((iz_jz < 0) || (size_source[2] <= iz_jz))
         continue;
 
       for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
-        int iy_jy = iy-jy;
+        Integer iy_jy = iy-jy;
         if ((iy_jy < 0) || (size_source[1] <= iy_jy))
           continue;
 
         for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
-          int ix_jx = ix-jx;
+          Integer ix_jx = ix-jx;
           if ((ix_jx < 0) || (size_source[0] <= ix_jx))
             continue;
 
@@ -359,6 +358,8 @@ public:
 
           if (aaafMask)
             filter_val *= aaafMask[iz_jz][iy_jy][ix_jx];
+            if (filter_val == 0.0)
+              continue;
             //Note: The "filter_val" also is needed to calculate
             //      the denominator used in normalization.
             //      It is unusual to use a mask unless you intend
@@ -391,16 +392,16 @@ public:
       array_size[d] = 1 + 2*halfwidth[d];
     }
     Alloc3D(array_size, &afH, &aaafH);
-    for (int iz = 0; iz < array_size[2]; iz++)
-      for (int iy = 0; iy < array_size[1]; iy++)
-        for (int ix = 0; ix < array_size[0]; ix++)
+    for (Integer iz = 0; iz < array_size[2]; iz++)
+      for (Integer iy = 0; iy < array_size[1]; iy++)
+        for (Integer ix = 0; ix < array_size[0]; ix++)
           aaafH[iz][iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
 
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
     aaafH += halfwidth[2];
-    for (int iz = 0; iz < array_size[2]; iz++) {
+    for (Integer iz = 0; iz < array_size[2]; iz++) {
       aaafH[iz] += halfwidth[1];
-      for (int iy = 0; iy < array_size[1]; iy++) {
+      for (Integer iy = 0; iy < array_size[1]; iy++) {
         aaafH[iz][iy] += halfwidth[0];
       }
     }
@@ -416,9 +417,9 @@ public:
     }
     //shift pointers back to normal
     aaafH -= halfwidth[2];
-    for (int iz = 0; iz < array_size[2]; iz++) {
+    for (Integer iz = 0; iz < array_size[2]; iz++) {
       aaafH[iz] -= halfwidth[1];
-      for (int iy = 0; iy < array_size[1]; iy++) {
+      for (Integer iy = 0; iy < array_size[1]; iy++) {
         aaafH[iz][iy] -= halfwidth[0];
       }
     }
@@ -476,17 +477,17 @@ private:
       RealNum denominator = 0.0;
 
       for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
-      int iz_jz = iz-jz;
+      Integer iz_jz = iz-jz;
       if ((iz_jz < 0) || (size_source[2] <= iz_jz))
         continue;
 
       for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
-        int iy_jy = iy-jy;
+        Integer iy_jy = iy-jy;
         if ((iy_jy < 0) || (size_source[1] <= iy_jy))
           continue;
 
         for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
-          int ix_jx = ix-jx;
+          Integer ix_jx = ix-jx;
           if ((ix_jx < 0) || (size_source[0] <= ix_jx))
             continue;
 
@@ -590,7 +591,7 @@ private:
 
   #endif //#ifndef DISABLE_TEMPLATE_MATCHING
 
-}; // class Filter
+}; // class Filter3D
 
 
 

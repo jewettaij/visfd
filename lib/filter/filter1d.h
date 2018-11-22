@@ -89,7 +89,7 @@ public:
       }
       RealNum g = 0.0;
       for (Integer j=-halfwidth; j<=halfwidth; j++) {
-        int i_j = i-j;
+        Integer i_j = i-j;
         if ((i_j < 0) || (size_source <= i_j))
           continue;
         g += afH[j] * afSource[i_j];
@@ -151,7 +151,7 @@ public:
           afDenominator);
 
     if (normalize) {
-      for (int i=0; i < size_source; i++)
+      for (Integer i=0; i < size_source; i++)
         if (afDenominator[i] > 0.0)
           afDest[i] /= afDenominator[i];
       delete [] afDenominator;
@@ -257,7 +257,7 @@ public:
 
       for (Integer j=-halfwidth; j<=halfwidth; j++) {
 
-        int i_j = i-j;
+        Integer i_j = i-j;
 
         if ((i_j < 0) || (size_source <= i_j))
           continue;
@@ -308,7 +308,7 @@ public:
     halfwidth = set_halfwidth;
     array_size = 1 + 2*halfwidth;
     afH = new RealNum [array_size];
-    for (int i = 0; i < array_size; i++)
+    for (Integer i = 0; i < array_size; i++)
       afH[i] = -1.0e38; //(if uninitiliazed memory read, we will know)
 
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
@@ -347,7 +347,7 @@ public:
   inline Filter1D(const Filter1D<RealNum, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH
-    //for(Int i=-halfwidth; i<=halfwidth; i++)
+    //for(Integer i=-halfwidth; i<=halfwidth; i++)
     //  afH[i] = source.afH[i];
     // -- Use memcpy() instead: --
     //memcpy(afH,

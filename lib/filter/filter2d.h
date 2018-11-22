@@ -76,8 +76,8 @@ public:
           aafDenominator);
 
     if (normalize) {
-      for (int iy=0; iy < size_source[1]; iy++)
-        for (int ix=0; ix < size_source[0]; ix++)
+      for (Integer iy=0; iy < size_source[1]; iy++)
+        for (Integer ix=0; ix < size_source[0]; ix++)
           if (aafDenominator[iy][ix] > 0.0)
             aafDest[iy][ix] /= aafDenominator[iy][ix];
       Dealloc2D(size_source, &afDenominator, &aafDenominator);
@@ -155,13 +155,13 @@ public:
 
         for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
 
-          int iy_jy = iy-jy;
+          Integer iy_jy = iy-jy;
           if ((iy_jy < 0) || (size_source[1] <= iy_jy))
             continue;
 
           for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
 
-            int ix_jx = ix-jx;
+            Integer ix_jx = ix-jx;
             if ((ix_jx < 0) || (size_source[0] <= ix_jx))
               continue;
 
@@ -212,13 +212,13 @@ public:
       array_size[d] = 1 + 2*halfwidth[d];
     }
     Alloc2D(array_size, &afH, &aafH);
-    for (int iy = 0; iy < array_size[1]; iy++)
-      for (int ix = 0; ix < array_size[0]; ix++)
+    for (Integer iy = 0; iy < array_size[1]; iy++)
+      for (Integer ix = 0; ix < array_size[0]; ix++)
         aafH[iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
 
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
     aafH += halfwidth[1];
-    for (int iy = 0; iy < array_size[1]; iy++)
+    for (Integer iy = 0; iy < array_size[1]; iy++)
       aafH[iy] += halfwidth[0];
   }
 
@@ -231,7 +231,7 @@ public:
     }
     //shift pointers back to normal
     aafH -= halfwidth[1];
-    for (int iy = 0; iy < array_size[1]; iy++)
+    for (Integer iy = 0; iy < array_size[1]; iy++)
       aafH[iy] -= halfwidth[0];
     //then deallocate
     Dealloc2D(array_size, &afH, &aafH);
@@ -258,8 +258,8 @@ public:
   inline Filter2D(const Filter2D<RealNum, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH and aafH
-    //for(Int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-    //  for(Int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+    //for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+    //  for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
     //    aafH[iy][ix] = source.aafH[iy][ix];
     // -- Use memcpy() instead: --
     //memcpy(afH,
