@@ -20,7 +20,7 @@ public:
   void SetSigma(RealNum sigma, RealNum filter_cutoff_ratio=2.5)
   {
     RealNum sigmas[3] = {sigma, sigma, sigma};
-    // Precompute the Gaussian as a function of r, store in aaafH
+    // Precompute the Gaussian as a function of r, store in ::aaafH
     // ("GenFilterGenGauss3D()" is defined in filter3d.h)
     *(static_cast<Filter3D*>(this)) =
       GenFilterGenGauss3D(sigmas, 2, filter_cutoff_ratio);
@@ -43,6 +43,7 @@ public:
                       RealNum const *const *const *aaa3fSource[3], //!< vector associated with each voxel
                       RealNum ***aaa33fDest[3][3], //!< votes will be collected here
                       RealNum const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+                      bool detect_curves_not_surfaces = false,
                       RealNum *pDenominator = NULL) const
 
   {
@@ -80,34 +81,75 @@ public:
             filter_val * aaafSource[iz_jz][iy_jy][ix_jx];
 
           RealNum const *r = aaaf3Displacement[iz_jz][iy_jy][ix_jx];
-          RealNum const *normal = aaa3fSource[jz][jy][jx];
+          RealNum const *n = aaa3fSource[jz][jy][jx];
 
-          Real costheta = DotProduct3(r, normal);
-          Real cos2 = costheta * costheta;
-          Real decay_function = radial_contribution
+          //
+          //   .
+          //   :\
+          //   : \
+          // ->:  \<- theta
+          //   :   \
+          //   :    \ 
+          //   :     \
+          //   :      \
+          //   :       \  
+          //   ^        \
+          //   |         \ 
+          // n |          \
+          //   |        .-' r
+          //   |,,..--''
+          //  0
+          //
+          // "n" = the direction of the stick tensor.  If the object being 
+          //       detected is a surface, n is perpendicular to that surface.
+          //       If the object is a curve, then n points tangent to the curve.
+          // "r" = the position of the vote receiver relative to the voter
+          //
+          // "theta" = the angle of r relative to the plane perpendicular to n.
+          //           (NOT the angle of r relative to n.  This is a confusing
+          //            convention, but this is how it is normally defined.)
+          
+          RealNum sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
+          RealNum sinx2 = sintheta * 2.0;
+          RealNum sin2 = costheta * costheta;
+          RealNum cos2 = 1.0 - sin2;
+          RealNum angle_depencece2 = cos2;
+          if (detect_curves_not_surfaces) {
+            // If we are detecting 1-dimensional curves (polymers, etc...)
+            // instead of 2-dimensional surfaces (membranes, ...)
+            // then the stick direction is assumed to be along the 
+            // of the curve, (as opposed to perpendicular to the 2D surface).
+            // As such
+            angle_dependence2 = sin2;
+          }
+          RealNum decay_function = radial_contribution;
           switch(n) {
           case 2:
-            decay_function *= cos2;
+            decay_function *= angle_dependence2;
             break;
           case 4:
-            decay_function *= cos2 * cos2;
+            decay_function *= angle_dependence2 * angle_dependence2;
             break;
           case:
-            decay_function *= pow(costheta, n);
+            //RealNum angle_dependence = sqrt(angle_dependence2);
+            decay_function *= pow(angle_dependence2, 0.5*n);
             break;
           }
 
-          RealNum normal_rotated[3];
-          RealNum cosx2 = costheta * 2.0;
-          for (Integer d=0; d<3; d++)
-            normal_rotated[d] = normal[d] - cosx2*r[d];
+          RealNum n_rotated[3];
+          for (Integer d=0; d<3; d++) {
+            if (detect_curves_not_surfaces)
+              n_rotated[d] = n[d] - sinx2*r[d];
+            else
+              n_rotated[d] = sinx2*r[d] - n[d]
+          }
 
           RealNum tensor_vote[3][3];
           for (Integer di=0; di<3; di++) {
             for (Integer dj=0; dj<3; dj++) {
               if (di <= dj) {
                 tensor_vote[di][dj] = (decay_function *
-                                       normal_rotated[d1] * normal_rotated[d2]);
+                                       n_rotated[d1] * n_rotated[d2]);
                 aaa33fDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
               }
             }
@@ -141,6 +183,7 @@ public:
                     RealNum sigma,  //!< Gaussian width of influence
                     Integer exponent, //!< angle dependence
                     RealNum truncate_ratio=2.5,  //!< how many sigma before truncating?
+                    bool detect_curves_not_surfaces = false,
                     ostream *pReportProgress = NULL  //!< print progress to the user?
                     )
   {
