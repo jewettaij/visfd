@@ -10,12 +10,12 @@ using namespace std;
 
 
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 
 class Filter2D {
 public:
-  RealNum *afH;
-  RealNum **aafH;
+  Scalar *afH;
+  Scalar **aafH;
   Integer halfwidth[2]; //num pixels from filter center to edge in x,y directions
   Integer array_size[2]; //size of the array in x,y directions (in voxels)
 
@@ -59,13 +59,13 @@ public:
   ///  not complete because some entries lie outside the mask or the boundary.)
 
   void Apply(Integer const size_source[2],
-             RealNum const *const *aafSource,
-             RealNum **aafDest,
-             RealNum const *const *aafMask = NULL,
+             Scalar const *const *aafSource,
+             Scalar **aafDest,
+             Scalar const *const *aafMask = NULL,
              bool normalize = false) const
   {
-    RealNum *afDenominator = NULL;
-    RealNum **aafDenominator = NULL;
+    Scalar *afDenominator = NULL;
+    Scalar **aafDenominator = NULL;
     if (normalize)
       Alloc2D(size_source, &afDenominator, &aafDenominator);
 
@@ -133,10 +133,10 @@ public:
   /// @param aafDenominator[][] will store d[i] if you supply a non-NULL pointer
 
   void Apply(Integer const size_source[2],
-             RealNum const *const *aafSource,
-             RealNum **aafDest,
-             RealNum const *const *aafMask = NULL,
-             RealNum **aafDenominator = NULL) const
+             Scalar const *const *aafSource,
+             Scalar **aafDest,
+             Scalar const *const *aafMask = NULL,
+             Scalar **aafDenominator = NULL) const
              //bool precompute_mask_times_source = true) const
   {
 
@@ -150,8 +150,8 @@ public:
           continue;
         }
           
-        RealNum g = 0.0;
-        RealNum denominator = 0.0;
+        Scalar g = 0.0;
+        Scalar denominator = 0.0;
 
         for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
 
@@ -165,7 +165,7 @@ public:
             if ((ix_jx < 0) || (size_source[0] <= ix_jx))
               continue;
 
-            RealNum filter_val = aafH[jy][jx];
+            Scalar filter_val = aafH[jy][jx];
 
             if (aafMask)
               filter_val *= aafMask[iy_jy][ix_jx];
@@ -174,7 +174,7 @@ public:
               //      It is unusual to use a mask unless you intend
               //      to normalize the result later, but I don't enforce this
 
-            RealNum delta_g = 
+            Scalar delta_g = 
               filter_val * aafSource[iy_jy][ix_jx];
 
             g += delta_g;
@@ -195,7 +195,7 @@ public:
 
   void Normalize() {
     // Make sure the sum of the filter weights is 1
-    RealNum total = 0.0;
+    Scalar total = 0.0;
     for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
       for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
         total += aafH[iy][ix];
@@ -255,7 +255,7 @@ public:
   }
 
 
-  inline Filter2D(const Filter2D<RealNum, Integer>& source) {
+  inline Filter2D(const Filter2D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH and aafH
     //for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
@@ -265,7 +265,7 @@ public:
     //memcpy(afH,
     //       source.afH,
     //       (array_size[0] * array_size[1])
-    //       *sizeof(RealNum));
+    //       *sizeof(Scalar));
     // -- Use std:copy() instead: --
     std::copy(source.afH,
               source.afH + (array_size[0] * array_size[1]),
@@ -297,7 +297,7 @@ public:
   }
 
 
-  inline void swap(Filter2D<RealNum, Integer> &other) {
+  inline void swap(Filter2D<Scalar, Integer> &other) {
     std::swap(afH, other.afH);
     std::swap(aafH, other.aafH);
     std::swap(halfwidth, other.halfwidth);
@@ -305,8 +305,8 @@ public:
   }
 
 
-  inline Filter2D<RealNum, Integer>&
-    operator = (Filter2D<RealNum, Integer> source) {
+  inline Filter2D<Scalar, Integer>&
+    operator = (Filter2D<Scalar, Integer> source) {
     this->swap(source);
     return *this;
   }
@@ -317,33 +317,33 @@ public:
 
 
 
-template<class RealNum>
+template<class Scalar>
 // Create a 2D filter and fill it with a "generalized Gaussian" function:
 //    h_xy(r) = A*exp(-r^m)
 // where   r  = sqrt((x/σ_x)^2 + (y/σ_y)^2)
 //   and   A  is determined by normalization of the discrete sum
 // Note: "A" is equal to the value stored in the middle of the array,
 //       The caller can determine what "A" is by looking at this value.
-Filter2D<RealNum, int>
-GenFilterGenGauss2D(RealNum width[2],    //"σ_x", "σ_y" parameters
-                    RealNum m_exp,       //"m" exponent parameter
+Filter2D<Scalar, int>
+GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
+                    Scalar m_exp,       //"m" exponent parameter
                     int halfwidth[2],
-                    RealNum *pA=NULL,    //optional:report A coeff to user
+                    Scalar *pA=NULL,    //optional:report A coeff to user
                     ostream *pReportProgress = NULL)
 {
-  RealNum window_threshold = 1.0;
+  Scalar window_threshold = 1.0;
   for (int d=0; d<2; d++) {
-    RealNum h = ((width[d]>0) ? exp(-pow(halfwidth[d]/width[d], m_exp)) : 1.0);
+    Scalar h = ((width[d]>0) ? exp(-pow(halfwidth[d]/width[d], m_exp)) : 1.0);
     if (h < window_threshold)
       window_threshold = h;
   }
 
-  Filter2D<RealNum, int> filter(halfwidth);
-  RealNum total = 0;
+  Filter2D<Scalar, int> filter(halfwidth);
+  Scalar total = 0;
   for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
     for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
-      RealNum r = sqrt(SQR(ix/width[0]) + SQR(iy/width[1]));
-      RealNum h = ((r>0) ? exp(-pow(r, m_exp)) : 1.0);
+      Scalar r = sqrt(SQR(ix/width[0]) + SQR(iy/width[1]));
+      Scalar h = ((r>0) ? exp(-pow(r, m_exp)) : 1.0);
       if (ABS(h) < window_threshold)
         h = 0.0; // this eliminates corner entries which fall below threshold
                  // (and eliminates anisotropic artifacts due to these corners)
@@ -375,12 +375,12 @@ GenFilterGenGauss2D(RealNum width[2],    //"σ_x", "σ_y" parameters
 
 
 
-template<class RealNum>
-Filter2D<RealNum, int>
-GenFilterGenGauss2D(RealNum width[2],            //"s_x", "s_y" parameters
-                    RealNum m_exp,               //"m" parameter in formula
-                    RealNum filter_cutoff_ratio,
-                    RealNum *pA=NULL,    //optional:report A coeff to user
+template<class Scalar>
+Filter2D<Scalar, int>
+GenFilterGenGauss2D(Scalar width[2],            //"s_x", "s_y" parameters
+                    Scalar m_exp,               //"m" parameter in formula
+                    Scalar filter_cutoff_ratio,
+                    Scalar *pA=NULL,    //optional:report A coeff to user
                     ostream *pReportProgress = NULL)
 {
   // choose the width of the filter window based on the filter_cutoff_ratio
@@ -401,24 +401,24 @@ GenFilterGenGauss2D(RealNum width[2],            //"s_x", "s_y" parameters
 
 
 
-template<class RealNum>
+template<class Scalar>
 // Create a 2D filter and fill it with a difference of (generalized) Gaussians:
 // This version requires that the caller has already created individual
 // filters for the two gaussians.
 // All this function does is subtract one filter from the other (and rescale).
-Filter2D<RealNum, int> 
-_GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
-                 RealNum width_b[2],  //"b" parameter in formula
-                 RealNum m_exp,  //"m" parameter in formula
-                 RealNum n_exp,  //"n" parameter in formula
-                 Filter2D<RealNum, int>& filterXY_A, //filters for the two
-                 Filter2D<RealNum, int>& filterXY_B, //gaussians
-                 RealNum *pA=NULL, //optional:report A,B coeffs to user
-                 RealNum *pB=NULL, //optional:report A,B coeffs to user
+Filter2D<Scalar, int> 
+_GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
+                 Scalar width_b[2],  //"b" parameter in formula
+                 Scalar m_exp,  //"m" parameter in formula
+                 Scalar n_exp,  //"n" parameter in formula
+                 Filter2D<Scalar, int>& filterXY_A, //filters for the two
+                 Filter2D<Scalar, int>& filterXY_B, //gaussians
+                 Scalar *pA=NULL, //optional:report A,B coeffs to user
+                 Scalar *pB=NULL, //optional:report A,B coeffs to user
                  ostream *pReportProgress = NULL)
 {
 
-  RealNum A, B;
+  Scalar A, B;
   //A, B = height of the central peak
   A = filterXY_A.aafH[0][0];
   B = filterXY_B.aafH[0][0];
@@ -428,7 +428,7 @@ _GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
   int halfwidth[2];
   halfwidth[0] = MAX(filterXY_A.halfwidth[0], filterXY_B.halfwidth[0]);
   halfwidth[1] = MAX(filterXY_A.halfwidth[1], filterXY_B.halfwidth[1]);
-  Filter2D<RealNum, int> filter(halfwidth);
+  Filter2D<Scalar, int> filter(halfwidth);
 
   if (pReportProgress)
     *pReportProgress  << "Array of 2D filter entries:" << endl;
@@ -483,25 +483,25 @@ _GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
 
 
 
-template<class RealNum>
+template<class Scalar>
 // Create a 2D filter and fill it with a difference of (generalized) Gaussians:
-Filter2D<RealNum, int> 
-GenFilterDogg2D(RealNum width_a[2],  //"a" parameter in formula
-                RealNum width_b[2],  //"b" parameter in formula
-                RealNum m_exp,       //"m" parameter in formula
-                RealNum n_exp,       //"n" parameter in formula
+Filter2D<Scalar, int> 
+GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
+                Scalar width_b[2],  //"b" parameter in formula
+                Scalar m_exp,       //"m" parameter in formula
+                Scalar n_exp,       //"n" parameter in formula
                 int halfwidth[2],
-                RealNum *pA = NULL,  //optional:report A,B coeffs to user
-                RealNum *pB = NULL,  //optional:report A,B coeffs to user
+                Scalar *pA = NULL,  //optional:report A,B coeffs to user
+                Scalar *pB = NULL,  //optional:report A,B coeffs to user
                 ostream *pReportProgress = NULL)
 {
-  Filter2D<RealNum, int> filterXY_A =
+  Filter2D<Scalar, int> filterXY_A =
     GenFilterGenGauss2D(width_a,      //"a_x", "a_y" gaussian width parameters
                         m_exp,        //"n" exponent parameter
                         halfwidth);
                         //pReportProgress);
 
-  Filter2D<RealNum, int> filterXY_B =
+  Filter2D<Scalar, int> filterXY_B =
     GenFilterGenGauss2D(width_b,      //"b_x", "b_y" gaussian width parameters
                         n_exp,        //"n" exponent parameter
                         halfwidth);

@@ -144,4 +144,66 @@ static inline void Quaternion2Matrix(const RealNum q[4], RealNum M[3][3])
 
 
 
+/// @brief  A simple class for storing 3x3 symmetric arrays
+///      A symmetric 3x3 matrix contains only 6 unique numbers.
+///      To save memory, save these 6 numbers in a 3x2 matrix (instead of 3x3),
+///      and define a 1-to-1 mapping between the indices from the two matrices.
+/// @code
+/// di ∈ [0,2]
+/// dj ∈ [0,2]
+/// Di ∈ [0,1]
+/// Dj ∈ [0,2]
+/// @endcode
+
+template<class Scalar, class Integer>
+
+class SymmetricMatrix3x3 {
+public:
+  Scalar& operator()(Integer di, Integer dj)
+  {
+    assert((0 <= di < 3) && (0 <= dj < 3));
+    Integer Di, Dj;
+    MapIndices3x3_to_2x3(di, dj, Di, Dj);
+    return data[Di][Dj];
+  }
+
+private:
+  Scalar data[3][2];
+
+  // map  Di -> di   and   Dj -> dj
+  void MapIndices2x3_to_3x3(Integer Di, Integer Dj,
+                            Integer& di, Integer& dj)
+  {
+    assert((0 <= Di < 2) && (0 <= Dj < 3));
+    di = Di;
+    dj = Dj;
+    if ((Di == 1) && (Dj == 0)) {
+      di = 2;
+      dj = 2;
+    }
+  }
+
+
+  // map  di -> Di   and   dj -> Dj
+  void MapIndices3x3_to_2x3(Integer di, Integer dj,
+                            Integer& Di, Integer& Dj)
+  {
+    //assert(di <= dj);
+    if (di > dj)
+      swap(di, dj);
+    Di = di;
+    Dj = dj;
+    if (di == 2) {
+      assert(dj == 2);
+      Di = 1;
+      Dj = 0;
+    }
+  }
+
+}; //class SymmetricMatrix3x3
+
+
+
+
+
 #endif //#ifndef _LIN3_UTILS_H

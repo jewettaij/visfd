@@ -1,25 +1,26 @@
 
 
-template<class RealNum, class Integer>
+
+template<class Scalar, class Integer>
 
 
 class TV3Dslow::public Filter3D {
 
 private:
 
-  RealNum ***aaaf3Displacement[3];
-  RealNum *af3Displacement[3];
+  Scalar ***aaaf3Displacement[3];
+  Scalar *af3Displacement[3];
 
 public:
 
-  TV3Dslow():Filter3D() {
+ TV3Dslow():Filter3D() {
     af3Displacement = NULL;
     aaaf3Displacement = NULL;
   }
 
-  void SetSigma(RealNum sigma, RealNum filter_cutoff_ratio=2.5)
+  void SetSigma(Scalar sigma, Scalar filter_cutoff_ratio=2.5)
   {
-    RealNum sigmas[3] = {sigma, sigma, sigma};
+    Scalar sigmas[3] = {sigma, sigma, sigma};
     // Precompute the Gaussian as a function of r, store in ::aaafH
     // ("GenFilterGenGauss3D()" is defined in filter3d.h)
     *(static_cast<Filter3D*>(this)) =
@@ -33,22 +34,23 @@ public:
     DeallocNormalized();
   }
 
-  RealNum
+  Scalar
   TVApplyStickToVoxel(Integer ix,
                       Integer iy,
                       Integer iz,
                       Integer const size_source[3],
-                      RealNum const *const *const *aaafSource, //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
-                  //CompactMultiChannelImage3D<RealNum> *pvSource, //!< vector associated with each voxel
-                      RealNum const *const *const *aaa3fSource[3], //!< vector associated with each voxel
-                      RealNum ***aaa33fDest[3][3], //!< votes will be collected here
-                      RealNum const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+                      Scalar const *const *const *aaafSource, //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
+                  //CompactMultiChannelImage3D<Scalar> *pvSource, //!< vector associated with each voxel
+                      array<Scalar,3> const *const *const *aaa3fSource, //!< vector associated with each voxel
+                      SymmetricMatrix3x3<Scalar, Integer> aaa33fDest, //!< votes will be collected here
+                      array<array<Scalar,3>, 2> ***aaa33fDest, //!< votes will be collected here
+                      Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
                       bool detect_curves_not_surfaces = false,
-                      RealNum *pDenominator = NULL) const
+                      Scalar *pDenominator = NULL) const
 
   {
-    RealNum g = 0.0;
-    RealNum denominator = 0.0;
+    Scalar g = 0.0;
+    Scalar denominator = 0.0;
 
     for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
       Integer iz_jz = iz-jz;
@@ -65,7 +67,7 @@ public:
           if ((ix_jx < 0) || (size_source[0] <= ix_jx))
             continue;
 
-          RealNum filter_val = aaafH[jz][jy][jx];
+          Scalar filter_val = aaafH[jz][jy][jx];
 
           if (aaafMaskSource) {
             filter_val *= aaafMaskSource[iz_jz][iy_jy][ix_jx];
@@ -77,11 +79,11 @@ public:
           //      It is unusual to use a mask unless you intend
           //      to normalize the result later, but I don't enforce this
 
-          RealNum radial_contribution =
+          Scalar radial_contribution =
             filter_val * aaafSource[iz_jz][iy_jy][ix_jx];
 
-          RealNum const *r = aaaf3Displacement[iz_jz][iy_jy][ix_jx];
-          RealNum const *n = aaa3fSource[jz][jy][jx];
+          Scalar const *r = aaaf3Displacement[iz_jz][iy_jy][ix_jx];
+          Scalar const *n = aaa3fSource[jz][jy][jx];
 
           //
           //   .
@@ -109,11 +111,11 @@ public:
           //           (NOT the angle of r relative to n.  This is a confusing
           //            convention, but this is how it is normally defined.)
           
-          RealNum sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
-          RealNum sinx2 = sintheta * 2.0;
-          RealNum sin2 = costheta * costheta;
-          RealNum cos2 = 1.0 - sin2;
-          RealNum angle_depencece2 = cos2;
+          Scalar sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
+          Scalar sinx2 = sintheta * 2.0;
+          Scalar sin2 = costheta * costheta;
+          Scalar cos2 = 1.0 - sin2;
+          Scalar angle_depencece2 = cos2;
           if (detect_curves_not_surfaces) {
             // If we are detecting 1-dimensional curves (polymers, etc...)
             // instead of 2-dimensional surfaces (membranes, ...)
@@ -122,7 +124,7 @@ public:
             // As such
             angle_dependence2 = sin2;
           }
-          RealNum decay_function = radial_contribution;
+          Scalar decay_function = radial_contribution;
           switch(n) {
           case 2:
             decay_function *= angle_dependence2;
@@ -131,12 +133,12 @@ public:
             decay_function *= angle_dependence2 * angle_dependence2;
             break;
           case:
-            //RealNum angle_dependence = sqrt(angle_dependence2);
+            //Scalar angle_dependence = sqrt(angle_dependence2);
             decay_function *= pow(angle_dependence2, 0.5*n);
             break;
           }
 
-          RealNum n_rotated[3];
+          Scalar n_rotated[3];
           for (Integer d=0; d<3; d++) {
             if (detect_curves_not_surfaces)
               n_rotated[d] = n[d] - sinx2*r[d];
@@ -144,13 +146,19 @@ public:
               n_rotated[d] = sinx2*r[d] - n[d]
           }
 
-          RealNum tensor_vote[3][3];
+          Scalar tensor_vote[3][3];
           for (Integer di=0; di<3; di++) {
             for (Integer dj=0; dj<3; dj++) {
               if (di <= dj) {
                 tensor_vote[di][dj] = (decay_function *
                                        n_rotated[d1] * n_rotated[d2]);
-                aaa33fDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
+
+                // commenting out the next line to save memory:
+                //aaa33fDest[iz][iy][ix][Di][Dj] += tensor_vote[di][dj];
+
+                // Instead to save memory use this code:
+                MapIndices3x3_to_2x3(di, dj, Di, Dj);
+                aaa33fDest[iz][iy][ix][Di][Dj] += tensor_vote[di][dj];
               }
             }
           }
@@ -172,20 +180,20 @@ public:
 
 
   void
-  _TVDenseStickSlow(Integer const image_size[3], //!< source image size
-                    RealNum const *const *const *aaafSource, //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
-                  //CompactMultiChannelImage3D<RealNum> *pvSource, //!< vector associated with each voxel
-                    RealNum const *const *const *aaa3fSource[3], //!< vector associated with each voxel
-                    RealNum ***aaa33fDest[3][3], //!< votes will be collected here
-                    RealNum const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
-                    RealNum const *const *const *aaafMaskDest,  //!< don't cast votes wherever mask==0
-                    RealNum ***aaafDenominator = NULL,
-                    RealNum sigma,  //!< Gaussian width of influence
-                    Integer exponent, //!< angle dependence
-                    RealNum truncate_ratio=2.5,  //!< how many sigma before truncating?
-                    bool detect_curves_not_surfaces = false,
-                    ostream *pReportProgress = NULL  //!< print progress to the user?
-                    )
+  TVDenseStickSlow(Integer const image_size[3], //!< source image size
+                   Scalar const *const *const *aaafSource, //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
+                  //CompactMultiChannelImage3D<Scalar> *pvSource, //!< vector associated with each voxel
+                   array<Scalar,3> const *const *const *aaa3fSource, //!< vector associated with each voxel
+                   SymmetricMatrix3x3<Scalar, Integer> aaa33fDest, //!< votes will be collected here
+                   Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+                   Scalar const *const *const *aaafMaskDest,  //!< don't cast votes wherever mask==0
+                   Scalar ***aaafDenominator = NULL,
+                   Scalar sigma,  //!< Gaussian width of influence
+                   Integer exponent, //!< angle dependence
+                   Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+                   bool detect_curves_not_surfaces = false,
+                   ostream *pReportProgress = NULL  //!< print progress to the user?
+                   )
   {
     assert(aaafSource);
     assert(aaa3fSource);
@@ -237,7 +245,7 @@ public:
         }
       }
     }
-  } //_TVDenseStickSlow()
+  } //TVDenseStickSlow()
 
 private:
 
@@ -274,12 +282,12 @@ private:
     }
   }
 
-  void PrecalcNormalized(RealNum ***aaaf3Displacement[3]) {
+  void PrecalcNormalized(Scalar ***aaaf3Displacement[3]) {
     // pre-compute the normalized radius unit vector
     for (Integer iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
       for (Integer iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
         for (Integer ix = -halfwidth[0]; ix <= halfwidth[0]; ix++) {
-          RealNum length = sqrt(ix*ix + iy*iy + iz*iz);
+          Scalar length = sqrt(ix*ix + iy*iy + iz*iz);
           if (length == 0)
             length = 1.0;
           aaaf3Displacement[iz][iy][ix][0] = ix / length;

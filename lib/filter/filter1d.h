@@ -5,22 +5,22 @@
 using namespace std;
 
 
-template<class RealNum >
-inline RealNum ABS(RealNum x) { return ((x<0.0) ? -x: x); }
+template<class Scalar >
+inline Scalar ABS(Scalar x) { return ((x<0.0) ? -x: x); }
 
-template<class RealNum >
-inline RealNum SQR(RealNum x) { return x*x; }
+template<class Scalar >
+inline Scalar SQR(Scalar x) { return x*x; }
 
-template<class RealNum >
-inline RealNum MAX(RealNum x, RealNum y) { return ((x<y) ? y : x); }
+template<class Scalar >
+inline Scalar MAX(Scalar x, Scalar y) { return ((x<y) ? y : x); }
 
 
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 
 class Filter1D {
 public:
-  RealNum *afH;
+  Scalar *afH;
   Integer halfwidth; //distance from the filter center to its edge, in pixels
   Integer array_size; //size of the array in x,y directions (in voxels)
 
@@ -40,8 +40,8 @@ public:
   ///  only adds a small amount of overhead when filtering non-sparse arrays.)
 
   void Apply(Integer const size_source, 
-             RealNum const *afSource,
-             RealNum *afDest)
+             Scalar const *afSource,
+             Scalar *afDest)
   {
     assert(afDest != afSource);
 
@@ -87,7 +87,7 @@ public:
         afDest[i] = 0.0;
         continue;
       }
-      RealNum g = 0.0;
+      Scalar g = 0.0;
       for (Integer j=-halfwidth; j<=halfwidth; j++) {
         Integer i_j = i-j;
         if ((i_j < 0) || (size_source <= i_j))
@@ -135,14 +135,14 @@ public:
 
 
   void Apply(Integer const size_source, 
-             RealNum const *afSource,
-             RealNum *afDest,
-             RealNum const *afMask,
+             Scalar const *afSource,
+             Scalar *afDest,
+             Scalar const *afMask,
              bool normalize) const
   {
-    RealNum *afDenominator = NULL;
+    Scalar *afDenominator = NULL;
     if (normalize)
-      afDenominator = new RealNum[size_source];
+      afDenominator = new Scalar[size_source];
 
     Apply(size_source, 
           afSource,
@@ -196,10 +196,10 @@ public:
 
 
   void Apply(Integer const size_source, 
-             RealNum const *afSource,
-             RealNum *afDest,
-             RealNum const *afMask,
-             RealNum *afDenominator = NULL) const
+             Scalar const *afSource,
+             Scalar *afDest,
+             Scalar const *afMask,
+             Scalar *afDenominator = NULL) const
   {
     assert(afDest != afSource);
     assert(afDest != afMask);
@@ -250,8 +250,8 @@ public:
       // If we got this far, then there is a nearby non-zero entry in the
       // afMask[] array, so we proceed to apply the filter at this location, i
 
-      RealNum g = 0.0;           // g[i], the result after filtering
-      RealNum denominator = 0.0; // "d[i]" in the comments above
+      Scalar g = 0.0;           // g[i], the result after filtering
+      Scalar denominator = 0.0; // "d[i]" in the comments above
 
       // Inner loop:
 
@@ -262,7 +262,7 @@ public:
         if ((i_j < 0) || (size_source <= i_j))
           continue;
 
-        RealNum filter_val = afH[j];
+        Scalar filter_val = afH[j];
         if (afMask)
           filter_val *= afMask[i_j];
           //Note: The "filter_val" also is needed to calculate
@@ -270,7 +270,7 @@ public:
           //      It is unusual to use a mask unless you intend
           //      to normalize the result later, but I don't enforce this
 
-        RealNum delta_g = filter_val * afSource[i_j];
+        Scalar delta_g = filter_val * afSource[i_j];
 
         g += delta_g;
 
@@ -290,7 +290,7 @@ public:
   
   void Normalize() {
     // Make sure the sum of the filter weights is 1
-    RealNum total = 0.0;
+    Scalar total = 0.0;
     for (Integer i=-halfwidth; i<=halfwidth; i++)
       total += afH[i];
     for (Integer i=-halfwidth; i<=halfwidth; i++)
@@ -307,7 +307,7 @@ public:
   void Alloc(Integer set_halfwidth) {
     halfwidth = set_halfwidth;
     array_size = 1 + 2*halfwidth;
-    afH = new RealNum [array_size];
+    afH = new Scalar [array_size];
     for (Integer i = 0; i < array_size; i++)
       afH[i] = -1.0e38; //(if uninitiliazed memory read, we will know)
 
@@ -344,7 +344,7 @@ public:
   }
 
 
-  inline Filter1D(const Filter1D<RealNum, Integer>& source) {
+  inline Filter1D(const Filter1D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH
     //for(Integer i=-halfwidth; i<=halfwidth; i++)
@@ -352,7 +352,7 @@ public:
     // -- Use memcpy() instead: --
     //memcpy(afH,
     //       source.afH,
-    //       array_size * sizeof(RealNum));
+    //       array_size * sizeof(Scalar));
     // -- Use std:copy() instead: --
     std::copy(source.afH, source.afH + array_size, afH);
   }
@@ -362,14 +362,14 @@ public:
     Dealloc();
   }
 
-  inline void swap(Filter1D<RealNum, Integer> &other) {
+  inline void swap(Filter1D<Scalar, Integer> &other) {
     std::swap(afH, other.afH);
     std::swap(halfwidth, other.halfwidth);
     std::swap(array_size, other.array_size);
   }
 
-  inline Filter1D<RealNum, Integer>&
-    operator = (Filter1D<RealNum, Integer> source) {
+  inline Filter1D<Scalar, Integer>&
+    operator = (Filter1D<Scalar, Integer> source) {
     this->swap(source);
     return *this;
   }
@@ -379,27 +379,27 @@ public:
 
 
 
-//void swap(Filter1D<RealNum, Integer> &a, Filter1D<RealNum, Integer> &b) {
+//void swap(Filter1D<Scalar, Integer> &a, Filter1D<Scalar, Integer> &b) {
 //  a.swap(b);
 //}
 
 
 
 
-template<class RealNum>
+template<class Scalar>
 // GenFilterGauss1D generates a 1-D filter and fills its array with values
 // corresponding to a normalized Gaussian evaluated at evenly spaced intervals.
 // The caller must specify the "σ" parameter (width of the Gaussian,
 // in units of pixels/voxels), in addition to the "halfwidth" parameter, which
 // indicates the number of entries in the array (in units of pixels/voxels).
-Filter1D<RealNum, int>
-GenFilterGauss1D(RealNum sigma,  // The "σ" paramgeter in the Gaussian
+Filter1D<Scalar, int>
+GenFilterGauss1D(Scalar sigma,  // The "σ" paramgeter in the Gaussian
                  int halfwidth,  // number of entries in the filter array / 2
                  ostream *pReportProgress = NULL)
 {
-  Filter1D<RealNum, int> filter(halfwidth);
+  Filter1D<Scalar, int> filter(halfwidth);
 
-  RealNum sum = 0.0;
+  Scalar sum = 0.0;
   for (int i=-halfwidth; i<=halfwidth; i++) {
     if (sigma == 0.0) //(When sigma==0, use a Kronecker delta function)
       filter.afH[i] = ((i == 0) ? 1.0 : 0.0);

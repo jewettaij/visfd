@@ -44,13 +44,13 @@ string g_date_string("2018-11-08");
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class RealNum>
-static Filter2D<RealNum, int>
-GenFilterGenGauss2D(RealNum width[2],    //!< "s_x", "s_y" parameters
-                    RealNum m_exp,       //!< "m" parameter in formula
-                    RealNum filter_truncate_ratio, //!< controls window width
-                    RealNum filter_truncate_threshold, //!< controls window width
-                    RealNum *pA=NULL,    //!< optional:report A coeff to user
+template<class Scalar>
+static Filter2D<Scalar, int>
+GenFilterGenGauss2D(Scalar width[2],    //!< "s_x", "s_y" parameters
+                    Scalar m_exp,       //!< "m" parameter in formula
+                    Scalar filter_truncate_ratio, //!< controls window width
+                    Scalar filter_truncate_threshold, //!< controls window width
+                    Scalar *pA=NULL,    //!< optional:report A coeff to user
                     ostream *pReportEquation = NULL //!< optional: print equation to the terminal
                     )
                     
@@ -84,13 +84,13 @@ GenFilterGenGauss2D(RealNum width[2],    //!< "s_x", "s_y" parameters
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class RealNum>
-static Filter3D<RealNum, int>
-GenFilterGenGauss3D(RealNum width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
-                    RealNum m_exp,       //!<"m" parameter in formula
-                    RealNum filter_truncate_ratio, //!<controls window width
-                    RealNum filter_truncate_threshold, //!<controls window width
-                    RealNum *pA=NULL,    //!<optional:report A coeff to user
+template<class Scalar>
+static Filter3D<Scalar, int>
+GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
+                    Scalar m_exp,       //!<"m" parameter in formula
+                    Scalar filter_truncate_ratio, //!<controls window width
+                    Scalar filter_truncate_threshold, //!<controls window width
+                    Scalar *pA=NULL,    //!<optional:report A coeff to user
                     ostream *pReportEquation = NULL  //!< optional: print equation to the terminal
                     )
 {
@@ -122,21 +122,21 @@ GenFilterGenGauss3D(RealNum width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class RealNum>
-static Filter2D<RealNum, int> 
-GenFilterDogg2D(RealNum width_a[2],  //!< "a" parameter in formula
-                RealNum width_b[2],  //!< "b" parameter in formula
-                RealNum m_exp,       //!< "m" parameter in formula
-                RealNum n_exp,       //!< "n" parameter in formula
-                RealNum filter_truncate_ratio,//how many sigma before cutoff?
-                RealNum filter_truncate_threshold,//cutoff when decay below threshold
-                RealNum *pA=NULL, //!< optional:report A,B coeffs to user
-                RealNum *pB=NULL, //!< optional:report A,B coeffs to user
+template<class Scalar>
+static Filter2D<Scalar, int> 
+GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
+                Scalar width_b[2],  //!< "b" parameter in formula
+                Scalar m_exp,       //!< "m" parameter in formula
+                Scalar n_exp,       //!< "n" parameter in formula
+                Scalar filter_truncate_ratio,//how many sigma before cutoff?
+                Scalar filter_truncate_threshold,//cutoff when decay below threshold
+                Scalar *pA=NULL, //!< optional:report A,B coeffs to user
+                Scalar *pB=NULL, //!< optional:report A,B coeffs to user
                 ostream *pReportProgress = NULL  //!< optional: print equation to the terminal
                 )
 {
-  RealNum filter_truncate_ratio_A = filter_truncate_ratio;
-  RealNum filter_truncate_ratio_B = filter_truncate_ratio;
+  Scalar filter_truncate_ratio_A = filter_truncate_ratio;
+  Scalar filter_truncate_ratio_B = filter_truncate_ratio;
   if (filter_truncate_ratio < 0.0) {
     // Choose the filter domain window based on the "filter_truncate_threshold"
     //    filter_truncate_threshold = exp(-filter_truncate_ratio^m_exp);
@@ -145,12 +145,12 @@ GenFilterDogg2D(RealNum width_a[2],  //!< "a" parameter in formula
     // Do the same thing for the other Gaussian:
     filter_truncate_ratio_B = pow(-log(filter_truncate_threshold), 1.0/n_exp);
   }
-  Filter2D<RealNum, int> filterXY_A =
+  Filter2D<Scalar, int> filterXY_A =
     GenFilterGenGauss2D(width_a, //"a_x", "a_y" gaussian width parameters
                         m_exp,   //"m" exponent parameter
                         filter_truncate_ratio_A);
 
-  Filter2D<RealNum, int> filterXY_B =
+  Filter2D<Scalar, int> filterXY_B =
     GenFilterGenGauss2D(width_b, //"b_x", "b_y" gaussian width parameters
                         n_exp,   //"n" exponent parameter
                         filter_truncate_ratio_B);
@@ -176,22 +176,22 @@ GenFilterDogg2D(RealNum width_a[2],  //!< "a" parameter in formula
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class RealNum>
+template<class Scalar>
 // Create a 3-D filter and fill it with a difference of (generalized) Gaussians:
-static Filter3D<RealNum, int> 
-GenFilterDogg3D(RealNum width_a[3],  //"a" parameter in formula
-                RealNum width_b[3],  //"b" parameter in formula
-                RealNum m_exp,       //"m" parameter in formula
-                RealNum n_exp,       //"n" parameter in formula
-                RealNum filter_truncate_ratio,//how many sigma before cutoff?
-                RealNum filter_truncate_threshold,//cutoff when decay below threshold
-                RealNum *pA = NULL, //optional:report A,B coeffs to user
-                RealNum *pB = NULL, //optional:report A,B coeffs to user
+static Filter3D<Scalar, int> 
+GenFilterDogg3D(Scalar width_a[3],  //"a" parameter in formula
+                Scalar width_b[3],  //"b" parameter in formula
+                Scalar m_exp,       //"m" parameter in formula
+                Scalar n_exp,       //"n" parameter in formula
+                Scalar filter_truncate_ratio,//how many sigma before cutoff?
+                Scalar filter_truncate_threshold,//cutoff when decay below threshold
+                Scalar *pA = NULL, //optional:report A,B coeffs to user
+                Scalar *pB = NULL, //optional:report A,B coeffs to user
                 ostream *pReportProgress = NULL  //!< optional: print equation to the terminal
                 )
 {
-  RealNum filter_truncate_ratio_A = filter_truncate_ratio;
-  RealNum filter_truncate_ratio_B = filter_truncate_ratio;
+  Scalar filter_truncate_ratio_A = filter_truncate_ratio;
+  Scalar filter_truncate_ratio_B = filter_truncate_ratio;
   if (filter_truncate_ratio < 0.0) {
     // Choose the filter domain window based on the "filter_truncate_threshold"
     //    filter_truncate_threshold = exp(-filter_truncate_ratio^m_exp);
@@ -200,12 +200,12 @@ GenFilterDogg3D(RealNum width_a[3],  //"a" parameter in formula
     // Do the same thing for the other Gaussian:
     filter_truncate_ratio_B = pow(-log(filter_truncate_threshold), 1.0/n_exp);
   }
-  Filter3D<RealNum, int> filter_A =
+  Filter3D<Scalar, int> filter_A =
     GenFilterGenGauss3D(width_a, //"a_x", "a_y", "a_z" gaussian width parameters
                         m_exp,   //"m" exponent parameter
                         filter_truncate_ratio_A);
 
-  Filter3D<RealNum, int> filter_B =
+  Filter3D<Scalar, int> filter_B =
     GenFilterGenGauss3D(width_b, //"b_x", "b_y", "b_z" gaussian width parameters
                         n_exp,   //"n" exponent parameter
                         filter_truncate_ratio_B);
@@ -237,15 +237,15 @@ GenFilterDogg3D(RealNum width_a[3],  //"a" parameter in formula
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class RealNum>
-static RealNum
+template<class Scalar>
+static Scalar
 ApplyGauss3D(int const image_size[3], 
-             RealNum const *const* const *aaafSource,
-             RealNum ***aaafDest,
-             RealNum const *const *const *aaafMask,
-             RealNum const sigma[3],
-             RealNum filter_truncate_ratio,
-             RealNum filter_truncate_threshold,
+             Scalar const *const* const *aaafSource,
+             Scalar ***aaafDest,
+             Scalar const *const *const *aaafMask,
+             Scalar const sigma[3],
+             Scalar filter_truncate_ratio,
+             Scalar filter_truncate_threshold,
              bool normalize = true,
              ostream *pReportProgress = NULL)
 {
@@ -279,27 +279,27 @@ ApplyGauss3D(int const image_size[3],
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class RealNum>
+template<class Scalar>
 void
 ApplyDog3D(int const image_size[3], //source image size
-           RealNum const *const *const *aaafSource,  //source image
-           RealNum ***aaafDest,     //save results here
-           RealNum const *const *const *aaafMask,  //ignore voxels where mask==0
-           RealNum sigma_a[3],
-           RealNum sigma_b[3],
-           RealNum filter_truncate_ratio,
-           RealNum filter_truncate_threshold,
-           RealNum *pA = NULL,
-           RealNum *pB = NULL)
+           Scalar const *const *const *aaafSource,  //source image
+           Scalar ***aaafDest,     //save results here
+           Scalar const *const *const *aaafMask,  //ignore voxels where mask==0
+           Scalar sigma_a[3],
+           Scalar sigma_b[3],
+           Scalar filter_truncate_ratio,
+           Scalar filter_truncate_threshold,
+           Scalar *pA = NULL,
+           Scalar *pB = NULL)
 {
-  RealNum ***aaafTemp; //temporary array to store partially processed tomogram
-  RealNum *afTemp;     //temporary array to store partially processed tomogram
+  Scalar ***aaafTemp; //temporary array to store partially processed tomogram
+  Scalar *afTemp;     //temporary array to store partially processed tomogram
 
   Alloc3D(image_size,
           &afTemp,
           &aaafTemp);
 
-  RealNum A, B;        // let the user know what A B coefficients were used
+  Scalar A, B;        // let the user know what A B coefficients were used
 
   A = ApplyGauss3D(image_size,
                    aaafSource,
@@ -344,18 +344,18 @@ ApplyDog3D(int const image_size[3], //source image size
 
 
 
-template<class RealNum>
+template<class Scalar>
 void
 ApplyDogScaleFree3D(int const image_size[3], //source image size
-                    RealNum const *const *const *aaafSource,   //source image
-                    RealNum ***aaafDest,     //save results here
-                    RealNum const *const *const *aaafMask,     //ignore voxels where mask==0
-                    RealNum const sigma[3],  //Gaussian width in x,y,z drections
-                    RealNum delta_sigma_over_sigma, //difference in Gauss widths
-                    RealNum filter_truncate_ratio,
-                    RealNum filter_truncate_threshold,
-                    RealNum *pA = NULL,
-                    RealNum *pB = NULL,
+                    Scalar const *const *const *aaafSource,   //source image
+                    Scalar ***aaafDest,     //save results here
+                    Scalar const *const *const *aaafMask,     //ignore voxels where mask==0
+                    Scalar const sigma[3],  //Gaussian width in x,y,z drections
+                    Scalar delta_sigma_over_sigma, //difference in Gauss widths
+                    Scalar filter_truncate_ratio,
+                    Scalar filter_truncate_threshold,
+                    Scalar *pA = NULL,
+                    Scalar *pB = NULL,
                     ostream *pReportProgress = NULL)
 {
 
@@ -751,30 +751,30 @@ HandleDogScaleFree(Settings settings,
 /// (This is sometimes called "non-max suppression".)
 /// This function is not intended for public use.
 
-template<class RealNum>
+template<class Scalar>
 static void
 BlobDogNM(int const image_size[3], //!<source image size
-          RealNum const *const *const *aaafSource,   //!<source image
-          RealNum const *const *const *aaafMask,     //!<ignore voxels where mask==0
-          const vector<RealNum>& blob_diameters, //!< blob widths to try, ordered
-          vector<array<RealNum,3> >& minima_crds, //!<store minima x,y,z coords here
-          vector<array<RealNum,3> >& maxima_crds, //!<store maxima x,y,z coords here
-          vector<RealNum>& minima_diameters, //!< corresponding width for that minima
-          vector<RealNum>& maxima_diameters, //!< corresponding width for that maxima
-          vector<RealNum>& minima_scores, //!< what was the blob's score?
-          vector<RealNum>& maxima_scores, //!< (score = intensity after filtering)
-          RealNum delta_sigma_over_sigma,//!< param for approximating LOG with DOG
-          RealNum truncate_ratio,      //!< how many sigma before truncating?
-          RealNum minima_threshold=0.5,  //!< discard blobs with unremarkable scores
-          RealNum maxima_threshold=0.5,  //!< discard blobs with unremarkable scores
+          Scalar const *const *const *aaafSource,   //!<source image
+          Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
+          const vector<Scalar>& blob_diameters, //!< blob widths to try, ordered
+          vector<array<Scalar,3> >& minima_crds, //!<store minima x,y,z coords here
+          vector<array<Scalar,3> >& maxima_crds, //!<store maxima x,y,z coords here
+          vector<Scalar>& minima_diameters, //!< corresponding width for that minima
+          vector<Scalar>& maxima_diameters, //!< corresponding width for that maxima
+          vector<Scalar>& minima_scores, //!< what was the blob's score?
+          vector<Scalar>& maxima_scores, //!< (score = intensity after filtering)
+          Scalar delta_sigma_over_sigma,//!< param for approximating LOG with DOG
+          Scalar truncate_ratio,      //!< how many sigma before truncating?
+          Scalar minima_threshold=0.5,  //!< discard blobs with unremarkable scores
+          Scalar maxima_threshold=0.5,  //!< discard blobs with unremarkable scores
           bool    use_threshold_ratios=true, //!< threshold=ratio*best_score?
-          RealNum sep_ratio_thresh=1.0,          //!< minimum radial separation between blobs
-          RealNum nonmax_max_overlap_large=1.0,  //!< maximum volume overlap with larger blob
-          RealNum nonmax_max_overlap_small=1.0,  //!< maximum volume overlap with smaller blob
+          Scalar sep_ratio_thresh=1.0,          //!< minimum radial separation between blobs
+          Scalar nonmax_max_overlap_large=1.0,  //!< maximum volume overlap with larger blob
+          Scalar nonmax_max_overlap_small=1.0,  //!< maximum volume overlap with smaller blob
           // optional arguments
           ostream *pReportProgress = NULL, //!< report progress to the user?
-          RealNum ****aaaafI = NULL, //!<preallocated memory for filtered images
-          RealNum **aafI = NULL     //!<preallocated memory for filtered images
+          Scalar ****aaaafI = NULL, //!<preallocated memory for filtered images
+          Scalar **aafI = NULL     //!<preallocated memory for filtered images
         )
 {
 
@@ -843,31 +843,31 @@ BlobDogNM(int const image_size[3], //!<source image size
 /// This version can discard blobs which overlap with existing blobs.
 /// (This is sometimes called "non-max suppression".)
 
-template<class RealNum>
+template<class Scalar>
 static
 void
 _BlobDogNM(int const image_size[3], //!<source image size
-           RealNum const *const *const *aaafSource,   //!<source image
-           RealNum const *const *const *aaafMask,     //!<ignore voxels where mask==0
-           const vector<RealNum>& blob_diameters, //!<list of diameters to try (ordered)
-           vector<array<RealNum,3> >& minima_crds, //!<store minima x,y,z coords here
-           vector<array<RealNum,3> >& maxima_crds, //!<store maxima x,y,z coords here
-           vector<RealNum>& minima_diameters, //!<corresponding radius for that minima
-           vector<RealNum>& maxima_diameters, //!<corresponding radius for that maxima
-           vector<RealNum>& minima_scores, //!<what was the blobs score?
-           vector<RealNum>& maxima_scores, //!<(score = intensity after filtering)
-           RealNum delta_sigma_over_sigma, //!<difference in Gauss widths parameter
-           RealNum filter_truncate_ratio,     //!<how many sigma before truncating?
-           RealNum filter_truncate_threshold, //!<decay in filter before truncating
-           RealNum minima_threshold,       //!<discard unremarkable minima
-           RealNum maxima_threshold,       //!<discard unremarkable maxima
+           Scalar const *const *const *aaafSource,   //!<source image
+           Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
+           const vector<Scalar>& blob_diameters, //!<list of diameters to try (ordered)
+           vector<array<Scalar,3> >& minima_crds, //!<store minima x,y,z coords here
+           vector<array<Scalar,3> >& maxima_crds, //!<store maxima x,y,z coords here
+           vector<Scalar>& minima_diameters, //!<corresponding radius for that minima
+           vector<Scalar>& maxima_diameters, //!<corresponding radius for that maxima
+           vector<Scalar>& minima_scores, //!<what was the blobs score?
+           vector<Scalar>& maxima_scores, //!<(score = intensity after filtering)
+           Scalar delta_sigma_over_sigma, //!<difference in Gauss widths parameter
+           Scalar filter_truncate_ratio,     //!<how many sigma before truncating?
+           Scalar filter_truncate_threshold, //!<decay in filter before truncating
+           Scalar minima_threshold,       //!<discard unremarkable minima
+           Scalar maxima_threshold,       //!<discard unremarkable maxima
            bool use_threshold_ratios=true, //!<threshold=ratio*best_score ?
-           RealNum sep_ratio_thresh=1.0,          //!<minimum radial separation between blobs
-           RealNum nonmax_max_overlap_large=1.0,  //!<maximum volume overlap with larger blob
-           RealNum nonmax_max_overlap_small=1.0,  //!<maximum volume overlap with smaller blob
+           Scalar sep_ratio_thresh=1.0,          //!<minimum radial separation between blobs
+           Scalar nonmax_max_overlap_large=1.0,  //!<maximum volume overlap with larger blob
+           Scalar nonmax_max_overlap_small=1.0,  //!<maximum volume overlap with smaller blob
            ostream *pReportProgress = NULL,
-           RealNum ****aaaafI = NULL, //!<preallocated memory for filtered images
-           RealNum **aafI = NULL     //!<preallocated memory for filtered images
+           Scalar ****aaaafI = NULL, //!<preallocated memory for filtered images
+           Scalar **aafI = NULL     //!<preallocated memory for filtered images
            )
 {
   
@@ -2606,13 +2606,13 @@ HandleLocalFluctuations(Settings settings,
 
 #ifndef DISABLE_BOOTSTRAPPING
 
-template<class RealNum>
+template<class Scalar>
 void
 ScrambleImage3D(int image_size[3],
-                RealNum const *const *const *aaafSource,
+                Scalar const *const *const *aaafSource,
                   //(ellipsoidal) scramble radius in x,y,z directions:
                 int const scramble_radius[3], 
-                RealNum ***aaafDest)
+                Scalar ***aaafDest)
 // Scramble the contents of an image by replacing the current voxel with a
 // randmly chosen voxel nearby
 // (which lies within an ellipsoid specified by "scramble_radius")
@@ -2620,7 +2620,7 @@ ScrambleImage3D(int image_size[3],
   for (int iz=0; iz < image_size[2]; iz++) {
     for (int iy=0; iy < image_size[1]; iy++) {
       for (int ix=0; ix < image_size[0]; ix++) {
-        RealNum r = 2.0;
+        Scalar r = 2.0;
         int dx, dy, dz;
         while (r > 1.0) {
           dx = RANDOM_INT(1+2*scramble_radius[0]) - scramble_radius[0];
@@ -2782,11 +2782,11 @@ static int sgn(T val) {
 
 
 
-template<class RealNum>
+template<class Scalar>
 static void
 WriteBNPTSfile(string filename,
-               vector<array<RealNum,3> > coords,
-               vector<array<RealNum,3> > norms)
+               vector<array<Scalar,3> > coords,
+               vector<array<Scalar,3> > norms)
 {
   assert(coords.size() == norms.size());
   size_t n = coords.size();
@@ -2794,11 +2794,11 @@ WriteBNPTSfile(string filename,
   bnpts_file.open(filename.c_str(), ios::out | ios::binary);
   for (size_t i=0; i < n; i++) {
     float xyz[3];
-    xyz[0] = coords[i][0];  //(convert from "RealNum" to float)
+    xyz[0] = coords[i][0];  //(convert from "Scalar" to float)
     xyz[1] = coords[i][1];
     xyz[2] = coords[i][2];
     float norm[3];
-    norm[0] = norms[i][0];  //(convert from "RealNum" to float)
+    norm[0] = norms[i][0];  //(convert from "Scalar" to float)
     norm[1] = norms[i][1];
     norm[2] = norms[i][2];
     bnpts_file.write((char*)&(xyz[0]), sizeof(float));
@@ -2812,21 +2812,21 @@ WriteBNPTSfile(string filename,
 }
 
 
-template<class RealNum>
+template<class Scalar>
 static void
 WriteOrientedPointCloud(string pointcloud_file_name,
                         const int image_size[3],
-                        RealNum const *const *const *aaafImage,
-                        CompactMultiChannelImage3D<RealNum> &hessian,
-                        RealNum threshold)
+                        Scalar const *const *const *aaafImage,
+                        CompactMultiChannelImage3D<Scalar> &hessian,
+                        Scalar threshold)
 {
   assert(aaafImage);
-  vector<array<RealNum,3> > coords;
-  vector<array<RealNum,3> > norms;
+  vector<array<Scalar,3> > coords;
+  vector<array<Scalar,3> > norms;
   for (int iz=0; iz < image_size[2]; iz++) {
     for (int iy=0; iy < image_size[1]; iy++) {
       for (int ix=0; ix < image_size[0]; ix++) {
-        RealNum metric = aaafImage[iz][iy][ix];
+        Scalar metric = aaafImage[iz][iy][ix];
         if ((abs(metric) >= abs(threshold)) &&
             (metric*threshold > 0.0)) //same sign
         {
@@ -2835,20 +2835,20 @@ WriteOrientedPointCloud(string pointcloud_file_name,
             // (if not, then this voxel lies outside the mask, so skip it)
             continue;
 
-          array<RealNum,3> xyz;
+          array<Scalar,3> xyz;
           xyz[0] = ix;
           xyz[1] = iy;
           xyz[2] = iz;
           coords.push_back(xyz);
 
-          array<RealNum,3> norm;
-          RealNum quat[4];
+          array<Scalar,3> norm;
+          Scalar quat[4];
           quat[0] = hessian.aaaafI[iz][iy][ix][3];
           quat[1] = hessian.aaaafI[iz][iy][ix][4];
           quat[2] = hessian.aaaafI[iz][iy][ix][5];
           quat[3] = hessian.aaaafI[iz][iy][ix][6];
 
-          RealNum eigenvects[3][3];
+          Scalar eigenvects[3][3];
           Quaternion2Matrix(quat, eigenvects);
           norm[0] = eigenvects[0][0];
           norm[1] = eigenvects[0][1];
