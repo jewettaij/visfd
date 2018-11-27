@@ -1,3 +1,8 @@
+#include <lin3_utils.h>
+
+
+
+
 
 
 
@@ -13,26 +18,76 @@ private:
 
 public:
 
- TV3Dslow():Filter3D() {
-    af3Displacement = NULL;
-    aaaf3Displacement = NULL;
-  }
-
-  void SetSigma(Scalar sigma, Scalar filter_cutoff_ratio=2.5)
+  
+  void
+  TVDenseStickSlow(Integer const image_size[3], //!< source image size
+                   Scalar const *const *const *aaafSource, //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
+                  //CompactMultiChannelImage3D<Scalar> *pvSource, //!< vector associated with each voxel
+                   array<Scalar,3> const *const *const *aaa3fSource, //!< vector associated with each voxel
+                   SymmetricMatrix3x3<Scalar, Integer> aaa33fDest, //!< votes will be collected here
+                   Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+                   Scalar const *const *const *aaafMaskDest,  //!< don't cast votes wherever mask==0
+                   Scalar ***aaafDenominator = NULL,
+                   Scalar sigma,  //!< Gaussian width of influence
+                   Integer exponent, //!< angle dependence
+                   Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+                   bool detect_curves_not_surfaces = false,
+                   ostream *pReportProgress = NULL  //!< print progress to the user?
+                   )
   {
-    Scalar sigmas[3] = {sigma, sigma, sigma};
-    // Precompute the Gaussian as a function of r, store in ::aaafH
-    // ("GenFilterGenGauss3D()" is defined in filter3d.h)
-    *(static_cast<Filter3D*>(this)) =
-      GenFilterGenGauss3D(sigmas, 2, filter_cutoff_ratio);
-    
-    AllocNormalized();
-    PrecalcNormalized(aaaf3Displacement, halfwidth);
-  }
+    assert(aaafSource);
+    assert(aaa3fSource);
+    assert(aaa33fDest);
 
-  ~TV3Dslow() {
-    DeallocNormalized();
-  }
+    Integer truncate_halfwidth = floor(sigma * truncate_ratio);
+
+    //assert(pv);
+    //assert(pV->nchannels() == 3);
+    //pV->Resize(image_size, aaafMaskSource, pReportProgress);
+
+    if (pReportProgress)
+      *pReportProgress << "  progress: processing plane#" << endl;
+
+    // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
+    // Multiplying the density in the tomogram by the mask removes some of 
+    // the voxels from consideration later on when we do the filtering.
+    // (Later, we will adjust the weight of the average we compute when we
+    //  apply the filter in order to account for the voxels we deleted now.)
+
+    for (Integer iz=0; iz<size_source[2]; iz++) {
+
+      if (pReportProgress)
+        *pReportProgress << "  " << iz+1 << " / " << size_source[2] << "\n";
+
+      #pragma omp parallel for collapse(2)
+      for (Integer iy=0; iy<size_source[1]; iy++) {
+
+        for (Integer ix=0; ix<size_source[0]; ix++) {
+
+          // Calculate the effect of the filter on
+          // the voxel located at position ix,iy,iz
+
+          if ((aaafMaskDest) && (aaafMaskDest[iz][iy][ix] == 0.0)) {
+            for (Integer di=0; di<3; di++)
+              for (Integer dj=0; dj<3; dj++)
+                aaafDest[iz][iy][ix][di][dj] = 0.0;
+            continue;
+          }
+
+          TVApplyStickToVoxel(ix, iy, iz,
+                              size_source,
+                              aaafSource,
+                              aaaf3Source,
+                              aaafMaskSource,
+                              (aaafDenominator
+                               ? &(aaafDenominator[iz][iy][ix])
+                               : NULL));
+        }
+      }
+    }
+  } //TVDenseStickSlow()
+
+
 
   Scalar
   TVApplyStickToVoxel(Integer ix,
@@ -153,12 +208,18 @@ public:
                 tensor_vote[di][dj] = (decay_function *
                                        n_rotated[d1] * n_rotated[d2]);
 
-                // commenting out the next line to save memory:
-                //aaa33fDest[iz][iy][ix][Di][Dj] += tensor_vote[di][dj];
+                // I used to implement aaa33fDest as a 5-dimensionl array.
 
-                // Instead to save memory use this code:
-                MapIndices3x3_to_2x3(di, dj, Di, Dj);
-                aaa33fDest[iz][iy][ix][Di][Dj] += tensor_vote[di][dj];
+                //aaa33fDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
+
+                // The ix,iy,iz'th entry was a 3x3 matrix.
+                // Since this matrix is symmentric, there is no reason to
+                // waste so much memory.  So I implemented a version of the 3x3
+                // matrix that only uses 2x3 space.  Access the elements
+                // using operator (int d1, d2), instead of [d1][d2]
+
+                // Use this code instead:
+                aaa33fDest[iz][iy][ix](di, dj) += tensor_vote[di][dj];
               }
             }
           }
@@ -178,74 +239,26 @@ public:
 
 
 
+  TV3Dslow():Filter3D() {
+    af3Displacement = NULL;
+    aaaf3Displacement = NULL;
+  }
 
-  void
-  TVDenseStickSlow(Integer const image_size[3], //!< source image size
-                   Scalar const *const *const *aaafSource, //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
-                  //CompactMultiChannelImage3D<Scalar> *pvSource, //!< vector associated with each voxel
-                   array<Scalar,3> const *const *const *aaa3fSource, //!< vector associated with each voxel
-                   SymmetricMatrix3x3<Scalar, Integer> aaa33fDest, //!< votes will be collected here
-                   Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
-                   Scalar const *const *const *aaafMaskDest,  //!< don't cast votes wherever mask==0
-                   Scalar ***aaafDenominator = NULL,
-                   Scalar sigma,  //!< Gaussian width of influence
-                   Integer exponent, //!< angle dependence
-                   Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-                   bool detect_curves_not_surfaces = false,
-                   ostream *pReportProgress = NULL  //!< print progress to the user?
-                   )
+  void SetSigma(Scalar sigma, Scalar filter_cutoff_ratio=2.5)
   {
-    assert(aaafSource);
-    assert(aaa3fSource);
-    assert(aaa33fDest);
+    Scalar sigmas[3] = {sigma, sigma, sigma};
+    // Precompute the Gaussian as a function of r, store in ::aaafH
+    // ("GenFilterGenGauss3D()" is defined in filter3d.h)
+    *(static_cast<Filter3D*>(this)) =
+      GenFilterGenGauss3D(sigmas, 2, filter_cutoff_ratio);
+    
+    AllocNormalized();
+    PrecalcNormalized(aaaf3Displacement, halfwidth);
+  }
 
-    Integer truncate_halfwidth = floor(sigma * truncate_ratio);
-
-    //assert(pv);
-    //assert(pV->nchannels() == 3);
-    //pV->Resize(image_size, aaafMaskSource, pReportProgress);
-
-    if (pReportProgress)
-      *pReportProgress << "  progress: processing plane#" << endl;
-
-    // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
-    // Multiplying the density in the tomogram by the mask removes some of 
-    // the voxels from consideration later on when we do the filtering.
-    // (Later, we will adjust the weight of the average we compute when we
-    //  apply the filter in order to account for the voxels we deleted now.)
-
-    for (Integer iz=0; iz<size_source[2]; iz++) {
-
-      if (pReportProgress)
-        *pReportProgress << "  " << iz+1 << " / " << size_source[2] << "\n";
-
-      #pragma omp parallel for collapse(2)
-      for (Integer iy=0; iy<size_source[1]; iy++) {
-
-        for (Integer ix=0; ix<size_source[0]; ix++) {
-
-          // Calculate the effect of the filter on
-          // the voxel located at position ix,iy,iz
-
-          if ((aaafMaskDest) && (aaafMaskDest[iz][iy][ix] == 0.0)) {
-            for (Integer di=0; di<3; di++)
-              for (Integer dj=0; dj<3; dj++)
-                aaafDest[iz][iy][ix][di][dj] = 0.0;
-            continue;
-          }
-
-          TVApplyStickToVoxel(ix, iy, iz,
-                              size_source,
-                              aaafSource,
-                              aaaf3Source,
-                              aaafMaskSource,
-                              (aaafDenominator
-                               ? &(aaafDenominator[iz][iy][ix])
-                               : NULL));
-        }
-      }
-    }
-  } //TVDenseStickSlow()
+  ~TV3Dslow() {
+    DeallocNormalized();
+  }
 
 private:
 
