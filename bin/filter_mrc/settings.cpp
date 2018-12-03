@@ -104,7 +104,11 @@ Settings::Settings() {
   nonmax_max_volume_overlap_large = 1.0;
  
   out_normals_fname = "";
-  planar_threshold = 0.0;
+  planar_hessian_score_threshold = 0.0;
+  planar_tv_score_threshold = 0.0;
+  planar_tv_sigma = 0.0;
+  planar_tv_exponent = 4;
+  planar_tv_num_iters = 0;
 
   use_thresholds = false;
   use_dual_thresholds = false;
@@ -1610,7 +1614,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        planar_threshold = stof(vArgs[i+1]);
+        planar_hessian_score_threshold = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1619,6 +1623,69 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     }
+
+    else if (vArgs[i] == "-planar-tv") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        planar_tv_sigma = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number, the threshold\n"
+                       "       for deciding whether to compute the surface normal there.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if (vArgs[i] == "-planar-tv-angle-exponent") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        planar_tv_exponent = stoi(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number, the threshold\n"
+                       "       for deciding whether to compute the surface normal there.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if (vArgs[i] == "-planar-tv-threshold") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        planar_tv_score_threshold = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number, the threshold\n"
+                       "       for deciding whether to compute the surface normal there.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-planar-tv-iter") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        planar_tv_num_iters = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number, the threshold\n"
+                       "       for deciding whether to compute the surface normal there.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
 
     else if (vArgs[i] == "-planar-bnpts") {
       try {

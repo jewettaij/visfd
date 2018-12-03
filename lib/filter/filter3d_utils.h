@@ -18,20 +18,20 @@ using namespace std;
 /// @return the weighted average
 
 
-template<class RealNum, class Integer>
-RealNum AverageArr(Integer const array_size[3],
-                   RealNum const *const *const *aaafH,
-                   RealNum const *const *const *aaafW = NULL) 
+template<class Scalar, class Integer>
+Scalar AverageArr(Integer const array_size[3],
+                  Scalar const *const *const *aaafH,
+                  Scalar const *const *const *aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  Scalar total = 0.0;
+  Scalar denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        Scalar h = aaafH[iz][iy][ix];
         if (aaafW) {
-          RealNum w = aaafW[iz][iy][ix];
+          Scalar w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -41,7 +41,7 @@ RealNum AverageArr(Integer const array_size[3],
       }
     }
   }
-  return static_cast<RealNum>(total / denom);
+  return static_cast<Scalar>(total / denom);
 } //void AverageArr()
 
 
@@ -54,23 +54,23 @@ RealNum AverageArr(Integer const array_size[3],
 /// @param  aaafW       an optional array of weights (for weighted averages)
 /// @return the weighted average of the squared entries in the array
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 static
-RealNum _AveSqrArr(Integer const array_size[3],
-                  RealNum const *const *const *aaafH,
-                  RealNum const *const *const *aaafW = NULL) 
+Scalar _AveSqrArr(Integer const array_size[3],
+                  Scalar const *const *const *aaafH,
+                  Scalar const *const *const *aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  Scalar total = 0.0;
+  Scalar denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        Scalar h = aaafH[iz][iy][ix];
         h *= h;
 
         if (aaafW) {
-          RealNum w = aaafW[iz][iy][ix];
+          Scalar w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -80,7 +80,7 @@ RealNum _AveSqrArr(Integer const array_size[3],
       }
     }
   }
-  return static_cast<RealNum>(sqrt(total / denom));
+  return static_cast<Scalar>(sqrt(total / denom));
 } //void _AveSqrArr()
 
 
@@ -95,23 +95,23 @@ RealNum _AveSqrArr(Integer const array_size[3],
 /// @param  aaafW       an optional array of weights (for weighted averages)
 /// @return the weighted standard deviation
 
-template<class RealNum, class Integer>
-RealNum StdDevArr(Integer const array_size[3],
-                  RealNum const *const *const *aaafH,
-                  RealNum const *const *const *aaafW = NULL) 
+template<class Scalar, class Integer>
+Scalar StdDevArr(Integer const array_size[3],
+                 Scalar const *const *const *aaafH,
+                 Scalar const *const *const *aaafW = NULL) 
 {
-  RealNum ave = AverageArr(array_size, aaafH, aaafW);
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  Scalar ave = AverageArr(array_size, aaafH, aaafW);
+  Scalar total = 0.0;
+  Scalar denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = (aaafH[iz][iy][ix] - ave);
+        Scalar h = (aaafH[iz][iy][ix] - ave);
         h *= h;
 
         if (aaafW) {
-          RealNum w = aaafW[iz][iy][ix];
+          Scalar w = aaafW[iz][iy][ix];
           h *= w;
           denom += w;
         }
@@ -121,7 +121,7 @@ RealNum StdDevArr(Integer const array_size[3],
       }
     }
   }
-  return static_cast<RealNum>(sqrt(total / denom));
+  return static_cast<Scalar>(sqrt(total / denom));
 } //void StdDevArr()
 
 
@@ -135,26 +135,26 @@ RealNum StdDevArr(Integer const array_size[3],
 ///                     the corresponding entry value)
 /// @return the (weighted) sum
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 static
-RealNum _SumArr(Integer const array_size[3],
-               RealNum const *const *const *aaafH,
-               RealNum const *const *const *aaafW = NULL) 
+Scalar _SumArr(Integer const array_size[3],
+               Scalar const *const *const *aaafH,
+               Scalar const *const *const *aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  Scalar total = 0.0;
+  Scalar denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        Scalar h = aaafH[iz][iy][ix];
         total += h;
         if (aaafW)
           h *= aaafW[iz][iy][ix];
       }
     }
   }
-  return static_cast<RealNum>(total);
+  return static_cast<Scalar>(total);
 } //void _SumArr()
 
 
@@ -169,19 +169,19 @@ RealNum _SumArr(Integer const array_size[3],
 ///                     the corresponding squared entry value)
 /// @return the (weighted) sum of squares
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 static
-RealNum _SumSqrArr(Integer const array_size[3],
-                  RealNum const *const *const *aaafH,
-                  RealNum const *const *const *aaafW = NULL) 
+Scalar _SumSqrArr(Integer const array_size[3],
+                  Scalar const *const *const *aaafH,
+                  Scalar const *const *const *aaafW = NULL) 
 {
-  RealNum total = 0.0;
-  RealNum denom = 0.0;
+  Scalar total = 0.0;
+  Scalar denom = 0.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafH[iz][iy][ix];
+        Scalar h = aaafH[iz][iy][ix];
         h *= h;
         if (aaafW)
           h *= aaafW[iz][iy][ix];
@@ -189,7 +189,7 @@ RealNum _SumSqrArr(Integer const array_size[3],
       }
     }
   }
-  return static_cast<RealNum>(total);
+  return static_cast<Scalar>(total);
 } //void _SumSqrArr()
 
 
@@ -200,10 +200,10 @@ RealNum _SumSqrArr(Integer const array_size[3],
 /// @param  array_size  an array of 3 integers storing the size of the array
 /// @param  aaafH       the 3D array containing the entries to be modified
 
-template<class RealNum, class Integer>
-void AddScalarArr(RealNum offset,
+template<class Scalar, class Integer>
+void AddScalarArr(Scalar offset,
                   Integer const array_size[3],
-                  RealNum ***aaafH)
+                  Scalar ***aaafH)
 {
   for (Integer iz = 0; iz < array_size[2]; iz++)
     for (Integer iy = 0; iy < array_size[1]; iy++)
@@ -212,16 +212,17 @@ void AddScalarArr(RealNum offset,
 }
 
 
+
 /// @brief  Multiply all the entries in a 3D array by a scalar.
 ///         This function was not intended for public use.
 /// @param  scale       the number that will be multiplied by the array entries
 /// @param  array_size  an array of 3 integers storing the size of the array
 /// @param  aaafH       the 3D array containing the entries to be modified
 
-template<class RealNum, class Integer>
-void MultiplyScalarArr(RealNum scale,
+template<class Scalar, class Integer>
+void MultiplyScalarArr(Scalar scale,
                        Integer const array_size[3],
-                       RealNum ***aaafH)
+                       Scalar ***aaafH)
 {
   for (Integer iz = 0; iz < array_size[2]; iz++)
     for (Integer iy = 0; iy < array_size[1]; iy++)
@@ -242,14 +243,14 @@ void MultiplyScalarArr(RealNum scale,
 /// @return the minimum entry in the aaafI array (not ignored by the mask)
 ///         (or HUGE_VALF, if the aaafMask array has no non-zero entries)
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 static
-RealNum _MinArr(Integer const array_size[3],
-                RealNum const *const *const *aaafI,
-                RealNum const *const *const *aaafMask = NULL,
-                Integer *afLocation = NULL)
+Scalar _MinArr(Integer const array_size[3],
+               Scalar const *const *const *aaafI,
+               Scalar const *const *const *aaafMask = NULL,
+               Integer *afLocation = NULL)
 {
-  RealNum min_I = HUGE_VALF; //return this suspicious value if mask is empty
+  Scalar min_I = HUGE_VALF; //return this suspicious value if mask is empty
   bool first_iter = true;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
@@ -281,14 +282,14 @@ RealNum _MinArr(Integer const array_size[3],
 /// @return the minimum entry in the aaafI array (not ignored by the mask)
 ///         (or -HUGE_VALF, if the aaafMask array has no non-zero entries)
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 static
-RealNum _MaxArr(Integer const array_size[3],
-                RealNum const *const *const *aaafI,
-                RealNum const *const *const *aaafMask = NULL,
-                Integer *afLocation = NULL)
+Scalar _MaxArr(Integer const array_size[3],
+               Scalar const *const *const *aaafI,
+               Scalar const *const *const *aaafMask = NULL,
+               Integer *afLocation = NULL)
 {
-  RealNum max_I = -HUGE_VALF; //return this suspicious value if mask is empty
+  Scalar max_I = -HUGE_VALF; //return this suspicious value if mask is empty
   bool first_iter = true;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
@@ -320,18 +321,18 @@ RealNum _MaxArr(Integer const array_size[3],
 /// @param  aaafI       the 3D array containing the entries
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
 
-template<class RealNum, class Integer>
+template<class Scalar, class Integer>
 void
-HistogramArr(RealNum **paHistX,  
+HistogramArr(Scalar **paHistX,  
              size_t  **paHistY,
              Integer &nbins,
-             RealNum &bin_width,
+             Scalar &bin_width,
              Integer const array_size[3],
-             RealNum ***aaafI,
-             RealNum const *const *const *aaafMask = NULL) 
+             Scalar ***aaafI,
+             Scalar const *const *const *aaafMask = NULL) 
 {
-  RealNum hmin = 0.0;
-  RealNum hmax = -1.0;
+  Scalar hmin = 0.0;
+  Scalar hmax = -1.0;
 
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
@@ -356,7 +357,7 @@ HistogramArr(RealNum **paHistX,
   }
 
   assert(paHistX);
-  *paHistX = new RealNum [nbins];
+  *paHistX = new Scalar [nbins];
   for (int i=0; i<nbins; i++)
     (*paHistX)[i] = hmin + i*bin_width;
 
@@ -367,9 +368,9 @@ HistogramArr(RealNum **paHistX,
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
       for (Integer ix = 0; ix < array_size[0]; ix++) {
-        RealNum h = aaafI[iz][iy][ix];
+        Scalar h = aaafI[iz][iy][ix];
         if ((! aaafMask) || (aaafMask[iz][iy][ix] != 0.0)) {
-          RealNum h = aaafI[iz][iy][ix];
+          Scalar h = aaafI[iz][iy][ix];
           Integer i = floor( (h - hmin)/bin_width );
           assert((0 <= i) && (i < nbins));
           (*paHistY)[i]++;

@@ -17,6 +17,7 @@
 #include <limits>
 #include <cstring>
 #include <cassert>
+#include <type_traits>
 using namespace std;
 
 
@@ -26,6 +27,18 @@ using namespace std;
 
 namespace selfadjoint_eigen3
 {
+
+
+  typedef enum eEigenOrderType {
+    INCREASING_EIVALS,
+    DECREASING_EIVALS,
+    INCREASING_ABS_EIVALS,
+    DECREASING_ABS_EIVALS,
+    INCREASINGLY_DISTINCT_EIVALS,
+    DECREASINGLY_DISTINCT_EIVALS,
+  } EigenOrderType;
+
+
 
   template <class Scalar>
   static inline void computeRoots3(const Scalar m[3][3],
@@ -116,14 +129,14 @@ namespace selfadjoint_eigen3
 
 
   template <class Scalar>
-  inline void Diagonalize3(const Scalar mat[3][3],
-                           Scalar eivals[3], // store eigenvalues here
-                           // If the user supplies a 2D eivects array,
-                           // then the 3 eigenvectors will be stored in
-                           // the 3 rows of the "eivects" 2D array
-                           // (ie, eivects[0], eivects[1], eivects[2])
-                           // Note: eivects
-                           Scalar eivects[][3] = NULL)
+  inline void DiagonalizeSymm3(const Scalar mat[3][3],
+                               Scalar eivals[3], // store eigenvalues here
+                               // If the user supplies a 2D eivects array,
+                               // then the 3 eigenvectors will be stored in
+                               // the 3 rows of the "eivects" 2D array
+                               // (ie, eivects[0], eivects[1], eivects[2])
+                               Scalar eivects[][3] = NULL,
+                               EigenOrderType eival_order = INCREASING_EIVALS)
   {
     const Scalar EPSILON = std::numeric_limits<Scalar>::epsilon();
     // Shift the matrix to the mean eigenvalue and map the matrix
@@ -224,7 +237,140 @@ namespace selfadjoint_eigen3
       eivals[d] += shift;
     }
 
-  } //Diagonalize3()
+
+    // At this point, the eigenvalues are montonically increasing.
+
+    assert(eivals[0] <= eivals[1] <= eivals[2]);
+
+    if (((eival_order == INCREASING_EIVALS) && (eivals[0] > eivals[2])) ||
+        ((eival_order == DECREASING_EIVALS) && (eivals[0] < eivals[2])) ||
+        ((eival_order == INCREASING_ABS_EIVALS) && (abs(eivals[0]) > abs(eivals[2]))) ||
+        ((eival_order == DECREASING_ABS_EIVALS) && (abs(eivals[0]) < abs(eivals[2]))) ||
+        ((eival_order == INCREASINGLY_DISTINCT_EIVALS) && (eivals[1]-eivals[0] > eivals[2]-eivals[1])) ||
+        ((eival_order == DECREASINGLY_DISTINCT_EIVALS) && (eivals[1]-eivals[0] < eivals[2]-eivals[1])))
+    {
+      // Swap the first and last eigenvalues:
+      swap(eivals[0], eivals[2]);
+      // Swap the first and last eigenvectors:
+      for (int d=0; d<3; d++)
+        swap(eivects[0][d], eivects[2][d]);
+    }
+
+  } //DiagonalizeSymm3()
+
+
+
+
+  template <class CompactSymMatrix, class ConstCompactSymMatrix>
+  void
+  DiagonalizeSymCompact3(ConstCompactSymMatrix source,
+                         CompactSymMatrix dest,
+                         EigenOrderType eival_order = INCREASING_EIVALS)
+  {
+    // We need to define some temporary variables that store calculations.
+    // These variables will be of type "Scalar" which should be the same
+    // numeric type (ie float, double) as the entries in the "dest" argument
+    // (which is array-like and supports subscripting).
+    // Unfortunately, the next line of hellish C++ failed to infer the type
+    // of the entries in the "dest" argument correctly:
+    // typedef std::remove_reference<decltype(dest[0])>::type Scalar;
+    // ...so I'm just goint to use doubles instead for these temporary variables
+    typedef double Scalar;
+
+    // Convert the "source" from type "CompactSymMatrix"
+    // ...to an ordinary 3x3 array ("matrix"):
+    Scalar matrix[3][3];
+    for (int di=0; di<3; di++)
+      for (int dj=0; dj<3; dj++)
+        matrix[di][dj] = source[ MapIndices_3x3_to_linear[di][dj] ];
+
+    Scalar eivals[3];
+    Scalar eivects[3][3];
+
+    // Now diagonalize this 3x3 array
+    DiagonalizeSymm3(matrix, eivals, eivects);
+
+    // Convert to quaternions:
+    // There are 3 eigenvectors, each containing 3 numbers (9 total).
+    // We will store the eigenvectors and eigenvalues for every voxel
+    // in the image in a large (4-dimensional) array.
+    // Allocating space for these huge arrays is a serious problem.
+    // Rotation matrices can be represented using quaternions.
+    // So we convert the eigenvects into quaternion format in order
+    // to reduce the space needed from 9=3x3 numbers down to 4 (per voxel)
+    // (I suppose I could use Euler angles or Shoemake coordinates,
+    //  to reduce this down to 3, but I'm too lazy to be bothered.)
+
+    // Problem:
+    // The eigenvectors are orthonormal, but not necessarily a rotation.
+    // If the determinant is negative, then flip one of the eigenvectors
+    // to insure the determinant is positive.  Handle this below:
+    if (Determinant3(eivects) < 0.0) {
+      for (int d=0; d<3; d++)
+        eivects[0][d] *= -1.0;
+    }
+
+    // convert the 3x3 matrix of eigenvector components down to 3 numbers
+    // ("Shoemake" coordinates representing the rotation corresponding
+    //  to the 3 eigenvectors of the 3x3 matrix.)
+    Scalar shoemake[3];
+    Matrix2Shoemake(eivects, shoemake);
+
+    // Store the eigenvalues and eigevectors in the following format:
+    dest[0] = eivals[0];
+    dest[1] = eivals[1];
+    dest[2] = eivals[2];
+    dest[3] = shoemake[0];
+    dest[4] = shoemake[1];
+    dest[5] = shoemake[2];
+
+  } // DiagonalizeSymCompact3()
+
+
+
+  template <class CompactSymMatrix, class ConstCompactSymMatrix>
+  void
+  UndiagonalizeSymCompact3(CompactSymMatrix source,
+                           CompactSymMatrix dest)
+  {
+    // We need to define some temporary variables that store calculations.
+    // These variables will be of type "Scalar" which should be the same
+    // numeric type (ie float, double) as the entries in the "dest" argument
+    // (which is array-like and supports subscripting).
+    // Unfortunately, the next line of hellish C++ failed to infer the type
+    // of the entries in the "dest" argument correctly:
+    // typedef std::remove_reference<decltype(dest[0])>::type Scalar;
+    // ...so I'm just goint to use doubles instead for these temporary variables
+    typedef double Scalar;
+
+    Scalar eivals[3];
+    eivals[0] = source[0];
+    eivals[1] = source[1];
+    eivals[2] = source[2];
+    Scalar shoemake[3];
+    shoemake[0] = source[3];
+    shoemake[1] = source[4];
+    shoemake[2] = source[5];
+    Scalar eivects[3][3];
+    Shoemake2Matrix(shoemake, eivects);
+
+    // Here we reverse the result of an earlier diagonalization
+    // Mij = sum_d  lambda[d] * V_d[i] * V_d[j]
+    Scalar matrix[3][3] = {{0.0,0.0,0.0}, {0.0,0.0,0.0}, {0.0,0.0,0.0}};
+    for (int d=0; d<3; d++) {
+      for (int di=0; di<3; di++) {
+        for (int dj=0; dj<3; dj++) {
+          matrix[di][dj] += eivals[d] * eivects[d][di] * eivects[d][dj];
+        }
+      }
+    }
+    for (int di=0; di<3; di++) {
+      for (int dj=0; dj<3; dj++) {
+        dest[ MapIndices_3x3_to_linear[di][dj] ] = matrix[di][dj];
+      }
+    }
+
+  } // UndiagonalizeSymCompact3()
 
 
 } // namespace selfadjoint_eigenvalues3

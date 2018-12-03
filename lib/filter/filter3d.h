@@ -11,6 +11,7 @@
 #include <ostream>
 #include <vector>
 #include <tuple>
+#include <cassert>
 using namespace std;
 #include <alloc3d.h>
 #include <filter1d.h>  // defines "Filter1D" (used in "ApplyGauss()")
@@ -387,7 +388,7 @@ public:
   /// @brief allocate space for the filter array
   void Alloc(Integer const set_halfwidth[3]) {
     //Integer array_size[3];
-    for(Integer d=0; d < 3; d++) {
+    for(int d=0; d < 3; d++) {
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
@@ -411,7 +412,7 @@ public:
   /// @brief allocate space used by the filter array
   void Dealloc() {
     //Integer array_size[3];
-    for(Integer d=0; d < 3; d++) {
+    for(int d=0; d < 3; d++) {
       array_size[d] = 1 + 2*halfwidth[d];
       halfwidth[d] = -1;
     }
@@ -425,7 +426,7 @@ public:
     }
     //then deallocate
     Dealloc3D(array_size, &afH, &aaafH);
-    for(Integer d=0; d < 3; d++)
+    for(int d=0; d < 3; d++)
       array_size[d] = -1;
   }
 
@@ -1256,8 +1257,8 @@ ApplySeparable3D(int const image_size[3],
   // Gaussian evaluated at its peak, which is stored in the central entry
 
   Scalar A_coeff = (aFilter[0].afH[0] *
-                     aFilter[1].afH[0] *
-                     aFilter[2].afH[0]);
+                    aFilter[1].afH[0] *
+                    aFilter[2].afH[0]);
 
   return A_coeff;
 
@@ -2567,15 +2568,6 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds,
 
 
 
-
-
-
-
-
-
-
-
-
 template<class Scalar>
 
 class CompactMultiChannelImage3D
@@ -2706,15 +2698,31 @@ private:
 
 
 
+
 using namespace selfadjoint_eigen3;
 
+/// @brief  Calculate matrix of 2nd derivatives (the hessian)
+///         as well as the the vector of 1st derivatives (the gradient)
+///         of the source image (aaafSource), at every location where aaafMask
+///         is non-zero (or everywhere if aaafMask is NULL)
+///         Apply a Gaussian blur to the image (of width sigma) beforehand,
+///         (truncating the blur filter at a distance of truncate_ratio*sigma
+///          voxels from the center of the Gaussian).
+///         Hessians and Gradients are saved in 3-dimensional arrays of
+///         either "TensorContainers", or "VectorContainers".
+///         Both of these objects must support array subscripting.
+///         Each "TensorContainer" object is expected to behave like
+///         a one-dimensional array of 6 scalars (hence the "aaaafHessian"
+///         argument behaves like a 4-dimensional array)
+///         Each "VectorContainer" object is expected to behave like
+///         a one-dimensional array of 3 scalars.
 
-template<class Scalar>
+template<class Scalar, class VectorContainer, class TensorContainer>
 void
 CalcHessian3D(int const image_size[3], //!< source image size
               Scalar const *const *const *aaafSource, //!< source image
-              CompactMultiChannelImage3D<Scalar> *pHessian, //!< save results here (if not NULL)
-              CompactMultiChannelImage3D<Scalar> *pGradient, //!< save results here (if not NULL)
+              VectorContainer ***aaaafGradient,  //!< save results here (if not NULL)
+              TensorContainer ***aaaafHessian, //!< save results here (if not NULL)
               Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
               Scalar sigma,  //!< Gaussian width in x,y,z drections
               Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
@@ -2722,16 +2730,8 @@ CalcHessian3D(int const image_size[3], //!< source image size
               )
 {
   assert(aaafSource);
+  assert(aaaafHessian);
   
-  if (pHessian) {
-    assert(pHessian->nchannels() == 7);
-    pHessian->Resize(image_size, aaafMask, pReportProgress);
-  }
-  if (pGradient) {
-    assert(pGradient->nchannels() == 3);
-    pGradient->Resize(image_size, aaafMask, pReportProgress);
-  }
-
   int truncate_halfwidth = floor(sigma * truncate_ratio);
 
   // Here we use the fast, sloppy way to compute gradients and Hessians:
@@ -2747,7 +2747,7 @@ CalcHessian3D(int const image_size[3], //!< source image size
   // First, apply the Gaussian filter to the image
   if (pReportProgress)
     *pReportProgress
-      << " -- Attempting to allocate space for one more image.      --\n"
+      << " -- Attempting to allocate space for one more image.       --\n"
       << " -- (If this crashes your computer, find a computer with   --\n"
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
@@ -2773,21 +2773,16 @@ CalcHessian3D(int const image_size[3], //!< source image size
   assert(image_size[1] >= 3);
   assert(image_size[2] >= 3);
 
-  if (pReportProgress && pHessian)
-    *pReportProgress << "\n"
-      "---- Diagonalizing the Hessian everywhere (within the mask)... "
-                     << flush;
-
   // Now compute gradients and hessians
 
-  #pragma omp parallel for collapse(2)
   for (int iz = 1; iz < image_size[2]-1; iz++) {
+    #pragma omp parallel for collapse(2)
     for (int iy = 1; iy < image_size[1]-1; iy++) {
       for (int ix = 1; ix < image_size[0]-1; ix++) {
         if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
           continue;
 
-        if (pGradient) {
+        if (aaaafGradient) {
           Scalar gradient[3];
           gradient[0]=0.5*(aaafSmoothed[iz][iy][ix+1] - 
                            aaafSmoothed[iz][iy][ix-1]);
@@ -2803,20 +2798,13 @@ CalcHessian3D(int const image_size[3], //!< source image size
           gradient[1] *= sigma;
           gradient[2] *= sigma;
           
-          pGradient->aaaafI[iz][iy][ix][0] = gradient[0];
-          pGradient->aaaafI[iz][iy][ix][1] = gradient[1];
-          pGradient->aaaafI[iz][iy][ix][2] = gradient[2];
-
-          if ((ix==image_size[0]/4)&&(iy==image_size[1]/4)&&(iz==image_size[2]/4))
-            pHessian->aaaafI[iz][iy][ix][0] = -1.0;     
-          if ((ix==image_size[0]/3)&&(iy==image_size[1]/3)&&(iz==image_size[2]/3))
-            pHessian->aaaafI[iz][iy][ix][0] = -1.0;     
-          if ((ix==image_size[0]/2)&&(iy==image_size[1]/2)&&(iz==image_size[2]/2))
-            pHessian->aaaafI[iz][iy][ix][0] = -1.0;     
+          aaaafGradient[iz][iy][ix][0] = gradient[0];
+          aaaafGradient[iz][iy][ix][1] = gradient[1];
+          aaaafGradient[iz][iy][ix][2] = gradient[2];
 
         }
 
-        if (pHessian) {
+        if (aaaafHessian) {
           Scalar hessian[3][3];
           hessian[0][0] = (aaafSmoothed[iz][iy][ix+1] + 
                            aaafSmoothed[iz][iy][ix-1] - 
@@ -2848,61 +2836,22 @@ CalcHessian3D(int const image_size[3], //!< source image size
 
           // Optional: Insure that the result is dimensionless:
           // (Lindeberg 1993 "On Scale Selection for Differential Operators")
-          for (int i=0; i < 3; i++)
-            for (int j=0; j < 3; j++)
-              hessian[i][j] *= sigma*sigma;
+          for (int di=0; di < 3; di++)
+            for (int dj=0; dj < 3; dj++)
+              hessian[di][dj] *= sigma*sigma;
 
+          // To reduce memory consumption,
+          // save the resulting 3x3 matrix in a smaller 1-D array whose index
+          // is given by MapIndices_3x3_to_linear()
+          for (int di=0; di < 3; di++)
+            for (int dj=0; dj < 3; dj++)
+              aaaafHessian[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+                = hessian[di][dj];
 
-          Scalar eivals[3];
-          Scalar eivects[3][3];
-
-          Diagonalize3(hessian, eivals, eivects);
-
-          // The Diagonalize3() function sorts the eigenvalues (and vectors)
-          // in increasing order.  We want it in decreasing order.  
-          // Swap the first and last eigenvalues:
-          swap(eivals[0], eivals[2]);
-          // Swap the first and last eigenvectors:
-          for (int d=0; d<3; d++)
-            swap(eivects[0][d], eivects[2][d]);
-
-          // Convert to quaternions:
-          // There are 3 eigenvectors, each containing 3 numbers (9 total).
-          // We will store the eigenvectors and eigenvalues for every voxel
-          // in the image in a large (4-dimensional) array.
-          // Allocating space for these huge arrays is a serious problem.
-          // Rotation matrices can be represented using quaternions.
-          // So we convert the eigenvects into quaternion format in order
-          // to reduce the space needed from 9=3x3 numbers down to 4 (per voxel)
-          // (I suppose I could use Euler angles or Shoemake coordinates,
-          //  to reduce this down to 3, but I'm too lazy to be bothered.)
-
-          // Problem:
-          // The eigenvectors are orthonormal, but not necessarily a rotation.
-          // If the determinant is negative, then flip one of the eigenvectors
-          // to insure the determinant is positive.  Handle this below:
-          if (Determinant3(eivects) < 0.0) {
-            for (int d=0; d<3; d++)
-              eivects[0][d] *= -1.0;
-          }
-
-          Scalar quat[4];
-          Matrix2Quaternion(eivects, quat);
-
-          assert(pHessian->aaaafI[iz][iy][ix]);
-
-          pHessian->aaaafI[iz][iy][ix][0] = eivals[0];
-          pHessian->aaaafI[iz][iy][ix][1] = eivals[1];
-          pHessian->aaaafI[iz][iy][ix][2] = eivals[2];
-          pHessian->aaaafI[iz][iy][ix][3] = quat[0];
-          pHessian->aaaafI[iz][iy][ix][4] = quat[1];
-          pHessian->aaaafI[iz][iy][ix][5] = quat[2];
-          pHessian->aaaafI[iz][iy][ix][6] = quat[3];
-
-        } //if (pHessian)
-      } //for (int ix = 1; ix < image_size[0]-1; ix++) {
-    } //for (int iy = 1; iy < image_size[1]-1; iy++) {
-  } //for (int iz = 1; iz < image_size[2]-1; iz++) {
+        } //if (aaaafHessian)
+      } //for (int ix = 1; ix < image_size[0]-1; ix++)
+    } //for (int iy = 1; iy < image_size[1]-1; iy++)
+  } //for (int iz = 1; iz < image_size[2]-1; iz++)
 
   Dealloc3D(image_size,
             &afSmoothed,
@@ -2915,38 +2864,34 @@ CalcHessian3D(int const image_size[3], //!< source image size
 
 
 
-/// CalcInertiaTensor3D()
+
+
+
+/// CalcMomentTensor3D()
 /// This is almost certainly algebraically equivalent to CalcHessian3D()
-/// However this version of the function is more robust for small ridges.
+/// However this version of the function might be more robust for small ridges.
 /// (This is because I apply the derivative to the Gaussian filter
-///  before applying the filter, ...INSTEAD of applying the Gaussian filter
+///  before applying the filter, ...instead of applying the Gaussian filter
 ///  and then taking differences afterwards.  If the width of the object being
 ///  detected is not much more than 3-voxel wide, the 3-voxel wide differences
 ///  used in the other implementation are a large source of error.)
 /// Unfortunately this version is slower and needs much more memory however.
 /// Eventually, I might elliminate one of these implementations.
 
-template<class Scalar>
+template<class Scalar, class FirstMomentContainer, class SecondMomentContainer>
 void
-CalcInertiaTensor3D(int const image_size[3], //!< source image size
-                    Scalar const *const *const *aaafSource, //!< source image
-                    CompactMultiChannelImage3D<Scalar> *pSecondMoment, //!< save results here (if not NULL)
-                    CompactMultiChannelImage3D<Scalar> *pFirstMoment, //!< save results here (if not NULL)
-                    Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                    Scalar sigma,  //!< Gaussian width in x,y,z drections
-                    Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-                    ostream *pReportProgress = NULL  //!< print progress to the user?
-                    )
+CalcMomentTensor3D(int const image_size[3], //!< source image size
+                   Scalar const *const *const *aaafSource, //!< source image
+                   FirstMomentContainer ***aaaaf1stMoment,  //!< save results here (if not NULL)
+                   SecondMomentContainer ***aaaaf2ndMoment, //!< save results here (if not NULL)
+                   Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+                   Scalar sigma,  //!< Gaussian width in x,y,z drections
+                   Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+                   ostream *pReportProgress = NULL  //!< print progress to the user?
+                   )
 {
+  assert(image_size);
   assert(aaafSource);
-  if (pSecondMoment) {
-    assert(pSecondMoment->nchannels() == 7);
-    pSecondMoment->Resize(image_size, aaafMask, pReportProgress);
-  }
-  if (pFirstMoment) {
-    assert(pSecondMoment->nchannels() == 3);
-    pFirstMoment->Resize(image_size, aaafMask, pReportProgress);
-  }
   
   int truncate_halfwidth = floor(sigma * truncate_ratio);
 
@@ -2990,7 +2935,7 @@ CalcInertiaTensor3D(int const image_size[3], //!< source image size
   Filter1D<Scalar, int> aFilter[3];
 
 
-  if (pFirstMoment) {
+  if (aaaaf1stMoment) {
 
     if (pReportProgress)
       *pReportProgress
@@ -3085,9 +3030,10 @@ CalcInertiaTensor3D(int const image_size[3], //!< source image size
           first_deriv[1] *= sigma;
           first_deriv[2] *= sigma;
           
-          pFirstMoment->aaaafI[iz][iy][ix][0] = first_deriv[0];
-          pFirstMoment->aaaafI[iz][iy][ix][1] = first_deriv[1];
-          pFirstMoment->aaaafI[iz][iy][ix][2] = first_deriv[2];
+          // Store the result in aaaaf1stMoment[]
+          aaaaf1stMoment[iz][iy][ix][0] = first_deriv[0];
+          aaaaf1stMoment[iz][iy][ix][1] = first_deriv[1];
+          aaaaf1stMoment[iz][iy][ix][2] = first_deriv[2];
         }
       }
     }
@@ -3104,7 +3050,7 @@ CalcInertiaTensor3D(int const image_size[3], //!< source image size
 
 
 
-  if (pSecondMoment) {
+  if (aaaaf2ndMoment) {
     if (pReportProgress)
       *pReportProgress << "\n"
         " ------ Calculating the average of nearby voxels: ------\n";
@@ -3265,90 +3211,44 @@ CalcInertiaTensor3D(int const image_size[3], //!< source image size
       }
     }
 
-
-    // Now compute eigenvalues and eigenvectors of the second moment
-
-    if (pReportProgress)
-      *pReportProgress << "\n"
-        "---- Diagonalizing the 2nd moment everywhere (within the mask) ----"
-                       << flush;
-
-    #pragma omp parallel for collapse(2)
-    for (int iz = 1; iz < image_size[2]-1; iz++) {
-      for (int iy = 1; iy < image_size[1]-1; iy++) {
-        for (int ix = 1; ix < image_size[0]-1; ix++) {
+    for(int iz=0; iz<image_size[2]; iz++) {
+      for(int iy=0; iy<image_size[1]; iy++) {
+        for(int ix=0; ix<image_size[0]; ix++) {
           if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
             continue;
+          // Store the result in aaaaf2ndMoment[].  As usual, to save memory
+          // we use the "MapIndices_3x3_to_linear()" function to store the
+          // entries of the symmetric 3x3 matrix in a 1D array with only 6 entries.
+          // (Symmetric 3x3 matrices can have at most 6 unique entries.)
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[0][0] ] =
+            aaafIxx[ix][iy][iz];
 
-          if (pSecondMoment) {
-            Scalar second_deriv[3][3];
-            second_deriv[0][0] = aaafIxx[iz][iy][ix];
-            second_deriv[1][1] = aaafIyy[iz][iy][ix];
-            second_deriv[2][2] = aaafIzz[iz][iy][ix];
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[0][1] ] =
+            aaafIxy[ix][iy][iz];
+    
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[0][2] ] =
+            aaafIxz[ix][iy][iz];
 
-            second_deriv[0][1] = aaafIxy[iz][iy][ix];
-            second_deriv[1][0] = second_deriv[0][1];
-            second_deriv[1][2] = aaafIyz[iz][iy][ix];
-            second_deriv[2][1] = second_deriv[1][2];
-            second_deriv[2][0] = aaafIxz[iz][iy][ix];
-            second_deriv[0][2] = second_deriv[2][0];
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[1][0] ] =
+            aaafIxy[ix][iy][iz];  // (redundant but harmless)
 
-            // Optional: Insure that the result is dimensionless:
-            // (Lindeberg 1993 "On Scale Selection for Differential Operators")
-            for (int i=0; i < 3; i++)
-              for (int j=0; j < 3; j++)
-                second_deriv[i][j] *= sigma*sigma;
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[1][1] ] =
+            aaafIyy[ix][iy][iz];
 
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[1][2] ] =
+            aaafIyz[ix][iy][iz];
 
-            Scalar eivals[3];
-            Scalar eivects[3][3];
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[2][0] ] =
+            aaafIxz[ix][iy][iz];  // (redundant but harmless)
 
-            Diagonalize3(second_deriv, eivals, eivects);
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[2][1] ] =
+            aaafIyz[ix][iy][iz];  // (redundant but harmless)
 
-            // The Diagonalize3() function sorts the eigenvalues (and vectors)
-            // in increasing order.  We want it in decreasing order.  
-            // Swap the first and last eigenvalues:
-            swap(eivals[0], eivals[2]);
-            // Swap the first and last eigenvectors:
-            for (int d=0; d<3; d++)
-              swap(eivects[0][d], eivects[2][d]);
-
-            // Convert to quaternions:
-            // There are 3 eigenvectors, each containing 3 numbers (9 total).
-            // We will store the eigenvectors and eigenvalues for every voxel
-            // in the image in a large (4-dimensional) array.
-            // Allocating space for these huge arrays is a serious problem.
-            // Rotation matrices can be represented using quaternions.
-            // So we convert the eigenvects into quaternion format in order to
-            // reduce the space needed from 9=3x3 numbers down to 4 (per voxel)
-            // (I suppose I could use Euler angles or Shoemake coordinates,
-            //  to reduce this down to 3, but I'm too lazy to be bothered.)
-
-            // Problem:
-            // The eigenvectors are orthonormal, but not necessarily a rotation.
-            // If the determinant is negative, then flip one of the eigenvectors
-            // to insure the determinant is positive.  Handle this below:
-            if (Determinant3(eivects) < 0.0) {
-              for (int d=0; d<3; d++)
-                eivects[0][d] *= -1.0;
-            }
-
-            Scalar quat[4];
-            Matrix2Quaternion(eivects, quat);
-
-            assert(second_deriv.aaaafI[iz][iy][ix]);
-
-            pSecondMoment->aaaafI[iz][iy][ix][0] = eivals[0];
-            pSecondMoment->aaaafI[iz][iy][ix][1] = eivals[1];
-            pSecondMoment->aaaafI[iz][iy][ix][2] = eivals[2];
-            pSecondMoment->aaaafI[iz][iy][ix][3] = quat[0];
-            pSecondMoment->aaaafI[iz][iy][ix][4] = quat[1];
-            pSecondMoment->aaaafI[iz][iy][ix][5] = quat[2];
-            pSecondMoment->aaaafI[iz][iy][ix][6] = quat[3];
-          } //if (pSecondMoment)
-        } //for (int ix = 1; ix < image_size[0]-1; ix++) {
-      } //for (int iy = 1; iy < image_size[1]-1; iy++) {
-    } //for (int iz = 1; iz < image_size[2]-1; iz++) {
+          aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[2][2] ] =
+            aaafIzz[ix][iy][iz];
+        }
+      }
+    }
 
     if (pReportProgress)
       *pReportProgress << "done ----" << endl;
@@ -3381,9 +3281,685 @@ CalcInertiaTensor3D(int const image_size[3], //!< source image size
             &afNorm,
             &aaafNorm);
 
-} // CalcInertiaTensor3D()
+} // CalcMomentTensor3D()
 
 
+
+
+
+
+
+/// @brief  Convert a volumetric 3D 6-channel image, where each voxel in the
+///         image has the (non-redundant) components of a symmetrix 3x3 matrix.
+///         The output of this function is another 3D 6-channel image, however
+///         each voxel in this image contains the 3-eigenvalues as well as the
+///         eigevectors (stored as 3 Shoemake coordinates).
+///         If a non-NULL "aaafMask" argument was specified, voxels in the
+///         image are ignored when aaafMask[iz][iy][ix] == 0.
+/// @note   The "TensorContainer" object type is expected to behave like
+///         a one-dimensional array of 6 scalars.
+
+template<class Scalar, class TensorContainer>
+void
+DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
+                          TensorContainer const *const *const *aaaafSource, //!< input tensor
+                          TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
+                          Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+                          EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS,
+                          ostream *pReportProgress = NULL  //!< print progress to the user?
+                          )
+{
+  assert(aaaafSource);
+  if (pReportProgress && aaaafSource)
+    *pReportProgress << "\n"
+      "---- Diagonalizing the Hessian everywhere (within the mask)... "
+                     << flush;
+
+  #pragma omp parallel for collapse(2)
+  for (int iz = 1; iz < image_size[2]-1; iz++) {
+    for (int iy = 1; iy < image_size[1]-1; iy++) {
+      for (int ix = 1; ix < image_size[0]-1; ix++) {
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
+
+        DiagonalizeSymCompact3(aaaafSource[iz][iy][ix],
+                               aaaafDest[iz][iy][ix],
+                               eival_order);
+
+      } //for (int ix = 1; ix < image_size[0]-1; ix++) {
+    } //for (int iy = 1; iy < image_size[1]-1; iy++) {
+  } //for (int iz = 1; iz < image_size[2]-1; iz++) {
+} //DiagonalizeHessianImage3D()
+
+
+
+
+
+/// @brief  Convert a volumetric 3D 6-channel image, where each voxel in the
+///         image has the (non-redundant) components of a symmetrix 3x3 matrix.
+///         The output of this function is another 3D 6-channel image, however
+///         each voxel in this image contains the 3-eigenvalues as well as the
+///         eigevectors (stored as 3 Shoemake coordinates).
+///         In order to conserve memory, the conversion occurs in place.
+///         (The original array is overwritten with the new array.)
+///         If a non-NULL "aaafMask" argument was specified, voxels in the
+///         image are ignored when aaafMask[iz][iy][ix] == 0.
+/// @note   The "TensorContainer" object type is expected to behave like
+///         a one-dimensional array of 6 scalars.
+
+template<class Scalar, class TensorContainer>
+void
+UndiagonalizeHessianImage3D(int const image_size[3],  //!< source image size
+                            TensorContainer const *const *const *aaaafSource, //!< input tensor
+                            TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
+                            Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+                            ostream *pReportProgress = NULL  //!< print progress to the user?
+                            )
+{
+  assert(aaaafSource);
+
+  if (pReportProgress)
+    *pReportProgress << "\n"
+      "---- Undiagonalizing the Hessian everywhere (within the mask)... "
+                     << flush;
+
+  #pragma omp parallel for collapse(2)
+  for (int iz = 1; iz < image_size[2]-1; iz++) {
+    for (int iy = 1; iy < image_size[1]-1; iy++) {
+      for (int ix = 1; ix < image_size[0]-1; ix++) {
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
+
+        UndiagonalizeSymCompact3(aaaafSource, aaaafDest);
+
+      } //for (int ix = 1; ix < image_size[0]-1; ix++) {
+    } //for (int iy = 1; iy < image_size[1]-1; iy++) {
+  } //for (int iz = 1; iz < image_size[2]-1; iz++) {
+} //UndiagonalizeHessianImage3D()
+
+
+
+
+
+/// @brief: Calculate how "plane"-like a feature along a ridge is
+///         from the hessian (the matrix of 2nd derivatives).
+///         This function assumes the hessian matrix has been diagonalized
+///         and that the first 3 entries of the "diagonalizedHessian"
+///         argument are the eigenvalues of the original hessian matrix.
+
+template<class TensorContainer, class VectorContainer>
+double
+ScoreHessianPlanar(TensorContainer diagonalizedHessian,
+                   VectorContainer gradient)
+{
+  //typedef decltype(diagonalizedHessian[0]) Scalar;
+  double lambda1 = diagonalizedHessian[0];
+  double lambda2 = diagonalizedHessian[1];
+  double lambda3 = diagonalizedHessian[2];
+
+  // not needed:
+  //Scalar grad_sqd = 0.0;
+  //if (gradient)
+  //  grad_sqd = DotProduct3(gradient, gradient);
+
+  // REMOVE THIS CRUFT
+  // The "score_ratio" variable is the score function used in Eq(5) of
+  // Martinez-Sanchez++Fernandez_JStructBiol2011.  IT PERFORMS POORLY.
+  //float score_ratio;
+  //score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
+  //               / grad_sqd);
+  //score_ratio *= score_ratio;
+
+  // REMOVE THIS CRUFT:
+  // The following "linear" metric produces interesting results, but
+  // the resulting membrane structures that are detected are not well
+  // separated from the huge amount of background noise.  DON'T USE:
+  //float Linear_norm = lambda1 - lambda2;
+  //score = Linear_norm / grad_sqd;
+
+
+  // I decided to try the "Ngamma_norm" metric proposed on p.26 of
+  // Lindeberg Int.J.ComputVis.1998,
+  // "Edge and ridge detection with automatic scale selection"
+  double Nnorm = lambda1*lambda1 - lambda2*lambda2;
+  Nnorm *= Nnorm;
+
+  return Nnorm;
+} // ScoreHessianPlanar()
+
+
+
+
+
+/// @brief: Calculate how "plane"-like a feature along a ridge is
+///         from the tensor created by the process of tensor voting.
+///         This function assumes that "diagonalizedMatrix3x3" has been 
+///         diagonalized, and that its first 3 entries 
+///         are the eigenvalues of the original hessian matrix.
+template<class TensorContainer>
+double
+ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
+{
+  //return ScoreHessianPlanar(diagonalizedMatrix3x3,
+  //                          NULL,
+  //                          multiplier);
+  double lambda1 = diagonalizedMatrix3[0];
+  double lambda2 = diagonalizedMatrix3[1];
+  return lambda1 - lambda2;  // the "stickness" (See TensorVoting paper)
+}
+
+
+
+
+/// @brief  A class for performing simple tensor-voting image processing 
+///         tasksin 3D.  Currently only "stick" voting is supported.
+///         (Other kinds of tensor voting, such as "plate" and "ball" are not.)
+///         This can perform tensor voting for both types of
+///         "stick" fields in 3D:
+///         (1) Stick-fields corresponding to planar-surface-like features,
+///         (2) Stick-fields corresponding to curve-like features.
+
+template<class Scalar, class Integer, class VectorContainer, class TensorContainer>
+
+class TV3D {
+
+private:
+
+  Scalar sigma;
+  Integer exponent;
+  Integer halfwidth[3];
+  Integer array_size[3];
+  Filter3D<Scalar, Integer> radial_decay_lookup;
+  array<Scalar, 3> ***aaaafDisplacement;
+  array<Scalar, 3> *aafDisplacement;
+
+public:
+
+  TV3D():radial_decay_lookup() {
+    Init();
+  }
+
+  TV3D(Scalar set_sigma,
+       Integer set_exponent,
+       Scalar filter_cutoff_ratio=2.5):radial_decay_lookup() {
+    Init();
+    SetExponent(set_exponent);
+    SetSigma(set_sigma, filter_cutoff_ratio);
+  }
+
+  inline TV3D(const Filter3D<Scalar, Integer>& source) {
+    Resize(source.halfwidth); // allocates and initializes afH and aaafH
+    std::copy(source.aafDisplacement,
+              source.aafDisplacement + (array_size[0] * array_size[1] * array_size[2]),
+              aafDisplacement);
+  }
+
+  ~TV3D() {
+    DeallocDisplacement();
+  }
+
+  void SetExponent(Scalar set_exponent) {
+    exponent = set_exponent;
+  }
+
+  void SetSigma(Scalar set_sigma, Scalar filter_cutoff_ratio=2.5)
+  {
+    sigma = set_sigma;
+    for (int d=0; d<3; d++)
+      halfwidth[d] = floor(sigma * filter_cutoff_ratio);
+    Resize(halfwidth);
+  }
+
+
+  /// @brief  Perform dense stick-voting, using every voxel in the image
+  ///         (with non-zero correspondin entries in the aaafMaskSource array)
+  ///         as a source, and collecting votes at every voxel
+  ///         (with non-zero correspondin entries in the aaafMaskDest array)
+  ///         in the aaaafDest array.
+  ///         Other kinds of tensor voting ("plate" and "ball")
+  ///         are not supported by this function.
+  ///         This function can perform tensor voting for both types of
+  ///         "stick" fields in 3D:
+  ///         (1) Stick-fields corresponding to planar-surface-like features,
+  ///         (2) Stick-fields corresponding to curve-like features.
+  ///         This function expects a 3D array of normalized "vectors"
+  ///         (one vector for each voxel in the original image, 3 numbers each).
+  ///         These "vectors" can have user-defined type (implementation),
+  ///         however they must support 1-dimensional subscripting (i=0,1,2).
+  ///         This function also expects an array of numbers ("saliencies")
+  ///         which store the strength of each vector.
+  ///         (Note: Do not multiply each vector by its saliency.
+  ///                The length of each vector is expected to be 1.0)
+  /// After this function is invoked, aaaafDest will store an array of
+  /// diagonalized tensors, one tensor for each voxel in the original image
+  /// (unless aaafMaskDest!=NULL and the corresponding entry there is 0).
+
+  void
+  TVDenseStick(Integer const image_size[3],  //!< source image size
+               Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
+               VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+               TensorContainer ***aaaafDest,  //!< votes will be collected here
+               Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
+               Scalar const *const *const *aaafMaskDest=NULL,  //!< don't cast votes wherever mask==0
+               bool detect_curves_not_surfaces=false,
+               bool normalize=true,
+               ostream *pReportProgress=NULL  //!< print progress to the user?
+               )
+  {
+    if (pReportProgress)
+      *pReportProgress
+        << " -- Attempting to allocate space for one more image.\n"
+        << " -- (If this crashes your computer, find a computer with\n"
+        << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
+
+    float *afDenominator = NULL;
+    float ***aaafDenominator = NULL;
+
+    if (normalize)
+      Alloc3D(image_size,
+              &afDenominator,
+              &aaafDenominator);
+
+    TVDenseStick(image_size,
+                 aaafSaliency,
+                 aaaafV,
+                 aaaafDest,
+                 aaafMaskSource,
+                 aaafMaskDest,
+                 detect_curves_not_surfaces,
+                 aaafDenominator,
+                 pReportProgress);
+
+    if (normalize) {
+      assert(aaafDenominator);
+      for (Integer iz=0; iz<image_size[2]; iz++) {
+        #pragma omp parallel for collapse(2)
+        for (Integer iy=0; iy<image_size[1]; iy++) {
+          for (Integer ix=0; ix<image_size[0]; ix++) {
+            for (int di=0; di<3; di++) {
+              for (int dj=0; dj<3; dj++) {
+                if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+                  continue;
+                assert(aaafDenominator[iz][iy][ix] > 0.0);
+                aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+                  /= aaafDenominator[iz][iy][ix];
+              }
+            }
+          }
+        }
+      } //for (Integer iz=0; iz<image_size[2]; iz++)
+
+      Dealloc3D(image_size,
+                &afDenominator,
+                &aaafDenominator);
+    } //if (normalize) {
+
+  } // TVDenseStick()
+
+
+  void
+  TVDenseStick(Integer const image_size[3],  //!< source image size
+               Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
+               VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+               TensorContainer ***aaaafDest,  //!< votes will be collected here
+               Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
+               Scalar const *const *const *aaafMaskDest=NULL,  //!< don't cast votes wherever mask==0
+               bool detect_curves_not_surfaces=false,
+               Scalar ***aaafDenominator=NULL,
+               ostream *pReportProgress=NULL  //!< print progress to the user?
+               )
+  {
+    assert(aaafSaliency);
+    assert(aaaafV);
+    assert(aaaafDest);
+
+    //assert(pv);
+    //assert(pV->nchannels() == 3);
+    //pV->Resize(image_size, aaafMaskSource, pReportProgress);
+
+    if (pReportProgress)
+      *pReportProgress << "---- Begin Tensor Voting (dense, stick) ----\n"
+                       << "  progress: processing plane#" << endl;
+
+    if (pReportProgress)
+      *pReportProgress << "---- Diagonalizing Tensor Voting results ----" << endl;
+
+    // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
+    // Multiplying the density in the tomogram by the mask removes some of 
+    // the voxels from consideration later on when we do the filtering.
+    // (Later, we will adjust the weight of the average we compute when we
+    //  apply the filter in order to account for the voxels we deleted now.)
+
+    for (Integer iz=0; iz<image_size[2]; iz++) {
+
+      if (pReportProgress)
+        *pReportProgress << "  " << iz+1 << " / " << image_size[2] << "\n";
+
+      #pragma omp parallel for collapse(2)
+      for (Integer iy=0; iy<image_size[1]; iy++) {
+
+        for (Integer ix=0; ix<image_size[0]; ix++) {
+
+          // Calculate the effect of the filter on
+          // the voxel located at position ix,iy,iz
+
+          if ((aaafMaskDest) && (aaafMaskDest[iz][iy][ix] == 0.0)) {
+            for (int di=0; di<3; di++)
+              for (int dj=0; dj<3; dj++)
+                aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ] = 0.0;
+            continue;
+          }
+
+          TVApplyStickToVoxel(ix, iy, iz,
+                              image_size,
+                              aaafSaliency,
+                              aaaafV,
+                              aaaafDest,
+                              aaafMaskSource,
+                              exponent,
+                              (aaafDenominator
+                               ? &(aaafDenominator[iz][iy][ix])
+                               : NULL));
+        }
+      }
+    }
+
+    // Diagonalize the resulting tensor.
+    // The resulting eigenvalues and eigenvectors can be analyzed by the caller.
+    DiagonalizeHessianImage3D(image_size,
+                              aaaafDest, //<--undiagonalized tensors (input)
+                              aaaafDest, //<--diagonalized tensors (output)
+                              aaafMaskSource,
+                              selfadjoint_eigen3::DECREASING_EIVALS,
+                              pReportProgress);
+
+
+    // DEBUG: assert that all eigenvalues are nonnegative
+    for (Integer iz=0; iz<image_size[2]; iz++) {
+      for (Integer iy=0; iy<image_size[1]; iy++) {
+        for (Integer ix=0; ix<image_size[0]; ix++) {
+          if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0.0))
+            continue;
+          // The eigenvalues are in the first 3 entries of aaaafDest[iz][iy][ix]
+          float *eivals = aaaafDest[iz][iy][ix];
+          assert(eivals);
+          for (int d=0; d<3; d++)
+            assert(eivals[d] >= 0.0);
+        }
+      }
+    }
+
+  } //TVDenseStick()
+
+
+
+
+  Scalar
+  TVApplyStickToVoxel(Integer ix,
+                      Integer iy,
+                      Integer iz,
+                      Integer const image_size[3],
+                      Scalar const *const *const *aaafSaliency, //!< saliency (score) of each voxel (usually calculated from Hessian eigenvalues)
+                      VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+                      TensorContainer ***aaaafDest,  //!< votes will be collected here
+                      Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+                      bool detect_curves_not_surfaces = false,
+                      Scalar *pDenominator = NULL) const
+
+  {
+    assert(aaafSaliency);
+    assert(aaaafV);
+    assert(aaaafDest);
+
+    Scalar g = 0.0;
+    Scalar denominator = 0.0;
+
+    for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
+      Integer iz_jz = iz-jz;
+      if ((iz_jz < 0) || (image_size[2] <= iz_jz))
+        continue;
+
+      for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
+        Integer iy_jy = iy-jy;
+        if ((iy_jy < 0) || (image_size[1] <= iy_jy))
+          continue;
+
+        for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
+          Integer ix_jx = ix-jx;
+          if ((ix_jx < 0) || (image_size[0] <= ix_jx))
+            continue;
+
+          // The function describing how the vote-strength falls off with
+          // distance has been precomputed and is stored in
+          // radial_decay_lookup.aaafH[jz][jy][jx];
+          // In most tensor-voting implementations, this is a Gaussian.
+          Scalar filter_val = radial_decay_lookup.aaafH[jz][jy][jx];
+
+          if (aaafMaskSource) {
+            filter_val *= aaafMaskSource[iz_jz][iy_jy][ix_jx];
+            if (filter_val == 0.0)
+              continue;
+          }
+          //Note: The "filter_val" also is needed to calculate
+          //      the denominator used in normalization.
+          //      It is unusual to use a mask unless you intend
+          //      to normalize the result later, but I don't enforce this
+
+          Scalar decay_radial = filter_val;
+
+          Scalar r[3];
+          Scalar n[3];
+          for (int d=0; d<3; d++) {
+            r[d] = aaaafDisplacement[iz_jz][iy_jy][ix_jx][d];
+            n[d] = aaaafV[jz][jy][jx][d];
+          }
+
+          //
+          //   .
+          //   :\
+          //   : \
+          // ->:  \<- theta
+          //   :   \
+          //   :    \ 
+          //   :     \
+          //   :      \
+          //   :       \  
+          //   ^        \
+          //   |         \ 
+          // n |          \
+          //   |        .-' r
+          //   |,,..--''
+          //  0
+          //
+          // "n" = the direction of the stick tensor.  If the object being 
+          //       detected is a surface, n is perpendicular to that surface.
+          //       If the object is a curve, then n points tangent to the curve.
+          // "r" = the position of the vote receiver relative to the voter
+          //
+          // "theta" = the angle of r relative to the plane perpendicular to n.
+          //           (NOT the angle of r relative to n.  This is a confusing
+          //            convention, but this is how it is normally defined.)
+          
+          Scalar sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
+          Scalar sinx2 = sintheta * 2.0;
+          Scalar sin2 = sintheta * sintheta;
+          Scalar cos2 = 1.0 - sin2;
+          Scalar angle_dependence2 = cos2;
+          if (detect_curves_not_surfaces) {
+            // If we are detecting 1-dimensional curves (polymers, etc...)
+            // instead of 2-dimensional surfaces (membranes, ...)
+            // then the stick direction is assumed to be along the 
+            // of the curve, (as opposed to perpendicular to the 2D surface).
+            // As such
+            angle_dependence2 = sin2;
+          }
+
+          Scalar decay_angular;
+
+          switch(exponent) {
+          case 2:
+            decay_angular = angle_dependence2;
+            break;
+          case 4:
+            decay_angular = angle_dependence2 * angle_dependence2;
+            break;
+          default:
+            //Scalar angle_dependence = sqrt(angle_dependence2);
+            decay_angular = pow(angle_dependence2, 0.5*exponent);
+            break;
+          }
+
+          Scalar n_rotated[3];
+          for (int d=0; d<3; d++) {
+            if (detect_curves_not_surfaces)
+              n_rotated[d] = n[d] - sinx2*r[d];
+            else
+              n_rotated[d] = sinx2*r[d] - n[d];
+          }
+
+          Scalar tensor_vote[3][3];
+          for (int di=0; di<3; di++) {
+            for (int dj=0; dj<3; dj++) {
+              if (di <= dj) {
+                tensor_vote[di][dj] = (aaafSaliency[iz_jz][iy_jy][ix_jx] *
+                                       decay_radial *
+                                       decay_angular *
+                                       n_rotated[di] * n_rotated[dj]);
+
+                // OLD CODE: I used to implement aaaafDest as a 5-D array.
+                //
+                //aaaafDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
+                //
+                // NEW CODE:
+                // The ix,iy,iz'th entry in aaaafDest should be a 3x3 matrix.
+                // Since this matrix is symmentric, it contains only 6
+                // non-redundant entries.  Consequently there is no need to
+                // store 9 numbers if only 6 are needed.
+                // So I implemented a version of the 3x3 matrix which has
+                // only 6 entries, arranged in a 1-D array of size 6.
+                // To access these entries, use "MapIndices_3x3_to_linear()".
+
+                aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+                  += tensor_vote[di][dj];
+              }
+            }
+          }
+
+          if (pDenominator)
+            denominator += filter_val;
+        }
+      }
+    }
+
+    if (pDenominator)
+      *pDenominator = denominator;
+
+    return g;
+  } // TVApplyToVoxel()
+
+
+
+  inline void swap(TV3D<Scalar,Integer,VectorContainer,TensorContainer> &other)
+  {
+    std::swap(sigma, other.sigma);
+    std::swap(exponent, other.exponent);
+    std::swap(radial_decay_lookup, other.radial_decay_lookup);
+    std::swap(aafDisplacement, other.aafDisplacement);
+    std::swap(aaaafDisplacement, other.aaaafDisplacement);
+    std::swap(halfwidth, other.halfwidth);
+    std::swap(array_size, other.array_size);
+  }
+
+
+  inline TV3D<Scalar,Integer,VectorContainer,TensorContainer>&
+    operator = (TV3D<Scalar,Integer,VectorContainer,TensorContainer> source)
+  {
+    this->swap(source);
+    return *this;
+  }
+
+private:
+
+  void Init() {
+    sigma = 0.0;
+    halfwidth[0] = -1;
+    halfwidth[1] = -1;
+    halfwidth[2] = -1;
+    array_size[0] = -1;
+    array_size[1] = -1;
+    array_size[2] = -1;
+    aafDisplacement = NULL;
+    aaaafDisplacement = NULL;
+  }
+
+
+  void Resize(Integer set_halfwidth[3]) {
+    for (int d=0; d<3; d++) {
+      array_size[d] = 2*halfwidth[d] + 1;
+    }
+
+    Scalar sigmas[3] = {sigma, sigma, sigma};
+    radial_decay_lookup =
+      GenFilterGenGauss3D(sigmas,
+                          static_cast<float>(2.0),
+                          halfwidth);
+    
+    AllocDisplacement();
+    PrecalcDisplacement(aaaafDisplacement);
+  }
+
+
+  void DeallocDisplacement() {
+    if (aaaafDisplacement) {
+      //shift pointers back to normal
+      aaaafDisplacement -= halfwidth[2];
+      for (Integer iz = 0; iz < array_size[2]; iz++) {
+        aaaafDisplacement[iz] -= halfwidth[1];
+        for (Integer iy = 0; iy < array_size[1]; iy++) {
+          aaaafDisplacement[iz][iy] -= halfwidth[0];
+        }
+      }
+      Dealloc3D(array_size,
+                &aafDisplacement,
+                &aaaafDisplacement);
+    }
+  }
+
+  void AllocDisplacement() {
+    if (aaaafDisplacement)
+      Dealloc3D(array_size,
+                &aafDisplacement,
+                &aaaafDisplacement);
+    Alloc3D(array_size,
+            &aafDisplacement,
+            &aaaafDisplacement);
+    //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
+    aaaafDisplacement += halfwidth[2];
+    for (Integer iz = 0; iz < array_size[2]; iz++) {
+      aaaafDisplacement[iz] += halfwidth[1];
+      for (Integer iy = 0; iy < array_size[1]; iy++) {
+        aaaafDisplacement[iz][iy] += halfwidth[0];
+      }
+    }
+  }
+
+  void PrecalcDisplacement(array<Scalar, 3> ***aaaafDisplacement) {
+    // pre-compute the normalized radius unit vector
+    for (Integer iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+      for (Integer iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
+        for (Integer ix = -halfwidth[0]; ix <= halfwidth[0]; ix++) {
+          Scalar length = sqrt(ix*ix + iy*iy + iz*iz);
+          if (length == 0)
+            length = 1.0;
+          aaaafDisplacement[iz][iy][ix][0] = ix / length;
+          aaaafDisplacement[iz][iy][ix][1] = iy / length;
+          aaaafDisplacement[iz][iy][ix][2] = iz / length;
+        }
+      }
+    }
+  }
+
+}; // class TV3D
 
 
 #endif //#ifndef _FILTER3D_H

@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <ostream>
+#include <cassert>
 using namespace std;
 #include <alloc2d.h>
 

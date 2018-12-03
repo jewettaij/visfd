@@ -2,6 +2,7 @@
 #define _FILTER1D_H
 
 #include <cstring>
+#include <cassert>
 using namespace std;
 
 

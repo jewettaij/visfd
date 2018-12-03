@@ -2812,7 +2812,7 @@ WriteBNPTSfile(string filename,
 }
 
 
-template<class Scalar>
+template<class Scalar, class VectorContainer>
 static void
 WriteOrientedPointCloud(string pointcloud_file_name,
                         const int image_size[3],
@@ -2867,6 +2867,7 @@ WriteOrientedPointCloud(string pointcloud_file_name,
 
 
 
+
 static void
 HandleRidgeDetectorPlanar(Settings settings,
                           MrcSimple &tomo_in,
@@ -2878,12 +2879,41 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   float sigma = settings.width_a[0];
 
-  CompactMultiChannelImage3D<float> c_hessian(7);
-  CompactMultiChannelImage3D<float> c_gradient(3);
+  // Allocate space for the arrays where will will store the image intensity
+  // gradient vectors and Hessian matrices during the calculation. This is messy
+  // I apologize for not using simpler data structures, but I was trying
+  // to reduce memory usage.
 
-  // REMOVE THIS CRUFT:  (commenting out: harmless but not necessary)
-  //c_hessian.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
-  //c_gradient.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  // Allocate the image storing the gradient at every voxel.  This could be
+  // implemented as "float ****aaaafGradient;", however instead we use:
+
+  array<float, 3> ***aaaafGradient;
+
+  // Alternatively, we could have defined it using:
+  // float ****aaaafGradient;  (or  float ***aaaafGradient[3];)
+  // however defining it as "array<float, 3> ***aaaafGradient;" makes it easier
+  // to allocate memory for this array using "Alloc3d()" defined in "alloc3d.h".
+
+  array<float, 3> *aafGradient;
+  // The "Alloc3d()" function also needs an argument which is a pointer to
+  // a 1-D array with the contents of aaaafGradient arranged consecutively.
+  // That's what "aafGradient" is.
+
+  // Now use Alloc3D() to allocate space for both aafGradient and aaaafGradient.
+
+  Alloc3D(tomo_in.header.nvoxels,
+          &(aafGradient),
+          &(aaaafGradient));
+
+  // The storage requirement for Hessians (6 floats) is large enough that
+  // I decided to represent hessians using a CompactMultiChannelImage3D.
+  // Internally this is a 4-dimensional array, however the last dimension
+  // is only allocated (non-NULL) for voxels which were selected by the user
+  // (ie voxels for which the mask is non-zero).  This can reduce memory usage
+  // by a factor of up to 3 (for floats) for this array.
+  CompactMultiChannelImage3D<float> c_hessian(6);
+  c_hessian.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  
 
   // How did the user specify how wide to make the filter window?
   if (settings.filter_truncate_ratio <= 0) {
@@ -2920,15 +2950,32 @@ HandleRidgeDetectorPlanar(Settings settings,
                  &cerr);
   }
 
+  // Using this blurred image, calculate the 2nd derivative matrix everywhere:
+
   CalcHessian3D(tomo_in.header.nvoxels,
                 tomo_in.aaafI,
-                &c_hessian,
-                &c_gradient,
+                aaaafGradient,
+                c_hessian.aaaafI,
                 mask.aaafI,
                 sigma,
                 settings.filter_truncate_ratio,
                 &cerr);
 
+  // Now calculate the eigenvalues and eigenvectors of the hessian matrix
+  // located at each voxel.
+  // (This converts an array of 6 numbers representing the non-redundant
+  //  entries from the symmetrix 3x3 matrix, into 3 eigenvalues,
+  //  and 3 "Shoemake" coordinates, from which eigenvectors can be calculated)
+  // To save space, I chose to store the result in the same array.
+
+  DiagonalizeHessianImage3D(tomo_in.header.nvoxels,
+                            c_hessian.aaaafI,
+                            c_hessian.aaaafI,
+                            mask.aaafI,
+                            selfadjoint_eigen3::DECREASING_EIVALS,
+                            &cerr);
+
+  // Optional: store the saliency (score) of each voxel in tomo_out.aaafI
   for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
     for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
       for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
@@ -2941,25 +2988,26 @@ HandleRidgeDetectorPlanar(Settings settings,
         if (! c_hessian.aaaafI[iz][iy][ix]) //ignore voxels that are either
           continue;                         //in the mask or on the boundary
 
-        float score;
-
         float lambda1 = c_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
         float lambda2 = c_hessian.aaaafI[iz][iy][ix][1];
         float lambda3 = c_hessian.aaaafI[iz][iy][ix][2]; //minimum eigenvalue
-        float eivects[3][3]; //eivect[i]=i'th quaternion (these are row vectors)
-        // To save space the eigenvectors were stored as a quaternion 
-        // instead of a 3x3 matrix.  So we must unpack the eigenvectors.
-        float quat[3]; // <- the eigenvectors stored in quaternion format
-        quat[0]       = c_hessian.aaaafI[iz][iy][ix][3];
-        quat[1]       = c_hessian.aaaafI[iz][iy][ix][4];
-        quat[2]       = c_hessian.aaaafI[iz][iy][ix][5];
-        quat[3]       = c_hessian.aaaafI[iz][iy][ix][6];
-        Quaternion2Matrix(quat, eivects); //convert to 3x3 matrix
-        float grad[3];
-        grad[0] = c_gradient.aaaafI[iz][iy][ix][0];
-        grad[1] = c_gradient.aaaafI[iz][iy][ix][1];
-        grad[2] = c_gradient.aaaafI[iz][iy][ix][2];
-        float grad_sqd = DotProduct3(grad, grad);
+        // To save space the eigenvectors were stored as a "Shoemake" 
+        // coordinates (similar to quaternions) instead of a 3x3 matrix.
+        // So we must unpack the eigenvectors.
+        float shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
+        shoemake[0]       = c_hessian.aaaafI[iz][iy][ix][3];
+        shoemake[1]       = c_hessian.aaaafI[iz][iy][ix][4];
+        shoemake[2]       = c_hessian.aaaafI[iz][iy][ix][5];
+
+        // Now lets extract the eigenvectors:
+        float eivects[3][3];
+        Shoemake2Matrix(shoemake, eivects); //convert to 3x3 matrix
+
+        // REMOVE THIS CRUFT ?
+        //float grad[3];
+        //grad[0] = aaaafGradient[iz][iy][ix][0];
+        //grad[1] = aaaafGradient[iz][iy][ix][1];
+        //grad[2] = aaaafGradient[iz][iy][ix][2];
 
         if ((ix == tomo_in.header.nvoxels[0]/4) && (iy == tomo_in.header.nvoxels[1]/4) && (iz == tomo_in.header.nvoxels[2]/4))
           eivects[0][0]=-1.0;
@@ -2968,41 +3016,26 @@ HandleRidgeDetectorPlanar(Settings settings,
         if ((ix == tomo_in.header.nvoxels[0]/2) && (iy == tomo_in.header.nvoxels[1]/2) && (iz == tomo_in.header.nvoxels[2]/2))
           eivects[0][0]=-1.0;
 
-        // Now compute the "score". (The score is the number used to
-        // determine how plane-like the image is at this voxel location.)
+        float score;
+        score = ScoreHessianPlanar(c_hessian.aaaafI[iz][iy][ix],
+                                   aaaafGradient[iz][iy][ix]);
 
+        float peak_height = 1.0;
+        if (tomo_background.aaafI)
+          peak_height = (tomo_in.aaafI[iz][iy][ix] -
+                         tomo_background.aaafI[iz][iy][ix]);
+        score *= peak_height;
 
-        // REMOVE THIS CRUFT
-        // The "score_ratio" variable is the score function used in Eq(5) of
-        // Martinez-Sanchez++Fernandez_JStructBiol2011.  IT PERFORMS POORLY.
-        //float score_ratio;
-        //score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
-        //               / grad_sqd);
-        //score_ratio *= score_ratio;
-
-
-        // REMOVE THIS CRUFT:
-        // The following "linear" metric produces interesting results, but
-        // the resulting membrane structures that are detected are not well
-        // separated from the huge amount of background noise.  DON'T USE:
-        //float Linear_norm = lambda1 - lambda2;
-        //score = Linear_norm / grad_sqd;
-        
-        // I decided to try the "Ngamma_norm" metric proposed on p.26 of
-        // Lindeberg Int.J.ComputVis.1998,
-        // "Edge and ridge detection with automatic scale selection"
-        float Nnorm = lambda1*lambda1 - lambda2*lambda2;
-        Nnorm *= Nnorm;
-        score = Nnorm;
-
-        // Additionally, you can weight whatever Hessian score metric you
-        // are using by height of the peak.  (shallow peaks get a lower score)
-        if (subtract_background) {
-          float peak_height = (tomo_out.aaafI[iz][iy][ix] -
-                               tomo_background.aaafI[iz][iy][ix]);
-          score = peak_height * score;
+        if ((settings.planar_hessian_score_threshold == 0.0) ||
+            (score > settings.planar_hessian_score_threshold)) {
+          tomo_out.aaafI[iz][iy][ix] = score;
         }
+        else
+          tomo_out.aaafI[iz][iy][ix] = 0.0;
 
+
+        #if 0
+        //I will use this code eventually, but not yet
         float gradient_along_v1 = DotProduct3(grad, eivects[0]);
         float distance_to_ridge;
         if (lambda1 != 0)
@@ -3016,15 +3049,64 @@ HandleRidgeDetectorPlanar(Settings settings,
           if (abs(ridge_voxel_location) > 0.5)
             ridge_located_in_same_voxel = false;
         }
+        //if ((distance_to_ridge < settings.ridge_detector_search_width*0.5) &&
 
-        //if (distance_to_ridge < settings.ridge_detector_search_width * 0.5)
-        //if (ridge_located_in_same_voxel)
+        if (! ridge_located_in_same_voxel)
+          out_tomo.aaafI[iz][iy][ix] = 0.0;  //then ignore discard this voxel
+        #endif
+
+
+
+        if (settings.planar_tv_sigma > 0.0) {
+          // We need to store the direction of the most important eigenvector
+          // somewhere.  To save space, why not store it in the aaaafGradient
+          // array?  (At this point, we are no longer using it).
+          aaaafGradient[iz][iy][ix][0] = eivects[0][0];
+          aaaafGradient[iz][iy][ix][1] = eivects[0][1];
+          aaaafGradient[iz][iy][ix][2] = eivects[0][2];
+        }
+
+
+      } //for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
+    } //for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
+  } //for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
+
+
+
+
+  if (settings.planar_tv_sigma > 0.0) {
+    assert(settings.filter_truncate_ratio > 0);
+
+    TV3D<float, int, array<float,3>, float* >
+      tv(settings.planar_tv_sigma,
+         settings.planar_tv_exponent,
+         settings.filter_truncate_ratio);
+
+    tv.TVDenseStick(tomo_in.header.nvoxels,
+                    tomo_out.aaafI,
+                    aaaafGradient,
+                    c_hessian.aaaafI,
+                    tomo_out.aaafI,
+                    mask.aaafI,
+                    true,
+                    false,
+                    &cerr);
+
+    for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+      for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+        for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+          float score = ScoreTensorPlanar(c_hessian.aaaafI[iz][iy][ix]);
+          float peak_height = 1.0;
+          if (tomo_background.aaafI)
+            peak_height = (tomo_in.aaafI[iz][iy][ix] -
+                           tomo_background.aaafI[iz][iy][ix]);
+          score *= peak_height;
           tomo_out.aaafI[iz][iy][ix] = score;
-        //else
-        //  tomo_out.aaafI[iz][iy][ix] = 0.0;
+        }
       }
     }
-  }
+  } // if (settings.planar_tv_sigma > 0.0)
+
 
 
   ////Did the user ask us to generate any output files?
@@ -3034,14 +3116,19 @@ HandleRidgeDetectorPlanar(Settings settings,
   //    settings.out_file_name + string(".bnpts");
 
 
+  #if 0
   //Did the user ask us to generate output files containing surface orientation?
   if (settings.out_normals_fname != "")
     WriteOrientedPointCloud(settings.out_normals_fname,
                             tomo_out.header.nvoxels,
                             tomo_out.aaafI,
                             c_hessian,
-                            settings.planar_threshold);
-                
+                            settings.planar_tv_score_threshold);
+  #endif
+
+  Dealloc3D(tomo_in.header.nvoxels,
+            &(aafGradient),
+            &(aaaafGradient));
 } //HandleRidgeDetectorPlanar()
 
 

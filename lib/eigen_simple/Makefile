@@ -14,21 +14,19 @@ INTERNAL_LIB_PATH = ..
 LIBS =
 
 INCLUDES = \
--I$(INTERNAL_LIB_PATH)/alloc \
 -I$(INTERNAL_LIB_PATH)/err
 
 #Default target: create a library
-libmrc_simple.a: mrc_simple.o mrc_header.o
+libeigen_simple.a: lin3_utils.o
 	$(CPP_PRELINKER_COMMAND)
 	$(L_COMP) \
-	libmrc_simple.a \
-	mrc_simple.o \
-	mrc_header.o \
+	libeigen_simple.a \
+	lin3_utils.o \
 	$(LINKER_TEMP_FILES)
 
 install:
-	$(MAKE) ANSI_C="$(ANSI_C)" ANSI_CPP="$(ANSI_CPP)" L_COMP="$(L_COMP)" CFLAGS="$(CFLAGS)" LFLAGS="$(LFLAGS)" INSTALL_PATH="$(INSTALL_PATH)" libmrc_simple.a
-	-cp -f libmrc_simple.a $(INSTALL_PATH)
+	$(MAKE) ANSI_C="$(ANSI_C)" ANSI_CPP="$(ANSI_CPP)" L_COMP="$(L_COMP)" CFLAGS="$(CFLAGS)" LFLAGS="$(LFLAGS)" INSTALL_PATH="$(INSTALL_PATH)" libeigen_simple.a
+	-cp -f libeigen3_simple.a $(INSTALL_PATH)
 
 GENERATED_FILES = *.o *.a core $(COMPILER_TEMP_FILES) $(LINKER_TEMP_FILES)
 
@@ -37,10 +35,10 @@ clean:
 
 distclean:
 	$(MAKE) clean
-	rm -f $(INSTALL_PATH)/libmrc_simple.a
+	rm -f $(INSTALL_PATH)/libeigen3_simple.a
 
 
-OBJECT_SRC = mrc_simple.cpp mrc_header.cpp
+OBJECT_SRC = lin3_utils.cpp
 
 depend:
 	mv Makefile Makefile.tmp

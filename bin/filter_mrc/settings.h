@@ -189,7 +189,11 @@ class Settings {
   bool sphere_decals_shell_thickness_is_ratio;
 
   string out_normals_fname;
-  float planar_threshold;
+  float planar_hessian_score_threshold;
+  float planar_tv_score_threshold;
+  float planar_tv_sigma;
+  int   planar_tv_exponent = 4;
+  int   planar_tv_num_iters = 1;
  
   // not used (yet):
   //float missing_wedge_min[2];  //range of angles sampled (around x and y axis)
