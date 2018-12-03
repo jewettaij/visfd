@@ -6,8 +6,7 @@ SHELL = /bin/sh
 #are copied to the #$(INSTALL_PATH)/lib directory as well as the associated
 #header files, which are copied into the $(INSTALL_PATH)/include directory.
 PUBLIC_SRC_DIRS = \
-mrc_simple \
-eigen_simple
+mrc_simple
 
 #The "PRIVATE_SRC_DIRS" directories contain source for libraries not intended
 #for outside scrutiny.  These directories contain code which will be
