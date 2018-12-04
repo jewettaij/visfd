@@ -2659,9 +2659,9 @@ private:
         for (int ix = 0; ix < image_size[0]; ix++)
           aaaafI[iz][iy][ix] = NULL;
 
-    for (int iz = 1; iz < image_size[2]-1; iz++) {
-      for (int iy = 1; iy < image_size[1]-1; iy++) {
-        for (int ix = 1; ix < image_size[0]-1; ix++) {
+    for (int iz = 0; iz < image_size[2]; iz++) {
+      for (int iy = 0; iy < image_size[1]; iy++) {
+        for (int ix = 0; ix < image_size[0]; ix++) {
           if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
             continue;
           n_good_voxels++;
@@ -2670,9 +2670,9 @@ private:
     }
     afI = new Scalar[n_good_voxels * n_channels_per_voxel];
     int n = 0;
-    for (int iz = 1; iz < image_size[2]-1; iz++) {
-      for (int iy = 1; iy < image_size[1]-1; iy++) {
-        for (int ix = 1; ix < image_size[0]-1; ix++) {
+    for (int iz = 0; iz < image_size[2]; iz++) {
+      for (int iy = 0; iy < image_size[1]; iy++) {
+        for (int ix = 0; ix < image_size[0]; ix++) {
           if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
             continue;
           aaaafI[iz][iy][ix] =
