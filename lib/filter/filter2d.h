@@ -218,32 +218,39 @@ public:
         aafH[iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
 
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
-    aafH += halfwidth[1];
     for (Integer iy = 0; iy < array_size[1]; iy++)
       aafH[iy] += halfwidth[0];
+    aafH += halfwidth[1];
   }
 
 
   void Dealloc() {
+    if (! aafH) {
+      assert(! afH);
+      Init();
+      return;
+    }
     //Integer array_size[2];
     for(Integer d=0; d < 2; d++) {
       array_size[d] = 1 + 2*halfwidth[d];
-      halfwidth[d] = -1;
     }
     //shift pointers back to normal
-    aafH -= halfwidth[1];
     for (Integer iy = 0; iy < array_size[1]; iy++)
       aafH[iy] -= halfwidth[0];
+    aafH -= halfwidth[1];
     //then deallocate
     Dealloc2D(array_size, &afH, &aafH);
-    for(Integer d=0; d < 2; d++)
+    for(Integer d=0; d < 2; d++) {
       array_size[d] = -1;
+      halfwidth[d] = -1;
+    }
   }
 
 
   void Resize(Integer const set_halfwidth[2]) {
     //Integer array_size[2];
-    if (afH && aafH) {
+    if (aafH) {
+      assert(afH);
       for(Integer d=0; d < 2; d++)
         array_size[d] = 1 + 2*halfwidth[d];
       Dealloc2D(array_size, &afH, &aafH);
@@ -277,6 +284,8 @@ public:
   void Init() {
     halfwidth[0] = -1;
     halfwidth[1] = -1;
+    array_size[0] = -1;
+    array_size[1] = -1;
     afH = NULL;
     aafH = NULL;
   }

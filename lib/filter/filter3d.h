@@ -399,35 +399,41 @@ public:
           aaafH[iz][iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
 
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
-    aaafH += halfwidth[2];
     for (Integer iz = 0; iz < array_size[2]; iz++) {
-      aaafH[iz] += halfwidth[1];
       for (Integer iy = 0; iy < array_size[1]; iy++) {
         aaafH[iz][iy] += halfwidth[0];
       }
+      aaafH[iz] += halfwidth[1];
     }
+    aaafH += halfwidth[2];
   }
 
 
   /// @brief allocate space used by the filter array
   void Dealloc() {
+    if (! aaafH) {
+      assert(! afH);
+      Init();
+      return;
+    }
     //Integer array_size[3];
     for(int d=0; d < 3; d++) {
       array_size[d] = 1 + 2*halfwidth[d];
-      halfwidth[d] = -1;
     }
     //shift pointers back to normal
-    aaafH -= halfwidth[2];
     for (Integer iz = 0; iz < array_size[2]; iz++) {
-      aaafH[iz] -= halfwidth[1];
       for (Integer iy = 0; iy < array_size[1]; iy++) {
         aaafH[iz][iy] -= halfwidth[0];
       }
+      aaafH[iz] -= halfwidth[1];
     }
+    aaafH -= halfwidth[2];
     //then deallocate
     Dealloc3D(array_size, &afH, &aaafH);
-    for(int d=0; d < 3; d++)
+    for(int d=0; d < 3; d++) {
       array_size[d] = -1;
+      halfwidth[d] = -1;
+    }
   }
 
 
@@ -441,6 +447,9 @@ public:
     halfwidth[0] = -1;
     halfwidth[1] = -1;
     halfwidth[2] = -1;
+    array_size[0] = -1;
+    array_size[1] = -1;
+    array_size[2] = -1;
     afH = NULL;
     aaafH = NULL;
   }
@@ -3823,8 +3832,8 @@ public:
           Scalar r[3];
           Scalar n[3];
           for (int d=0; d<3; d++) {
-            r[d] = aaaafDisplacement[iz_jz][iy_jy][ix_jx][d];
-            n[d] = aaaafV[jz][jy][jx][d];
+            r[d] = aaaafDisplacement[jz][jy][jx][d];
+            n[d] = aaaafV[iz_jz][iy_jy][ix_jx][d];
           }
 
           //
@@ -3976,7 +3985,7 @@ private:
       GenFilterGenGauss3D(sigmas,
                           static_cast<float>(2.0),
                           halfwidth);
-    
+
     AllocDisplacement();
     PrecalcDisplacement(aaaafDisplacement);
   }
@@ -3984,14 +3993,17 @@ private:
 
   void DeallocDisplacement() {
     if (aaaafDisplacement) {
+      for (int d=0; d<3; d++) {
+        array_size[d] = 2*halfwidth[d] + 1;
+      }
       //shift pointers back to normal
-      aaaafDisplacement -= halfwidth[2];
       for (Integer iz = 0; iz < array_size[2]; iz++) {
-        aaaafDisplacement[iz] -= halfwidth[1];
         for (Integer iy = 0; iy < array_size[1]; iy++) {
           aaaafDisplacement[iz][iy] -= halfwidth[0];
         }
+        aaaafDisplacement[iz] -= halfwidth[1];
       }
+      aaaafDisplacement -= halfwidth[2];
       Dealloc3D(array_size,
                 &aafDisplacement,
                 &aaaafDisplacement);
@@ -4007,13 +4019,13 @@ private:
             &aafDisplacement,
             &aaaafDisplacement);
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
-    aaaafDisplacement += halfwidth[2];
     for (Integer iz = 0; iz < array_size[2]; iz++) {
-      aaaafDisplacement[iz] += halfwidth[1];
       for (Integer iy = 0; iy < array_size[1]; iy++) {
         aaaafDisplacement[iz][iy] += halfwidth[0];
       }
+      aaaafDisplacement[iz] += halfwidth[1];
     }
+    aaaafDisplacement += halfwidth[2];
   }
 
   void PrecalcDisplacement(array<Scalar, 3> ***aaaafDisplacement) {

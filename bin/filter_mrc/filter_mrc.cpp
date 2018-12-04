@@ -3261,6 +3261,7 @@ int main(int argc, char **argv) {
                      "Use the -w argument to specify the voxel width.");
 
 
+    settings.planar_tv_sigma /= voxel_width[0];
     for (int d=0; d<3; d++) {
       settings.width_a[d] /= voxel_width[d];
       settings.width_b[d] /= voxel_width[d];
