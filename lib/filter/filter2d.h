@@ -168,12 +168,16 @@ public:
 
             Scalar filter_val = aafH[jy][jx];
 
-            if (aafMask)
-              filter_val *= aafMask[iy_jy][ix_jx];
-              //Note: The "filter_val" also is needed to calculate
-              //      the denominator used in normalization.
-              //      It is unusual to use a mask unless you intend
-              //      to normalize the result later, but I don't enforce this
+            if (aafMask) {
+              Scalar mask_val = aafMask[iy_jy][ix_jx];
+              if (mask_val = 0.0)
+                continue;
+              filter_val *= mask_val;
+            }
+            //Note: The "filter_val" also is needed to calculate
+            //      the denominator used in normalization.
+            //      It is unusual to use a mask unless you intend
+            //      to normalize the result later, but I don't enforce this
 
             Scalar delta_g = 
               filter_val * aafSource[iy_jy][ix_jx];

@@ -357,14 +357,16 @@ public:
 
           Scalar filter_val = aaafH[jz][jy][jx];
 
-          if (aaafMask)
-            filter_val *= aaafMask[iz_jz][iy_jy][ix_jx];
-            if (filter_val == 0.0)
+          if (aaafMask) {
+            Scalar mask_val = aaafMask[iz_jz][iy_jy][ix_jx];
+            if (mask_val = 0.0)
               continue;
-            //Note: The "filter_val" also is needed to calculate
-            //      the denominator used in normalization.
-            //      It is unusual to use a mask unless you intend
-            //      to normalize the result later, but I don't enforce this
+            filter_val *= mask_val;
+          }
+          //Note: The "filter_val" also is needed to calculate
+          //      the denominator used in normalization.
+          //      It is unusual to use a mask unless you intend
+          //      to normalize the result later, but I don't enforce this
 
           Scalar delta_g = 
             filter_val * aaafSource[iz_jz][iy_jy][ix_jx];
@@ -3818,9 +3820,10 @@ public:
           Scalar filter_val = radial_decay_lookup.aaafH[jz][jy][jx];
 
           if (aaafMaskSource) {
-            filter_val *= aaafMaskSource[iz_jz][iy_jy][ix_jx];
-            if (filter_val == 0.0)
+            Scalar mask_val = aaafMaskSource[iz_jz][iy_jy][ix_jx];
+            if (mask_val = 0.0)
               continue;
+            filter_val *= mask_val;
           }
           //Note: The "filter_val" also is needed to calculate
           //      the denominator used in normalization.
