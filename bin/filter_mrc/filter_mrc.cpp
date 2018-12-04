@@ -31,7 +31,7 @@ using namespace std;
 
 string g_program_name("filter_mrc.cpp");
 string g_version_string("0.9.3");
-string g_date_string("2018-11-08");
+string g_date_string("2018-12-04");
 
 
 

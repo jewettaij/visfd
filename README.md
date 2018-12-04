@@ -29,10 +29,11 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 **filter_mrc** detects features and applies simple filters to 3D images.
 It supports 
+local minima/maxima finding, non-max suppression,
 [3D scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection),
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
-filters (for *membrane detection*),
-and local minima/maxima finding (with non-max suppresion).
+[tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf)
+(for automatic 3D surface and 3D curve detection).
 Filters include
 thresholding,
 low-pass, high-pass, 
@@ -40,6 +41,7 @@ low-pass, high-pass,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 and
 [DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians), 
+[TV](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf),
 and others.
 A image *mask* can be used to exclude certain
 voxels or regions from consideration.
