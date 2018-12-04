@@ -31,7 +31,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 It supports 
 local minima/maxima finding, non-max suppression,
 [3D scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection),
-[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 [tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf)
 (for automatic 3D surface and 3D curve detection).
 Filters include
