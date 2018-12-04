@@ -109,6 +109,7 @@ Settings::Settings() {
   planar_tv_sigma = 0.0;
   planar_tv_exponent = 4;
   planar_tv_num_iters = 0;
+  planar_tv_truncate_ratio = sqrt(2.0);
 
   use_thresholds = false;
   use_dual_thresholds = false;

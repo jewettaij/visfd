@@ -194,6 +194,7 @@ class Settings {
   float planar_tv_sigma;
   int   planar_tv_exponent = 4;
   int   planar_tv_num_iters = 1;
+  float planar_tv_truncate_ratio;
  
   // not used (yet):
   //float missing_wedge_min[2];  //range of angles sampled (around x and y axis)

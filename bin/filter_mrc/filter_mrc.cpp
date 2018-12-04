@@ -3094,7 +3094,7 @@ HandleRidgeDetectorPlanar(Settings settings,
     TV3D<float, int, array<float,3>, float* >
       tv(settings.planar_tv_sigma,
          settings.planar_tv_exponent,
-         settings.filter_truncate_ratio);
+         settings.planar_tv_truncate_ratio);
 
     tv.TVDenseStick(tomo_in.header.nvoxels,
                     tomo_out.aaafI,
