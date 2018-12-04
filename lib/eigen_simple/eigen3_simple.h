@@ -129,14 +129,14 @@ namespace selfadjoint_eigen3
 
 
   template <class Scalar>
-  inline void DiagonalizeSymm3(const Scalar mat[3][3],
-                               Scalar eivals[3], // store eigenvalues here
-                               // If the user supplies a 2D eivects array,
-                               // then the 3 eigenvectors will be stored in
-                               // the 3 rows of the "eivects" 2D array
-                               // (ie, eivects[0], eivects[1], eivects[2])
-                               Scalar eivects[][3] = NULL,
-                               EigenOrderType eival_order = INCREASING_EIVALS)
+  inline void DiagonalizeSym3(const Scalar mat[3][3],
+                              Scalar eivals[3], // store eigenvalues here
+                              // If the user supplies a 2D eivects array,
+                              // then the 3 eigenvectors will be stored in
+                              // the 3 rows of the "eivects" 2D array
+                              // (ie, eivects[0], eivects[1], eivects[2])
+                              Scalar eivects[][3] = NULL,
+                              EigenOrderType eival_order = INCREASING_EIVALS)
   {
     const Scalar EPSILON = std::numeric_limits<Scalar>::epsilon();
     // Shift the matrix to the mean eigenvalue and map the matrix
@@ -238,9 +238,9 @@ namespace selfadjoint_eigen3
     }
 
 
-    // At this point, the eigenvalues are montonically increasing.
+    // At this point, the eigenvalues should be montonically increasing.
 
-    assert(eivals[0] <= eivals[1] <= eivals[2]);
+    assert((eivals[0] <= eivals[1]) && (eivals[1] <= eivals[2]));
 
     if (((eival_order == INCREASING_EIVALS) && (eivals[0] > eivals[2])) ||
         ((eival_order == DECREASING_EIVALS) && (eivals[0] < eivals[2])) ||
@@ -256,7 +256,7 @@ namespace selfadjoint_eigen3
         swap(eivects[0][d], eivects[2][d]);
     }
 
-  } //DiagonalizeSymm3()
+  } //DiagonalizeSym3()
 
 
 
@@ -288,7 +288,7 @@ namespace selfadjoint_eigen3
     Scalar eivects[3][3];
 
     // Now diagonalize this 3x3 array
-    DiagonalizeSymm3(matrix, eivals, eivects);
+    DiagonalizeSym3(matrix, eivals, eivects, eival_order);
 
     // Convert to quaternions:
     // There are 3 eigenvectors, each containing 3 numbers (9 total).
@@ -310,6 +310,10 @@ namespace selfadjoint_eigen3
         eivects[0][d] *= -1.0;
     }
 
+    // Note: Each eigenvector is a currently row-vector in eivects[3][3];
+    // It's optional, but I prefer to transpose this, because I think of
+    // each eigenvector as a column vector.  Either way should work.
+    Transpose3(eivects);
     // convert the 3x3 matrix of eigenvector components down to 3 numbers
     // ("Shoemake" coordinates representing the rotation corresponding
     //  to the 3 eigenvectors of the 3x3 matrix.)

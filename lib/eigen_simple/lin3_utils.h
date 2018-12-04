@@ -59,21 +59,24 @@ static inline void Copy3(const Scalar source[3][3], Scalar dest[3][3]) {
 
 template <class Scalar>
 static inline void Transpose3(const Scalar source[3][3], Scalar dest[3][3]) {
-  assert(source != dest);
-  for (int i=0; i<3; i++)
-    for (int j=0; j<3; j++)
-      dest[i][j] = source[j][i];
+  if (source != dest) {
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+        dest[i][j] = source[j][i];
+  }
+  else {
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+        swap(dest[i][j], dest[j][i]);
+  }
 }
+
 
 template <class Scalar>
 static inline void Transpose3(Scalar m[3][3]) {
-  for (int i=0; i<3; i++) {
-    for (int j=0; j<3; j++) {
-      Scalar tmp = m[i][j];
-      m[i][j] = m[j][i];
-      m[j][i] = tmp;
-    }
-  }
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      swap(m[i][j], m[j][i]);
 }
 
 
@@ -135,18 +138,30 @@ static inline void Matrix2Quaternion(const Scalar M[3][3], Scalar q[4])
 
 
 /// @brief  Convert a quaternion (q) to a 3x3 rotation matrix (M)
-template<class Scalar>
-static inline void Quaternion2Matrix(const Scalar q[4], Scalar M[3][3])
+/// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
+
+template<class RealNum>
+static inline void Quaternion2Matrix(const RealNum q[4], RealNum M[3][3])
 {
-  M[0][0] =  (q[0]*q[0])-(q[1]*q[1])-(q[2]*q[2])+(q[3]*q[3]);
-  M[1][1] = -(q[0]*q[0])+(q[1]*q[1])-(q[2]*q[2])+(q[3]*q[3]);
-  M[2][2] = -(q[0]*q[0])-(q[1]*q[1])+(q[2]*q[2])+(q[3]*q[3]);
-  M[0][1] = 2*(q[0]*q[1] - q[2]*q[3]);
-  M[1][0] = 2*(q[0]*q[1] + q[2]*q[3]);
-  M[1][2] = 2*(q[1]*q[2] - q[0]*q[3]);
-  M[2][1] = 2*(q[1]*q[2] + q[0]*q[3]);
-  M[0][2] = 2*(q[0]*q[2] + q[1]*q[3]);
-  M[2][0] = 2*(q[0]*q[2] - q[1]*q[3]);
+  //M[0][0] =  (q[0]*q[0])-(q[1]*q[1])-(q[2]*q[2])+(q[3]*q[3]);
+  //M[1][1] = -(q[0]*q[0])+(q[1]*q[1])-(q[2]*q[2])+(q[3]*q[3]);
+  //M[2][2] = -(q[0]*q[0])-(q[1]*q[1])+(q[2]*q[2])+(q[3]*q[3]);
+  //M[0][1] = 2*(q[0]*q[1] - q[2]*q[3]);
+  //M[1][0] = 2*(q[0]*q[1] + q[2]*q[3]);
+  //M[1][2] = 2*(q[1]*q[2] - q[0]*q[3]);
+  //M[2][1] = 2*(q[1]*q[2] + q[0]*q[3]);
+  //M[0][2] = 2*(q[0]*q[2] + q[1]*q[3]);
+  //M[2][0] = 2*(q[0]*q[2] - q[1]*q[3]);
+
+  M[0][0] =  1.0 - 2*(q[2]*q[2]) - 2*(q[3]*q[3]);
+  M[1][1] =  1.0 - 2*(q[1]*q[1]) - 2*(q[3]*q[3]);
+  M[2][2] =  1.0 - 2*(q[1]*q[1]) - 2*(q[2]*q[2]);
+  M[0][1] = 2*(q[1]*q[2] - q[3]*q[0]);
+  M[1][0] = 2*(q[1]*q[2] + q[3]*q[0]);
+  M[1][2] = 2*(q[2]*q[3] - q[1]*q[0]);
+  M[2][1] = 2*(q[2]*q[3] + q[1]*q[0]);
+  M[0][2] = 2*(q[1]*q[3] + q[2]*q[0]);
+  M[2][0] = 2*(q[1]*q[3] - q[2]*q[0]);
 }
 
 
@@ -162,15 +177,23 @@ static inline void Shoemake2Quaternion(const Scalar sm[3], Scalar q[4])
   Scalar theta1 = M_2PI * X1;
   Scalar theta2 = M_2PI * X2;
   Scalar r1 = std::sqrt(1.0-X0);
-  Scalar r2 = X0;
+  Scalar r2 = std::sqrt(X0);
   Scalar s1 = std::sin(theta1);
   Scalar c1 = std::cos(theta1);
   Scalar s2 = std::sin(theta2);
   Scalar c2 = std::cos(theta2);
+
+  // Alternative quaternion convention, where q[3] is real instead of q[0]
   q[0] = s1*r1;
   q[1] = c1*r1;
   q[2] = s2*r2;
   q[3] = c2*r2;
+
+  // Alternative quaternion convention, where q[0] is real instead of q[3]
+  //q[3] = s1*r1;
+  //q[0] = c1*r1;
+  //q[1] = s2*r2;
+  //q[2] = c2*r2;
 }
 
 
@@ -182,15 +205,28 @@ static inline void Quaternion2Shoemake(const Scalar q[4], Scalar sm[3])
 {
   const Scalar M_2PI = 6.283185307179586;
 
+  // Alternative quaternion convention, where q[3] is real instead of q[0]
   Scalar r1 = std::sqrt(q[0]*q[0] + q[1]*q[1]);
   Scalar r2 = std::sqrt(q[2]*q[2] + q[3]*q[3]);
-  Scalar X0 = r2;
+  Scalar X0 = r2*r2;
   Scalar theta1 = 0.0;
   if (r1 > 0)
     theta1 = std::atan2(q[0], q[1]);
   Scalar theta2 = 0.0;
   if (r2 > 0)
     theta2 = std::atan2(q[2], q[3]);
+
+  // Alternative quaternion convention, where q[0] is real instead of q[3]
+  //Scalar r1 = std::sqrt(q[3]*q[3] + q[0]*q[0]);
+  //Scalar r2 = std::sqrt(q[1]*q[1] + q[2]*q[2]);
+  //Scalar X0 = r2;
+  //Scalar theta1 = 0.0;
+  //if (r1 > 0)
+  //  theta1 = std::atan2(q[3], q[0]);
+  //Scalar theta2 = 0.0;
+  //if (r2 > 0)
+  //  theta2 = std::atan2(q[1], q[2]);
+
   Scalar X1 = theta1 / M_2PI;
   Scalar X2 = theta2 / M_2PI;
   sm[0] = X0;

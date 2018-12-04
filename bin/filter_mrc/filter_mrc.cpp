@@ -2988,9 +2988,10 @@ HandleRidgeDetectorPlanar(Settings settings,
         if (! c_hessian.aaaafI[iz][iy][ix]) //ignore voxels that are either
           continue;                         //in the mask or on the boundary
 
-        float lambda1 = c_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
-        float lambda2 = c_hessian.aaaafI[iz][iy][ix][1];
-        float lambda3 = c_hessian.aaaafI[iz][iy][ix][2]; //minimum eigenvalue
+        float eivals[3];
+        eivals[0] = c_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
+        eivals[1] = c_hessian.aaaafI[iz][iy][ix][1];
+        eivals[2] = c_hessian.aaaafI[iz][iy][ix][2]; //minimum eigenvalue
         // To save space the eigenvectors were stored as a "Shoemake" 
         // coordinates (similar to quaternions) instead of a 3x3 matrix.
         // So we must unpack the eigenvectors.
@@ -3017,6 +3018,19 @@ HandleRidgeDetectorPlanar(Settings settings,
           eivects[0][0]=-1.0;
 
         float score;
+
+        // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
+        if ((ix==108) && (iy==122) && (iz==49)) {
+            cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
+                 << "eivals = "<<eivals[0]<<","<<eivals[1]<<","<<eivals[2]<<"\n"
+                 << "eivects = \n"
+                 << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
+                 << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
+                 << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
+                 << endl;
+          score = 0.0;
+        }
+
         score = ScoreHessianPlanar(c_hessian.aaaafI[iz][iy][ix],
                                    aaaafGradient[iz][iy][ix]);
 

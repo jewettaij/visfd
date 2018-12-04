@@ -2802,6 +2802,12 @@ CalcHessian3D(int const image_size[3], //!< source image size
           aaaafGradient[iz][iy][ix][1] = gradient[1];
           aaaafGradient[iz][iy][ix][2] = gradient[2];
 
+          if ((ix==108) && (iy==122) && (iz==49)) {
+            cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
+                 << "gradient[0] = " << aaaafGradient[iz][iy][ix][0] << endl;
+            aaafSmoothed[0][0][0] = -1000.0;
+          }
+
         }
 
         if (aaaafHessian) {
@@ -2833,6 +2839,17 @@ CalcHessian3D(int const image_size[3], //!< source image size
                                   aaafSmoothed[iz+1][iy][ix-1] - 
                                   aaafSmoothed[iz-1][iy][ix+1]);
           hessian[0][2] = hessian[2][0];
+
+
+
+          // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
+          if ((ix == 108) && (iy == 122) && (iz == 49)) {
+            cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
+                 << "hessian[0][0] = " << hessian[0][0] << endl;
+            aaafSmoothed[0][0][0] = -1000.0;
+          }
+
+
 
           // Optional: Insure that the result is dimensionless:
           // (Lindeberg 1993 "On Scale Selection for Differential Operators")
@@ -3322,9 +3339,65 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
         if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
           continue;
 
+        // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
+        if ((ix==108) && (iy==122) && (iz==49)) {
+          Scalar hessian[3][3];
+          for (int di=0; di<3; di++)
+            for (int dj=0; dj<3; dj++)
+              hessian[di][dj] = aaaafSource[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ];
+          Scalar quat[4];
+          cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
+               << "hessian = \n"
+               << "    "<<hessian[0][0]<<","<<hessian[0][1]<<","<<hessian[0][2]<<"\n"
+               << "    "<<hessian[1][0]<<","<<hessian[1][1]<<","<<hessian[1][2]<<"\n"
+               << "    "<<hessian[2][0]<<","<<hessian[2][1]<<","<<hessian[2][2]<<"\n";
+          float eivals[3];
+          float eivects[3][3];
+          DiagonalizeSym3(hessian,
+                          eivals,
+                          eivects,
+                          eival_order);
+          if (Determinant3(eivects) < 0.0) {
+            for (int d=0; d<3; d++)
+              eivects[0][d] *= -1.0;
+          }
+          cerr << "eivects = \n"
+               << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
+               << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
+               << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n";
+
+          // Note: Each eigenvector is a currently row-vector in eivects[3][3];
+          // It's optional, but I prefer to transpose this, because I think of
+          // each eigenvector as a column vector.  Either way should work.
+          Transpose3(eivects);
+          Matrix2Quaternion(eivects, quat); //convert to 3x3 matrix
+          cerr << "quat = " << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n";
+        }
+
         DiagonalizeSymCompact3(aaaafSource[iz][iy][ix],
                                aaaafDest[iz][iy][ix],
                                eival_order);
+
+
+        // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
+        if ((ix==108) && (iy==122) && (iz==49)) {
+          float shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
+          shoemake[0]       = aaaafDest[iz][iy][ix][3];
+          shoemake[1]       = aaaafDest[iz][iy][ix][4];
+          shoemake[2]       = aaaafDest[iz][iy][ix][5];
+          float quat[4];
+          Shoemake2Quaternion(shoemake, quat); //convert to 3x3 matrix
+          float eivects[3][3];
+          Quaternion2Matrix(quat, eivects); //convert to 3x3 matrix
+          cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
+               << "quat2 = " << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n"
+               << "eivects = \n"
+               << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
+               << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
+               << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
+               << endl;
+        }
+
 
       } //for (int ix = 1; ix < image_size[0]-1; ix++) {
     } //for (int iy = 1; iy < image_size[1]-1; iy++) {
