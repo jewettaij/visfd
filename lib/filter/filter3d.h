@@ -3730,8 +3730,7 @@ public:
     // (Later, we will adjust the weight of the average we compute when we
     //  apply the filter in order to account for the voxels we deleted now.)
 
-    //for (Integer iz=0; iz<image_size[2]; iz++) {
-    for (Integer iz=0; iz<20; iz++) {
+    for (Integer iz=0; iz<image_size[2]; iz++) {
 
       if (pReportProgress)
         *pReportProgress << "  " << iz+1 << " / " << image_size[2] << "\n";
