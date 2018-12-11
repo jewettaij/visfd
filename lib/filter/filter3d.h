@@ -3724,16 +3724,14 @@ public:
       *pReportProgress << "---- Begin Tensor Voting (dense, stick) ----\n"
                        << "  progress: processing plane#" << endl;
 
-    if (pReportProgress)
-      *pReportProgress << "---- Diagonalizing Tensor Voting results ----" << endl;
-
     // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
     // Multiplying the density in the tomogram by the mask removes some of 
     // the voxels from consideration later on when we do the filtering.
     // (Later, we will adjust the weight of the average we compute when we
     //  apply the filter in order to account for the voxels we deleted now.)
 
-    for (Integer iz=0; iz<image_size[2]; iz++) {
+    //for (Integer iz=0; iz<image_size[2]; iz++) {
+    for (Integer iz=0; iz<20; iz++) {
 
       if (pReportProgress)
         *pReportProgress << "  " << iz+1 << " / " << image_size[2] << "\n";
@@ -3766,6 +3764,9 @@ public:
         }
       }
     }
+
+    if (pReportProgress)
+      *pReportProgress << "---- Diagonalizing Tensor Voting results ----" << endl;
 
     // Diagonalize the resulting tensor.
     // The resulting eigenvalues and eigenvectors can be analyzed by the caller.
