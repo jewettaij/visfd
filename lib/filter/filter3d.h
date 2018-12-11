@@ -2813,11 +2813,16 @@ CalcHessian3D(int const image_size[3], //!< source image size
           aaaafGradient[iz][iy][ix][1] = gradient[1];
           aaaafGradient[iz][iy][ix][2] = gradient[2];
 
-          if ((ix==108) && (iy==122) && (iz==49)) {
+          #ifndef NDEBUG
+          if ((ix==image_size[0]/2) &&
+              (iy==image_size[1]/2) &&
+              (iz==image_size[2]/2))
+          {
             cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
                  << "gradient[0] = " << aaaafGradient[iz][iy][ix][0] << endl;
             aaafSmoothed[0][0][0] = -1000.0;
           }
+          #endif  //#ifndef NDEBUG
 
         }
 
@@ -2853,13 +2858,17 @@ CalcHessian3D(int const image_size[3], //!< source image size
 
 
 
+          #ifndef NDEBUG
           // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
-          if ((ix == 108) && (iy == 122) && (iz == 49)) {
+          if ((ix==image_size[0]/2) &&
+              (iy==image_size[1]/2) &&
+              (iz==image_size[2]/2))
+          {
             cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
                  << "hessian[0][0] = " << hessian[0][0] << endl;
             aaafSmoothed[0][0][0] = -1000.0;
           }
-
+          #endif  //#ifndef NDEBUG
 
 
           // Optional: Insure that the result is dimensionless:
@@ -3350,8 +3359,13 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
         if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
           continue;
 
+
+        #ifndef NDEBUG
         // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
-        if ((ix==108) && (iy==122) && (iz==49)) {
+        if ((ix==image_size[0]/2) &&
+            (iy==image_size[1]/2) &&
+            (iz==image_size[2]/2))
+        {
           Scalar hessian[3][3];
           for (int di=0; di<3; di++)
             for (int dj=0; dj<3; dj++)
@@ -3384,14 +3398,22 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
           Matrix2Quaternion(eivects, quat); //convert to 3x3 matrix
           cerr << "quat = " << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n";
         }
+        #endif  //#ifndef NDEBUG
+
+
+
 
         DiagonalizeSymCompact3(aaaafSource[iz][iy][ix],
                                aaaafDest[iz][iy][ix],
                                eival_order);
 
 
+        #ifndef NDEBUG
         // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
-        if ((ix==108) && (iy==122) && (iz==49)) {
+        if ((ix==image_size[0]/2) &&
+            (iy==image_size[1]/2) &&
+            (iz==image_size[2]/2))
+        {
           float shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
           shoemake[0]       = aaaafDest[iz][iy][ix][3];
           shoemake[1]       = aaaafDest[iz][iy][ix][4];
@@ -3408,7 +3430,7 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
                << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
                << endl;
         }
-
+        #endif  //#ifndef NDEBUG
 
       } //for (int ix = 1; ix < image_size[0]-1; ix++) {
     } //for (int iy = 1; iy < image_size[1]-1; iy++) {
