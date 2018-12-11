@@ -3419,15 +3419,12 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
 
 
 
-/// @brief  Convert a volumetric 3D 6-channel image, where each voxel in the
-///         image has the (non-redundant) components of a symmetrix 3x3 matrix.
-///         The output of this function is another 3D 6-channel image, however
-///         each voxel in this image contains the 3-eigenvalues as well as the
-///         eigevectors (stored as 3 Shoemake coordinates).
-///         In order to conserve memory, the conversion occurs in place.
-///         (The original array is overwritten with the new array.)
-///         If a non-NULL "aaafMask" argument was specified, voxels in the
-///         image are ignored when aaafMask[iz][iy][ix] == 0.
+
+/// @brief  Read a volumetric 3D 6-channel image, where each voxel in the
+///         image has the (non-redundant) components of a symmetrix 3x3 matrix
+///         which has been diagonalized using DiagonalizeHessianImage3D().
+///         This function loops over all the voxels and performs the
+///         inverse operation.
 /// @note   The "TensorContainer" object type is expected to behave like
 ///         a one-dimensional array of 6 scalars.
 
