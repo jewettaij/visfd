@@ -3010,26 +3010,24 @@ HandleRidgeDetectorPlanar(Settings settings,
         //grad[1] = aaaafGradient[iz][iy][ix][1];
         //grad[2] = aaaafGradient[iz][iy][ix][2];
 
-        if ((ix == tomo_in.header.nvoxels[0]/4) && (iy == tomo_in.header.nvoxels[1]/4) && (iz == tomo_in.header.nvoxels[2]/4))
-          eivects[0][0]=-1.0;
-        if ((ix == tomo_in.header.nvoxels[0]/3) && (iy == tomo_in.header.nvoxels[1]/3) && (iz == tomo_in.header.nvoxels[2]/3))
-          eivects[0][0]=-1.0;
-        if ((ix == tomo_in.header.nvoxels[0]/2) && (iy == tomo_in.header.nvoxels[1]/2) && (iz == tomo_in.header.nvoxels[2]/2))
-          eivects[0][0]=-1.0;
-
         float score;
 
         // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
-        if ((ix==108) && (iy==122) && (iz==49)) {
-            cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
-                 << "eivals = "<<eivals[0]<<","<<eivals[1]<<","<<eivals[2]<<"\n"
-                 << "eivects = \n"
-                 << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
-                 << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
-                 << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
-                 << endl;
+        #ifndef NDEBUG
+        if ((ix==tomo_in.header.nvoxels[0]/2) &&
+            (iy==tomo_in.header.nvoxels[1]/2) &&
+            (iz==tomo_in.header.nvoxels[2]/2))
+        {
+          cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
+               << "eivals = "<<eivals[0]<<","<<eivals[1]<<","<<eivals[2]<<"\n"
+               << "eivects = \n"
+               << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
+               << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
+               << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
+               << endl;
           score = 0.0;
         }
+        #endif  //#ifndef NDEBUG
 
         score = ScoreHessianPlanar(c_hessian.aaaafI[iz][iy][ix],
                                    aaaafGradient[iz][iy][ix]);
