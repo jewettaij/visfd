@@ -423,8 +423,8 @@ public:
       array_size[d] = 1 + 2*halfwidth[d];
     }
     //shift pointers back to normal
-    for (Integer iz = 0; iz < array_size[2]; iz++) {
-      for (Integer iy = 0; iy < array_size[1]; iy++) {
+    for (Integer iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+      for (Integer iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
         aaafH[iz][iy] -= halfwidth[0];
       }
       aaafH[iz] -= halfwidth[1];
@@ -4019,8 +4019,8 @@ private:
         array_size[d] = 2*halfwidth[d] + 1;
       }
       //shift pointers back to normal
-      for (Integer iz = 0; iz < array_size[2]; iz++) {
-        for (Integer iy = 0; iy < array_size[1]; iy++) {
+      for (Integer iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+        for (Integer iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
           aaaafDisplacement[iz][iy] -= halfwidth[0];
         }
         aaaafDisplacement[iz] -= halfwidth[1];

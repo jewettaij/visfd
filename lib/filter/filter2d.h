@@ -239,7 +239,7 @@ public:
       array_size[d] = 1 + 2*halfwidth[d];
     }
     //shift pointers back to normal
-    for (Integer iy = 0; iy < array_size[1]; iy++)
+    for (Integer iy = -halfwidth[1]; iy <= halfwidth[1]; iy++)
       aafH[iy] -= halfwidth[0];
     aafH -= halfwidth[1];
     //then deallocate
