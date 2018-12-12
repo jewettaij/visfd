@@ -3756,7 +3756,7 @@ public:
                               aaaafV,
                               aaaafDest,
                               aaafMaskSource,
-                              exponent,
+                              detect_curves_not_surfaces,
                               (aaafDenominator
                                ? &(aaafDenominator[iz][iy][ix])
                                : NULL));
@@ -3797,7 +3797,7 @@ public:
 
 
 
-  Scalar
+  void
   TVApplyStickToVoxel(Integer ix,
                       Integer iy,
                       Integer iz,
@@ -3808,13 +3808,11 @@ public:
                       Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
                       bool detect_curves_not_surfaces = false,
                       Scalar *pDenominator = NULL) const
-
   {
     assert(aaafSaliency);
     assert(aaaafV);
     assert(aaaafDest);
 
-    Scalar g = 0.0;
     Scalar denominator = 0.0;
 
     for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
@@ -3958,7 +3956,6 @@ public:
     if (pDenominator)
       *pDenominator = denominator;
 
-    return g;
   } // TVApplyToVoxel()
 
 
