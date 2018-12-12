@@ -3100,8 +3100,8 @@ HandleRidgeDetectorPlanar(Settings settings,
                     c_hessian.aaaafI,
                     tomo_out.aaafI,
                     mask.aaafI,
-                    true,
                     false,
+                    true,
                     &cerr);
 
     for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
