@@ -2879,7 +2879,7 @@ CalcHessian3D(int const image_size[3], //!< source image size
 
           // To reduce memory consumption,
           // save the resulting 3x3 matrix in a smaller 1-D array whose index
-          // is given by MapIndices_3x3_to_linear()
+          // is given by MapIndices_3x3_to_linear[][]
           for (int di=0; di < 3; di++)
             for (int dj=0; dj < 3; dj++)
               aaaafHessian[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
@@ -3254,7 +3254,7 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
           if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
             continue;
           // Store the result in aaaaf2ndMoment[].  As usual, to save memory
-          // we use the "MapIndices_3x3_to_linear()" function to store the
+          // we use the "MapIndices_3x3_to_linear[][]" function to store the
           // entries of the symmetric 3x3 matrix in a 1D array with only 6 entries.
           // (Symmetric 3x3 matrices can have at most 6 unique entries.)
           aaaaf2ndMoment[iz][iy][ix][ MapIndices_3x3_to_linear[0][0] ] =
@@ -3838,7 +3838,7 @@ public:
 
           if (aaafMaskSource) {
             Scalar mask_val = aaafMaskSource[iz_jz][iy_jy][ix_jx];
-            if (mask_val = 0.0)
+            if (mask_val == 0.0)
               continue;
             filter_val *= mask_val;
           }
@@ -3847,7 +3847,13 @@ public:
           //      It is unusual to use a mask unless you intend
           //      to normalize the result later, but I don't enforce this
 
+          Scalar saliency = aaafSaliency[iz_jz][iy_jy][ix_jx];
+          if (saliency == 0.0)
+            continue;
+
           Scalar decay_radial = filter_val;
+          if (decay_radial == 0.0)
+            continue;
 
           Scalar r[3];
           Scalar n[3];
@@ -3881,7 +3887,7 @@ public:
           // "theta" = the angle of r relative to the plane perpendicular to n.
           //           (NOT the angle of r relative to n.  This is a confusing
           //            convention, but this is how it is normally defined.)
-          
+
           Scalar sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
           Scalar sinx2 = sintheta * 2.0;
           Scalar sin2 = sintheta * sintheta;
@@ -3923,7 +3929,7 @@ public:
           for (int di=0; di<3; di++) {
             for (int dj=0; dj<3; dj++) {
               if (di <= dj) {
-                tensor_vote[di][dj] = (aaafSaliency[iz_jz][iy_jy][ix_jx] *
+                tensor_vote[di][dj] = (saliency *
                                        decay_radial *
                                        decay_angular *
                                        n_rotated[di] * n_rotated[dj]);
@@ -3939,7 +3945,7 @@ public:
                 // store 9 numbers if only 6 are needed.
                 // So I implemented a version of the 3x3 matrix which has
                 // only 6 entries, arranged in a 1-D array of size 6.
-                // To access these entries, use "MapIndices_3x3_to_linear()".
+                // To access these entries, use "MapIndices_3x3_to_linear[][]".
 
                 aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
                   += tensor_vote[di][dj];
@@ -3949,9 +3955,9 @@ public:
 
           if (pDenominator)
             denominator += filter_val;
-        }
-      }
-    }
+        } // for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++)
+      } // for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++)
+    } // for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++)
 
     if (pDenominator)
       *pDenominator = denominator;
