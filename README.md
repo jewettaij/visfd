@@ -43,8 +43,7 @@ low-pass, high-pass,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 and
 [DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians), 
-[tensor voting]
-(http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+[tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
 and others.
 A image *mask* can be used to exclude certain
 voxels or regions from consideration.

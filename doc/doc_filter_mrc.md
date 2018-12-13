@@ -35,7 +35,7 @@ voxels or regions from consideration.
 
 ## Usage Examples:
 
-1)
+### Example 1
 ```
 # Detect membranes using tensor voting (target thickness ≈ 65.0 Angstroms)
 
@@ -45,7 +45,7 @@ filter_mrc -w 19.2 \
   -planar 65.0 -planar-tv 200.0 -planar-tv-angle-exponent 4
 ```
 
-2)
+### Example 2
 ```
 # Detect all dark blobs between 180 and 260 Angstroms in width:
 
@@ -150,6 +150,13 @@ or minima and maxima which are too close together.
 
 
 The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
+
+
+The "**-planar**" and "**-planar-tv**" filters are used to detect thin, membrane-like structures using
+[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+and 
+[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf), respectively.
+
 
 
 The "**-dog**"" filter uses a
