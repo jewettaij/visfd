@@ -42,7 +42,7 @@ voxels or regions from consideration.
 filter_mrc -w 19.2 \
   -in tomogram.rec \
   -out membrane_tv.rec \
-  -planar 65.0 -planar-tv 200.0 -planar-tv-angle-exponent 4
+  -planar 65.0 -planar-tv 3.0 -planar-tv-angle-exponent 4
 ```
 
 ### Example 2
