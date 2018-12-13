@@ -11,8 +11,9 @@ brightness inversions,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
+3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf),
 filters.
 Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
@@ -32,31 +33,44 @@ voxels or regions from consideration.
 
 
 
-## Usage Example:
+## Usage Examples:
 
+1)
+```
+# Detect membranes using tensor voting (target thickness ≈ 65.0 Angstroms)
+
+filter_mrc -w 19.2 \
+  -in tomogram.rec \
+  -out membrane_tv.rec \
+  -planar 65.0 -planar-tv 200.0 -planar-tv-angle-exponent 4
+```
+
+2)
 ```
 # Detect all dark blobs between 180 and 260 Angstroms in width:
 
 filter_mrc -w 19.2 \
-  -in Bdellovibrio.rec \
-  -blob Bdellovibrio_blobs 180.0 260.0 1.01 \
-  -mask Bdellovibrio_mask_water=0_periplasm=1_cytoplasm=2.mrc \
+  -in tomogram.rec \
+  -blob tomogram_blobs 180.0 260.0 1.01 \
+  -mask tomogram_mask_water=0_periplasm=1_cytoplasm=2.mrc \
   -mask-select 2 -mask-out 0.0
 
 # Now discard the faint, noisy, or overlapping blobs:
 
 filter_mrc -w 19.2 \
-  -discard-blobs Bdellovibrio_blobs.minima.txt Bdellovibrio_ribosomes.txt \
+  -discard-blobs tomogram_blobs.minima.txt tomogram_ribosomes.txt \
   -blob-minima-threshold -50 \
   -blob-separation 0.8
 
 # Finally, display the remaining blobs we want to keep:
 
 filter_mrc -w 19.2 \
-  -in Bdellovibrio.rec \
-  -out Bdellovibrio_ribosomes.rec \
-  -spheres Bdellovibrio_ribosomes.txt
+  -in tomogram.rec \
+  -out tomogram_ribosomes.rec \
+  -spheres tomogram_ribosomes.txt
 ```
+
+
 
 ## Arguments:
 
@@ -214,6 +228,74 @@ if you use the default exponent of 2.
 *Changing the exponent will slow down the filter considerably.*
 
 The filter is truncated far away from the central peak at a point which is chosen automatically according the σ, σ_x, σ_y, σ_z parameters selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
+
+
+### -planar  thickness
+When the "**-planar**" filter is selected, a
+[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+filter will be used.
+By default, it detects thin membrane-like
+structures which are dark on a white background.
+The **-planar** argument must be followed by a number indicating
+the approximate *thickness* of the membrane you are interested in detecting.
+(in physical units, not voxels.  
+ Membranes whose thickness within a factor of 2 of this target
+ are also likely to be detected.
+ Technically, the *thickness* parameter controls the width Gaussian that will
+ be initially convolved with the original image, according to σ=thickness/√3.
+ For details, see Steger IEEE Trans. Pattern Anal. Machine Int. 1998.)
+
+The *output* of this filter will be bright wherever the derivative of
+the brightness varies much more rapidly in one direction than it does
+in the two orthogonal directions.
+Because this filter depends on second derivatives,
+it is prone to detect a large number of spurious fluctuations in brightness
+(in addition to the membrane-like structures you are interested in).
+Tensor-voting (using the *-planar-tv* argument)
+can be used to remove these spurious detected peaks
+and improve the signal-to-noise ratio.
+
+*(Techincal details: This will generate an output image whose brightness equals
+"Ngamma_norm = λ1^2 - λ2^2",
+where λ1, abd λ2 are the largest and second-largest eigenvalues of the
+hessian matrix, multiplied by σ^2 [in units of voxels].
+See Lindeberg Int.J.Comput.Vis.(1998) for details.)*
+
+**WARNING** *This filter requires a very large amount of memory
+*(enough to store at least 8 copies of the original image in 32bit-float mode).*
+
+
+### -planar-tv  σ_ratio
+The "**-planar-tv**" argument enables refinement of (*-planar*) results using
+[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf).
+It performs a kind of directional blurring which reinforces regions in the image
+where detected ridges in the image point in the same or similar directions.
+(for a nice visual demonstration, see 
+[these slides](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf).)
+The σ_ratio argument is a number larger than 1 which controls the distance
+over which this blurring occurs.
+(It is typically 3.0.  See technical details below.)
+Tensor voting is a very effective method to improve the signal-to-noise
+ratio when detecting curves and surfaces.
+Tensor-voting refinement is not done by default 
+because it can be a very slow computation.
+
+*(Note: -planar-tv is not an independent filter.
+        It enables refinement of existing results from the -planar filter.
+        This argument is ignored unless the -planar argument is also used.)*
+
+*(Techincal details: The width of the Gaussian used in the radial-decay
+                     function used in tensor voting has a width of
+                     σ_tv = σ_ratio ⨉ σ,
+                     where "σ" is the bluring used in the ridge detection
+                     and it has a value of σ=thickness/√3)*
+
+
+### -planar-tv-angle-exponent  n
+The "**-planar-tv-angle-exponent**" parameter (*n*) 
+controls the penalty applied to membrane-like regions which are pointing
+in incompatible directions.  It is 4 be default.
+
 
 
 ### -dog

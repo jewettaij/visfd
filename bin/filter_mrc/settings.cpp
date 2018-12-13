@@ -1531,7 +1531,6 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-
     else if ((vArgs[i] == "-spheres-foreground") ||
              (vArgs[i] == "-sphere-foreground")) {
       sphere_decals_foreground_use_score = false;
@@ -1563,6 +1562,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 1;
     }
 
+
     else if ((vArgs[i] == "-planar") ||
              (vArgs[i] == "-plane") ||
              (vArgs[i] == "-membrane"))
@@ -1572,7 +1572,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        width_a[0] = stof(vArgs[i+1]);
+        width_a[0] = stof(vArgs[i+1]) / sqrt(3.0);
         width_a[1] = width_a[0];
         width_a[2] = width_a[0];
         width_b[0] = 0.0;
@@ -1587,6 +1587,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     }
+
 
     else if ((vArgs[i] == "-planar-background") ||
              (vArgs[i] == "-plane-background") ||
@@ -1610,6 +1611,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+
     else if (vArgs[i] == "-planar-threshold") {
       try {
         if ((i+1 >= vArgs.size()) ||
@@ -1625,7 +1627,12 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+
     else if (vArgs[i] == "-planar-tv") {
+      if (filter_type != RIDGE_PLANAR)
+        throw InputErr("Error: the -planar-tv argument must appear in the argument list\n"
+                       "       after the -planar argument.  It does not make sense to use\n"
+                       "       -planar-tv refinement if you are not using the -planar filter.\n");
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
@@ -1634,8 +1641,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by a number, the threshold\n"
-                       "       for deciding whether to compute the surface normal there.\n");
+                       " argument must be followed by a number, the ratio\n"
+                       "       of widths used in directional blurring (typically 3)\n");
       }
       num_arguments_deleted = 2;
     }
@@ -1969,6 +1976,15 @@ Settings::ParseArgs(vector<string>& vArgs)
       blob_maxima_file_name = blob_file_name_base;
     }
   } //if (filter_type == BLOB)
+
+
+  if (filter_type == RIDGE_PLANAR) {
+    for (int d=0; d<3; d++) {
+      // The parameter entered by the user is a ratio, not an absolute number.
+      // Now that we know what width_a is, multiply width_b by width_a.
+      width_b[d] *= width_a[d];
+    }
+  }
 
 } // Settings::ParseArgs()
 
