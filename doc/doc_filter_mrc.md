@@ -42,7 +42,7 @@ voxels or regions from consideration.
 filter_mrc -w 19.2 \
   -in tomogram.rec \
   -out membrane_tv.rec \
-  -planar 65.0 -planar-tv 3.0 -planar-tv-angle-exponent 4
+  -planar 65.0 -planar-tv 5.0 -planar-tv-angle-exponent 4
 ```
 
 ### Example 2
@@ -282,7 +282,7 @@ where detected ridges in the image point in the same or similar directions.
 [these slides](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf).)
 The σ_ratio argument is a number larger than 1 which controls the distance
 over which this blurring occurs.
-(It is typically 3.0.  See technical details below.)
+(It is typically 5.0.  See technical details below.)
 Tensor voting is a very effective method to improve the signal-to-noise
 ratio when detecting curves and surfaces.
 Tensor-voting refinement is not done by default 

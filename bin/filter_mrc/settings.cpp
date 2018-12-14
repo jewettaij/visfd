@@ -1638,6 +1638,8 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == ""))
           throw invalid_argument("");
         planar_tv_sigma = stof(vArgs[i+1]);
+        if (planar_tv_sigma < 1.0)
+          throw InputErr("Error: the -planar-tv argument must be >= 1.0\n");
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
