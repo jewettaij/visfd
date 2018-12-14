@@ -1979,11 +1979,10 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
   if (filter_type == RIDGE_PLANAR) {
-    for (int d=0; d<3; d++) {
-      // The parameter entered by the user is a ratio, not an absolute number.
-      // Now that we know what width_a is, multiply width_b by width_a.
-      width_b[d] *= width_a[d];
-    }
+    float sigma = width_a[0];
+    // The parameter entered by the user is a ratio, not an absolute number.
+    // Now that we know what sigma is, multiply planar_tv_sigma by sigma.
+    planar_tv_sigma *= sigma;
   }
 
 } // Settings::ParseArgs()

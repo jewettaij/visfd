@@ -263,13 +263,14 @@ can be used to remove these spurious detected peaks
 and improve the signal-to-noise ratio.
 
 *(Techincal details: This will generate an output image whose brightness equals
-"Ngamma_norm = λ1^2 - λ2^2",
+Ngamma_norm = λ1^2 - λ2^2,
 where λ1, abd λ2 are the largest and second-largest eigenvalues of the
 hessian matrix, multiplied by σ^2 [in units of voxels].
 See Lindeberg Int.J.Comput.Vis.(1998) for details.)*
 
-**WARNING** *This filter requires a very large amount of memory
-*(enough to store at least 8 copies of the original image in 32bit-float mode).*
+**WARNING** 
+*This filter requires a very large amount of memory
+(enough to store at least 8 copies of the original image in 32bit-float mode).*
 
 
 ### -planar-tv  σ_ratio
@@ -285,7 +286,7 @@ over which this blurring occurs.
 Tensor voting is a very effective method to improve the signal-to-noise
 ratio when detecting curves and surfaces.
 Tensor-voting refinement is not done by default 
-because it can be a very slow computation.
+because it can be a very expensive computation.
 
 *(Note: -planar-tv is not an independent filter.
         It enables refinement of existing results from the -planar filter.

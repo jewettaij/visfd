@@ -9,6 +9,7 @@ crop_mrc
 filter_mrc
 print_mrc_stats
 sum_voxels
+pval_mrc
 
 # text-editor temporary files:
 *~
