@@ -3117,7 +3117,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                     mask.aaafI,
                     false,  // (we want to detect surfaces not curves)
                     //settings.planar_hessian_score_threshold,
-                    false,  //true,   // (do normalize near image bounaries)
+                    true,   // (do normalize near rectangular image bounaries)
                     &cerr);
 
     for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {

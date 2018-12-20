@@ -2932,18 +2932,18 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
 
   //calculate the filter used for the 0'th moment (ordinary Gaussian filter)
   Filter1D<Scalar, int> filter0 = GenFilterGauss1D(sigma,
-                                                    truncate_halfwidth);
+                                                   truncate_halfwidth);
 
   //calculate the filter used for the 1st moment (Guassian(x) * x)
   Filter1D<Scalar, int> filter1 = GenFilterGauss1D(sigma,
-                                                    truncate_halfwidth);
+                                                   truncate_halfwidth);
   for (int i = -truncate_halfwidth; i <= truncate_halfwidth; i++)
     filter1.afW[i] *= i;
 
 
   //calculate the filter used for the 2nd moment (Guassian(x) * x^2)
   Filter1D<Scalar, int> filter2 = GenFilterGauss1D(sigma,
-                                                    truncate_halfwidth);
+                                                   truncate_halfwidth);
   for (int i = -truncate_halfwidth; i <= truncate_halfwidth; i++)
     filter2.afW[i] *= i*i;
 
@@ -3606,8 +3606,9 @@ public:
   void SetSigma(Scalar set_sigma, Scalar filter_cutoff_ratio=2.5)
   {
     sigma = set_sigma;
+    Integer halfwidth_single = floor(sigma * filter_cutoff_ratio);
     for (int d=0; d<3; d++)
-      halfwidth[d] = floor(sigma * filter_cutoff_ratio);
+      halfwidth[d] = halfwidth_single;
     Resize(halfwidth);
   }
 
@@ -3657,7 +3658,7 @@ public:
     float *afDenominator = NULL;
     float ***aaafDenominator = NULL;
 
-    if (normalize) {
+    if (normalize && aaafMaskSource) {
       Alloc3D(image_size,
               &afDenominator,
               &aaafDenominator);
@@ -3684,72 +3685,79 @@ public:
       if (pReportProgress)
         *pReportProgress << "  Normalizing the result of tensor voting" << endl;
 
-      // REMOVE THIS CRUFT:
-      //if (aaafMaskSource) {
+      if (aaafMaskSource) {
 
-      assert(aaafDenominator);
-      for (Integer iz=0; iz<image_size[2]; iz++) {
-        #pragma omp parallel for collapse(2)
-        for (Integer iy=0; iy<image_size[1]; iy++) {
-          for (Integer ix=0; ix<image_size[0]; ix++) {
-            if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
-              continue;
-            assert(aaafDenominator[iz][iy][ix] > 0.0);
-            for (int di = 0; di < 3; di++) {
-              for (int dj = di; dj < 3; dj++) {
-                aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
-                  /= aaafDenominator[iz][iy][ix];
+        assert(aaafDenominator);
+        for (Integer iz=0; iz<image_size[2]; iz++) {
+          #pragma omp parallel for collapse(2)
+          for (Integer iy=0; iy<image_size[1]; iy++) {
+            for (Integer ix=0; ix<image_size[0]; ix++) {
+              if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+                continue;
+              assert(aaafDenominator[iz][iy][ix] > 0.0);
+              for (int di = 0; di < 3; di++) {
+                for (int dj = di; dj < 3; dj++) {
+                  aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+                    /= aaafDenominator[iz][iy][ix];
+                }
+              }
+            }
+          }
+        } //for (Integer iz=0; iz<image_size[2]; iz++)
+        Dealloc3D(image_size,
+                  &afDenominator,
+                  &aaafDenominator);
+
+      } // if (aaafMask)
+      else {
+        // THE UGLY CODE BELOW (THE NEXT ELSE-CLAUSE) IS UNNECESSARY,
+        // BUT IT MAKES TENSOR-VOTING CODE ABOUT 10% FASTER.
+        // IF YOU WANT TO MAKE THE CODE PRETTIER, DELETE THIS ELSE-CLAUSE
+        // AND MAKE SURE "aaafDenominator" IS ALLWAYS ALLOCATED.
+        assert(aaafDenominator == NULL);
+      
+        // When no mask is supplied, 
+        // If there is no mask, but the user wants the result to be normalized,
+        // then we convolve the filter with the rectangular box. This is cheaper
+        // because the convolution of a separable filter with a rectangular box 
+        // shaped function is the product of the convolution with three 1-D 
+        // functions which are 1 from 0..image_size[d], and 0 everywhere else.
+        Integer halfwidth_single = halfwidth[0];
+        assert(halfwidth_single == halfwidth[1]);
+        assert(halfwidth_single == halfwidth[2]);
+        Filter1D<Scalar, Integer> filter1d = 
+          GenFilterGauss1D(sigma, halfwidth_single);
+        Scalar *aafDenom_precomputed[3];
+        for (int d=0; d<3; d++) {
+          Scalar *afAllOnes = new Scalar [image_size[d]];
+          aafDenom_precomputed[d] = new Scalar [image_size[d]];
+          for (Integer i=0; i < image_size[d]; i++)
+            afAllOnes[i] = 1.0;
+          filter1d.Apply(image_size[d], afAllOnes, aafDenom_precomputed[d]);
+          delete [] afAllOnes;
+        }
+        for (Integer iz = 0; iz < image_size[2]; iz++) {
+          #pragma omp parallel for collapse(2)
+          for (Integer iy = 0; iy < image_size[1]; iy++) {
+            for (Integer ix = 0; ix < image_size[0]; ix++) {
+              if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+                continue;
+              Scalar denominator = (aafDenom_precomputed[0][ix] *
+                                    aafDenom_precomputed[1][iy] *
+                                    aafDenom_precomputed[2][iz]);
+              for (int di=0; di<3; di++) {
+                for (int dj=0; dj<3; dj++) {
+                  aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+                    /= denominator;
+                }
               }
             }
           }
         }
-      } //for (Integer iz=0; iz<image_size[2]; iz++)
-      Dealloc3D(image_size,
-                &afDenominator,
-                &aaafDenominator);
-
-      // REMOVE THIS CRUFT:
-      //} // if (aaafMask)
-      //else {
-      //  // When no mask is supplied, 
-      //  // If there is no mask, but the user wants the result to be normalized,
-      //  // then we convolve the filter with the rectangular box.  This is cheaper
-      //  // because the convolution of a separable filter with a rectangular box 
-      //  // shaped function is the product of the convolution with three 1-D 
-      //  // functions which are 1 from 0..image_size[d], and 0 everywhere else.
-      //  Filter1D<Scalar, int> filter1d = 
-      //    GenFilterGauss1D(sigma, truncate_halfwidth);
-      //  Scalar *aafDenom_precomputed[3];
-      //  for (int d=0; d<3; d++) {
-      //    Scalar *afAllOnes = new Scalar [image_size[d]];
-      //    aafDenom_precomputed[d] = new Scalar [image_size[d]];
-      //    for (Integer i=0; i < image_size[d]; i++)
-      //      afAllOnes[i] = 1.0;
-      //    filter1d.Apply(image_size[d], afAllOnes, aafDenom_precomputed[d]);
-      //    delete [] afAllOnes;
-      //  }
-      //  for (Integer iz = 0; iz < image_size[2]; iz++) {
-      //    #pragma omp parallel for collapse(2)
-      //    for (Integer iy = 0; iy < image_size[1]; iy++) {
-      //      for (Integer ix = 0; ix < image_size[0]; ix++) {
-      //        if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
-      //          continue;
-      //        Scalar denominator = (aafDenom_precomputed[0][ix] *
-      //                              aafDenom_precomputed[1][iy] *
-      //                              aafDenom_precomputed[2][iz]);
-      //        for (int di=0; di<3; di++) {
-      //          for (int dj=0; dj<3; dj++) {
-      //            aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
-      //              /= denominator;
-      //          }
-      //        }
-      //      }
-      //    }
-      //  }
-      //  // delete the array we created for storing the precomputed denominator:
-      //  for (int d=0; d<3; d++)
-      //    delete [] aafDenom_precomputed[d];
-      //} // else clause for "if (aaafMaskSource)"
+        // delete the array we created for storing the precomputed denominator:
+        for (int d=0; d<3; d++)
+          delete [] aafDenom_precomputed[d];
+      } // else clause for "if (aaafMaskSource)"
 
     } //if (normalize)
 
