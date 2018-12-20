@@ -2975,6 +2975,18 @@ HandleRidgeDetectorPlanar(Settings settings,
                             selfadjoint_eigen3::DECREASING_EIVALS,
                             &cerr);
 
+
+  // We need to store the direction of the most important eigenvector
+  // somewhere.  To save space, why not store it in the aaaafGradient
+  // array?  (At this point, we are no longer using it).
+
+  array<float, 3> ***aaaafStickDirection = aaaafGradient;
+
+  // This just effectively changes the name
+  // from "aaaafGradient" to "aaaafStickDirection".
+  // The purpose of the name change is to make it easier to read the code later.
+
+
   // Optional: store the saliency (score) of each voxel in tomo_out.aaafI
   for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
     for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
@@ -3025,7 +3037,6 @@ HandleRidgeDetectorPlanar(Settings settings,
                << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
                << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
                << endl;
-          score = 0.0;
         }
         #endif  //#ifndef NDEBUG
 
@@ -3038,13 +3049,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                          tomo_background.aaafI[iz][iy][ix]);
         score *= peak_height;
 
-        if ((settings.planar_hessian_score_threshold == 0.0) ||
-            (score > settings.planar_hessian_score_threshold)) {
-          tomo_out.aaafI[iz][iy][ix] = score;
-        }
-        else
-          tomo_out.aaafI[iz][iy][ix] = 0.0;
-
+        tomo_out.aaafI[iz][iy][ix] = score;
 
         #if 0
         //I will use this code eventually, but not yet
@@ -3069,13 +3074,11 @@ HandleRidgeDetectorPlanar(Settings settings,
 
 
 
+       
         if (settings.planar_tv_sigma > 0.0) {
-          // We need to store the direction of the most important eigenvector
-          // somewhere.  To save space, why not store it in the aaaafGradient
-          // array?  (At this point, we are no longer using it).
-          aaaafGradient[iz][iy][ix][0] = eivects[0][0];
-          aaaafGradient[iz][iy][ix][1] = eivects[0][1];
-          aaaafGradient[iz][iy][ix][2] = eivects[0][2];
+          aaaafStickDirection[iz][iy][ix][0] = eivects[0][0];
+          aaaafStickDirection[iz][iy][ix][1] = eivects[0][1];
+          aaaafStickDirection[iz][iy][ix][2] = eivects[0][2];
         }
 
 
@@ -3086,8 +3089,20 @@ HandleRidgeDetectorPlanar(Settings settings,
 
 
 
+
   if (settings.planar_tv_sigma > 0.0) {
     assert(settings.filter_truncate_ratio > 0);
+
+    // Use thresholding to reduce the number of voxels that we have to consider
+    // Later, voxels with 0 saliency will be ignored.
+    for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+      for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+        for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+          if (tomo_out.aaafI[iz][iy][ix] < settings.planar_hessian_score_threshold)
+            tomo_out.aaafI[iz][iy][ix] = 0.0;
+        }
+      }
+    }
 
     TV3D<float, int, array<float,3>, float* >
       tv(settings.planar_tv_sigma,
@@ -3096,12 +3111,13 @@ HandleRidgeDetectorPlanar(Settings settings,
 
     tv.TVDenseStick(tomo_in.header.nvoxels,
                     tomo_out.aaafI,
-                    aaaafGradient,
+                    aaaafStickDirection,
                     c_hessian.aaaafI,
-                    NULL,
+                    NULL,   // (do not use a source mask)
                     mask.aaafI,
-                    false,
-                    true,
+                    false,  // (we want to detect surfaces not curves)
+                    //settings.planar_hessian_score_threshold,
+                    true,   // (do normalize near image bounaries)
                     &cerr);
 
     for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {

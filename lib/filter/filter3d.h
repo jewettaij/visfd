@@ -1241,8 +1241,8 @@ ApplySeparable3D(int const image_size[3],
         for (int iy = 0; iy < image_size[1]; iy++) {
           for (int ix = 0; ix < image_size[0]; ix++) {
             Scalar denominator = (aafDenom_precomputed[0][ix] *
-                                   aafDenom_precomputed[1][iy] *
-                                   aafDenom_precomputed[2][iz]);
+                                  aafDenom_precomputed[1][iy] *
+                                  aafDenom_precomputed[2][iz]);
             aaafDest[iz][iy][ix] /= denominator;
           }
         }
@@ -2820,7 +2820,6 @@ CalcHessian3D(int const image_size[3], //!< source image size
           {
             cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
                  << "gradient[0] = " << aaaafGradient[iz][iy][ix][0] << endl;
-            aaafSmoothed[0][0][0] = -1000.0;
           }
           #endif  //#ifndef NDEBUG
 
@@ -2866,7 +2865,6 @@ CalcHessian3D(int const image_size[3], //!< source image size
           {
             cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
                  << "hessian[0][0] = " << hessian[0][0] << endl;
-            aaafSmoothed[0][0][0] = -1000.0;
           }
           #endif  //#ifndef NDEBUG
 
@@ -2880,8 +2878,8 @@ CalcHessian3D(int const image_size[3], //!< source image size
           // To reduce memory consumption,
           // save the resulting 3x3 matrix in a smaller 1-D array whose index
           // is given by MapIndices_3x3_to_linear[][]
-          for (int di=0; di < 3; di++)
-            for (int dj=0; dj < 3; dj++)
+          for (int di = 0; di < 3; di++)
+            for (int dj = di; dj < 3; dj++)
               aaaafHessian[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
                 = hessian[di][dj];
 
@@ -3645,6 +3643,7 @@ public:
                Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
                Scalar const *const *const *aaafMaskDest=NULL,  //!< don't cast votes wherever mask==0
                bool detect_curves_not_surfaces=false,
+               //Scalar saliency_threshold = 0.0,
                bool normalize=true,
                ostream *pReportProgress=NULL  //!< print progress to the user?
                )
@@ -3658,10 +3657,11 @@ public:
     float *afDenominator = NULL;
     float ***aaafDenominator = NULL;
 
-    if (normalize)
+    if (normalize) {
       Alloc3D(image_size,
               &afDenominator,
               &aaafDenominator);
+    }
 
     TVDenseStick(image_size,
                  aaafSaliency,
@@ -3670,20 +3670,33 @@ public:
                  aaafMaskSource,
                  aaafMaskDest,
                  detect_curves_not_surfaces,
+                 //saliency_threshold,
                  aaafDenominator,
                  pReportProgress);
 
+
+    // If any of the tensor voting sums were incomplete
+    // (due to image boundaries, or mask boundaries).
+    // then normalize the resulting magnitudes of the filter
+    // at pixels located near the image boundaries (or mask boundaries).
+    // OPTIONAL (probably not useful to most users)
     if (normalize) {
+      if (pReportProgress)
+        *pReportProgress << "  Normalizing the result of tensor voting" << endl;
+
+      // REMOVE THIS CRUFT:
+      //if (aaafMaskSource) {
+
       assert(aaafDenominator);
       for (Integer iz=0; iz<image_size[2]; iz++) {
         #pragma omp parallel for collapse(2)
         for (Integer iy=0; iy<image_size[1]; iy++) {
           for (Integer ix=0; ix<image_size[0]; ix++) {
-            for (int di=0; di<3; di++) {
-              for (int dj=0; dj<3; dj++) {
-                if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
-                  continue;
-                assert(aaafDenominator[iz][iy][ix] > 0.0);
+            if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+              continue;
+            assert(aaafDenominator[iz][iy][ix] > 0.0);
+            for (int di = 0; di < 3; di++) {
+              for (int dj = di; dj < 3; dj++) {
                 aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
                   /= aaafDenominator[iz][iy][ix];
               }
@@ -3691,11 +3704,54 @@ public:
           }
         }
       } //for (Integer iz=0; iz<image_size[2]; iz++)
-
       Dealloc3D(image_size,
                 &afDenominator,
                 &aaafDenominator);
-    } //if (normalize) {
+
+      // REMOVE THIS CRUFT:
+      //} // if (aaafMask)
+      //else {
+      //  // When no mask is supplied, 
+      //  // If there is no mask, but the user wants the result to be normalized,
+      //  // then we convolve the filter with the rectangular box.  This is cheaper
+      //  // because the convolution of a separable filter with a rectangular box 
+      //  // shaped function is the product of the convolution with three 1-D 
+      //  // functions which are 1 from 0..image_size[d], and 0 everywhere else.
+      //  Filter1D<Scalar, int> filter1d = 
+      //    GenFilterGauss1D(sigma, truncate_halfwidth);
+      //  Scalar *aafDenom_precomputed[3];
+      //  for (int d=0; d<3; d++) {
+      //    Scalar *afAllOnes = new Scalar [image_size[d]];
+      //    aafDenom_precomputed[d] = new Scalar [image_size[d]];
+      //    for (Integer i=0; i < image_size[d]; i++)
+      //      afAllOnes[i] = 1.0;
+      //    filter1d.Apply(image_size[d], afAllOnes, aafDenom_precomputed[d]);
+      //    delete [] afAllOnes;
+      //  }
+      //  for (Integer iz = 0; iz < image_size[2]; iz++) {
+      //    #pragma omp parallel for collapse(2)
+      //    for (Integer iy = 0; iy < image_size[1]; iy++) {
+      //      for (Integer ix = 0; ix < image_size[0]; ix++) {
+      //        if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+      //          continue;
+      //        Scalar denominator = (aafDenom_precomputed[0][ix] *
+      //                              aafDenom_precomputed[1][iy] *
+      //                              aafDenom_precomputed[2][iz]);
+      //        for (int di=0; di<3; di++) {
+      //          for (int dj=0; dj<3; dj++) {
+      //            aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+      //              /= denominator;
+      //          }
+      //        }
+      //      }
+      //    }
+      //  }
+      //  // delete the array we created for storing the precomputed denominator:
+      //  for (int d=0; d<3; d++)
+      //    delete [] aafDenom_precomputed[d];
+      //} // else clause for "if (aaafMaskSource)"
+
+    } //if (normalize)
 
   } // TVDenseStick()
 
@@ -3708,6 +3764,7 @@ public:
                Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
                Scalar const *const *const *aaafMaskDest=NULL,  //!< don't cast votes wherever mask==0
                bool detect_curves_not_surfaces=false,
+               //Scalar saliency_threshold = 0.0,
                Scalar ***aaafDenominator=NULL,
                ostream *pReportProgress=NULL  //!< print progress to the user?
                )
@@ -3716,6 +3773,51 @@ public:
     assert(aaaafV);
     assert(aaaafDest);
 
+
+    //optional: count the number of voxels which can
+    //          cast votes (useful for benchmarking)
+    if (pReportProgress) {
+      size_t n_salient = 0;
+      size_t n_all = 0;
+      for (Integer iz=0; iz<image_size[2]; iz++) {
+        for (Integer iy=0; iy<image_size[1]; iy++) {
+          for (Integer ix=0; ix<image_size[0]; ix++) {
+            n_all++;
+            //if (aaafSaliency[iz][iy][ix] > saliency_threshold)
+            if (aaafSaliency[iz][iy][ix] != 0.0)
+              n_salient++;
+          }
+        }
+      }
+      *pReportProgress << "  (fraction of salient voxels = "
+                       << (static_cast<double>(n_salient) / n_all)
+                       << ")\n"
+                       << "  (use aggressive thresholding to improve speed)"
+                       << endl;
+    }
+
+
+    // First, initialize the arrays which will store the results with zeros.
+    for (Integer iz=0; iz<image_size[2]; iz++)
+      for (Integer iy=0; iy<image_size[1]; iy++)
+        for (Integer ix=0; ix<image_size[0]; ix++)
+          for (int di=0; di<3; di++)
+            for (int dj=0; dj<3; dj++)
+              aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ] = 0.0;
+
+    if (aaafDenominator) {
+      // aaafDenominator[][][] keeps track of how much of the sum of
+      // tensor-voting contributions was available at each voxel location.
+      // (If some voxels were unavailable or outside the boundaries of 
+      //  the image, they cannot cast votes at this voxel location.)
+      //  This array keeps track of that.)  We should initialize this array too.
+      for (Integer iz=0; iz<image_size[2]; iz++)
+        for (Integer iy=0; iy<image_size[1]; iy++)
+          for (Integer ix=0; ix<image_size[0]; ix++)
+            aaafDenominator[iz][iy][ix] = 0.0;
+    }
+
+    // REMOVE THIS CRUFT
     //assert(pv);
     //assert(pV->nchannels() == 3);
     //pV->Resize(image_size, aaafMaskSource, pReportProgress);
@@ -3740,26 +3842,40 @@ public:
 
         for (Integer ix=0; ix<image_size[0]; ix++) {
 
-          // Calculate the effect of the filter on
-          // the voxel located at position ix,iy,iz
+          // ------------ Uncomment whichever is faster: -----------
+          // EITHER uncomment TVCastStickVotes() or TVReceiveStickVotes()
+          // (VERSION1 OR VERSION2), BUT NOT BOTH
 
-          if ((aaafMaskDest) && (aaafMaskDest[iz][iy][ix] == 0.0)) {
-            for (int di=0; di<3; di++)
-              for (int dj=0; dj<3; dj++)
-                aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ] = 0.0;
-            continue;
-          }
+          // VERSION1:
+          //           Have the voxel at ix,iy,iz cast votes at nearby voxels:
 
-          TVApplyStickToVoxel(ix, iy, iz,
-                              image_size,
-                              aaafSaliency,
-                              aaaafV,
-                              aaaafDest,
-                              aaafMaskSource,
-                              detect_curves_not_surfaces,
-                              (aaafDenominator
-                               ? &(aaafDenominator[iz][iy][ix])
-                               : NULL));
+          TVCastStickVotes(ix, iy, iz,
+                           image_size,
+                           aaafSaliency,
+                           aaaafV,
+                           aaaafDest,
+                           aaafMaskSource,
+                           aaafMaskDest,
+                           detect_curves_not_surfaces,
+                           //saliency_threshold,
+                           aaafDenominator);
+
+          // VERSION 2: Have the voxel at ix,iy,iz receive votes
+          //            from nearby voxels
+          //
+          //TVReceiveStickVotes(ix, iy, iz,
+          //                    image_size,
+          //                    aaafSaliency,
+          //                    aaaafV,
+          //                    aaaafDest,
+          //                    aaafMaskSource,
+          //                    aaafMaskDest,
+          //                    detect_curves_not_surfaces,
+          //                    //saliency_threshold,
+          //                    (aaafDenominator
+          //                     ? &(aaafDenominator[iz][iy][ix])
+          //                     : NULL));
+
         }
       }
     }
@@ -3772,7 +3888,7 @@ public:
     DiagonalizeHessianImage3D(image_size,
                               aaaafDest, //<--undiagonalized tensors (input)
                               aaaafDest, //<--diagonalized tensors (output)
-                              aaafMaskSource,
+                              aaafMaskDest,
                               selfadjoint_eigen3::DECREASING_EIVALS,
                               pReportProgress);
 
@@ -3795,23 +3911,202 @@ public:
   } //TVDenseStick()
 
 
+private:
+  void
+  TVCastStickVotes(Integer ix,  //!< coordinates of the voter
+                   Integer iy,  //!< coordinates of the voter
+                   Integer iz,  //!< coordinates of the voter
+                   Integer const image_size[3],
+                   Scalar const *const *const *aaafSaliency, //!< saliency (score) of each voxel (usually calculated from Hessian eigenvalues)
+                   VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+                   TensorContainer ***aaaafDest,  //!< votes will be collected here
+                   Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+                   Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
+                   bool detect_curves_not_surfaces = false,
+                   //Scalar saliency_threshold = 0.0,
+                   Scalar ***aaafDenominator = NULL) const
+  {
+    assert(aaafSaliency);
+    assert(aaaafV);
+    assert(aaaafDest);
+
+    Scalar saliency = aaafSaliency[iz][iy][ix];
+    if (saliency == 0.0)
+    //if (saliency <= saliency_threshold)
+      return;
+
+    Scalar mask_val = 1.0;
+    if (aaafMaskSource) {
+      mask_val = aaafMaskSource[iz][iy][ix];
+      if (mask_val == 0.0)
+        return;
+    }
+
+    Scalar n[3]; // the direction of the stick tensor (see below)
+    for (int d=0; d<3; d++)
+      n[d] = aaaafV[iz][iy][ix][d];
+
+    //Note: The "filter_val" also is needed to calculate
+    //      the denominator used in normalization.
+    //      It is unusual to use a mask unless you intend
+    //      to normalize the result later, but I don't enforce this
+
+    for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
+      Integer iz_jz = iz+jz;
+      if ((iz_jz < 0) || (image_size[2] <= iz_jz))
+        continue;
+
+      for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
+        Integer iy_jy = iy+jy;
+        if ((iy_jy < 0) || (image_size[1] <= iy_jy))
+          continue;
+
+        for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
+          Integer ix_jx = ix+jx;
+          if ((ix_jx < 0) || (image_size[0] <= ix_jx))
+            continue;
+
+          if ((aaafMaskDest) && (aaafMaskDest[iz_jz][iy_jy][ix_jx] == 0.0))
+            continue;
+
+          // The function describing how the vote-strength falls off with
+          // distance has been precomputed and is stored in
+          // radial_decay_lookup.aaafH[jz][jy][jx];
+          // In most tensor-voting implementations, this is a Gaussian.
+          Scalar filter_val = radial_decay_lookup.aaafH[jz][jy][jx];
+          if (aaafMaskSource)
+            filter_val *= mask_val;
+
+          Scalar decay_radial = filter_val;
+          if (decay_radial == 0.0)
+            continue;
+
+          Scalar r[3];
+          for (int d=0; d<3; d++)
+            r[d] = aaaafDisplacement[jz][jy][jx][d];
+
+          //
+          //   .
+          //   :\
+          //   : \
+          // ->:  \<- theta
+          //   :   \
+          //   :    \ 
+          //   :     \
+          //   :      \
+          //   :       \  
+          //   ^        \
+          //   |         \ 
+          // n |          \
+          //   |        .-' r
+          //   |,,..--''
+          //  0
+          //
+          // "n" = the direction of the stick tensor.  If the object being 
+          //       detected is a surface, n is perpendicular to that surface.
+          //       If the object is a curve, then n points tangent to the curve.
+          // "r" = the position of the vote receiver relative to the voter
+          //
+          // "theta" = the angle of r relative to the plane perpendicular to n.
+          //           (NOT the angle of r relative to n.  This is a confusing
+          //            convention, but this is how it is normally defined.)
+
+          Scalar sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
+          Scalar sinx2 = sintheta * 2.0;
+          Scalar sin2 = sintheta * sintheta;
+          Scalar cos2 = 1.0 - sin2;
+          Scalar angle_dependence2 = cos2;
+          if (detect_curves_not_surfaces) {
+            // If we are detecting 1-dimensional curves (polymers, etc...)
+            // instead of 2-dimensional surfaces (membranes, ...)
+            // then the stick direction is assumed to be along the 
+            // of the curve, (as opposed to perpendicular to the 2D surface).
+            // As such
+            angle_dependence2 = sin2;
+          }
+
+          Scalar decay_angular;
+
+          switch(exponent) {
+          case 2:
+            decay_angular = angle_dependence2;
+            break;
+          case 4:
+            decay_angular = angle_dependence2 * angle_dependence2;
+            break;
+          default:
+            //Scalar angle_dependence = sqrt(angle_dependence2);
+            decay_angular = pow(angle_dependence2, 0.5*exponent);
+            break;
+          }
+
+          Scalar n_rotated[3];
+          for (int d=0; d<3; d++) {
+            if (detect_curves_not_surfaces)
+              n_rotated[d] = n[d] - sinx2*r[d];
+            else
+              n_rotated[d] = sinx2*r[d] - n[d];
+          }
+
+          Scalar tensor_vote[3][3];
+          for (int di = 0; di < 3; di++) {
+            for (int dj = di; dj < 3; dj++) {
+              tensor_vote[di][dj] = (saliency *
+                                     decay_radial *
+                                     decay_angular *
+                                     n_rotated[di] * n_rotated[dj]);
+
+              // OLD CODE: I used to implement aaaafDest as a 5-D array.
+              //
+              //aaaafDest[iz_jz][iy_jy][ix_jx][di][dj] += tensor_vote[di][dj];
+              //
+              // NEW CODE:
+              // The ix_jx,iy_jy,iz_jz'th entry in aaaafDest should be
+              // a 3x3 matrix. Since this matrix is symmentric, it contains
+              // only 6 non-redundant entries.  Consequently there is no
+              // need to store 9 numbers if only 6 are needed.
+              // So I implemented a version of the 3x3 matrix which has
+              // only 6 entries, arranged in a 1-D array of size 6.
+              // To access these entries, use "MapIndices_3x3_to_linear[][]".
+
+              aaaafDest[iz_jz][iy_jy][ix_jx][MapIndices_3x3_to_linear[di][dj]]
+                += tensor_vote[di][dj];
+            }
+          }
+
+          if (aaafDenominator)
+            aaafDenominator[iz_jz][iy_jy][ix_jx] += filter_val;
+
+        } // for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++)
+      } // for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++)
+    } // for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++)
+
+
+  } // TVCastStickVotes()
+
+
 
 
   void
-  TVApplyStickToVoxel(Integer ix,
-                      Integer iy,
-                      Integer iz,
+  TVReceiveStickVotes(Integer ix,  //!< coordinates of the receiver voxel
+                      Integer iy,  //!< coordinates of the receiver voxel
+                      Integer iz,  //!< coordinates of the receiver voxel
                       Integer const image_size[3],
                       Scalar const *const *const *aaafSaliency, //!< saliency (score) of each voxel (usually calculated from Hessian eigenvalues)
                       VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
                       TensorContainer ***aaaafDest,  //!< votes will be collected here
                       Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+                      Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
                       bool detect_curves_not_surfaces = false,
+                      //Scalar saliency_threshold = 0.0,
                       Scalar *pDenominator = NULL) const
   {
     assert(aaafSaliency);
     assert(aaaafV);
     assert(aaaafDest);
+
+    if (aaafMaskDest && (aaafMaskDest[iz][iy][ix] == 0.0))
+      return;
 
     Scalar denominator = 0.0;
 
@@ -3848,6 +4143,7 @@ public:
           //      to normalize the result later, but I don't enforce this
 
           Scalar saliency = aaafSaliency[iz_jz][iy_jy][ix_jx];
+          //if (saliency <= saliency_threshold)
           if (saliency == 0.0)
             continue;
 
@@ -3926,30 +4222,28 @@ public:
           }
 
           Scalar tensor_vote[3][3];
-          for (int di=0; di<3; di++) {
-            for (int dj=0; dj<3; dj++) {
-              if (di <= dj) {
-                tensor_vote[di][dj] = (saliency *
-                                       decay_radial *
-                                       decay_angular *
-                                       n_rotated[di] * n_rotated[dj]);
+          for (int di = 0; di < 3; di++) {
+            for (int dj = di; dj < 3; dj++) {
+              tensor_vote[di][dj] = (saliency *
+                                     decay_radial *
+                                     decay_angular *
+                                     n_rotated[di] * n_rotated[dj]);
 
-                // OLD CODE: I used to implement aaaafDest as a 5-D array.
-                //
-                //aaaafDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
-                //
-                // NEW CODE:
-                // The ix,iy,iz'th entry in aaaafDest should be a 3x3 matrix.
-                // Since this matrix is symmentric, it contains only 6
-                // non-redundant entries.  Consequently there is no need to
-                // store 9 numbers if only 6 are needed.
-                // So I implemented a version of the 3x3 matrix which has
-                // only 6 entries, arranged in a 1-D array of size 6.
-                // To access these entries, use "MapIndices_3x3_to_linear[][]".
+              // OLD CODE: I used to implement aaaafDest as a 5-D array.
+              //
+              //aaaafDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
+              //
+              // NEW CODE:
+              // The ix,iy,iz'th entry in aaaafDest should be a 3x3 matrix.
+              // Since this matrix is symmentric, it contains only 6
+              // non-redundant entries.  Consequently there is no need to
+              // store 9 numbers if only 6 are needed.
+              // So I implemented a version of the 3x3 matrix which has
+              // only 6 entries, arranged in a 1-D array of size 6.
+              // To access these entries, use "MapIndices_3x3_to_linear[][]".
 
-                aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
-                  += tensor_vote[di][dj];
-              }
+              aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+                += tensor_vote[di][dj];
             }
           }
 
@@ -3962,7 +4256,7 @@ public:
     if (pDenominator)
       *pDenominator = denominator;
 
-  } // TVApplyToVoxel()
+  } // TVReceiveStickVotes()
 
 
 
