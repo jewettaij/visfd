@@ -13,7 +13,7 @@ brightness inversions,
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf),
+[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf)
 filters.
 Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
@@ -624,7 +624,7 @@ create a file containing the locations of the local minima or maxima
 of the voxel brightnesses within the image, respectively.
 The file is a 5-column ascii text file.
 The x,y,z coordinates of each minima or maxima are in the first 3 columns,
-followed by the "radius" of the minima (which is "0" by default), and finally
+followed by the "diameter" of the minima (which is "0" by default), and finally
 it's "score" (which is the brightness of the voxel at that location).
 *(This format is identical to the format used by the
   "-blob",  "-blobr",  "-blobd" and "-spheres" arguments.)*

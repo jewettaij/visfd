@@ -1498,68 +1498,38 @@ HandleExtrema(Settings settings,
   //float local_minima_threshold = settings.find_minima_threshold;
   //float local_maxima_threshold = settings.find_maxima_threshold;
 
-  float local_minima_threshold = settings.score_upper_bound;
-  float local_maxima_threshold = settings.score_lower_bound;
+  float minima_threshold = settings.score_upper_bound;
+  float maxima_threshold = settings.score_lower_bound;
   
   vector<array<float, 3> > minima_crds_voxels;
   vector<array<float, 3> > maxima_crds_voxels;
 
-  cerr << "---- searching for local minima & maxima ----\n";
-  for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
-    cerr << "  " << iz+1 << " / " << tomo_out.header.nvoxels[2] << "\n";
-    for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
-      for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
-        // Search the 26 surrounding voxels to see if this voxel is
-        // either a minima or a maxima
-        bool is_minima = true;
-        bool is_maxima = true;
-        for (int jz = -1; jz <= 1; jz++) {
-          for (int jy = -1; jy <= 1; jy++) {
-            for (int jx = -1; jx <= 1; jx++) {
-              if ((ix+jx <0) || (ix+jx >= tomo_out.header.nvoxels[0]) ||
-                  (iy+jy <0) || (iy+jy >= tomo_out.header.nvoxels[1]) ||
-                  (iz+jz <0) || (iz+jz >= tomo_out.header.nvoxels[2]))
-                continue;
-              if (jx==0 && jy==0 && jz==0)
-                continue;
-              if ((! mask.aaafI) && (mask.aaafI[iz+jz][iy+jy][ix+jx] == 0)){
-                is_minima = false;
-                is_maxima = false;
-                continue;
-              }
-              if (tomo_out.aaafI[iz+jz][iy+jy][ix+jx] <=
-                  tomo_out.aaafI[iz][iy][ix])
-                is_minima = false;
-              if (tomo_out.aaafI[iz+jz][iy+jy][ix+jx] >=
-                  tomo_out.aaafI[iz][iy][ix])
-                is_maxima = false;
-            }
-          }
-        }
-        if (is_minima && settings.find_minima) {
-          if (((! mask.aaafI) || (mask.aaafI[iz][iy][ix] != 0)) &&
-              (tomo_out.aaafI[iz][iy][ix] < local_minima_threshold)) {
-            array<float, 3> ixiyiz;
-            ixiyiz[0] = ix;
-            ixiyiz[1] = iy;
-            ixiyiz[2] = iz;
-            minima_crds_voxels.push_back(ixiyiz);
-          }
-        }
-        if (is_maxima && settings.find_maxima) {
-          if (((! mask.aaafI) || (mask.aaafI[iz][iy][ix] != 0)) &&
-              (tomo_out.aaafI[iz][iy][ix] > local_maxima_threshold)) {
-            array<float, 3> ixiyiz;
-            ixiyiz[0] = ix;
-            ixiyiz[1] = iy;
-            ixiyiz[2] = iz;
-            maxima_crds_voxels.push_back(ixiyiz);
-          }
-        }
-        assert(! (is_minima && is_maxima));
-      } //for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
-    } //for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
-  } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
+  vector<float> minima_scores(minima_crds_voxels.size());
+  vector<float> maxima_scores(maxima_crds_voxels.size());
+
+  FindLocalExtrema3D(tomo_out.header.nvoxels,
+                     tomo_out.aaafI,
+                     mask.aaafI,
+                     settings.find_minima,
+                     settings.find_maxima,
+                     minima_crds_voxels,
+                     maxima_crds_voxels,
+                     minima_scores,
+                     maxima_scores,
+                     minima_threshold,
+                     maxima_threshold,
+                     &cerr);
+
+  // non-max suppression
+  // discards minima or maxima which lie too close together.
+  // This requires that we choose a size for each minima or maxima.
+  // (If two minima/maxima lie within this distance, one of them is discarded.)
+  float use_this_diameter = (settings.sphere_decals_diameter *
+                             settings.nonmax_min_radial_separation_ratio);
+  if (use_this_diameter <= 0.0)
+    use_this_diameter = 0.0;
+  vector<float> minima_diameters(minima_crds_voxels.size(), use_this_diameter);
+  vector<float> maxima_diameters(maxima_crds_voxels.size(), use_this_diameter);
 
   if ((settings.nonmax_min_radial_separation_ratio > 0.0) ||
       (settings.nonmax_max_volume_overlap_large < 1.0) ||
@@ -1567,17 +1537,6 @@ HandleExtrema(Settings settings,
     if ((settings.sphere_decals_diameter > 0) &&
         //(settings.find_extrema_occlusion_ratio > 0.0)) {
         (settings.nonmax_min_radial_separation_ratio > 0.0)) {
-      vector<float> minima_diameters(minima_crds_voxels.size(),
-                                 settings.sphere_decals_diameter *
-                                 //settings.find_extrema_occlusion_ratio);
-                                 settings.nonmax_min_radial_separation_ratio);
-      vector<float> minima_scores(minima_crds_voxels.size());
-      for (size_t i = 0; i < minima_crds_voxels.size(); i++) {
-        int ix = minima_crds_voxels[i][0];
-        int iy = minima_crds_voxels[i][1];
-        int iz = minima_crds_voxels[i][2];
-        minima_scores[i] = tomo_out.aaafI[iz][iy][ix];
-      }
       DiscardOverlappingBlobs(minima_crds_voxels,
                               minima_diameters, 
                               minima_scores,
@@ -1588,20 +1547,10 @@ HandleExtrema(Settings settings,
                               settings.nonmax_max_volume_overlap_small,
                               &cerr);
     }
+
     if ((settings.sphere_decals_diameter > 0) &&
         //(settings.find_extrema_occlusion_ratio > 0.0)) {
         (settings.nonmax_min_radial_separation_ratio > 0.0)) {
-      vector<float> maxima_diameters(maxima_crds_voxels.size(),
-                                 settings.sphere_decals_diameter *
-                                 //settings.find_extrema_occlusion_ratio);
-                                 settings.nonmax_min_radial_separation_ratio);
-      vector<float> maxima_scores(maxima_crds_voxels.size());
-      for (size_t i = 0; i < maxima_crds_voxels.size(); i++) {
-        int ix = maxima_crds_voxels[i][0];
-        int iy = maxima_crds_voxels[i][1];
-        int iz = maxima_crds_voxels[i][2];
-        maxima_scores[i] = tomo_out.aaafI[iz][iy][ix];
-      }
       DiscardOverlappingBlobs(maxima_crds_voxels,
                               maxima_diameters, 
                               maxima_scores,
@@ -1630,7 +1579,9 @@ HandleExtrema(Settings settings,
     for (int i=0; i < minima_crds_voxels.size(); i++)
       minima_file << minima_crds_voxels[i][0] * voxel_width[0] << " "
                   << minima_crds_voxels[i][1] * voxel_width[1] << " "
-                  << minima_crds_voxels[i][2] * voxel_width[2] << "\n";
+                  << minima_crds_voxels[i][2] * voxel_width[2] << " "
+                  << minima_diameters[i] << " "
+                  << minima_scores[i] << "\n";
   }
   if ((maxima_crds_voxels.size() > 0) && settings.find_maxima) {
     fstream coords_file;
@@ -1640,7 +1591,9 @@ HandleExtrema(Settings settings,
     for (int i=0; i < maxima_crds_voxels.size(); i++)
       coords_file << maxima_crds_voxels[i][0] * voxel_width[0] << " "
                   << maxima_crds_voxels[i][1] * voxel_width[1] << " "
-                  << maxima_crds_voxels[i][2] * voxel_width[2] << "\n";
+                  << maxima_crds_voxels[i][2] * voxel_width[2] << " "
+                  << maxima_diameters[i] << " "
+                  << maxima_scores[i] << "\n";
   }
 } //HandleExtrema()
 
@@ -3073,8 +3026,6 @@ HandleRidgeDetectorPlanar(Settings settings,
         #endif
 
 
-
-       
         if (settings.planar_tv_sigma > 0.0) {
           aaaafStickDirection[iz][iy][ix][0] = eivects[0][0];
           aaaafStickDirection[iz][iy][ix][1] = eivects[0][1];
@@ -3113,7 +3064,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                     tomo_out.aaafI,
                     aaaafStickDirection,
                     c_hessian.aaaafI,
-                    NULL,   // (do not use a source mask)
+                    mask.aaafI,
                     mask.aaafI,
                     false,  // (we want to detect surfaces not curves)
                     //settings.planar_hessian_score_threshold,

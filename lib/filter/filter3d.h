@@ -11,6 +11,7 @@
 #include <ostream>
 #include <vector>
 #include <tuple>
+#include <set>
 #include <cassert>
 using namespace std;
 #include <alloc3d.h>
@@ -3557,8 +3558,8 @@ ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 ///         (Other kinds of tensor voting, such as "plate" and "ball" are not.)
 ///         This can perform tensor voting for both types of
 ///         "stick" fields in 3D:
-///         (1) Stick-fields corresponding to planar-surface-like features,
-///         (2) Stick-fields corresponding to curve-like features.
+///         (1) Stick-fields corresponding to 2D surface-like features,
+///         (2) Stick-fields corresponding to 1D curve-like features.
 
 template<class Scalar, class Integer, class VectorContainer, class TensorContainer>
 
@@ -3614,7 +3615,7 @@ public:
 
 
   /// @brief  Perform dense stick-voting, using every voxel in the image
-  ///         (with non-zero correspondin entries in the aaafMaskSource array)
+  ///         (with non-zero corresponding entries in the aaafMaskSource array)
   ///         as a source, and collecting votes at every voxel
   ///         (with non-zero correspondin entries in the aaafMaskDest array)
   ///         in the aaaafDest array.
@@ -3764,6 +3765,18 @@ public:
   } // TVDenseStick()
 
 
+
+
+
+
+
+private:
+  /// @brief  Perform dense stick-voting, using every voxel in the image
+  ///         as a source, and collecting votes at every voxel
+  ///         in the aaaafDest array.
+  ///         This version of this function offers the ability to manually.
+  ///         manage the aaafDenominator array (used for normalization).
+  ///         Most users should use the other version of this function.
   void
   TVDenseStick(Integer const image_size[3],  //!< source image size
                Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
@@ -3919,7 +3932,7 @@ public:
   } //TVDenseStick()
 
 
-private:
+  /// @brief  Cast stick votes from one voxel to all nearby voxels
   void
   TVCastStickVotes(Integer ix,  //!< coordinates of the voter
                    Integer iy,  //!< coordinates of the voter
@@ -4095,6 +4108,7 @@ private:
 
 
 
+  /// @brief  Receive stick votes from all voxels near a chosen "receiver" voxel
   void
   TVReceiveStickVotes(Integer ix,  //!< coordinates of the receiver voxel
                       Integer iy,  //!< coordinates of the receiver voxel
@@ -4370,8 +4384,114 @@ private:
       }
     }
   }
-
 }; // class TV3D
 
+
+
+
+
+
+template<class Scalar, class Integer>
+void
+FindLocalExtrema3D(Integer const image_size[3],
+                   Scalar const *const *const *aaafI,
+                   Scalar const *const *const *aaafMask,
+                   bool find_minima,
+                   bool find_maxima,
+                   vector<array<Scalar, 3> > &minima_crds_voxels,
+                   vector<array<Scalar, 3> > &maxima_crds_voxels,
+                   vector<Scalar> &minima_scores,
+                   vector<Scalar> &maxima_scores,
+                   Scalar minima_threshold = 0.0,  // Ignore minima or maxima which are not sufficiently low or high
+                   Scalar maxima_threshold = -1.0, // disable by default (if minima_threshold > maxima_threshold)
+                   ostream *pReportProgress=NULL)  //!< print progress to the user?
+{
+  if (pReportProgress)
+    *pReportProgress << "---- searching for local minima & maxima ----\n";
+  for (Integer iz=0; iz<image_size[2]; iz++) {
+    //if (pReportProgress)
+    //  *pReportProgress << "  " << iz+1 << " / " << image_size[2] << "\n";
+    for (Integer iy=0; iy<image_size[1]; iy++) {
+      for (Integer ix=0; ix<image_size[0]; ix++) {
+        // Search the 26 surrounding voxels to see if this voxel is
+        // either a minima or a maxima
+        bool is_minima = true;
+        bool is_maxima = true;
+        for (int jz = -1; jz <= 1; jz++) {
+          for (int jy = -1; jy <= 1; jy++) {
+            for (int jx = -1; jx <= 1; jx++) {
+              if ((ix+jx <0) || (ix+jx >= image_size[0]) ||
+                  (iy+jy <0) || (iy+jy >= image_size[1]) ||
+                  (iz+jz <0) || (iz+jz >= image_size[2]))
+                continue;
+              if (jx==0 && jy==0 && jz==0)
+                continue;
+              if (aaafMask && (aaafMask[iz+jz][iy+jy][ix+jx] == 0)) {
+                is_minima = false;
+                is_maxima = false;
+                continue;
+              }
+              if (aaafI[iz+jz][iy+jy][ix+jx] <=
+                  aaafI[iz][iy][ix])
+                is_minima = false;
+              if (aaafI[iz+jz][iy+jy][ix+jx] >=
+                  aaafI[iz][iy][ix])
+                is_maxima = false;
+            }
+          }
+        }
+        if (is_minima && find_minima) {
+          if (((! aaafMask) || (aaafMask[iz][iy][ix] != 0)) &&
+              ((aaafI[iz][iy][ix] < minima_threshold) ||
+               (maxima_threshold < minima_threshold)))
+          {
+            array<Scalar, 3> ixiyiz;
+            ixiyiz[0] = ix;
+            ixiyiz[1] = iy;
+            ixiyiz[2] = iz;
+            minima_crds_voxels.push_back(ixiyiz);
+            minima_scores.push_back(aaafI[iz][iy][ix]);
+          }
+        }
+        if (is_maxima && find_maxima) {
+          if (((! aaafMask) || (aaafMask[iz][iy][ix] != 0)) &&
+              ((aaafI[iz][iy][ix] > maxima_threshold) ||
+               (maxima_threshold < minima_threshold)))
+          {
+            array<Scalar, 3> ixiyiz;
+            ixiyiz[0] = ix;
+            ixiyiz[1] = iy;
+            ixiyiz[2] = iz;
+            maxima_crds_voxels.push_back(ixiyiz);
+            maxima_scores.push_back(aaafI[iz][iy][ix]);
+          }
+        }
+        assert(! (is_minima && is_maxima));
+      } //for (Integer ix=0; ix<image_size[0]; ix++) {
+    } //for (Integer iy=0; iy<image_size[1]; iy++) {
+  } //for (Integer iz=0; iz<image_size[2]; iz++) {
+} //FindLocalExtrema3D()
+
+
+
+
+template<class Scalar, class Integer, class VectorContainer, class TensorContainer>
+int ConnectedClusters(Integer const image_size[3],
+                      Integer halfwidth,
+                      VectorContainer const *const *const *aaaafFeatures,  //!< list of features associated with each voxel
+                      TensorContainer const *const *const *aaaafTensor,  //!< optional tensor associated with each voxel (from tensor voting)
+                      vector<set<size_t> > vsClusters) {
+  assert(image_size);
+  assert(aaaafFeatures);
+        
+  for (Integer iz=0; iz<image_size[2]; iz++) {
+    for (Integer iy=0; iy<image_size[1]; iy++) {
+      for (Integer ix=0; ix<image_size[0]; ix++) {
+        continue;  //CONTINUEHERE
+      }
+    }
+  }
+
+} //ConnectedClusters
 
 #endif //#ifndef _FILTER3D_H
