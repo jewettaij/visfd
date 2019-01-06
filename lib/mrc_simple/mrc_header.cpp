@@ -3,8 +3,8 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
-#include <err_report.h>
-#include "mrc_header.h"
+#include <err_report.hpp>
+#include "mrc_header.hpp"
 
 
 

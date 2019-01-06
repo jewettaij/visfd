@@ -22,8 +22,7 @@ filters are used whenever possible.
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 detecting local brightness-fluctuations,
 local minima-finding, and
-(spherical)
-[template-matching](https://en.wikipedia.org/wiki/Template_matching).
+[Watershed segmentation](https://imagej.net/Classic_Watershed), 
 A list of detected objects can be saved to a text file.
 Processed or annotated images can be saved to a new .mrc/.rec file.
 
@@ -148,6 +147,10 @@ intensity minima and maxima respectively in the image.
 The user has the option to discard poor scoring minima or maxima,
 or minima and maxima which are too close together.
 
+The "**-watershed**" argument will generate a new image which has been
+segmented using the
+[classic watershed](https://imagej.net/Classic_Watershed)
+algorithm.
 
 The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
 
@@ -235,6 +238,42 @@ if you use the default exponent of 2.
 *Changing the exponent will slow down the filter considerably.*
 
 The filter is truncated far away from the central peak at a point which is chosen automatically according the σ, σ_x, σ_y, σ_z parameters selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
+
+
+### -watershed minima
+
+If the "**-watershed**" argument is selected, the image will be segmented
+using the
+[classic watershed](https://imagej.net/Classic_Watershed)
+algorithm.
+Afterwards, each voxel in the image will be assigned to an integer 
+indicating the local-minima basin to which it belongs.
+Voxels which lie on "ridges" 
+(ie., at the boundary of multiple different drainage basins),
+are assigned a value of 0.
+Note: These minima are sorted according to depth and begin at 1, not zero.
+(Hence voxels in the first minima's basin, ie, the global minima basin, will be
+ assigned to intensities of 1.  Voxels in the next deepest basin, 2, etc...)
+Note: The locations of the corresponding local minima can be found by
+invoking the program on the same image using the "**-find-minima**" argument.
+(They are also sorted according to minima depth.)
+*Note: Oversegmentation can be reduced by performing a Gaussian blur 
+on the image to remove small, insignificant local minima beforehand.
+(This algorithm is usually only applied to images that have been smoothed
+or filtered in advance.)*
+
+
+### -watershed-threshold  threshold
+
+If the "**-watershed-threshold**" argument is also supplied, then voxels
+whose intensity exceeds *threshold*, will be assigned to -1.
+
+
+### -watershed maxima
+
+This performs watershed segmentation starting from maxima instead of minima.
+
+
 
 
 ### -planar  thickness

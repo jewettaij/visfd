@@ -4,9 +4,9 @@ mrc_simple_filter
 ===========
 
 This is a C++ template library for 3D image processing
-("[filter3d.h](./lib/filter/filter3d.h)")
+("[filter3d.hpp](./lib/filter/filter3d.hpp)")
 as well as reading & writing image files using the the MRC file format
-("[mrc_simple.h](./lib/mrc_simple/mrc_simple.h)").
+("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
 It is also a collection of stand-alone programs 
 which use this library
 (including "[filter_mrc](./doc/doc_filter_mrc.md)", 
@@ -35,7 +35,7 @@ local minima/maxima finding,
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf),
 (for automatic 3D curve and 3D surface detection, including membranes),
 and
-non-max suppression.
+[watershed segmentation](https://en.wikipedia.org/wiki/Watershed_%28image_processing%29)
 Filters include
 thresholding,
 low-pass, high-pass, 
@@ -56,7 +56,7 @@ Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 The *source code* for the filters used by this program
 is located here
-[here](./lib/filter/filter3d.h).
+[here](./lib/filter/filter3d.hpp).
 
 
 

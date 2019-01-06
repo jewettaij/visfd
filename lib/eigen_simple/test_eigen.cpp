@@ -1,7 +1,7 @@
 #include <iostream>
 using namespace std;
 
-#include "eigen3_simple.h"
+#include "eigen3_simple.hpp"
 using namespace selfadjoint_eigen3;
 
 int main(int argc, char **argv) {

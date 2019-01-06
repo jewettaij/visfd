@@ -98,7 +98,8 @@ class Settings {
     MIN_DISTANCE,    //voxel intensity = distance to nearest object
     SPHERE_DECALS,   //voxel intensity = 1 if within R from the nearest object
     SPHERE_NONMAX_SUPPRESSION,
-    RIDGE_PLANAR
+    RIDGE_PLANAR,
+    WATERSHED
   } FilterType; 
   
   FilterType filter_type;
@@ -187,6 +188,9 @@ class Settings {
   float sphere_decals_shell_thickness;
   float sphere_decals_shell_thickness_min;
   bool sphere_decals_shell_thickness_is_ratio;
+
+  bool watershed_use_minima;
+  float watershed_threshold;
 
   string out_normals_fname;
   float planar_hessian_score_threshold;

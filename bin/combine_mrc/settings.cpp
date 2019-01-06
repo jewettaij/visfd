@@ -1,7 +1,7 @@
 #include <sstream>
 using namespace std;
-#include <err_report.h>
-#include "settings.h"
+#include <err_report.hpp>
+#include "settings.hpp"
 
 
 string g_program_name = "merge_mrc";

@@ -8,8 +8,8 @@ using namespace std;
 #include <omp.h>       // (OpenMP-specific)
 #endif
 
-#include <err_report.h>
-#include "settings.h"
+#include <err_report.hpp>
+#include "settings.hpp"
 
 //  Example usage:
 // pval_mrc -w 19.2 -i image.rec -coords crds.txt -bin-width 300.0 

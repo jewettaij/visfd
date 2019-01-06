@@ -3,18 +3,12 @@
 
 #include <cstring>
 #include <cassert>
+#include <limits>
 using namespace std;
 
 
 template<class Scalar >
-inline Scalar ABS(Scalar x) { return ((x<0.0) ? -x: x); }
-
-template<class Scalar >
 inline Scalar SQR(Scalar x) { return x*x; }
-
-template<class Scalar >
-inline Scalar MAX(Scalar x, Scalar y) { return ((x<y) ? y : x); }
-
 
 
 template<class Scalar, class Integer>

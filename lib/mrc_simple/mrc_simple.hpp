@@ -27,7 +27,7 @@
 #include <cstring>
 #include <iostream>
 using namespace std;
-#include "mrc_header.h"
+#include "mrc_header.hpp"
 
 
 // "MrcSimple": a class to read and write tomographic data.

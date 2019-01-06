@@ -1,16 +1,16 @@
-#include <cmath>
 #include <sstream>
 #include <iostream>
 #include <cassert>
-#include <cmath>      //(defines "HUGE_VALF")
+#include <cmath>
+#include <limits>
 using namespace std;
 
 #ifndef DISABLE_OPENMP
 #include <omp.h>       // (OpenMP-specific)
 #endif
 
-#include <err_report.h>
-#include "settings.h"
+#include <err_report.hpp>
+#include "settings.hpp"
 
 
 template<class RealNum>
@@ -83,7 +83,7 @@ Settings::Settings() {
   sphere_decals_shell_thickness = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
-  sphere_decals_background_scale = 0.3; //default dimming of original image to emphasize spheres
+  sphere_decals_background_scale = 0.25; //default dimming of original image to emphasize spheres
   sphere_decals_foreground_use_score = true;
   //sphere_decals_background_use_orig = true;
   sphere_decals_foreground_norm = false;
@@ -91,18 +91,19 @@ Settings::Settings() {
   sphere_decals_shell_thickness_is_ratio = true;
   sphere_decals_shell_thickness = 0.05;
   sphere_decals_shell_thickness_min = 1.0;
-  //score_lower_bound = -HUGE_VALF;
-  //score_upper_bound = HUGE_VALF;
-  score_lower_bound = 0.0;
-  score_upper_bound = 0.0;
+  score_lower_bound = -std::numeric_limits<float>::infinity();
+  score_upper_bound = std::numeric_limits<float>::infinity();
   score_bounds_are_ratios = true;
-  sphere_diameters_lower_bound = -HUGE_VALF;
-  sphere_diameters_upper_bound = HUGE_VALF;
+  sphere_diameters_lower_bound = -std::numeric_limits<float>::infinity();
+  sphere_diameters_upper_bound = std::numeric_limits<float>::infinity();
   blob_width_multiplier = 1.0;
   nonmax_min_radial_separation_ratio = 0.0;
   nonmax_max_volume_overlap_small = 1.0;
   nonmax_max_volume_overlap_large = 1.0;
- 
+
+  watershed_use_minima = true;
+  watershed_threshold = std::numeric_limits<float>::infinity();
+
   out_normals_fname = "";
   planar_hessian_score_threshold = 0.0;
   planar_tv_score_threshold = 0.0;
@@ -790,7 +791,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_upper_bound = stof(vArgs[i+1]);
-        score_lower_bound = HUGE_VALF;
+        score_lower_bound = std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -807,7 +808,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_lower_bound = stof(vArgs[i+1]);
-        score_upper_bound = -HUGE_VALF;
+        score_upper_bound = -std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -824,7 +825,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_upper_bound = stof(vArgs[i+1]);
-        score_lower_bound = HUGE_VALF;
+        score_lower_bound = std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -842,7 +843,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_lower_bound = stof(vArgs[i+1]);
-        score_upper_bound = -HUGE_VALF;
+        score_upper_bound = -std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -1563,6 +1564,50 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+
+    else if (vArgs[i] == "-watershed")
+    {
+      filter_type = WATERSHED;
+      try {
+        if (i+1 < vArgs.size()) {
+          if ((vArgs[i+1] == "min") || (vArgs[i+1] == "minima")) {
+            watershed_use_minima = true;
+            watershed_threshold = std::numeric_limits<float>::infinity();
+          }
+          else if ((vArgs[i+1] == "max") || (vArgs[i+1] == "maxima")) {
+            watershed_use_minima = false;
+            watershed_threshold = -std::numeric_limits<float>::infinity();
+          }
+          throw invalid_argument("");
+        }
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be either \"minima\" or \"maxima\".\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if (vArgs[i] == "-watershed-threshold")
+    {
+      filter_type = WATERSHED;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        watershed_threshold = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      
+      num_arguments_deleted = 2;
+    }
+
+
+
     else if ((vArgs[i] == "-planar") ||
              (vArgs[i] == "-plane") ||
              (vArgs[i] == "-membrane"))
@@ -1948,7 +1993,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
   if (filter_type == BLOB) {
     if ((blob_minima_file_name != "") &&
-        (score_lower_bound == HUGE_VALF))
+        (score_lower_bound == std::numeric_limits<float>::infinity()))
     {
       // If the user is not interested in local maxima, then we only
       // need to create one file (for the minima, as opposed to a separate
@@ -1963,7 +2008,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       blob_minima_file_name = blob_file_name_base;
     }
     if ((blob_maxima_file_name != "") &&
-        (score_upper_bound == -HUGE_VALF))
+        (score_upper_bound == -std::numeric_limits<float>::infinity()))
     {
       // If the user is not interested in local minima, then we only
       // need to create one file (for the maxima, as opposed to a separate

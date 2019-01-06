@@ -16,22 +16,22 @@ using namespace std;
 #include <omp.h>       // (OpenMP-specific)
 #endif
 
-#include <err_report.h>
-#include <alloc2d.h>
-#include <alloc3d.h>
-#include <filter1d.h>
-#include <filter2d.h>
-#include <filter3d.h>
-#include <lin3_utils.h>
-#include <threshold.h>
-#include <mrc_simple.h>
+#include <err_report.hpp>
+#include <alloc2d.hpp>
+#include <alloc3d.hpp>
+#include <filter1d.hpp>
+#include <filter2d.hpp>
+#include <filter3d.hpp>
+#include <lin3_utils.hpp>
+#include <threshold.hpp>
+#include <mrc_simple.hpp>
 #include <random_gen.h>
-#include "settings.h"
+#include "settings.hpp"
 
 
 string g_program_name("filter_mrc.cpp");
-string g_version_string("0.10.5");
-string g_date_string("2018-12-21");
+string g_version_string("0.10.6");
+string g_date_string("2018-1-05");
 
 
 
@@ -919,14 +919,14 @@ HandleMinDistance(Settings settings,
                    settings.in_coords_file_name +"\" for reading.\n");
   vector<array<int,3> > crds;
   while (coords_file) {
-    float x, y, z;
+    double x, y, z;
     coords_file >> x;
     coords_file >> y;
     coords_file >> z;
-    int ix, iy, iz;
-    ix = static_cast<int>(x / voxel_width[0]);
-    iy = static_cast<int>(y / voxel_width[1]);
-    iz = static_cast<int>(z / voxel_width[2]);
+    double ix, iy, iz;
+    ix = floor((x / voxel_width[0]) + 0.5);
+    iy = floor((y / voxel_width[1]) + 0.5);
+    iz = floor((z / voxel_width[2]) + 0.5);
     array<int, 3> ixiyiz;
     ixiyiz[0] = ix;
     ixiyiz[1] = iy;
@@ -940,8 +940,8 @@ HandleMinDistance(Settings settings,
 
   // At some point I was trying to be as general as possible and allowed
   // for the possibility that voxels need not be cubes (same width x,y,z)
-  // Now, I realize that allowing for this possibility would slow
-  // down the next step considerably, so I just assume cube-shaped voxels:
+  // Now, I realize that allowing for this possibility would slow down some
+  // calculations considerably, so I just assume cube-shaped voxels:
   float voxel_width_ = voxel_width[0];
   assert((voxel_width[0] == voxel_width[1]) &&
          (voxel_width[1] == voxel_width[2]));
@@ -999,14 +999,14 @@ HandleBlobsNonmaxSuppression(Settings settings,
 {
   // At some point I was trying to be as general as possible and allowed
   // for the possibility that voxels need not be cubes (same width x,y,z)
-  // Now, I realize that allowing for this possibility would slow
-  // down the next step considerably, so I just assume cube-shaped voxels:
+  // Now, I realize that allowing for this possibility would slow down some
+  // calculations considerably, so I just assume cube-shaped voxels:
   float voxel_width_ = voxel_width[0];
   assert((voxel_width[0] == voxel_width[1]) &&
          (voxel_width[1] == voxel_width[2]));
 
 
-  cerr << " ------ calculating distance and volume overlap in: -------\n"
+  cerr << " ------ calculating distance and volume overlap in file: -------\n"
        << " " << settings.in_coords_file_name << "\n"
        << "\n";
 
@@ -1023,14 +1023,14 @@ HandleBlobsNonmaxSuppression(Settings settings,
     if (strLine.size() == 0)
       continue;
     stringstream ssLine(strLine);
-    float x, y, z;
+    double x, y, z;
     ssLine >> x;
     ssLine >> y;
     ssLine >> z;
-    float ix, iy, iz;
-    ix = x / voxel_width[0];
-    iy = y / voxel_width[1];
-    iz = z / voxel_width[2];
+    double ix, iy, iz;
+    ix = floor((x / voxel_width[0]) + 0.5);
+    iy = floor((y / voxel_width[1]) + 0.5);
+    iz = floor((z / voxel_width[2]) + 0.5);
     array<float, 3> ixiyiz;
     ixiyiz[0] = ix;
     ixiyiz[1] = iy;
@@ -1073,13 +1073,8 @@ HandleBlobsNonmaxSuppression(Settings settings,
         score = _score;
     }
 
-    if ((settings.score_lower_bound <= settings.score_upper_bound) &&
-        (! ((settings.score_lower_bound <= score) &&
-            (score <= settings.score_upper_bound))))
-      // If the score lies outside the desired range, skip this blob
-      continue; 
-    else if (! ((settings.score_lower_bound <= score) ||
-                (score <= settings.score_upper_bound)))
+    if (! ((settings.score_lower_bound <= score) &&
+           (score <= settings.score_upper_bound)))
       // If the score is not sufficiently high (or low), skip this blob
       continue; 
 
@@ -1504,18 +1499,31 @@ HandleExtrema(Settings settings,
   vector<array<float, 3> > minima_crds_voxels;
   vector<array<float, 3> > maxima_crds_voxels;
 
-  vector<float> minima_scores(minima_crds_voxels.size());
-  vector<float> maxima_scores(maxima_crds_voxels.size());
+  vector<float> minima_scores;
+  vector<float> maxima_scores;
+
+  vector<array<float, 3> > *pv_minima_crds_voxels = NULL;
+  vector<array<float, 3> > *pv_maxima_crds_voxels = NULL;
+  vector<float> *pv_minima_scores = NULL;
+  vector<float> *pv_maxima_scores = NULL;
+
+  if (settings.find_minima) {
+    pv_minima_crds_voxels = &minima_crds_voxels;
+    pv_minima_scores = &minima_scores;
+  }
+
+  if (settings.find_maxima) {
+    pv_maxima_crds_voxels = &maxima_crds_voxels;
+    pv_maxima_scores = &maxima_scores;
+  }
 
   FindLocalExtrema3D(tomo_out.header.nvoxels,
                      tomo_out.aaafI,
                      mask.aaafI,
-                     settings.find_minima,
-                     settings.find_maxima,
-                     minima_crds_voxels,
-                     maxima_crds_voxels,
-                     minima_scores,
-                     maxima_scores,
+                     pv_minima_crds_voxels,
+                     pv_maxima_crds_voxels,
+                     pv_minima_scores,
+                     pv_maxima_scores,
                      minima_threshold,
                      maxima_threshold,
                      &cerr);
@@ -3011,7 +3019,7 @@ HandleRidgeDetectorPlanar(Settings settings,
         if (lambda1 != 0)
           distance_to_ridge = abs(gradient_along_v1 / lambda1);
         else
-          distance_to_ridge = HUGE_VALF;
+          distance_to_ridge = std::numeric_limits<float>::infinity();
 
         bool ridge_located_in_same_voxel = true;
         for (int d=0; d<3; d++) {
@@ -3111,6 +3119,92 @@ HandleRidgeDetectorPlanar(Settings settings,
 } //HandleRidgeDetectorPlanar()
 
 
+
+
+static void
+HandleWatershed(Settings settings,
+                MrcSimple &tomo_in,
+                MrcSimple &tomo_out,
+                MrcSimple &mask,
+                float voxel_width[3])
+{
+  vector<array<int, 3> > extrema_crds;
+  vector<float> extrema_scores;
+
+  #if 0
+  float minima_threshold = settings.score_upper_bound;
+  float maxima_threshold = settings.score_lower_bound;
+  
+  vector<array<int, 3> > minima_crds_voxels;
+  vector<array<int, 3> > maxima_crds_voxels;
+
+  vector<float> minima_scores(minima_crds_voxels.size());
+  vector<float> maxima_scores(maxima_crds_voxels.size());
+
+  FindLocalExtrema3D(tomo_out.header.nvoxels,
+                     tomo_out.aaafI,
+                     mask.aaafI,
+                     &minima_crds_voxels,
+                     &maxima_crds_voxels,
+                     &minima_scores,
+                     &maxima_scores,
+                     minima_threshold,
+                     maxima_threshold,
+                     &cerr);
+
+  vector<array<int, 3> > *NULL_vai3 = NULL;
+  FindLocalExtrema3D(tomo_out.header.nvoxels,
+                     tomo_out.aaafI,
+                     mask.aaafI,
+                     &extrema_crds,
+                     NULL_vai,
+                     //&extrema_crds,
+                     //&minima_crds_voxels,
+                     //&maxima_crds_voxels,
+                     &extrema_scores,
+                     &extrema_scores,
+                     //&minima_scores,
+                     //&maxima_scores,
+                     minima_threshold,
+                     maxima_threshold,
+                     &cerr);
+
+  FindLocalExtrema3D(tomo_in.header.nvoxels,
+                     tomo_in.aaafI,
+                     mask.aaafI
+                     &extrema_crds,   // store minima locations here
+                     static_cast<vector<array<Coordinate, 3>*> >(NULL),
+                     &extrema_crds,   // store minima locations here
+                     //NULL,            // don't search for maxima_crds,
+                     &extrema_scores, // store minima values here
+                     &extrema_scores, // store minima values here
+                     //NULL,            // don't search for maxima_scores,
+                     settings.watershed_threshold,
+                     settings.watershed_threshold,
+                     //-std::numeric_limits<Scalar>::infinity(),
+                     &cerr);
+#endif
+
+  WatershedMeyers3D(tomo_in.header.nvoxels,
+                    tomo_in.aaafI,
+                    tomo_out.aaafI,
+                    mask.aaafI,
+                    settings.watershed_threshold,
+                    settings.watershed_use_minima,
+                    &extrema_crds,
+                    &extrema_scores);
+
+  // Did the user supply a mask?
+  // WatershedMeyers3D() intentionally does not modify voxels which lie 
+  // outside the mask.  These voxels will have random undefined values 
+  // unless we assign them manually.  We do this below.
+  float UNDEFINED = -1;
+  for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
+    for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
+      for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
+        if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
+          tomo_out.aaafI[iz][iy][ix] = UNDEFINED;
+} //HandleWatershed()
 
 
 
@@ -3246,8 +3340,8 @@ int main(int argc, char **argv) {
 
     // At some point I was trying to be as general as possible and allowed
     // for the possibility that voxels need not be cubes (same width x,y,z)
-    // Now, I realize that allowing for this possibility would slow
-    // down the next step considerably, so I just assume cube-shaped voxels:
+    // Now, I realize that allowing for this possibility would slow down some
+    // calculations considerably, so I just assume cube-shaped voxels:
     //assert((voxel_width[0] == voxel_width[1]) &&
     //       (voxel_width[1] == voxel_width[2]));
     for (int ir = 0; ir < settings.blob_diameters.size(); ir++)
@@ -3260,12 +3354,8 @@ int main(int argc, char **argv) {
 
 
     // ---- filtering ----
+    // perform an operation which generates a new image based on the old image
 
-    //cerr << "applying filter (window size in voxels: "
-    //     << 1 + 2*settings.filter_truncate_halfwidth[0] << ","
-    //     << 1 + 2*settings.filter_truncate_halfwidth[1] << ","
-    //     << 1 + 2*settings.filter_truncate_halfwidth[2] << ")"
-    //     << " ..." << endl;
 
     if (settings.filter_type == Settings::NONE) {
       cerr << "filter_type = Intensity Map <No convolution filter specified>\n";
@@ -3277,6 +3367,8 @@ int main(int argc, char **argv) {
       // (We have copied the contents from tomo_in into tomo_out already.)
     } 
 
+
+
     else if (settings.filter_type == Settings::GAUSS) {
 
       HandleGauss(settings, tomo_in, tomo_out, mask, voxel_width);
@@ -3284,12 +3376,12 @@ int main(int argc, char **argv) {
     } // if (settings.filter_type == Settings::GAUSS)
 
 
+
     else if (settings.filter_type == Settings::GGAUSS) {
 
       HandleGGauss(settings, tomo_in, tomo_out, mask, voxel_width);
 
     } //else if (settings.filter_type == Settings::GGAUSS)
-
 
 
 
@@ -3316,6 +3408,7 @@ int main(int argc, char **argv) {
     } //else if (settings.filter_type = Settings::DOGGXY)
 
 
+
     else if (settings.filter_type == Settings::DOG_SCALE_FREE) {
 
       HandleDogScaleFree(settings, tomo_in, tomo_out, mask, voxel_width);
@@ -3332,21 +3425,27 @@ int main(int argc, char **argv) {
 
 
 
+    else if (settings.filter_type == Settings::RIDGE_PLANAR) {
+
+      // find planar ridges (ie membranes or wide tubes)
+      HandleRidgeDetectorPlanar(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+    else if (settings.filter_type == Settings::WATERSHED) {
+
+      // perform watershed segmentation
+      HandleWatershed(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
     else if (settings.filter_type == Settings::LOCAL_FLUCTUATIONS) {
 
       HandleLocalFluctuations(settings, tomo_in, tomo_out, mask, voxel_width);
 
     } //else if (settings.filter_type == Settings::TEMPLATE_GGAUSS)
-
-
-
-    // ----- find planar ridges (ie membranes or wide tubes) -----
-
-    else if (settings.filter_type == Settings::RIDGE_PLANAR) {
-
-      HandleRidgeDetectorPlanar(settings, tomo_in, tomo_out, mask, voxel_width);
-
-    }
 
 
 

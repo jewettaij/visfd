@@ -4,8 +4,9 @@
 #include <cstring>
 #include <ostream>
 #include <cassert>
+#include <limits>
 using namespace std;
-#include <alloc2d.h>
+#include <alloc2d.hpp>
 
 
 
@@ -358,7 +359,7 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
     for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
       Scalar r = sqrt(SQR(ix/width[0]) + SQR(iy/width[1]));
       Scalar h = ((r>0) ? exp(-pow(r, m_exp)) : 1.0);
-      if (ABS(h) < window_threshold)
+      if (std::abs(h) < window_threshold)
         h = 0.0; // this eliminates corner entries which fall below threshold
                  // (and eliminates anisotropic artifacts due to these corners)
                  // There's no reason to keep any entries less than min value.
@@ -440,8 +441,8 @@ _GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
   // The "difference of gaussians" filter is the difference between
   // these two (generalized) gaussian filters.
   int halfwidth[2];
-  halfwidth[0] = MAX(filterXY_A.halfwidth[0], filterXY_B.halfwidth[0]);
-  halfwidth[1] = MAX(filterXY_A.halfwidth[1], filterXY_B.halfwidth[1]);
+  halfwidth[0] = std::max(filterXY_A.halfwidth[0], filterXY_B.halfwidth[0]);
+  halfwidth[1] = std::max(filterXY_A.halfwidth[1], filterXY_B.halfwidth[1]);
   Filter2D<Scalar, int> filter(halfwidth);
 
   if (pReportProgress)

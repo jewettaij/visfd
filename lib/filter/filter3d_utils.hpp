@@ -1,8 +1,9 @@
 #ifndef _FILTER3D_UTILS_H
 
 #include <cassert>
+#include <limits>
 using namespace std;
-#include <alloc3d.h>
+#include <alloc3d.hpp>
 
 
 
@@ -241,7 +242,7 @@ void MultiplyScalarArr(Scalar scale,
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
 /// @param  afLocation  (optional) report the location of the minima (ix,iy,iz)
 /// @return the minimum entry in the aaafI array (not ignored by the mask)
-///         (or HUGE_VALF, if the aaafMask array has no non-zero entries)
+///         (or std::numeric_limits::infinty(), if the aaafMask array has no non-zero entries)
 
 template<class Scalar, class Integer>
 static
@@ -250,7 +251,7 @@ Scalar _MinArr(Integer const array_size[3],
                Scalar const *const *const *aaafMask = NULL,
                Integer *afLocation = NULL)
 {
-  Scalar min_I = HUGE_VALF; //return this suspicious value if mask is empty
+  Scalar min_I = std::numeric_limits<Scalar>::infinity(); //return this suspicious value if mask is empty
   bool first_iter = true;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {
@@ -280,7 +281,7 @@ Scalar _MinArr(Integer const array_size[3],
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
 /// @param  afLocation  (optional) report the location of the maxima (ix,iy,iz)
 /// @return the minimum entry in the aaafI array (not ignored by the mask)
-///         (or -HUGE_VALF, if the aaafMask array has no non-zero entries)
+///         (or std::numeric_limits::infinty(), if the aaafMask array has no non-zero entries)
 
 template<class Scalar, class Integer>
 static
@@ -289,7 +290,7 @@ Scalar _MaxArr(Integer const array_size[3],
                Scalar const *const *const *aaafMask = NULL,
                Integer *afLocation = NULL)
 {
-  Scalar max_I = -HUGE_VALF; //return this suspicious value if mask is empty
+  Scalar max_I = -std::numeric_limits<Scalar>::infinity(); //return this suspicious value if mask is empty
   bool first_iter = true;
   for (Integer iz = 0; iz < array_size[2]; iz++) {
     for (Integer iy = 0; iy < array_size[1]; iy++) {

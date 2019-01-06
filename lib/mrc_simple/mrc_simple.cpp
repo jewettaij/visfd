@@ -23,9 +23,9 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
-#include <alloc3d.h>
-#include <err_report.h>
-#include "mrc_simple.h"
+#include <alloc3d.hpp>
+#include <err_report.hpp>
+#include "mrc_simple.hpp"
 
 
 template<class RealNum >

@@ -4,8 +4,8 @@
 #include <cassert>
 using namespace std;
 
-#include <err_report.h>
-#include "settings.h"
+#include <err_report.hpp>
+#include "settings.hpp"
 
 
 Settings::Settings() {

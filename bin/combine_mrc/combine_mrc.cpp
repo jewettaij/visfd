@@ -3,10 +3,10 @@
 #include <sstream>
 #include <vector>
 using namespace std;
-#include <err_report.h>
-#include <mrc_simple.h>
-#include <threshold.h>
-#include "settings.h"
+#include <err_report.hpp>
+#include <mrc_simple.hpp>
+#include <threshold.hpp>
+#include "settings.hpp"
 
 
 // (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)
