@@ -22,13 +22,15 @@ filters are used whenever possible.
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 detecting local brightness-fluctuations,
 local minima-finding, and
-[Watershed segmentation](https://imagej.net/Classic_Watershed), 
+[classic watershed segmentation](https://imagej.net/Classic_Watershed).
 A list of detected objects can be saved to a text file.
 Processed or annotated images can be saved to a new .mrc/.rec file.
 
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
-(Typically these are voxels which have been characterized previously.)
+(Typically these are voxels which have been characterized previously.
+The contributions from remaining voxels are normalized, so that objects located
+within narrow confined spaces can be detected accurately and without penalty.)*
 
 
 

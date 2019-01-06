@@ -35,7 +35,7 @@ local minima/maxima finding,
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf),
 (for automatic 3D curve and 3D surface detection, including membranes),
 and
-[watershed segmentation](https://en.wikipedia.org/wiki/Watershed_%28image_processing%29)
+[watershed segmentation](https://imagej.net/Classic_Watershed)
 .
 Filters include
 thresholding,
@@ -49,8 +49,8 @@ and others.
 A image *mask* can be used to exclude certain
 voxels or regions from consideration.
 *(Typically these are voxels which have been characterized previously.
-The contributions from remaining voxels are normalized, so that objects
-located within narrow confined spaces can still be detected accurately.)*
+The contributions from remaining voxels are normalized, so that objects located
+within narrow confined spaces can be detected accurately and without penalty.)*
 A list of detected objects can be saved to a text file.
 Annotated images can be saved to a new MRC/REC file.
 Documentation for this program is located
