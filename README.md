@@ -27,32 +27,29 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
 ![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)  *<-- 2D slice through a 3D tomogram:*
 
-**filter_mrc** detects features and applies simple filters to 3D images.
-It supports 
-local minima/maxima finding,
-[3D scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection),
-[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
-[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf),
-(for automatic 3D curve and 3D surface detection, including membranes),
-and
-[watershed segmentation](https://imagej.net/Classic_Watershed)
-.
-Filters include
+**filter_mrc** applies a filter to a 3D image, 
+and saves the result as a new .mrc/.rec file.
+It currently supports
+low-pass, high-pass,
 thresholding,
-low-pass, high-pass, 
-[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
+brightness inversions,
+[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
+[Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
+[Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
+3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[DOG](https://en.wikipedia.org/wiki/Difference_of_Gaussians), 
-[tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
-and others.
-A image *mask* can be used to exclude certain
-voxels or regions from consideration.
-*(Typically these are voxels which have been characterized previously.
-The contributions from remaining voxels are normalized, so that objects located
-within narrow confined spaces can be detected accurately and without penalty.)*
+[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+filters.
+
+**filter_mrc** can also be used for 3D
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
+detecting local brightness-fluctuations,
+local minima-finding, 
+[classic watershed segmentation](https://imagej.net/Classic_Watershed),
+and segmentation of 3D curves and 3D surfaces
+(including filaments and membranes).
 A list of detected objects can be saved to a text file.
-Annotated images can be saved to a new MRC/REC file.
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 The *source code* for the filters used by this program

@@ -13,7 +13,7 @@ brightness inversions,
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf)
+[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
 filters.
 Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
@@ -22,7 +22,9 @@ filters are used whenever possible.
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 detecting local brightness-fluctuations,
 local minima-finding, and
-[classic watershed segmentation](https://imagej.net/Classic_Watershed).
+[classic watershed segmentation](https://imagej.net/Classic_Watershed),
+and segmentation of 3D curves and 3D surfaces
+(including filaments and membranes).
 A list of detected objects can be saved to a text file.
 Processed or annotated images can be saved to a new .mrc/.rec file.
 
