@@ -36,6 +36,7 @@ local minima/maxima finding,
 (for automatic 3D curve and 3D surface detection, including membranes),
 and
 [watershed segmentation](https://en.wikipedia.org/wiki/Watershed_%28image_processing%29)
+.
 Filters include
 thresholding,
 low-pass, high-pass, 
