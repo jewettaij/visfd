@@ -3131,60 +3131,6 @@ HandleWatershed(Settings settings,
   vector<array<int, 3> > extrema_crds;
   vector<float> extrema_scores;
 
-  #if 0
-  float minima_threshold = settings.score_upper_bound;
-  float maxima_threshold = settings.score_lower_bound;
-  
-  vector<array<int, 3> > minima_crds_voxels;
-  vector<array<int, 3> > maxima_crds_voxels;
-
-  vector<float> minima_scores(minima_crds_voxels.size());
-  vector<float> maxima_scores(maxima_crds_voxels.size());
-
-  FindLocalExtrema3D(tomo_out.header.nvoxels,
-                     tomo_out.aaafI,
-                     mask.aaafI,
-                     &minima_crds_voxels,
-                     &maxima_crds_voxels,
-                     &minima_scores,
-                     &maxima_scores,
-                     minima_threshold,
-                     maxima_threshold,
-                     &cerr);
-
-  vector<array<int, 3> > *NULL_vai3 = NULL;
-  FindLocalExtrema3D(tomo_out.header.nvoxels,
-                     tomo_out.aaafI,
-                     mask.aaafI,
-                     &extrema_crds,
-                     NULL_vai,
-                     //&extrema_crds,
-                     //&minima_crds_voxels,
-                     //&maxima_crds_voxels,
-                     &extrema_scores,
-                     &extrema_scores,
-                     //&minima_scores,
-                     //&maxima_scores,
-                     minima_threshold,
-                     maxima_threshold,
-                     &cerr);
-
-  FindLocalExtrema3D(tomo_in.header.nvoxels,
-                     tomo_in.aaafI,
-                     mask.aaafI
-                     &extrema_crds,   // store minima locations here
-                     static_cast<vector<array<Coordinate, 3>*> >(NULL),
-                     &extrema_crds,   // store minima locations here
-                     //NULL,            // don't search for maxima_crds,
-                     &extrema_scores, // store minima values here
-                     &extrema_scores, // store minima values here
-                     //NULL,            // don't search for maxima_scores,
-                     settings.watershed_threshold,
-                     settings.watershed_threshold,
-                     //-std::numeric_limits<Scalar>::infinity(),
-                     &cerr);
-#endif
-
   WatershedMeyers3D(tomo_in.header.nvoxels,
                     tomo_in.aaafI,
                     tomo_out.aaafI,

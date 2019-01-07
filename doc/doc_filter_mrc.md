@@ -24,7 +24,7 @@ detecting local brightness-fluctuations,
 local minima-finding, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed),
 and segmentation of 3D curves and 3D surfaces
-(including filaments and membranes).
+(including **filaments** and **membranes**).
 A list of detected objects can be saved to a text file.
 Processed or annotated images can be saved to a new .mrc/.rec file.
 
