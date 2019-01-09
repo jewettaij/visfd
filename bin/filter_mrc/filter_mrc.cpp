@@ -3138,7 +3138,8 @@ HandleWatershed(Settings settings,
                     settings.watershed_threshold,
                     settings.watershed_use_minima,
                     &extrema_crds,
-                    &extrema_scores);
+                    &extrema_scores,
+                    &cerr);
 
   // Did the user supply a mask?
   // WatershedMeyers3D() intentionally does not modify voxels which lie 

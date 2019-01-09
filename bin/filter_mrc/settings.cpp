@@ -1578,7 +1578,8 @@ Settings::ParseArgs(vector<string>& vArgs)
             watershed_use_minima = false;
             watershed_threshold = -std::numeric_limits<float>::infinity();
           }
-          throw invalid_argument("");
+          else
+            throw invalid_argument("");
         }
       }
       catch (invalid_argument& exc) {
