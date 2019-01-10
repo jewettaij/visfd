@@ -180,24 +180,6 @@ remains relatively constant or fluctuates wildly.  It can also be useful
 for characterizing regions within the image that have poor contrast.
 
 
-The "**-template-gauss**" filter can also be used for blob detection.
-It performs
-[template-matching](https://en.wikipedia.org/wiki/Template_matching)
-on
-[(generalized) Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
-Specifically, it calculates the overlap
-(cross-correlation)
-of the image with the template
-(a generalized Gaussian),
-as well as the RMSE (root-mean-squared-error) between the
-original image and the Gaussian template
-after optimal overlap.
-(IE., after optimal scaling of the template voxel intensities and background subtraction).
-This allows the user to insure that the blobs in the image
-actually resemble the shape of the template (in this case a Gaussian),
-and cannot be easily fooled by a particularly bright or dark voxel
-in the source image.  (See below for details.)
-
 
 
 
@@ -826,6 +808,24 @@ It has not been optimized for speed.)
 
 
 ### -template-gauss
+The "**-template-gauss**" filter can also be used for blob detection.
+It performs
+[template-matching](https://en.wikipedia.org/wiki/Template_matching)
+on
+[(generalized) Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
+Specifically, it calculates the overlap
+(cross-correlation)
+of the image with the template
+(a generalized Gaussian),
+as well as the RMSE (root-mean-squared-error) between the
+original image and the Gaussian template
+after optimal overlap.
+(IE., after optimal scaling of the template voxel intensities and background subtraction).
+This allows the user to insure that the blobs in the image
+actually resemble the shape of the template (in this case a Gaussian),
+and cannot be easily fooled by a particularly bright or dark voxel
+in the source image.
+
 The **-template-gauss** and **-template-gauss-aniso** arguments must be followed by one or more numbers specifying the width of the Gaussian filter to apply to your image:
 ```
    -template-gauss-aniso  a_x  a_y  a_z  b_x  b_y  b_z
