@@ -30,8 +30,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc.cpp");
-string g_version_string("0.10.6");
-string g_date_string("2018-1-05");
+string g_version_string("0.11.0");
+string g_date_string("2018-1-10");
 
 
 
