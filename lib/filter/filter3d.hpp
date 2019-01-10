@@ -4892,8 +4892,9 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
                      halt_threshold,
                      pReportProgress);
 
-  Label WATERSHED_BOUNDARY = pv_extrema_locations->size(); //an impossible value
-  Label UNDEFINED = pv_extrema_locations->size() + 1; //an impossible value
+  Label WATERSHED_BOUNDARY = 0; //an impossible value
+  Label UNDEFINED = -1; //an impossible value
+  Label QUEUED = pv_extrema_locations->size() + 1; //an impossible value
 
   //initialize aaafDest[][][]
   for (int iz=0; iz<image_size[2]; iz++) {
@@ -4919,7 +4920,7 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
 
   if (pReportProgress)
     *pReportProgress <<
-      "Initializing the Watershed segmentation algorithm\n"
+      " ---- Watershed segmentation algorithm ----\n"
       "starting from " << pv_extrema_locations->size() << " different local "
                      << (start_from_minima ? "minima" : "maxima") << endl;
 
@@ -4960,7 +4961,7 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
 
     
     assert(aaafDest[iz][iy][ix] == UNDEFINED);
-    aaafDest[iz][iy][ix] = which_basin;
+    aaafDest[iz][iy][ix] = QUEUED;
 
   } // for (size_t i=0; i < pv_extrema_locations->size(); i++)
 
@@ -4974,42 +4975,51 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
 
   size_t n_voxels_processed = 0;
   size_t n_voxels_image = image_size[0] * image_size[1] * image_size[2];
+  #ifndef NDEBUG
   set<array<Coordinate, 3> > visited;
+  #endif
 
   while (! q.empty())
   {
     tuple<Scalar, Label, array<Coordinate, 3> > p = q.top();
     q.pop();
+
+    // Figure out the position of that voxel.
     Scalar i_score = -std::get<0>(p); //voxel intensity (brightness)=aaafSource[iz][iy][ix]
-    //Scalar i_which_basin = std::get<1>(p); // the basin to which that voxel borders
+    Scalar i_which_basin = std::get<1>(p); // the basin to which that voxel borders
     int ix = std::get<2>(p)[0]; // voxel location
     int iy = std::get<2>(p)[1]; //   "      "
     int iz = std::get<2>(p)[2]; //   "      "
 
-    if (i_score > halt_threshold * SIGN_FACTOR)
+    // Should we ignore this voxel?
+
+    if (i_score > halt_threshold * SIGN_FACTOR) {
       // stop when the voxel brightness(*SIGN_FACTOR) exceeds the halt_threshold
+      aaafDest[iz][iy][ix] = UNDEFINED;
       continue;
+    }
 
-    if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+    if (aaafMask && aaafMask[iz][iy][ix] == 0.0) {
+      // ignore the voxel if the user specified a mask, and it lies outside it
+      aaafDest[iz][iy][ix] = UNDEFINED;
       continue;
+    }
 
-    // Meyer (and Beucher's?) inter-pixel flood algorith:
-    // Check the voxels that surround voxel (ix,iy,iz)
-
-    // If voxel (ix,iy,iz) adjacent to only one basin, assign it to that basin.
-
-    array<Coordinate, 3> ixiyiz;
-    ixiyiz[0] = ix;
-    ixiyiz[1] = iy;
-    ixiyiz[2] = iz;
-
-    //if (aaafDest[iz][iy][ix] == UNDEFINED) {
-    //  aaafDest[iz][iy][ix] = i_which_basin; //initialize. might change later
+    assert(aaafDest[iz][iy][ix] == QUEUED);
+    // Now we assign this voxel to the basin
+    aaafDest[iz][iy][ix] = i_which_basin + 1;
+    // (Note: This will prevent the voxel from being visited again.)
 
     if (pReportProgress) {
       n_voxels_processed++;
+      #ifndef NDEBUG
+      array<Coordinate, 3> ixiyiz;
+      ixiyiz[0] = ix;
+      ixiyiz[1] = iy;
+      ixiyiz[2] = iz;
       assert(visited.find(ixiyiz) == visited.end());
       visited.insert(ixiyiz);
+      #endif //#ifndef NDEBUG
       //if (visited.size() % 1000 == 0)
       //cerr << "num voxels visited = " << visited.size() << endl;
       //cerr << "q.size() = " << q.size() << endl;
@@ -5020,21 +5030,38 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
         *pReportProgress << " percent complete: " << percentage << endl;
     }
 
-    //}
+    // ---------- Meyer (and Beucher's?) inter-pixel flood algorith: ---------
+    // Check the voxels that surround voxel (ix,iy,iz)
 
     // If voxel is adjacent to multiple basins, assign it to WATERSHED_BOUNDARY
     // We must check the neighbors of this voxel to see whether this is true.
 
+    // ---- loop over neighbors ----
     // Let (jx,jy,jz) denote the index offset for the neighbor voxels
     // (located at ix+jx,iy+jy,iz+jz)
-    const int neighbors[6][3] = {{-1,0,0}, {1,0,0},
-                                 {0,-1,0}, {0,1,0},
-                                 {0,0,-1}, {0,0,1}};
-    for (int J=0; J<6; J++) {
+
+    // Should we use adjacent voxel neighbors only?  If so, then use:
+    //const int neighbors[6][3] = {{-1,0,0}, {1,0,0},
+    //                             {0,-1,0}, {0,1,0},
+    //                             {0,0,-1}, {0,0,1}};
+    //for (int J=0; J<6; J++) {
+    //
+    // ...or should we consider all 28 (3x3x3-1) nearby voxels as well?
+    // In that case, use this instead:
+    const int neighbors[28][3] = {{-1,-1,-1}, {0,-1,-1},{1,-1,-1},
+                                 {-1,0,-1}, {0,0,-1},{1,0,-1},
+                                 {-1,1,-1}, {0,1,-1},{1,1,-1},
+                                 {-1,-1,0}, {0,-1,0},{1,-1,0},
+                                 {-1,0,0}, {1,0,0},
+                                 {-1,1,0}, {0,1,0},{1,1,0},
+                                 {-1,-1,1}, {0,-1,1},{1,-1,1},
+                                 {-1,0,1}, {0,0,1},{1,0,1},
+                                 {-1,1,1}, {0,1,1},{1,1,1}};
+
+    for (int J=0; J<28; J++) {
       int jx = neighbors[J][0];
       int jy = neighbors[J][1];
       int jz = neighbors[J][2];
-      //int j_which_basin = i_which_basin; // (we may update this later)
       int iz_jz = iz + jz;
       int iy_jy = iy + jy;
       int ix_jx = ix + jx;
@@ -5045,15 +5072,19 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
       if ((ix_jx < 0) || (image_size[0] <= ix_jx))
         continue;
 
-      //if ((jx == 0) && (jy == 0) && (jz == 0))
-      //  continue;
-
       if (aaafMask && (aaafMask[iz_jz][iy_jy][ix_jx] == 0.0))
         continue;
 
-      if (aaafDest[iz_jz][iy_jy][ix_jx] == UNDEFINED) {
-        // then first assign the neighbor to the same basin as ix,iy,iz
-        aaafDest[iz_jz][iy_jy][ix_jx] = aaafDest[iz][iy][ix];
+      if (aaafDest[iz_jz][iy_jy][ix_jx] == WATERSHED_BOUNDARY) {
+        // do nothing
+      }
+      else if (aaafDest[iz_jz][iy_jy][ix_jx] == QUEUED) {
+        // do nothing
+      }
+      else if (aaafDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)
+      {
+
+        aaafDest[iz_jz][iy_jy][ix_jx] = QUEUED;
 
         // and push this neighboring voxels onto the queue.
         // (...if they have not been assigned to a basin yet.
@@ -5062,8 +5093,9 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
         neighbor_crds[0] = ix_jx;
         neighbor_crds[1] = iy_jy;
         neighbor_crds[2] = iz_jz;
-        q.push(make_tuple(aaafSource[iz_jz][iy_jy][ix_jx]*SIGN_FACTOR,
-                          0,//i_which_basin,
+        Scalar neighbor_score = aaafSource[iz_jz][iy_jy][ix_jx]*SIGN_FACTOR;
+        q.push(make_tuple(-neighbor_score,
+                          i_which_basin,
                           neighbor_crds));
       }
       else {
@@ -5074,15 +5106,25 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
           // then we should assign the more SHALLOW voxel to WATERSHED_BOUNDARY.
           // Which of the two voxels is "more shallow"?
           // This is the voxel with the higher intensity (*SIGN_FACTOR).
-          if (SIGN_FACTOR * aaafSource[iz_jz][iy_jy][ix_jx]  <=
-              SIGN_FACTOR * aaafSource[iz][iy][ix])
-            aaafDest[iz][iy][ix] = WATERSHED_BOUNDARY;
-          else
-            aaafDest[iz_jz][iy_jy][ix_jx] = WATERSHED_BOUNDARY;
+          assert(SIGN_FACTOR * aaafSource[iz_jz][iy_jy][ix_jx]  <=
+                 SIGN_FACTOR * aaafSource[iz][iy][ix]);
+          aaafDest[iz][iy][ix] = WATERSHED_BOUNDARY;
         }
       }
     } //loop over jx,jy,jz (the neighbers of voxel ix,iy,iz)
   } //while (q.size() != 0)
+
+
+  #ifndef NDEBUG
+  // DEBUGGING
+  // All of the voxels should either be assigned to a basin,
+  // OR assigned to "WATERSHED_BOUNDARY" or to "UNDEFINED" (but not "QUEUED")
+  // Check for that below:
+  for (int iz=0; iz<image_size[2]; iz++)
+    for (int iy=0; iy<image_size[1]; iy++)
+      for (int ix=0; ix<image_size[0]; ix++)
+        assert(aaafDest[iz][iy][ix] != QUEUED);
+  #endif //#ifndef NDEBUG
 
 } //WatershedMeyers3D()
 
