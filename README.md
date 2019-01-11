@@ -33,7 +33,7 @@ It currently supports
 low-pass, high-pass,
 thresholding,
 brightness inversions,
-[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
+[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),

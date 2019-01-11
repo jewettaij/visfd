@@ -7,7 +7,7 @@ It currently supports
 low-pass, high-pass,
 thresholding,
 brightness inversions,
-[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
+[generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
@@ -23,8 +23,10 @@ filters are used whenever possible.
 detecting local brightness-fluctuations,
 local minima-finding, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed),
-and segmentation of 3D curves and 3D surfaces
-(including **filaments** and **membranes**).
+and segmentation of 1D curves and 2D surfaces
+(including **membranes**.
+ *Note:* The detection of curved **filaments** is not
+ yet working as of 2019-1-10.)
 A list of detected objects can be saved to a text file.
 Processed or annotated images can be saved to a new .mrc/.rec file.
 
