@@ -1,5 +1,5 @@
-#ifndef MRC_HEADER_H
-#define MRC_HEADER_H
+#ifndef MRC_HEADER_HPP
+#define MRC_HEADER_HPP
 
 #include <cstdint>
 using namespace std;
@@ -160,6 +160,6 @@ inline ostream& operator<<(ostream& mrc_file,
 
 
 
-#endif //#ifndef MRC_HEADER_H
+#endif //#ifndef MRC_HEADER_HPP
 
 

@@ -1,5 +1,5 @@
-#ifndef _THRESHOLD_H
-#define _THRESHOLD_H
+#ifndef _THRESHOLD_HPP
+#define _THRESHOLD_HPP
 
 template<class X>
 bool IsBetween(X x, X a, X b) {
@@ -137,4 +137,4 @@ Number Threshold4(Number density,
 
 
 
-#endif //#ifndef _THRESHOLD_H
+#endif //#ifndef _THRESHOLD_HPP

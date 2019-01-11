@@ -1,5 +1,5 @@
-#ifndef _ALLOC2D_H
-#define _ALLOC2D_H
+#ifndef _ALLOC2D_HPP
+#define _ALLOC2D_HPP
 
 
 // Alloc2D() is a function for allocating 2-dimensional arrays of data
@@ -49,4 +49,4 @@ void Dealloc2D(Integer const size[2],
 
 
 
-#endif //#ifndef _ALLOC2D_H
+#endif //#ifndef _ALLOC2D_HPP

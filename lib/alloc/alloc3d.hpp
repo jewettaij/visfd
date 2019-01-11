@@ -1,5 +1,5 @@
-#ifndef _ALLOC3D_H
-#define _ALLOC3D_H
+#ifndef _ALLOC3D_HPP
+#define _ALLOC3D_HPP
 
 
 // Alloc3D() is a function for allocating 3-dimensional arrays of data
@@ -61,4 +61,4 @@ void Dealloc3D(Integer const size[3],
 
 
 
-#endif //#ifndef _ALLOC3D_H
+#endif //#ifndef _ALLOC3D_HPP

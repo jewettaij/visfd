@@ -1,9 +1,10 @@
-#ifndef _FILTER2D_H
-#define _FILTER2D_H
+#ifndef _FILTER2D_HPP
+#define _FILTER2D_HPP
 
 #include <cstring>
 #include <ostream>
 #include <cassert>
+#include <cmath>
 #include <limits>
 using namespace std;
 #include <alloc2d.hpp>
@@ -534,4 +535,4 @@ GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
 
 
 
-#endif //#ifndef _FILTER2D_H
+#endif //#ifndef _FILTER2D_HPP

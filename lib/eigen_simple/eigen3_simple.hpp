@@ -1,5 +1,5 @@
-#ifndef _EIGEN3_SIMPLE_H
-#define _EIGEN3_SIMPLE_H
+#ifndef _EIGEN3_SIMPLE_HPP
+#define _EIGEN3_SIMPLE_HPP
 
 // This file contains code from "Eigen", a lightweight C++ template library
 // for linear algebra.  (It was later simplified to remove some dependencies.)
@@ -382,4 +382,4 @@ namespace selfadjoint_eigen3
 
 
 
-#endif //#ifndef _EIGEN3_SIMPLE_H
+#endif //#ifndef _EIGEN3_SIMPLE_HPP

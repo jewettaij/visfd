@@ -1,5 +1,5 @@
-#ifndef _LIN3_UTILS_H
-#define _LIN3_UTILS_H
+#ifndef _LIN3_UTILS_HPP
+#define _LIN3_UTILS_HPP
 
 #include <cmath>
 #include <cassert>
@@ -341,4 +341,4 @@ public:
 
 
 
-#endif //#ifndef _LIN3_UTILS_H
+#endif //#ifndef _LIN3_UTILS_HPP

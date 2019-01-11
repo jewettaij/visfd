@@ -1,5 +1,5 @@
-#ifndef _ERR_REPORT_H   //This check insures that C-preprocessor only includes
-#define _ERR_REPORT_H   //the following text once (not multiple times)
+#ifndef _ERR_REPORT_HPP   //This check insures that C-preprocessor only includes
+#define _ERR_REPORT_HPP   //the following text once (not multiple times)
 
 #include <string>
 using namespace std;
@@ -12,4 +12,4 @@ public:
   virtual const char *what() const throw() { return msg.c_str(); }
 };
 
-#endif //#ifndef _ERR_REPORT_H
+#endif //#ifndef _ERR_REPORT_HPP

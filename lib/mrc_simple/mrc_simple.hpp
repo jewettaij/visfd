@@ -1,5 +1,5 @@
-#ifndef _MRC_SIMPLE_H
-#define _MRC_SIMPLE_H
+#ifndef _MRC_SIMPLE_HPP
+#define _MRC_SIMPLE_HPP
 
 // "MrcSimple": a class to read and write tomographic data.
 //              (stored in .MRC and .REC files)
@@ -196,6 +196,6 @@ inline ostream& operator << (ostream& mrc_file,
 
 
 
-#endif //#ifndef _MRC_SIMPLE_H
+#endif //#ifndef _MRC_SIMPLE_HPP
 
 

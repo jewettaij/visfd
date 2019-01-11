@@ -415,7 +415,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-dog")
 
 
-
+    #ifndef DISABLE_DOGGXY
     else if (vArgs[i] == "-doggxy-aniso")
     {
       try {
@@ -482,6 +482,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 4;
     } //if (vArgs[i] == "-doggxy")
+    #endif //#ifndef DISABLE_DOGGXY
 
 
 

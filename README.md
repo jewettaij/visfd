@@ -49,7 +49,9 @@ detecting local brightness-fluctuations,
 local minima-finding, 
 [watershed segmentation](https://imagej.net/Classic_Watershed),
 and segmentation of **3D curves** and **3D surfaces**
-(including filaments and membranes).
+(including **membranes**.
+ *Note: The detection of curved filaments is not
+ yet working as of 2019-1-10.*)
 A list of detected objects can be saved to a text file.
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).

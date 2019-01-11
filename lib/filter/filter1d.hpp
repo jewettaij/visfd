@@ -1,8 +1,10 @@
-#ifndef _FILTER1D_H
-#define _FILTER1D_H
+#ifndef _FILTER1D_HPP
+#define _FILTER1D_HPP
 
 #include <cstring>
+#include <ostream>
 #include <cassert>
+#include <cmath>
 #include <limits>
 using namespace std;
 
@@ -411,4 +413,4 @@ GenFilterGauss1D(Scalar sigma,  // The "σ" paramgeter in the Gaussian
 
 
 
-#endif //#ifndef _FILTER1D_H
+#endif //#ifndef _FILTER1D_HPP

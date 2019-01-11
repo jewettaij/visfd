@@ -1,5 +1,5 @@
-#ifndef _SETTINGS_H
-#define _SETTINGS_H
+#ifndef _SETTINGS_HPP
+#define _SETTINGS_HPP
 
 #define DISABLE_BOOTSTRAPPING
 //#define DISABLE_TEMPLATE_MATCHING
@@ -43,4 +43,4 @@ class Settings {
 }; //class Settings
 
 
-#endif //#ifndef _SETTINGS_H
+#endif //#ifndef _SETTINGS_HPP

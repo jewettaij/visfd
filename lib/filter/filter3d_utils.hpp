@@ -1,4 +1,5 @@
-#ifndef _FILTER3D_UTILS_H
+#ifndef _FILTER3D_UTILS_HPP
+#define _FILTER3D_UTILS_HPP
 
 #include <cassert>
 #include <limits>
@@ -382,4 +383,4 @@ HistogramArr(Scalar **paHistX,
 } //void HistogramArr()
 
 
-#endif //#ifndef _FILTER3D_UTILS_H
+#endif //#ifndef _FILTER3D_UTILS_HPP
