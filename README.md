@@ -42,12 +42,13 @@ and
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
 filters.
 
+
 **filter_mrc** can also be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 detecting local brightness-fluctuations,
 local minima-finding, 
 [watershed segmentation](https://imagej.net/Classic_Watershed),
-and segmentation of 3D curves and 3D surfaces
+and segmentation of **3D curves** and **3D surfaces**
 (including filaments and membranes).
 A list of detected objects can be saved to a text file.
 Documentation for this program is located

@@ -1352,7 +1352,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-distance") {
+    else if (vArgs[i] == "-distance-points") {
       if (i+1 >= vArgs.size())
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a file name.\n");
