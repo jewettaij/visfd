@@ -268,21 +268,20 @@ The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
 arguments described here are typically only chosen when the user already 
 knows the approximate size of the features they want to emphasize
 in the image.
-
-```
-  -blob1  σ
-```
+    -blob1  σ
 When "**-blob1  σ**" is used, a LOG filter will be applied
 to the image using a Gaussian width (σ).
 Alternatively, if the user wishes to specify the actual size 
 (the radius or diameter) of the objects they want to emphasize, 
 then they can (equivalently) use 
-"**-blobr1 radius**" or "**-blobd1 diameter**" instead.
+    -blobr1 radius
+    -blobd1 diameter
+instead.
 There is also an anisotropic version of this filter as well
-("**-blob1-aniso  σ_x  σ_y  σ_z**").
+    -blob1-aniso  σ_x  σ_y  σ_z**
 
 The new image which is generated will *tend* to have have bright and dark spots 
-wherever bright and dark objects of this size are can be found.
+wherever bright and dark objects of the corresponding size can be found.
 This image can be searched for (local) minima and maxima
 by running this program again on the new image using the 
 "**-find-minima**", "**-find-maxima**" and "-blobr-separation" arguments.
@@ -552,7 +551,7 @@ for example:
 
 
 
-## Annotation and segmentation
+## Segmentation and annotation
 
 
 ### -planar  thickness
@@ -657,6 +656,7 @@ whose intensity exceeds *threshold*, will be assigned to -1.
 This performs watershed segmentation starting from maxima instead of minima.
 
 
+
 ### **-find-minima**, "**-find-maxima**"
 
 Usage:
@@ -704,7 +704,7 @@ radii (*2\*radius*) then the poorer scoring minima will be discarded.
 
 
 
-
+## Blob detection
 
 
 ### -blob,  -blob-r,  -blob-s
@@ -1051,30 +1051,6 @@ All other voxels will be ignored during filtering.
 
 
 
-### -distance-points  COORDINATE_FILE
-
-The **-distance-points** argument reads a file containing a list of 3D 
-coordinates and generates an image whose voxel intensities equal
-the *distance* to the nearest point.
-(This should not be confused with the
- [distance transform](https://en.wikipedia.org/wiki/Distance_transform).
- The size of the image matches the size of the image
- specified with the the "**-in**" argument.
- The points should lie within the boundaries of the image.)
-Example:
-
-```
-   -distance-points coordinates.txt
-```
-The file should contain at least 3 numbers per line
-(the x,y,z coordinates of that point, one point per line).
-The x,y,z coordinates are assumed to be in physical units
-(ie Angstroms) not voxels, *unless* the "**-w 1**" argument was also used.
-*(WARNING: As of 2019-1-11, the calculation is quite slow.
-  I've been too lazy to bother optimizing this for speed.)*
-
-
-
 
 ## Additional Arguments:
 
@@ -1121,7 +1097,30 @@ instead of Angstroms.
 This argument has no effect if the "-w" argument is used.
 
 
-## Miscellaneous filters:
+## Miscellaneous
+
+### -distance-points  COORDINATE_FILE
+
+The **-distance-points** argument reads a file containing a list of 3D 
+coordinates and generates an image whose voxel intensities equal
+the *distance* to the nearest point.
+(This should not be confused with the
+ [distance transform](https://en.wikipedia.org/wiki/Distance_transform).
+ The size of the image matches the size of the image
+ specified with the the "**-in**" argument.
+ The points should lie within the boundaries of the image.)
+Example:
+
+```
+   -distance-points coordinates.txt
+```
+The file should contain at least 3 numbers per line
+(the x,y,z coordinates of that point, one point per line).
+The x,y,z coordinates are assumed to be in physical units
+(ie Angstroms) not voxels, *unless* the "**-w 1**" argument was also used.
+*(WARNING: As of 2019-1-11, the calculation is quite slow.
+  I've been too lazy to bother optimizing this for speed.)*
+
 
 ### -dogg
 *Depreciation warning: This type of filter is unlikely to be useful
