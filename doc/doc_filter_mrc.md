@@ -172,7 +172,7 @@ The user has the option to discard poor scoring minima or maxima,
 or minima and maxima which are too close together.
 
 
-The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow compared to filters like -gauss and -dog.  (However, if you can estimate the size of the objects you want to detect in advance, then you can use "**-blob1**", "**-blobr1**", or "**-blobd1**" which are much faster.)
+The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow.  (For a fast and sloppy alternative, you can use the "**-log-d**" filter.)
 
 
 The "**-planar**" and "**-planar-tv**" filters are used to detect thin, membrane-like structures using
@@ -250,10 +250,10 @@ When *-dog* is used,
 and
 *b_x = b_y = b_z = b*
 
-### -blob1,  -blobr1,  -blobd1,  -blob1-aniso
+### -log,  -log-r, -log-d,  -log-aniso
 
 
-When the "**-blob1**", "**-blobr1**", and "**-blobd1**", or "**-blob1-aniso**"
+When the "**-log**", "**-log-r**", and "**-log-d**", or "**-log-aniso**"
 arguments are selected, a
 [Laplacian-of-a-Gaussian (LOG)](https://en.wikipedia.org/wiki/Blob_detection)
 filter is applied on the source image.
@@ -264,22 +264,30 @@ and then calculates the Laplacian of the result.
 Features in the image of various sizes can be emphasized
 using this kind of filter, and the result can be saved as a new image using
 "**-out** filename.mrc".
-The "**-blob1**", "**-blob1-aniso**", "**-blobr1**", and "**-blobd1**"
+The "**-log**", "**-log-aniso**", "**-log-r**", and "**-log-d**"
 arguments described here are typically only chosen when the user already 
 knows the approximate size of the features they want to emphasize
 in the image.
-    -blob1  σ
-When "**-blob1  σ**" is used, a LOG filter will be applied
+```
+    -log  σ
+```
+When "**-log  σ**" is used, a LOG filter will be applied
 to the image using a Gaussian width (σ).
 Alternatively, if the user wishes to specify the actual size 
 (the radius or diameter) of the objects they want to emphasize, 
 then they can (equivalently) use 
-    -blobr1 radius
-    -blobd1 diameter
+```
+    -log-r radius
+```
+or
+```
+    -log-d diameter
+```
 instead.
-There is also an anisotropic version of this filter as well
-    -blob1-aniso  σ_x  σ_y  σ_z**
-
+There is also an anisotropic version of this filter as well:
+```
+    -log-aniso  σ_x  σ_y  σ_z**
+```
 The new image which is generated will *tend* to have have bright and dark spots 
 wherever bright and dark objects of the corresponding size can be found.
 This image can be searched for (local) minima and maxima
@@ -289,7 +297,7 @@ These locations can be saved to a file and then a new anotated image can be
 created using the "**-spheres**" argument.  This provides a fast, sloppy, 
 and unselective way to search for features in an image.
 However scale-free 
-[**Blob detection**](https://en.wikipedia.org/wiki/Blob_detection)
+[**blob detection**](https://en.wikipedia.org/wiki/Blob_detection)
 is a more robust (and computationally expensive) way to detect objects 
 of a given size within an image.
 "Blob detection" is discussed elsewhere in this document, and should not be
@@ -339,7 +347,7 @@ Thresholding operations can be used to insure that the intensities
 They can also be used to select only voxels whose intensities lie within
 a narrow range of interest.
 
-*Note:* All threshold operations are performed *after* normal filtering operations have been applied (such as -gauss, -dog, -dogg, -fluct, or -blob1 filters).
+*Note:* All threshold operations are performed *after* normal filtering operations have been applied (such as -gauss, -dog, -dogg, -fluct, or -log filters).
 
 ### -invert
 
@@ -874,8 +882,8 @@ or *overlapping radii*, but not both.
 
 #### Specifying the radius or Gaussian-sigma parameters for the objects of interest:
 
-The "**-blob-r**", "**-blob-s**", (and "**-blob1-r**" "**-blob1-s**") arguments
-are variants of the "**-blob**" (and "**-blob1**") argument.
+The "**-blob-r**", "**-blob-s**", (and "**-log-r**" "**-log**") arguments
+are variants of the "**-blob**" (and "**-log-d**") argument.
 Their parameters are specified by the approximate radius(r≈σ√3)
 or Gaussian width (σ) of the objects
 that you wish to detect within the image (instead of the object's diameter).
@@ -968,7 +976,7 @@ The filter is multiplied by (1.0 / δ^2) to achieve *scale invariance*.
 of width σ, receives the same score as an
 object of width 2W filtered with a Gaussian of width *2σ*, for example.)
 This also means that you can use the
-"**-blob1**",  "**-blobr1**", and "**-blobd1**" arguments
+"**-log**",  "**-log-r**", and "**-log-d**" arguments
 to perform scale-free-blob-detection, *one Gaussian-width at a time,*
 in such a way that that you can directly compare
 the results of using different Gaussian-widths

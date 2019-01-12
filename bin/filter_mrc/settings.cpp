@@ -486,11 +486,9 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-blob-single") ||
-             (vArgs[i] == "-blob1") ||
-             (vArgs[i] == "-blob1-s") || (vArgs[i] == "-blob-s1") ||
-             (vArgs[i] == "-blob1-r") || (vArgs[i] == "-blob-r1") ||
-             (vArgs[i] == "-blob-1d") || (vArgs[i] == "-blob-d1"))
+    else if ((vArgs[i] == "-log") ||
+             (vArgs[i] == "-log-r") ||
+             (vArgs[i] == "-log-d"))
     {
       try {
         if ((i+1 >= vArgs.size()) ||
@@ -498,19 +496,17 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         float blob_width_multiplier = 1.0;
         blob_width_multiplier = 1.0;
-        if ((vArgs[i] == "-blob1-s") || (vArgs[i] == "-blob-s1"))
+        if (vArgs[i] == "-log")
           // (for a solid uniform 3-D sphere)
           blob_width_multiplier = 2.0*sqrt(3.0);
           //REMOVE THIS CRUFT
           //blob_width_multiplier = 1.0/sqrt(3.0);
-        if ((vArgs[i] == "-blob1-r") || (vArgs[i] == "-blob-r1"))
+        if (vArgs[i] == "-log-r")
           // (for a solid uniform 3-D sphere)
           blob_width_multiplier = 2.0;
           //REMOVE THIS CRUFT
           //blob_width_multiplier = 1.0/sqrt(3.0);
-        else if ((vArgs[i] == "-blob-single") ||
-                 (vArgs[i] == "-blob1") ||
-                 (vArgs[i] == "-blob1-d") || (vArgs[i] == "-blob-d1"))
+        if (vArgs[i] == "-log-d")
           // (for a solid uniform 3-D sphere)
           blob_width_multiplier = 1.0;
           //REMOVE THIS CRUFT
@@ -528,10 +524,10 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "       the (approximate) width of the objects of interest.\n");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-single")
+    } //if (vArgs[i] == "-log")
 
 
-    else if (vArgs[i] == "-blob1-aniso")
+    else if (vArgs[i] == "-log-aniso")
     {
       try {
         if ((i+3 >= vArgs.size()) ||
@@ -553,7 +549,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "       (Due to the missing-wedge artifact they might differ.\n");
       }
       num_arguments_deleted = 4;
-    } //if (vArgs[i] == "-blob1-aniso")
+    } //if (vArgs[i] == "-log-aniso")
 
 
 
