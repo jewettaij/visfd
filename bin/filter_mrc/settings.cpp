@@ -1566,28 +1566,22 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if (vArgs[i] == "-watershed")
+    else if ((vArgs[i] == "-watershed-minima") ||
+             (vArgs[i] == "-watershed"))
     {
       filter_type = WATERSHED;
-      try {
-        if (i+1 < vArgs.size()) {
-          if ((vArgs[i+1] == "min") || (vArgs[i+1] == "minima")) {
-            watershed_use_minima = true;
-            watershed_threshold = std::numeric_limits<float>::infinity();
-          }
-          else if ((vArgs[i+1] == "max") || (vArgs[i+1] == "maxima")) {
-            watershed_use_minima = false;
-            watershed_threshold = -std::numeric_limits<float>::infinity();
-          }
-          else
-            throw invalid_argument("");
-        }
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be either \"minima\" or \"maxima\".\n");
-      }
-      num_arguments_deleted = 2;
+      watershed_use_minima = true;
+      watershed_threshold = std::numeric_limits<float>::infinity();
+      num_arguments_deleted = 1;
+    }
+
+    
+    else if (vArgs[i] == "-watershed-maxima")
+    {
+      filter_type = WATERSHED;
+      watershed_use_minima = true;
+      watershed_threshold = std::numeric_limits<float>::infinity();
+      num_arguments_deleted = 1;
     }
 
 

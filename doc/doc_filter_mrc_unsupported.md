@@ -1,6 +1,6 @@
 Unsupported features:
 ===========
-* Depreciation warning:
+* DEPRECIATION WARNING:
 This file contains documentation for features of the "filter_mrc" program
 which are no longer maintained or supported (and were probably never useful).
 This file may be deleted in the future.*
