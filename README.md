@@ -39,7 +39,7 @@ brightness inversions,
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf),
 and brightness-fluctuation
 filters.
 
@@ -48,8 +48,8 @@ filters.
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 local minima-finding, 
 [watershed segmentation](https://imagej.net/Classic_Watershed),
-and the detection and segmentation of **3D curves** and **3D surfaces**.
-(...including **membranes**).
+and the detection and segmentation of **1D curves** and **2D surfaces**
+(including **membranes**).
 A list of detected objects can be saved to a text file.
 
 All operations support normalized *masking*, so that objects which are located

@@ -13,22 +13,20 @@ brightness inversions,
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf),
+and brightness-fluctuation
 filters.
 Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
 
 **filter_mrc** can also be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
-detecting local brightness-fluctuations,
 local minima-finding, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed),
-and segmentation of 1D curves and 2D surfaces
-(including **membranes**.
- *Note: The detection of curved filaments is not
- yet working as of 2019-1-10.*)
+and the detection and segmentation of **1D curves** and **2D surfaces**
+(including **membranes**).
 A list of detected objects can be saved to a text file.
-Processed or annotated images can be saved to a new .mrc/.rec file.
+Annotated images can be saved to a new .mrc/.rec file.
 
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
