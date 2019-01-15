@@ -346,7 +346,7 @@ will generate a huge number of "local minima".
 
 The "**-blob**", "**-blob-r**", and "**-blob-s**" arguments are used for
 [Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
-When this is used, the program will apply a LOG filter to the image
+When this is used, the program will apply a LoG filter to the image
 multiple times using a range of Gaussian widths (σ) (specified by the user)
 in an attempt to determine the correct size (scale) for the relevant objects
 in the image automatically.  (As such, this operation is comparatively slow.)
@@ -364,7 +364,7 @@ by 4 arguments (whose meaning depends on the filter selected):
 If "**-blob**" is selected, then it should be followed by the range of diameters
 of the objects you wish to detect (**d_min** and **d_max**).  (Simlarly, 
 "--blob-r" allows the user to specify blob sizes in terms of their radii.)
-A LOG filter will be applied to the image using different Gaussians
+A LoG filter will be applied to the image using different Gaussians
 whose widths (σ) vary between "**σ_min**", and "**σ_max**"
 (which are equal to d_min/(2√3) and d_max/(2√3) respectively).
 (If you prefer, you can use the "*-blob-s*" argument to directly specify the
@@ -398,7 +398,7 @@ On each line of that file,
 **size** is the size of the blob,
 (characterized either using either σ, radius, or diameter, as explained below),
 and **score** is the intensity of that voxel after
-a LOG filter of that size was applied to it.
+a LoG filter of that size was applied to it.
 The list is ordered from high score to low score
 (for maxima, or low score to high score for minima).
 These blobs can be visualized using the "**-spheres**" argument (see below).
@@ -579,7 +579,7 @@ and
 
 When the "**-log**", "**-log-r**", and "**-log-d**", or "**-log-aniso**"
 arguments are selected, a
-[Laplacian-of-a-Gaussian (LOG)](https://en.wikipedia.org/wiki/Blob_detection)
+[Laplacian-of-a-Gaussian (LoG)](https://en.wikipedia.org/wiki/Blob_detection)
 filter is applied on the source image.
 (See implementation details below.)
 The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
@@ -595,7 +595,7 @@ in the image.
 ```
     -log  σ
 ```
-When "**-log  σ**" is used, a LOG filter will be applied
+When "**-log  σ**" is used, a LoG filter will be applied
 to the image using a Gaussian width (σ).
 Alternatively, if the user wishes to specify the actual size 
 (the radius or diameter) of the objects they want to emphasize, 
@@ -626,6 +626,11 @@ is a more robust (and computationally expensive) way to detect objects
 of a given size within an image.
 "Blob detection" is discussed elsewhere in this document, and should not be
 confused with the discussion here.
+
+*(Implementation note: The LoG filter described here is approximated internally 
+ using a DoG filter. You can control the accuracy of this approximation using
+ the "-dog-delta δ" argument, which is 0.02 by default.  Using smaller values
+ of δ can improve the approximation, but could lead to spurious artifacts.)*
 
 
 
@@ -1019,7 +1024,6 @@ sphere. If the small sphere's volume is less than half of the larger sphere
 To prevent the small sphere from being discarded, you can use
 **-max-volume-overlap 0.5** together with
 **-max-volume-overlap-small 1**.
-*(This cannot be done using the -radial-separation argument.)*
 
 
 
@@ -1044,69 +1048,6 @@ and "**-out**" arguments.
 
 
 
-
-
-
-
-
-####  Implementation:
-
-To speed up the calculation,
-the Difference-of-Gaussian approximation to the Laplacian-of-Gaussian
-filter us used.
-Specifically, the original image is convolved with a
-[Difference-of-Gaussians (DOG)](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach)
-filter, *h(x,y,z)*
-```
-   h(x,y,z) = scale * ( A*exp(-0.5*r_a^2) - B*exp(-0.5*r_b^2) )
-  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
-    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
-      a_x = σ_x*(1-0.5*δ), a_y = σ_y*(1-0.5*δ), a_z = σ_z*(1-0.5*δ)
-      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
-    scale = (1.0 / δ^2)
-```
-The A and B parameters are determined automatically by normalization.
-The "*δ*" parameter is *0.02* by default.
-(This can be overridden using the "-dog-delta δ" argument.
-A smaller "*δ*" value may improve the approximation,
-but may also result in a noisier filtered image.)
-As always, the width of the Gaussian (the *σ_x*, *σ_y*, *σ_z* arguments) should be specified in units of physical distance, not in voxels.
-The *A* and *B* coefficients will be automatically chosen using normalization
-(so that the discrete integral sums of *exp(-0.5*r_a^2)* and *exp(-0.5*r_b^2)*
-functions are both 1).
-The filter is multiplied by (1.0 / δ^2) to achieve *scale invariance*.
-*("Scale invariance" means an object of width W filtered with a Gaussian
-of width σ, receives the same score as an
-object of width 2W filtered with a Gaussian of width *2σ*, for example.)
-This also means that you can use the
-"**-log**",  "**-log-r**", and "**-log-d**" arguments
-to perform scale-free-blob-detection, *one Gaussian-width at a time,*
-in such a way that that you can directly compare
-the results of using different Gaussian-widths
-(the same way they are compared when using
-"**-blob**", "**-blobr**", and "**-blob**").
-
-In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
-
-*Note:* The Gaussian "σ" arguments (*σ*, *σ_x*, *σ_y*, and *σ_z*)
-are the related to the *t* ("time") scaling parameter traditionally used
-in the scale-space literature according to:
-```
-   σ^2 = t
-```
-
-
-*Note:* As a reminder,
-a more general version of the the DOG filter used above can be
-applied to the image by using the "-dog" and "-dogg" arguments,
-(although using them is unlikely to improve blob detection).
-These alternate versions of the DOG filter allow the user
-to specify the *a_x, a_y, a_z, b_x, b_y, b_z* parameters  directly,
-and use
-[generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
-instead of
-[ordinary Gaussians](https://en.wikipedia.org/wiki/Normal_distribution)
-(by using the "-exponents m n" argument).
 
 
 
@@ -1270,3 +1211,51 @@ traditionally used in the
 if you use the default exponent of 2.
 *Changing the exponents will slow down the filter considerably.*
 
+
+
+
+####  Implementation of LoG filters and blob-detectors:
+
+To speed up the calculation,
+the Difference-of-Gaussian approximation to the Laplacian-of-Gaussian
+filter us used.
+Specifically, the original image is convolved with a
+[Difference-of-Gaussians (DoG)](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach)
+filter, *h(x,y,z)*
+```
+   h(x,y,z) = scale * ( A*exp(-0.5*r_a^2) - B*exp(-0.5*r_b^2) )
+  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+      a_x = σ_x*(1-0.5*δ), a_y = σ_y*(1-0.5*δ), a_z = σ_z*(1-0.5*δ)
+      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
+    scale = (1.0 / δ^2)
+```
+The A and B parameters are determined automatically by normalization.
+The "*δ*" parameter is *0.02* by default.
+(This can be overridden using the "-dog-delta δ" argument.
+A smaller "*δ*" value may improve the approximation,
+but may also result in a noisier filtered image.)
+As always, the width of the Gaussian (the *σ_x*, *σ_y*, *σ_z* arguments) should be specified in units of physical distance, not in voxels.
+The *A* and *B* coefficients will be automatically chosen using normalization
+(so that the discrete integral sums of *exp(-0.5*r_a^2)* and *exp(-0.5*r_b^2)*
+functions are both 1).
+The filter is multiplied by (1.0 / δ^2) to achieve *scale invariance*.
+*("Scale invariance" means an object of width W filtered with a Gaussian
+of width σ, receives the same score as an
+object of width 2W filtered with a Gaussian of width *2σ*, for example.)
+This also means that you can use the
+"**-log**",  "**-log-r**", and "**-log-d**" arguments
+to perform scale-free-blob-detection, *one Gaussian-width at a time,*
+in such a way that that you can directly compare
+the results of using different Gaussian-widths
+(the same way they are compared when using
+"**-blob**", "**-blobr**", and "**-blob**").
+
+In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
+
+*Note:* The Gaussian "σ" arguments (*σ*, *σ_x*, *σ_y*, and *σ_z*)
+and the *t* ("time") scaling parameter (traditionally used
+in the scale-space literature), are related according to:
+```
+   σ^2 = t
+```
