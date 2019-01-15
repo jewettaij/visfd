@@ -613,21 +613,28 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 //        It assumes separate Filter1D objects have already been created 
 //        which will blur the image in each direction (x,y,z).
 //        This function supports masks (which exclude voxels from consideration)
-//        One major feature of this function is its ability to efficiently
+//        One unusual feature of this function is its ability to efficiently
 //        normalize the resulting filtered image in the presence of a mask
 //        (as well as near the image boundaries). Consequently, the image does
-//        not fade to black near the boundaries of the image (or the mask).
+//        not necessarily fade to black near the boundaries of the image 
+//        (or the mask) but instead assumes the shade of the surrounding voxels.
+//        (This could be handled afterwards, but it would be 16.67% slower.)
+//        This function is invoked by ApplyGauss3D().
 //        This function was not intended for public use.
+// @return  This function returns the effective height of the central peak of
+//          the 3D filter.  (This is just the product of the central peaks of
+//          each of the 1D filters.)  For normalized Gaussian shaped filters,
+//          this peak height can be used to calculate the effective width
+//          of the Gaussian to the caller (in case that information is useful).
 template<class Scalar>
-static
-Scalar
-ApplySeparable3D(int const image_size[3], 
-                 Scalar const *const *const *aaafSource,
-                 Scalar ***aaafDest,
-                 Scalar const *const *const *aaafMask,
-                 Filter1D<Scalar, int> aFilter[3], //preallocated 1D filters
-                 bool normalize = true,
-                 ostream *pReportProgress = NULL)
+static Scalar
+ApplySeparable3D(int const image_size[3],              //!<number of voxels in x,y,z directions
+                 Scalar const *const *const *aaafSource, //!<image to which we want to apply the filter
+                 Scalar ***aaafDest,                   //!<store the filtered image here
+                 Scalar const *const *const *aaafMask, //!<if not NULL, ignore voxels if aaafMask[iz][iy][ix]!=0
+                 Filter1D<Scalar, int> aFilter[3], //!<preallocated 1D filters
+                 bool normalize = true, //!< normalize the result near the boundaries?
+                 ostream *pReportProgress = NULL) //!< print out progress to the user?
 {
   assert(aaafSource);
   assert(aaafDest);
@@ -787,7 +794,7 @@ ApplySeparable3D(int const image_size[3],
 
         // At this point, the convolution of the 1-D filter along
         // the Z direction on the afSource[][][] array is stored in both 
-        // aaafDeest[][][] and also afSource_tmp[].  Now we want to
+        // aaafDest[][][] and also afSource_tmp[].  Now we want to
         // apply the 1-D filter along the Y direction to that data.
         aFilter[d].Apply(image_size[d],
                          afSource_tmp,
@@ -962,6 +969,7 @@ ApplySeparable3D(int const image_size[3],
   // 1-D Gaussian coefficients in the X,Y,Z directions (A_x * A_y * A_z).
   // Those coefficients happen to equal the value of the corresponding 1-D
   // Gaussian evaluated at its peak, which is stored in the central entry
+  // It might be useful or convenient to return this information to the caller.
 
   Scalar A_coeff = (aFilter[0].afH[0] *
                     aFilter[1].afH[0] *
@@ -1116,6 +1124,7 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 
 
+
 /// @brief Apply a Gaussian filter (blur) to a 3D image
 ///
 /// @code h(x,y,z)=A*exp(-0.5*((x^2+y^2+z^2)/σ^2) @endcode
@@ -1239,8 +1248,8 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
 
 
 
-/// @brief Apply a "scale free" Difference-of-Gaussians filter to a 3D image
-///
+/// @brief Apply a Laplacian-of-Gaussians filter to a 3D image.
+///        The LoG filter is approximated with the following DoG filter:
 /// @code
 ///   h(x,y,z) = scale * ( A*exp(-0.5*r_a^2) - B*exp(-0.5*r_b^2) )
 ///  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
@@ -1249,28 +1258,30 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
 ///      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
 ///    scale = (1.0 / δ^2)
 /// @endcode
+/// To approximate the LoG, the δ parameter should not be larger than 0.05.
 /// The constants "A" and "B" are determined by normalization.
-/// In this version, the user manually specifies the filter window width.
+/// In this version, the Gaussian-width (σ) can vary in the x,y,z directions.
+/// (There's another version of this function where σ is a scalar.)
 /// Voxels outside the boundary of the image or outside the mask are not
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
 
 template<class Scalar>
 void
-ApplyDogScaleFree3D(int const image_size[3], //!< source image size
-                    Scalar const *const *const *aaafSource,   //!< source image (3D array)
-                    Scalar ***aaafDest,     //!< filtered image stored here
-                    Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-                    Scalar const sigma[3],  //!< Gaussian width in x,y,z drections
-                    Scalar delta_sigma_over_sigma, //difference in Gauss widths
-                    Scalar truncate_ratio,  //!< how many sigma before truncating?
-                    Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-                    Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-                    ostream *pReportProgress = NULL  //!< print progress to the user?
-                    )
+ApplyLog3D(int const image_size[3], //!< source image size
+           Scalar const *const *const *aaafSource,   //!< source image (3D array)
+           Scalar ***aaafDest,     //!< filtered image stored here
+           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+           Scalar const sigma[3],  //!< Gaussian width in x,y,z drections
+           Scalar delta_sigma_over_sigma=0.02, //δ, difference in Gauss widths (approximation to LoG)
+           Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+           Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+           Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
-  // "-log" approximates to the "Laplacian of a Gaussian" ("DOG") filter
-  // with the difference of two Gaussians ("DOG") filter.
+  // "-log" approximates to the "Laplacian of a Gaussian" ("DoG") filter
+  // with the difference of two Gaussians ("DoG") filter.
   // (The two Gaussians have widths which are slightly above and
   //  slightly below the width parameters specified by the user.)
   // For background details see:
@@ -1338,15 +1349,15 @@ ApplyDogScaleFree3D(int const image_size[3], //!< source image size
   //           (Don't worry about this for now.  Let the calller deal with this)
   //            
 
-} // ApplyDogScaleFree3D()
+} // ApplyLog3D()
 
 
 
 
 
 
-/// @brief Apply a "scale free" Difference-of-Gaussians filter to a 3D image
-///
+/// @brief Apply a Difference-of-Gaussians filter to a 3D image
+///        The LoG filter is approximated with the following DoG filter:
 /// @code
 ///   h(x,y,z) = scale * ( A*exp(-0.5*r_a^2) - B*exp(-0.5*r_b^2) )
 ///  where r_a = √((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
@@ -1355,37 +1366,38 @@ ApplyDogScaleFree3D(int const image_size[3], //!< source image size
 ///      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
 ///    scale = (1.0 / δ^2)
 /// @endcode
+/// To approximate the LoG, the δ parameter should not be larger than 0.05.
 /// The constants "A" and "B" are determined by normalization.
-/// In this version, the user specifies the filter window width in units of σ.
+/// In this version, the Gaussian width, σ, is the same in the xyz directions.
 /// Voxels outside the boundary of the image or outside the mask are not
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
 
 template<class Scalar>
 void
-ApplyDogScaleFree3D(int const image_size[3], //!< source image size
-                    Scalar const *const *const *aaafSource, //!< source image
-                    Scalar ***aaafDest,     //!< save results here
-                    Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                    Scalar sigma,  //!< Gaussian width in x,y,z drections
-                    Scalar delta_sigma_over_sigma, //!< δ, difference in Gauss widths
-                    Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-                    Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-                    Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-                    ostream *pReportProgress = NULL  //!< print progress to the user?
-                    )
+ApplyLog3D(int const image_size[3], //!< source image size
+           Scalar const *const *const *aaafSource, //!< source image
+           Scalar ***aaafDest,     //!< save results here
+           Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+           Scalar sigma,  //!< Gaussian width in x,y,z drections
+           Scalar delta_sigma_over_sigma=0.02, //!< δ, difference in Gauss widths (approximation to LoG)
+           Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+           Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+           Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
   Scalar sigma_xyz[3] = {sigma, sigma, sigma};
-  ApplyDogScaleFree3D(image_size,
-                      aaafSource,
-                      aaafDest,
-                      aaafMask,
-                      sigma_xyz,
-                      delta_sigma_over_sigma,
-                      truncate_ratio,
-                      pA,
-                      pB,
-                      pReportProgress);
+  ApplyLog3D(image_size,
+             aaafSource,
+             aaafDest,
+             aaafMask,
+             sigma_xyz,
+             delta_sigma_over_sigma,
+             truncate_ratio,
+             pA,
+             pB,
+             pReportProgress);
 }
 
 
@@ -1410,7 +1422,7 @@ BlobDog(int const image_size[3], //!< source image size
         vector<Scalar>& maxima_sigma, //!< corresponding width for that maxima
         vector<Scalar>& minima_scores, //!< what was the blob's score?
         vector<Scalar>& maxima_scores, //!< (score = intensity after filtering)
-        Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LOG with DOG
+        Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
         Scalar truncate_ratio=2.8,      //!< how many sigma before truncating?
         Scalar minima_threshold=0.0,    //!< discard blobs with unremarkable scores
         Scalar maxima_threshold=0.0,    //!< discard blobs with unremarkable scores
@@ -1424,7 +1436,7 @@ BlobDog(int const image_size[3], //!< source image size
 {
 
   // We need 3 images to store the result of filtering the image
-  // using DOG filters with 3 different widths.  Store those images here:
+  // using DoG filters with 3 different widths.  Store those images here:
 
   if (pReportProgress)
     *pReportProgress
@@ -1467,10 +1479,10 @@ BlobDog(int const image_size[3], //!< source image size
     if (pReportProgress)
       *pReportProgress
         << "--- Progress: "<<ir+1<<"/"<<blob_sigma.size() << "\n"
-        << "--- Applying DOG filter using sigma[" << ir << "] = "
+        << "--- Applying DoG filter using sigma[" << ir << "] = "
         << blob_sigma[ir] << " (in voxels) ---\n";
 
-    // Run the image through a DOG filter with the currently selected width.
+    // Run the image through a DoG filter with the currently selected width.
     // Compare the resulting filtered image with filtered images
     // smaller blob widths.
     // If a given voxel has a value which is larger than it's surrounding 26
@@ -1480,7 +1492,7 @@ BlobDog(int const image_size[3], //!< source image size
     // Keep track of all of these X,Y,Z,R local maxima voxels and their values
     // (and the local minima as well).
 
-    // We are going to apply a DOG filter to the original image and
+    // We are going to apply a DoG filter to the original image and
     // store it in the aaaaf array.
     // Unfortunately, there probably won't be enough memory 
     // to keep track of all of the filtered versions of the image.
@@ -1497,14 +1509,15 @@ BlobDog(int const image_size[3], //!< source image size
     j2i[0]  = (ir-1) % 3;
     j2i[1]  = ir % 3;
 
-    //Apply the DOG filter using the most recent blob width:
-    ApplyDogScaleFree3D(image_size,
-                        aaafSource,
-                        aaaafI[j2i[1]], //<-store the most recent filtered image
-                        aaafMask,
-                        blob_sigma[ir],
-                        delta_sigma_over_sigma,
-                        truncate_ratio);
+    //Apply the LoG filter (approximated with a DoG filter)
+    //      ...using the most recent blob width:
+    ApplyLog3D(image_size,
+               aaafSource,
+               aaaafI[j2i[1]], //<-store the most recent filtered image
+               aaafMask,
+               blob_sigma[ir],
+               delta_sigma_over_sigma,
+               truncate_ratio);
 
     // We must have filtered at least 3 images using different blob widths
     if (ir < 2)
@@ -1771,7 +1784,7 @@ BlobDogD(int const image_size[3], //!<source image size
          vector<Scalar>& minima_scores, //!<what was the blob's score?
          vector<Scalar>& maxima_scores, //!<(score = intensity after filtering)
          // optional arguments
-         Scalar delta_sigma_over_sigma=0.02,//!<param for approximating LOG with DOG
+         Scalar delta_sigma_over_sigma=0.02,//!<param for approximating LoG with DoG
          Scalar truncate_ratio=2.5,    //!<how many sigma before truncating?
          Scalar minima_threshold=0.5,  //!<discard blobs with unremarkable scores
          Scalar maxima_threshold=0.5,  //!<discard blobs with unremarkable scores
@@ -2050,10 +2063,10 @@ SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
 ///         Ri and Rj separated by a distance of rij.
 
 template<class Scalar>
-Scalar CalcVolOverlap(Scalar rij,//!<the distance between the spheres' centers
-                       Scalar Ri, //!< the radius of sphere i
-                       Scalar Rj  //!< the radius of sphere j
-                       )
+Scalar CalcSphereVolOverlap(Scalar rij,//!<the distance between the spheres' centers
+                            Scalar Ri, //!< the radius of sphere i
+                            Scalar Rj  //!< the radius of sphere j
+                            )
 {
   // WLOG, assume Ri <= Rj.  Insure that below
   if (Ri > Rj) {
@@ -2238,9 +2251,9 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds,
             Scalar ky = blob_crds[k][1];
             Scalar kz = blob_crds[k][2];
             Scalar rik = sqrt((ix-kx)*(ix-kx)+(iy-ky)*(iy-ky)+(iz-kz)*(iz-kz));
-            Scalar vol_overlap = CalcVolOverlap(rik,
-                                                 blob_diameters[i]/2,
-                                                 blob_diameters[k]/2);
+            Scalar vol_overlap = CalcSphereVolOverlap(rik,
+                                                      blob_diameters[i]/2,
+                                                      blob_diameters[k]/2);
             Scalar ri = blob_diameters[i]/2;
             Scalar rk = blob_diameters[k]/2;
             if (rik < (ri + rk) * min_radial_separation_ratio)
@@ -2796,13 +2809,15 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
   assert(aaafSource);
   assert(aaafDest);
 
+
+  // Figure out which neighbors to consider when searching neighboring voxels
   int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
   int num_neighbors = 0;
   {
-    // Figure out which neighbors to consider when searching neighboring voxels
     // How big is the search neighborhood around each minima?
     int r_neigh_sqd = connectivity;
-    int r_neigh = ceil(sqrt(r_neigh_sqd));
+    int r_neigh = floor(sqrt(r_neigh_sqd));
+    
     vector<array<int, 3> > vNeighbors;
     for (int jz = -r_neigh; jz <= r_neigh; jz++) {
       for (int jy = -r_neigh; jy <= r_neigh; jy++) {
@@ -2813,7 +2828,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
           j_xyz[2] = jz;
           if ((jx == 0) && (jy == 0) && (jz == 0))
             continue;
-          else if (jx*jx+jy*jy+jz+jz > r_neigh_sqd)
+          else if (jx*jx+jy*jy+jz*jz > r_neigh_sqd)
             continue;
           else
             vNeighbors.push_back(j_xyz);
@@ -2827,8 +2842,8 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
       for (int d = 0; d < 3; d++)
         neighbors[j][d] = vNeighbors[j][d];
     // We will use neighbors[][] from now on..
-  }
-  
+  } // ...done figuring out the list of voxel neighbors
+
 
   Scalar SIGN_FACTOR = 1.0;
   if (! start_from_minima) {
@@ -2987,7 +3002,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     }
 
     if (aaafMask && aaafMask[iz][iy][ix] == 0.0) {
-      // ignore the voxel if the user specified a mask, and it lies outside it
+      // ignore voxel if the user specified a mask and the voxel does not belong
       aaafDest[iz][iy][ix] = UNDEFINED;
       continue;
     }
@@ -3069,8 +3084,6 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
       else {
         if (aaafDest[iz_jz][iy_jy][ix_jx] != aaafDest[iz][iy][ix])
         {
-          if (ix == 2)
-            aaafMask = NULL; //DEBUGGING ONLY. DELETE LATER
           if (show_boundaries)
           {
             // If these two neighboring voxels already belong to different 
@@ -3101,7 +3114,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
         assert(aaafDest[iz][iy][ix] != QUEUED);
   #endif //#ifndef NDEBUG
 
-} //WatershedMeyers3D()
+} //Watershed3D()
 
 
 
@@ -4865,7 +4878,7 @@ _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
 
         // The two filters may have different widths, so we have to check
         // that ix,iy and iz lie within the domain of these two filters before
-        // adding or subtracting their values from the final GDOG filter.
+        // adding or subtracting their values from the final GDoG filter.
         if (((-filter_A.halfwidth[0]<=ix) && (ix<=filter_A.halfwidth[0])) &&
             ((-filter_A.halfwidth[1]<=iy) && (iy<=filter_A.halfwidth[1])) &&
             ((-filter_A.halfwidth[2]<=iz) && (iz<=filter_A.halfwidth[2])))

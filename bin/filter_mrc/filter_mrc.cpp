@@ -33,8 +33,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc.cpp");
-string g_version_string("0.12.1");
-string g_date_string("2018-1-12");
+string g_version_string("0.12.2");
+string g_date_string("2018-1-15");
 
 
 
@@ -205,24 +205,24 @@ HandleDogScaleFree(Settings settings,
                    MrcSimple &mask,
                    float voxel_width[3])
 {
-  cerr << "filter_type = Fast Laplacian of Gaussians (LOG)\n"
+  cerr << "filter_type = Fast Laplacian of Gaussians (LoG)\n"
        << "  (This will be approximated as a Difference of Gaussians,\n"
        << "   as explained below.)\n";
   //cerr << "filter_type = Difference of Gaussians Scale Free (DOGSF)\n";
 
   float A, B;
 
-  ApplyDogScaleFree3D(tomo_in.header.nvoxels,
-                      tomo_in.aaafI,
-                      tomo_out.aaafI,
-                      mask.aaafI,
-                      settings.dogsf_width,
-                      settings.delta_sigma_over_sigma,
-                      settings.filter_truncate_ratio,
-                      settings.filter_truncate_threshold,
-                      &A,
-                      &B,
-                      &cerr);
+  ApplyLog3D(tomo_in.header.nvoxels,
+             tomo_in.aaafI,
+             tomo_out.aaafI,
+             mask.aaafI,
+             settings.dogsf_width,
+             settings.delta_sigma_over_sigma,
+             settings.filter_truncate_ratio,
+             settings.filter_truncate_threshold,
+             &A,
+             &B,
+             &cerr);
 
 
   cerr << " Filter Used:\n"
