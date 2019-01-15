@@ -29,6 +29,7 @@ Settings::Settings() {
   mask_select = 1;
   use_mask_select = false;
   use_min_density = true;
+  extrema_on_boundary = false;
 
   voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
   voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
@@ -420,6 +421,20 @@ Settings::ParseArgs(vector<string>& vArgs)
       #endif //#ifdef DISABLE_OPENMP
       num_arguments_deleted = 2;
     }
+
+
+    
+    else if (vArgs[i] == "-boundary-extrema-yes") {
+      extrema_on_boundary = true;
+      num_arguments_deleted = 1;
+    }
+
+
+    else if (vArgs[i] == "-boundary-extrema-no") {
+      extrema_on_boundary = false;
+      num_arguments_deleted = 1;
+    }
+
 
     //Delete all the arguments we have processed in this iteration (if any)
     if (num_arguments_deleted > 0)

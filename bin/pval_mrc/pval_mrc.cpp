@@ -333,18 +333,32 @@ int main(int argc, char **argv) {
       // The safe, careful way to do this is to only consider
       // voxels which are surrounded by other voxels and are
       // local minima or maxima.
-      for (int iz=1; iz < tomo_out.header.nvoxels[2]-1; iz++) {
-        for (int iy=1; iy < tomo_out.header.nvoxels[1]-1; iy++) {
-          for (int ix=1; ix < tomo_out.header.nvoxels[0]-1; ix++) {
+      for (int iz=0; iz < tomo_out.header.nvoxels[2]; iz++) {
+        for (int iy=0; iy < tomo_out.header.nvoxels[1]; iy++) {
+          for (int ix=0; ix < tomo_out.header.nvoxels[0]; ix++) {
+
             bool is_local_minima = true;
             bool is_local_maxima = true;
+
+            if (! settings.extrema_on_boundary) {
+              if ((ix == 0) || (ix ==  tomo_out.header.nvoxels[0]-1) ||
+                  (ix == 0) || (ix ==  tomo_out.header.nvoxels[0]-1) ||
+                  (ix == 0) || (ix ==  tomo_out.header.nvoxels[0]-1)) {
+                is_local_minima = false;
+                is_local_maxima = false;
+              }
+            }
+
             float center_val = tomo_out.aaafI[iz][iy][ix];
             for (int jz=-1; jz<=1; jz++) {
               for (int jy=-1; jy<=1; jy++) {
                 for (int jx=-1; jx<=1; jx++) {
-                  if (mask.aaafI && (mask.aaafI[iz+jz][iy+jy][ix+jx] == 0.0)) {
-                    is_local_minima = false;
-                    is_local_maxima = false;
+                  if (! settings.extrema_on_boundary) {
+                    if (mask.aaafI && (mask.aaafI[iz+jz][iy+jy][ix+jx] == 0.0))
+                    {
+                      is_local_minima = false;
+                      is_local_maxima = false;
+                    }
                   }
                   if (tomo_out.aaafI[iz+jz][iy+jy][ix+jx] <= center_val)
                     is_local_minima = false;

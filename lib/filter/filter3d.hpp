@@ -699,7 +699,11 @@ ApplySeparable3D(int const image_size[3],
     for (int iy = 0; iy < image_size[1]; iy++) {
       for (int ix = 0; ix < image_size[0]; ix++) {
 
-        //CONTINUEHERE: std::bad_alloc() exception here using OpenMP 2018-10-18!
+
+        //BUG?: "std::bad_alloc()" exception thrown here using OpenMP 2018-10-18
+        //      (This mysteriously seems to have "fixed" itself on 2019-10-24.
+        //       Seems too good to be true?  I'm leaving a record of the
+        //       problem here in case the problem resumes later on.)
 
 
         // Copy the data we need to the temporary arrays
@@ -2306,21 +2310,37 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds,
 /// voxel intensities are not sufficiently low or high, respectively.
 /// If the aaafMask[][][] is not equal to NULL, then local minima and maxima
 /// will be ignored if the corresponding entry in aaafMask[][][] equals 0.
+/// @note  BUG WARNING:
+/// Non-point-like local minima and maxima are currently ignored.
+/// (Such extrema consist of multiple adjacent voxels of identical brightness.)
+/// This is a bug.
+/// This feature was intended to be applied to noisy microscope images
+/// (having 32bit depth) which have already been processed using
+/// Gaussian blurring, Tensor-voting, or other kinds of filters.
+/// For these images, adjacent voxels of identical brightness are very unlikely.
+/// This bug will get fixed eventually.
+
 
 template<class Scalar, class Integer>
 static void
-_FindLocalExtrema3D(int const image_size[3],
-                    Scalar const *const *const *aaafI,
-                    Scalar const *const *const *aaafMask,
-                    vector<Integer> *pv_minima_indices,
-                    vector<Integer> *pv_maxima_indices,
-                    vector<Scalar> *pv_minima_scores,
-                    vector<Scalar> *pv_maxima_scores,
-                    Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  // Ignore minima which are not sufficiently low
-                    Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
-                    ostream *pReportProgress=NULL)  // print progress to the user?
+_FindExtrema3D(int const image_size[3],
+               Scalar const *const *const *aaafI,
+               Scalar const *const *const *aaafMask,
+               vector<Integer> *pv_minima_indices,
+               vector<Integer> *pv_maxima_indices,
+               vector<Scalar> *pv_minima_scores,
+               vector<Scalar> *pv_maxima_scores,
+               Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  // Ignore minima which are not sufficiently low
+               Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
+               int connectivity=3,                      //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+               bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+               ostream *pReportProgress=NULL)  // print progress to the user?
 {
   assert(aaafI);
+
+  // how big is the search neighborhood around each minima?
+  int r_neigh_sqd = connectivity;
+  int r_neigh = ceil(sqrt(r_neigh_sqd));
 
   bool find_minima = (pv_minima_indices != NULL);
   bool find_maxima = (pv_maxima_indices != NULL);
@@ -2347,9 +2367,17 @@ _FindLocalExtrema3D(int const image_size[3],
           // either a minima or a maxima
           bool is_minima = true;
           bool is_maxima = true;
-          for (int jz = -1; jz <= 1; jz++) {
-            for (int jy = -1; jy <= 1; jy++) {
-              for (int jx = -1; jx <= 1; jx++) {
+          // ---- loop over neighbors ----
+          // Let (jx,jy,jz) denote the index offset for the neighbor voxels
+          // (located at ix+jx,iy+jy,iz+jz)
+          for (int jz = -r_neigh; jz <= r_neigh; jz++) {
+            for (int jy = -r_neigh; jy <= r_neigh; jy++) {
+              for (int jx = -r_neigh; jx <= r_neigh; jx++) {
+                if (jx*jx+jy*jy+jz+jz > r_neigh_sqd)
+                  continue;
+                int ix_jx = ix+jx;
+                int iy_jy = iy+jy;
+                int iz_jz = iz+jz;
                 if ((ix+jx <0) || (ix+jx >= image_size[0]) ||
                     (iy+jy <0) || (iy+jy >= image_size[1]) ||
                     (iz+jz <0) || (iz+jz >= image_size[2]))
@@ -2372,7 +2400,7 @@ _FindLocalExtrema3D(int const image_size[3],
           }
           if (is_minima && find_minima) {
             if (((! aaafMask) || (aaafMask[iz][iy][ix] != 0)) &&
-                ((aaafI[iz][iy][ix] < minima_threshold)
+                ((aaafI[iz][iy][ix] <= minima_threshold)
                   // || (maxima_threshold < minima_threshold)
                  ))
             {
@@ -2385,7 +2413,7 @@ _FindLocalExtrema3D(int const image_size[3],
           }
           if (is_maxima && find_maxima) {
             if (((! aaafMask) || (aaafMask[iz][iy][ix] != 0)) &&
-                ((aaafI[iz][iy][ix] > maxima_threshold)
+                ((aaafI[iz][iy][ix] >= maxima_threshold)
                   // || (maxima_threshold < minima_threshold)
                  ))
             {
@@ -2491,7 +2519,7 @@ _FindLocalExtrema3D(int const image_size[3],
         *pReportProgress << "done --" << endl;
     }
   }
-} //_FindLocalExtrema3D()
+} //_FindExtrema3D()
 
 
 
@@ -2499,14 +2527,16 @@ _FindLocalExtrema3D(int const image_size[3],
 
 template<class Scalar, class Integer>
 static void
-_FindLocalExtrema3D(int const image_size[3],
-                    Scalar const *const *const *aaafI,
-                    Scalar const *const *const *aaafMask,
-                    vector<Integer> &extrema_indices,
-                    vector<Scalar> &extrema_scores,
-                    bool seek_minima=true,    // search for minima or maxima?
-                    Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
-                    ostream *pReportProgress=NULL)  //!< print progress to the user?
+_FindExtrema3D(int const image_size[3],
+               Scalar const *const *const *aaafI,
+               Scalar const *const *const *aaafMask,
+               vector<Integer> &extrema_indices,
+               vector<Scalar> &extrema_scores,
+               bool seek_minima=true,    // search for minima or maxima?
+               Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
+               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+               bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+               ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
   // C++ will not allow us to supply NULL to a function that expects a pointer 
@@ -2516,32 +2546,36 @@ _FindLocalExtrema3D(int const image_size[3],
   vector<Integer> *NULL_vi = NULL;  
   vector<Scalar> *NULL_vf = NULL;  
   if (seek_minima) {
-    _FindLocalExtrema3D(image_size,
-                        aaafI,
-                        aaafMask,
-                        &extrema_indices, // store maxima locations here
-                        NULL_vi, // <-- don't search for maxima_crds,
-                        &extrema_scores, // store minima values here
-                        NULL_vf, // <-- don't search for maxima_scores,
-                        threshold,
-                        -std::numeric_limits<Scalar>::infinity(),
-                        pReportProgress);
+    _FindExtrema3D(image_size,
+                   aaafI,
+                   aaafMask,
+                   &extrema_indices, // store maxima locations here
+                   NULL_vi, // <-- don't search for maxima_crds,
+                   &extrema_scores, // store minima values here
+                   NULL_vf, // <-- don't search for maxima_scores,
+                   threshold,
+                   -std::numeric_limits<Scalar>::infinity(),
+                   connectivity,
+                   allow_borders,
+                   pReportProgress);
   }
   else {
     if (threshold == std::numeric_limits<Scalar>::infinity())
       threshold = -std::numeric_limits<Scalar>::infinity();
-    _FindLocalExtrema3D(image_size,
-                        aaafI,
-                        aaafMask,
-                        NULL_vi, // <-- don't search for minima_crds,
-                        &extrema_indices, // store maxima locations here
-                        NULL_vf, // <-- don't search for minima_scores,
-                        &extrema_scores, // store maxima values here
-                        std::numeric_limits<Scalar>::infinity(),
-                        threshold,
-                        pReportProgress);
+    _FindExtrema3D(image_size,
+                   aaafI,
+                   aaafMask,
+                   NULL_vi, // <-- don't search for minima_crds,
+                   &extrema_indices, // store maxima locations here
+                   NULL_vf, // <-- don't search for minima_scores,
+                   &extrema_scores, // store maxima values here
+                   std::numeric_limits<Scalar>::infinity(),
+                   threshold,
+                   connectivity,
+                   allow_borders,
+                   pReportProgress);
   }
-} //_FindLocalExtrema3D()
+} //_FindExtrema3D()
 
 
 
@@ -2567,16 +2601,18 @@ _FindLocalExtrema3D(int const image_size[3],
 
 template<class Scalar, class Coordinate>
 void
-FindLocalExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
-                   Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
-                   Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
-                   vector<array<Coordinate, 3> > *pv_minima_crds, //!< store minima locations (ix,iy,iz) here (if not NULL)
-                   vector<array<Coordinate, 3> > *pv_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
-                   vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
-                   vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
-                   Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
-                   Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
-                   ostream *pReportProgress=NULL   //!< optional: print progress to the user?
+FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
+              Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
+              Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+              vector<array<Coordinate, 3> > *pv_minima_crds, //!< store minima locations (ix,iy,iz) here (if not NULL)
+              vector<array<Coordinate, 3> > *pv_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
+              vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
+              vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
+              Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
+              Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
+              int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+              bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+              ostream *pReportProgress=NULL   //!< optional: print progress to the user?
                    )
 {
   bool find_minima = (pv_minima_crds != NULL);
@@ -2599,16 +2635,18 @@ FindLocalExtrema3D(int const image_size[3],          //!< size of the image in x
       pv_maxima_scores = &maxima_scores;
   }
 
-  _FindLocalExtrema3D(image_size,
-                      aaafI,
-                      aaafMask,
-                      pv_minima_indices,
-                      pv_maxima_indices,
-                      pv_minima_scores,
-                      pv_maxima_scores,
-                      minima_threshold,
-                      maxima_threshold,
-                      pReportProgress);
+  _FindExtrema3D(image_size,
+                 aaafI,
+                 aaafMask,
+                 pv_minima_indices,
+                 pv_maxima_indices,
+                 pv_minima_scores,
+                 pv_maxima_scores,
+                 minima_threshold,
+                 maxima_threshold,
+                 connectivity,
+                 allow_borders,
+                 pReportProgress);
 
   // Now convert the indices back to x,y,z coordinates
   if (pv_minima_crds) {
@@ -2645,7 +2683,7 @@ FindLocalExtrema3D(int const image_size[3],          //!< size of the image in x
       (*pv_maxima_crds)[n][2] = iz;
     }
   }
-} //FindLocalExtrema3D()
+} //FindExtrema3D()
 
 
 
@@ -2658,14 +2696,16 @@ FindLocalExtrema3D(int const image_size[3],          //!< size of the image in x
 
 template<class Scalar, class Coordinate>
 void
-FindLocalExtrema3D(int const image_size[3],
-                   Scalar const *const *const *aaafI,
-                   Scalar const *const *const *aaafMask,
-                   vector<array<Coordinate, 3> > &extrema_crds,
-                   vector<Scalar> &extrema_scores,
-                   bool seek_minima=true,    // search for minima or maxima?
-                   Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
-                   ostream *pReportProgress=NULL)  //!< print progress to the user?
+FindExtrema3D(int const image_size[3],
+              Scalar const *const *const *aaafI,
+              Scalar const *const *const *aaafMask,
+              vector<array<Coordinate, 3> > &extrema_crds,
+              vector<Scalar> &extrema_scores,
+              bool seek_minima=true,    // search for minima or maxima?
+              Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
+              int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+              bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+              ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
   // C++ will not allow us to supply NULL to a function that expects a pointer 
@@ -2676,32 +2716,36 @@ FindLocalExtrema3D(int const image_size[3],
   vector<Scalar> *NULL_vf = NULL;  
 
   if (seek_minima) {
-    FindLocalExtrema3D(image_size,
-                       aaafI,
-                       aaafMask,
-                       &extrema_crds,   // store minima locations here
-                       NULL_vai3,       // <-- don't search for maxima_crds,
-                       &extrema_scores, // store minima values here
-                       NULL_vf,         // <-- don't search for maxima_scores,
-                       threshold,
-                       -std::numeric_limits<Scalar>::infinity(),
-                       pReportProgress);
+    FindExtrema3D(image_size,
+                  aaafI,
+                  aaafMask,
+                  &extrema_crds,   // store minima locations here
+                  NULL_vai3,       // <-- don't search for maxima_crds,
+                  &extrema_scores, // store minima values here
+                  NULL_vf,         // <-- don't search for maxima_scores,
+                  threshold,
+                  -std::numeric_limits<Scalar>::infinity(),
+                  connectivity,
+                  allow_borders,
+                  pReportProgress);
   }
   else {
     if (threshold == std::numeric_limits<Scalar>::infinity())
       threshold = -std::numeric_limits<Scalar>::infinity();
-    FindLocalExtrema3D(image_size,
-                       aaafI,
-                       aaafMask,
-                       NULL_vai3,       // <-- don't search for minima_crds
-                       &extrema_crds,   // store maxima locations here
-                       NULL_vf,         // don't search for minima_scores
-                       &extrema_scores, // <-- store maxima values here
-                       std::numeric_limits<Scalar>::infinity(),
-                       threshold,
-                       pReportProgress);
+    FindExtrema3D(image_size,
+                  aaafI,
+                  aaafMask,
+                  NULL_vai3,       // <-- don't search for minima_crds
+                  &extrema_crds,   // store maxima locations here
+                  NULL_vf,         // don't search for minima_scores
+                  &extrema_scores, // <-- store maxima values here
+                  std::numeric_limits<Scalar>::infinity(),
+                  threshold,
+                  connectivity,
+                  allow_borders,
+                  pReportProgress);
   }
-} // FindLocalExtrema3D()
+} // FindExtrema3D()
 
 
 
@@ -2712,37 +2756,91 @@ FindLocalExtrema3D(int const image_size[3],
 /// @brief  Perform the Meyer's flood-fill algorithm to segment a 3D image.
 ///         After this function has completed, every voxel in aaafDest[][][]
 ///         will be assigned an integer which is one of 4 types:
-///      1) an integer greater than 0
-///         (indicating which basin to which the voxel belongs)
-///      2) WATERSHED_BOUNDARY = 0
-///         (when the voxel is located at the boundary between 2 or more basins)
-///      3) UNDEFINED = -1
-///         (when the voxel's height exceeds the threshold set by the caller)
+///      1) an integer between 1 and N_BASINS (the number of local minima in
+///         the image, indicating the basin to which the voxel belongs)
+///      2) 0
+///         (if show_boundaries == true, and if
+////         the voxel is located at the boundary between 2 or more basins)
+///      3) N_BASINS + 1
+///         (when the voxel's intensity passes the threshold set by the caller)
 ///      4) left unmodified (if aaafMask!=NULL and aaafMask[iz][iy][ix]==0)
 /// @note  If the "halt_threshold" argument is not supplied by the caller,
 //         then std::numeric_limits::infinity is used by default.
 /// @note  If aaafMask!=NULL then voxels in aaafDest are not modified if
 ///        their corresponding entry in aaafMask equals 0.
+/// @note  BUG WARNING:
+/// Basins beginning at non-point-like local minima are currently ignored.
+/// (Such extrema consist of multiple adjacent voxels of identical brightness.)
+/// This is a bug.
+/// This feature was intended to be applied to noisy microscope images
+/// (having 32bit depth) which have already been processed using
+/// Gaussian blurring, Tensor-voting, or other kinds of filters.
+/// For these images, adjacent voxels of identical brightness are very unlikely.
+/// This bug will get fixed eventually.
 
 template<class Scalar, class Label, class Coordinate>
 void
-WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
-                  Scalar const *const *const *aaafSource,  //!< intensity of each voxel
-                  Label ***aaafDest,                     //!< watershed segmentation results go here
-                  Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
-                  Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
-                  bool start_from_minima=true,             //!< start from local minima?
-                  vector<array<Coordinate, 3> > *pv_extrema_locations=NULL, //!< optional: the location of each minima or maxima
-                  vector<Scalar> *pv_extrema_scores=NULL, //!< optional: the voxel intensities (brightnesses) at these locations
-                  ostream *pReportProgress=NULL)  //!< print progress to the user?
+Watershed3D(int const image_size[3],                 //!< #voxels in xyz
+            Scalar const *const *const *aaafSource,  //!< intensity of each voxel
+            Label ***aaafDest,                       //!< watershed segmentation results go here
+            Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
+            Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
+            bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
+            int connectivity=3,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
+            bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled with 0?
+            vector<array<Coordinate, 3> > *pv_extrema_locations=NULL, //!< optional: the location of each minima or maxima
+            vector<Scalar> *pv_extrema_scores=NULL, //!< optional: the voxel intensities (brightnesses) at these locations
+            ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   assert(image_size);
   assert(aaafSource);
   assert(aaafDest);
 
+  int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
+  int num_neighbors = 0;
+  {
+    // Figure out which neighbors to consider when searching neighboring voxels
+    // How big is the search neighborhood around each minima?
+    int r_neigh_sqd = connectivity;
+    int r_neigh = ceil(sqrt(r_neigh_sqd));
+    vector<array<int, 3> > vNeighbors;
+    for (int jz = -r_neigh; jz <= r_neigh; jz++) {
+      for (int jy = -r_neigh; jy <= r_neigh; jy++) {
+        for (int jx = -r_neigh; jx <= r_neigh; jx++) {
+          array<int, 3> j_xyz;
+          j_xyz[0] = jx;
+          j_xyz[1] = jy;
+          j_xyz[2] = jz;
+          if ((jx == 0) && (jy == 0) && (jz == 0))
+            continue;
+          else if (jx*jx+jy*jy+jz+jz > r_neigh_sqd)
+            continue;
+          else
+            vNeighbors.push_back(j_xyz);
+        }
+      }
+    }
+    // Convert the list of neighbors vNeigh to a contiguous 2D C-style array:
+    num_neighbors = vNeighbors.size();
+    neighbors = new int[num_neighbors][3];
+    for (int j = 0; j < num_neighbors; j++)
+      for (int d = 0; d < 3; d++)
+        neighbors[j][d] = vNeighbors[j][d];
+    // We will use neighbors[][] from now on..
+  }
+  
+
   Scalar SIGN_FACTOR = 1.0;
-  if (! start_from_minima)
+  if (! start_from_minima) {
     SIGN_FACTOR = -1.0;
+    if (halt_threshold == std::numeric_limits<Scalar>::infinity())
+      // Then the caller did not bother to specify a threshold.  Note: the
+      // default threshold assumes we are searching for minima, not maxima.
+      // If the caller did not specify a halting threshold, AND if we ARE
+      // looking for maxima (not minima), then we have to reverse the sign of
+      // the default threshold as well (this is a little confusing to me too):
+      halt_threshold = -std::numeric_limits<Scalar>::infinity();
+  }
 
   vector<array<Coordinate, 3> > extrema_locations;
   if (pv_extrema_locations == NULL)
@@ -2753,18 +2851,20 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
     pv_extrema_scores = &extrema_scores;
 
   // Find all the local minima (or maxima?) in the image.
-  FindLocalExtrema3D(image_size,
-                     aaafSource,
-                     aaafMask,
-                     *pv_extrema_locations,
-                     *pv_extrema_scores,
-                     start_from_minima, //<-- minima or maxima?
-                     halt_threshold,
-                     pReportProgress);
+  FindExtrema3D(image_size,
+                aaafSource,
+                aaafMask,
+                *pv_extrema_locations,
+                *pv_extrema_scores,
+                start_from_minima, //<-- minima or maxima?
+                halt_threshold,
+                connectivity,
+                true,
+                pReportProgress);
 
   Label WATERSHED_BOUNDARY = 0; //an impossible value
-  Label UNDEFINED = -1; //an impossible value
-  Label QUEUED = pv_extrema_locations->size() + 1; //an impossible value
+  Label UNDEFINED = pv_extrema_locations->size() + 1; //an impossible value
+  Label QUEUED = pv_extrema_locations->size() + 2; //an impossible value
 
   //initialize aaafDest[][][]
   for (int iz=0; iz<image_size[2]; iz++) {
@@ -2782,11 +2882,14 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
   // iteration.  This is implemented as a priority-queue, sorted by intensity.
   // Each voxel in "q" has an intensity, a basin-ID (Label), and a location.
 
-  priority_queue<tuple<Scalar,    // the "height" of that voxel (brightness)
-                       Label,     // the basin-ID to which the voxel belongs
-                       array<Coordinate, 3> // location of the voxel
-                      >
+  priority_queue<tuple
+                  <
+                   Scalar,    // the "height" of that voxel (brightness)
+                   Label,     // the basin-ID to which the voxel belongs
+                   array<Coordinate, 3>  // location of the voxel
+                  >
                 > q;
+               
 
   if (pReportProgress)
     *pReportProgress <<
@@ -2812,8 +2915,8 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
     assert(score == aaafSource[iz][iy][ix]);
     score *= SIGN_FACTOR; //(enable search for either local minima OR maxima)
 
-    // Note:FindExtrema3D() should avoid minima above the halt_threshold, or
-    //      maxima below the halt_threshold.  We check for that with an assert:
+    // Note:FindExtrema3D() should avoid minima above the halt_threshold,
+    //     or maxima below the halt_threshold. We check for that with an assert:
     assert(score <= halt_threshold * SIGN_FACTOR);
 
     // copy the ix,iy,iz coordinates into an array<Coordinate, 3>
@@ -2844,7 +2947,21 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
   // until we process all voxels in the image.
 
   size_t n_voxels_processed = 0;
-  size_t n_voxels_image = image_size[0] * image_size[1] * image_size[2];
+  //size_t n_voxels_image = image_size[0] * image_size[1] * image_size[2];
+  size_t n_voxels_image = 0;
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          continue;
+        if (aaafSource[iz][iy][ix]*SIGN_FACTOR > halt_threshold*SIGN_FACTOR)
+          continue;
+        // count the number of voxels in the image we will be looping over later
+        n_voxels_image++;
+      }
+    }
+  }
+
   #ifndef NDEBUG
   set<array<Coordinate, 3> > visited;
   #endif
@@ -2854,9 +2971,9 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
     tuple<Scalar, Label, array<Coordinate, 3> > p = q.top();
     q.pop();
 
-    // Figure out the position of that voxel.
-    Scalar i_score = -std::get<0>(p); //voxel intensity (brightness)=aaafSource[iz][iy][ix]
-    Scalar i_which_basin = std::get<1>(p); // the basin to which that voxel borders
+    // Figure out the properties of that voxel (position, intensity/score,basin)
+    Scalar i_score = -std::get<0>(p); //abs(i_score) = voxel intensity = aaafSource[iz][iy][ix]
+    Scalar i_which_basin = std::get<1>(p); // the basin to which that voxel belongs (tentatively)
     int ix = std::get<2>(p)[0]; // voxel location
     int iy = std::get<2>(p)[1]; //   "      "
     int iz = std::get<2>(p)[2]; //   "      "
@@ -2880,25 +2997,24 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
     aaafDest[iz][iy][ix] = i_which_basin + 1;
     // (Note: This will prevent the voxel from being visited again.)
 
+
     if (pReportProgress) {
+      // Every time the amount of progress increases by 1%, inform the user:
       n_voxels_processed++;
-      #ifndef NDEBUG
-      array<Coordinate, 3> ixiyiz;
-      ixiyiz[0] = ix;
-      ixiyiz[1] = iy;
-      ixiyiz[2] = iz;
-      assert(visited.find(ixiyiz) == visited.end());
-      visited.insert(ixiyiz);
-      #endif //#ifndef NDEBUG
-      //if (visited.size() % 1000 == 0)
-      //cerr << "num voxels visited = " << visited.size() << endl;
-      //cerr << "q.size() = " << q.size() << endl;
-      // Every time the amount of progress increases by 1%, tell the user:
       size_t percentage = (n_voxels_processed*100) / n_voxels_image;
       size_t percentage_previous = ((n_voxels_processed-1)*100)/n_voxels_image;
       if (percentage != percentage_previous)
         *pReportProgress << " percent complete: " << percentage << endl;
     }
+
+    #ifndef NDEBUG
+    array<Coordinate, 3> ixiyiz;
+    ixiyiz[0] = ix;
+    ixiyiz[1] = iy;
+    ixiyiz[2] = iz;
+    assert(visited.find(ixiyiz) == visited.end());
+    visited.insert(ixiyiz);
+    #endif //#ifndef NDEBUG
 
     // ---------- Meyer (and Beucher's?) inter-pixel flood algorith: ---------
     // Check the voxels that surround voxel (ix,iy,iz)
@@ -2906,32 +3022,14 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
     // If voxel is adjacent to multiple basins, assign it to WATERSHED_BOUNDARY
     // We must check the neighbors of this voxel to see whether this is true.
 
+
     // ---- loop over neighbors ----
     // Let (jx,jy,jz) denote the index offset for the neighbor voxels
     // (located at ix+jx,iy+jy,iz+jz)
-
-    // Should we use adjacent voxel neighbors only?  If so, then use:
-    //const int neighbors[6][3] = {{-1,0,0}, {1,0,0},
-    //                             {0,-1,0}, {0,1,0},
-    //                             {0,0,-1}, {0,0,1}};
-    //for (int J=0; J<6; J++) {
-    //
-    // ...or should we consider all 28 (3x3x3-1) nearby voxels as well?
-    // In that case, use this instead:
-    const int neighbors[28][3] = {{-1,-1,-1}, {0,-1,-1},{1,-1,-1},
-                                 {-1,0,-1}, {0,0,-1},{1,0,-1},
-                                 {-1,1,-1}, {0,1,-1},{1,1,-1},
-                                 {-1,-1,0}, {0,-1,0},{1,-1,0},
-                                 {-1,0,0}, {1,0,0},
-                                 {-1,1,0}, {0,1,0},{1,1,0},
-                                 {-1,-1,1}, {0,-1,1},{1,-1,1},
-                                 {-1,0,1}, {0,0,1},{1,0,1},
-                                 {-1,1,1}, {0,1,1},{1,1,1}};
-
-    for (int J=0; J<28; J++) {
-      int jx = neighbors[J][0];
-      int jy = neighbors[J][1];
-      int jz = neighbors[J][2];
+    for (int j = 0; j < num_neighbors; j++) {
+      int jx = neighbors[j][0];
+      int jy = neighbors[j][1];
+      int jz = neighbors[j][2];
       int iz_jz = iz + jz;
       int iy_jy = iy + jy;
       int ix_jx = ix + jx;
@@ -2957,8 +3055,8 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
         aaafDest[iz_jz][iy_jy][ix_jx] = QUEUED;
 
         // and push this neighboring voxels onto the queue.
-        // (...if they have not been assigned to a basin yet.
-        //  This insures that the same voxel is never pushed more than once.)
+        // (...if they have not been assigned to a basin yet.  This
+        //  insures that the same voxel is never pushed more than once.)
         array<Coordinate, 3> neighbor_crds;
         neighbor_crds[0] = ix_jx;
         neighbor_crds[1] = iy_jy;
@@ -2969,27 +3067,34 @@ WatershedMeyers3D(int const image_size[3],                 //!< #voxels in xyz
                           neighbor_crds));
       }
       else {
-        if (aaafDest[iz_jz][iy_jy][ix_jx] !=
-            aaafDest[iz][iy][ix])
+        if (aaafDest[iz_jz][iy_jy][ix_jx] != aaafDest[iz][iy][ix])
         {
-          // If these two neighboring voxels already belong to different basins,
-          // then we should assign the more SHALLOW voxel to WATERSHED_BOUNDARY.
-          // Which of the two voxels is "more shallow"?
-          // This is the voxel with the higher intensity (*SIGN_FACTOR).
-          assert(SIGN_FACTOR * aaafSource[iz_jz][iy_jy][ix_jx]  <=
-                 SIGN_FACTOR * aaafSource[iz][iy][ix]);
-          aaafDest[iz][iy][ix] = WATERSHED_BOUNDARY;
-        }
-      }
-    } //loop over jx,jy,jz (the neighbers of voxel ix,iy,iz)
+          if (ix == 2)
+            aaafMask = NULL; //DEBUGGING ONLY. DELETE LATER
+          if (show_boundaries)
+          {
+            // If these two neighboring voxels already belong to different 
+            // basins, then we should assign the more SHALLOW voxel to 
+            // WATERSHED_BOUNDARY. Which of the two voxels is "more shallow"?
+            // This is the voxel with the higher intensity (*SIGN_FACTOR).
+            assert(SIGN_FACTOR * aaafSource[iz_jz][iy_jy][ix_jx]  <=
+                   SIGN_FACTOR * aaafSource[iz][iy][ix]);
+            aaafDest[iz][iy][ix] = WATERSHED_BOUNDARY;
+          }
+          else {
+            aaafDest[iz][iy][ix] = i_which_basin + 1;
+          }
+        } // if (aaafDest[iz_jz][iy_jy][ix_jx] != aaafDest[iz][iy][ix])
+      } // else clause for "if (aaafDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)"
+    } // for (int j = 0; j < num_neighbors; j++)
   } //while (q.size() != 0)
 
 
   #ifndef NDEBUG
   // DEBUGGING
   // All of the voxels should either be assigned to a basin,
-  // OR assigned to "WATERSHED_BOUNDARY" or to "UNDEFINED" (but not "QUEUED")
-  // Check for that below:
+  // OR assigned to "WATERSHED_BOUNDARY" or to "UNDEFINED"
+  // (but not "QUEUED").  Check for that below:
   for (int iz=0; iz<image_size[2]; iz++)
     for (int iy=0; iy<image_size[1]; iy++)
       for (int ix=0; ix<image_size[0]; ix++)

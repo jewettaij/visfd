@@ -75,6 +75,8 @@ Settings::Settings() {
   find_maxima = false;
   find_minima_file_name = "";
   find_maxima_file_name = "";
+  neighbor_connectivity = 3;
+  extrema_on_boundary = true;
   //REMOVE THIS CRUFT
   //find_extrema_occlusion_ratio = 1.0;
   in_coords_file_name = "";
@@ -103,6 +105,7 @@ Settings::Settings() {
 
   watershed_use_minima = true;
   watershed_threshold = std::numeric_limits<float>::infinity();
+  watershed_show_boundaries = true;
 
   out_normals_fname = "";
   planar_hessian_score_threshold = 0.0;
@@ -175,6 +178,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 {
   bool exponents_set_by_user = false;
   bool delta_set_by_user = false;
+  bool watershed_threshold_set_by_user = false;
   for (int i=1; i < vArgs.size(); ++i)
   {
 
@@ -782,8 +786,9 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob")
 
 
-    else if ((vArgs[i] == "-score-upper-bound") ||
-             (vArgs[i] == "-blob-minima-threshold")) {
+    else if ((vArgs[i] == "-minima-threshold") ||
+             (vArgs[i] == "-score-upper-bound"))
+    {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
@@ -796,11 +801,12 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-minima-threshold")
+    } //if (vArgs[i] == "-minima-threshold")
 
 
-    else if ((vArgs[i] == "-score-lower-bound") ||
-             (vArgs[i] == "-blob-maxima-threshold")) {
+    else if ((vArgs[i] == "-maxima-threshold") ||
+             (vArgs[i] == "-score-lower-bound"))
+    {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
@@ -813,11 +819,12 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-maxima-threshold")
+    } //if (vArgs[i] == "-maxima-threshold")
              
 
-    else if ((vArgs[i] == "-score-lower-bound-ratio") ||
-             (vArgs[i] == "-blob-minima-ratio")) {
+    else if ((vArgs[i] == "-minima-ratio") ||
+             (vArgs[i] == "-score-lower-bound-ratio"))
+    {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
@@ -830,12 +837,13 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-minima_ratio")
+    } //if (vArgs[i] == "-minima_ratio")
 
 
 
-    else if ((vArgs[i] == "-score-upper-bound-ratio") ||
-             (vArgs[i] == "-blob-maxima-ratio")) {
+    else if ((vArgs[i] == "-maxima-ratio") ||
+             (vArgs[i] == "-score-upper-bound-ratio"))
+    {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
@@ -848,7 +856,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-maxima-ratio")
+    } //if (vArgs[i] == "-maxima-ratio")
 
 
     // REMOVE THIS CRUFT:
@@ -1349,6 +1357,34 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+    else if (vArgs[i] == "-neighbor-connectivity") {
+      try {
+        if (i+1 >= vArgs.size())
+          throw invalid_argument("");
+        neighbor_connectivity = stoi(vArgs[i+1]);
+        if (neighbor_connectivity <= 0)
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+          throw InputErr("Error: The " + vArgs[i] + 
+                         " argument must be followed by a positive integer.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    
+    else if (vArgs[i] == "-boundary-extrema") {
+      extrema_on_boundary = true;
+      num_arguments_deleted = 1;
+    }
+
+
+    else if (vArgs[i] == "-ignore-boundary-extrema") {
+      extrema_on_boundary = false;
+      num_arguments_deleted = 1;
+    }
+
+
     else if (vArgs[i] == "-distance-points") {
       if (i+1 >= vArgs.size())
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1567,7 +1603,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     {
       filter_type = WATERSHED;
       watershed_use_minima = true;
-      watershed_threshold = std::numeric_limits<float>::infinity();
+      if (! watershed_threshold_set_by_user)
+        watershed_threshold = std::numeric_limits<float>::infinity();
       num_arguments_deleted = 1;
     }
 
@@ -1575,8 +1612,9 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-watershed-maxima")
     {
       filter_type = WATERSHED;
-      watershed_use_minima = true;
-      watershed_threshold = std::numeric_limits<float>::infinity();
+      watershed_use_minima = false;
+      if (! watershed_threshold_set_by_user)
+        watershed_threshold = std::numeric_limits<float>::infinity();
       num_arguments_deleted = 1;
     }
 
@@ -1586,8 +1624,9 @@ Settings::ParseArgs(vector<string>& vArgs)
       filter_type = WATERSHED;
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+            (vArgs[i+1] == ""))
           throw invalid_argument("");
+        watershed_threshold_set_by_user = true;
         watershed_threshold = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
@@ -1598,6 +1637,21 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+
+    else if (vArgs[i] == "-watershed-show-boundaries")
+    {
+      filter_type = WATERSHED;
+      watershed_show_boundaries = true;
+      num_arguments_deleted = 1;
+    }
+
+
+    else if (vArgs[i] == "-watershed-hide-boundaries")
+    {
+      filter_type = WATERSHED;
+      watershed_show_boundaries = false;
+      num_arguments_deleted = 1;
+    }
 
 
     else if ((vArgs[i] == "-planar") ||

@@ -2,7 +2,9 @@
 #define _EIGEN3_SIMPLE_HPP
 
 // This file contains code from "Eigen", a lightweight C++ template library
-// for linear algebra.  (It was later simplified to remove some dependencies.)
+// for linear algebra.
+// (Eigen is quite large.  The code in this directory is a simplified version
+//  which removes the many dependencies on other files from the Eigen library.)
 //
 // Copyright (C) 2008-2010 Gael Guennebaud <gael.guennebaud@inria.fr>
 // Copyright (C) 2010 Jitse Niesen <jitse@maths.leeds.ac.uk>

@@ -34,7 +34,7 @@ using namespace std;
 
 string g_program_name("filter_mrc.cpp");
 string g_version_string("0.12.1");
-string g_date_string("2018-1-11");
+string g_date_string("2018-1-12");
 
 
 
@@ -1030,16 +1030,18 @@ HandleExtrema(Settings settings,
     pv_maxima_scores = &maxima_scores;
   }
 
-  FindLocalExtrema3D(tomo_out.header.nvoxels,
-                     tomo_out.aaafI,
-                     mask.aaafI,
-                     pv_minima_crds_voxels,
-                     pv_maxima_crds_voxels,
-                     pv_minima_scores,
-                     pv_maxima_scores,
-                     minima_threshold,
-                     maxima_threshold,
-                     &cerr);
+  FindExtrema3D(tomo_out.header.nvoxels,
+                tomo_out.aaafI,
+                mask.aaafI,
+                pv_minima_crds_voxels,
+                pv_maxima_crds_voxels,
+                pv_minima_scores,
+                pv_maxima_scores,
+                minima_threshold,
+                maxima_threshold,
+                settings.neighbor_connectivity,
+                settings.extrema_on_boundary,
+                &cerr);
 
   // non-max suppression
   // discards minima or maxima which lie too close together.
@@ -1671,15 +1673,17 @@ HandleWatershed(Settings settings,
   vector<array<int, 3> > extrema_crds;
   vector<float> extrema_scores;
 
-  WatershedMeyers3D(tomo_in.header.nvoxels,
-                    tomo_in.aaafI,
-                    tomo_out.aaafI,
-                    mask.aaafI,
-                    settings.watershed_threshold,
-                    settings.watershed_use_minima,
-                    &extrema_crds,
-                    &extrema_scores,
-                    &cerr);
+  Watershed3D(tomo_in.header.nvoxels,
+              tomo_in.aaafI,
+              tomo_out.aaafI,
+              mask.aaafI,
+              settings.watershed_threshold,
+              settings.watershed_use_minima,
+              settings.neighbor_connectivity,
+              settings.watershed_show_boundaries,
+              &extrema_crds,
+              &extrema_scores,
+              &cerr);
 
   // Did the user supply a mask?
   // WatershedMeyers3D() intentionally does not modify voxels which lie 

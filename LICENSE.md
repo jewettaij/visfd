@@ -1,7 +1,7 @@
 Modified BSD License (BSD-3-Clause)
 ====================
 
-_Copyright © `2016`, `California Institute of Technology`
+_Copyright © `2018`, `The Scripps Research Institute`
 _All rights reserved._
 
 Redistribution and use in source and binary forms, with or without
@@ -27,3 +27,13 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
+
+
+## Eigen dependency
+***Note:***
+Files located in the "lib/eigen_simple" directory contain a few hundred
+lines of code which were adapted from the ***Eigen*** linear algebra library,
+which uses a permissive open source license.
+License details for that code can be found in the
+[LICENSE.md](lib/eigen_simple/LICENSE.md)
+file located in that directory.

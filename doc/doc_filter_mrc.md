@@ -62,7 +62,7 @@ filter_mrc -w 19.2 \
 
 filter_mrc -w 19.2 \
   -discard-blobs tomogram_blobs.minima.txt tomogram_ribosomes.txt \
-  -blob-minima-threshold -50 \
+  -minima-threshold -50 \
   -blob-separation 0.8
 
 # Finally, display the remaining blobs we want to keep:
@@ -184,11 +184,9 @@ and
 
 
 
-## Details:
+# Feature detection
 
-
-## Segmentation and annotation filters
-
+## Detecting membranes
 
 ### -planar  thickness
 
@@ -274,6 +272,7 @@ or
 The **-find-minima** and **-find-maxima** arguments will
 create a file containing the locations of the local minima or maxima
 of the voxel brightnesses within the image, respectively.
+
 The file is a 5-column ascii text file.
 The x,y,z coordinates of each minima or maxima are in the first 3 columns,
 followed by the "diameter" of the minima (which is "0" by default), and finally
@@ -282,11 +281,11 @@ it's "score" (which is the brightness of the voxel at that location).
   "-blob",  "-blobr",  "-blobd" and "-spheres" arguments.)*
 These arguments are typically used together with the following arguments:
 ```
-  -blob-minima-threshold   threshold
+  -minima-threshold   threshold
 ```
 or
 ```
-  -blob-maxima-threshold   threshold
+  -maxima-threshold   threshold
 ```
 This allows users to discard poor scoring minima (or maxima),
 minima whose "scores" do not fall below (or above) "threshold".
@@ -305,6 +304,38 @@ radii (*2\*radius*) then the poorer scoring minima will be discarded.
 (The "*radius*" will also be written to the 4th column of the "filename" file.
 *If the "-blobr-separation ratio" argument is supplied, then minima or maxima
  will be discarded if the distance between them falls below 2\*radius\*ratio.*)
+
+*Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
+are considered by default.
+(You can use the **-neighbor-connectivity nc** argument to skip
+ 3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
+ This may increase the number of spurious local minima and maxima discovered.)
+
+*Note:* By default, local minima and maxima which lie on the boundaries
+of the image (or on the boundary of the mask region), are considered.
+To ignore these extrema (ie, to consider only voxels which are surrounded
+by other voxels) use the "**-ignore-boundary-extrema-**" argument.
+
+**Note: This only detects point-like local minima and maxima.**
+To be considered a "local minima", all 28 adjacent voxels must have
+intensities which are brighter than the central voxel.
+Local minima containing more than one voxel of the same brightness will
+be ignored.
+This means an image containing a region of identically bright voxels
+will generate a huge number of "local minima".
+
+***BUG WARNING:***
+         *Non-point-like local minima or maxima are not currently detected.
+          (Such extrema consist of multiple adjacent voxels
+           of identical brightness.)
+          This is a bug.
+          This feature was intended to be applied to noisy microscope images
+          (having 32bit depth) which have already been processed using
+          Gaussian blurring, Tensor-voting, or other kinds of filters.
+          For these images, adjacent voxels of identical brightness
+          are very unlikely.
+          This bug will get fixed eventually.*
+
 
 
 
@@ -351,7 +382,7 @@ X,Y,Z,[scale-space](https://en.wikipedia.org/wiki/Blob_detection#The_difference_
 By default, two files will be created, named
 *file_name.minima.txt* (for storing local minima), and
 *file_name.minima.txt* (for storing local maxima).
-*(Note: If the "-blob-minima-threshold" or "-blob-maxima-threshold"
+*(Note: If the "-minima-threshold" or "-maxima-threshold"
  argument is specified, then only one file is generated.)*
 Each file is a 5-column ascii text file with the following format:
 ```
@@ -370,6 +401,7 @@ and **score** is the intensity of that voxel after
 a LOG filter of that size was applied to it.
 The list is ordered from high score to low score
 (for maxima, or low score to high score for minima).
+These blobs can be visualized using the "**-spheres**" argument (see below).
 
 
 
@@ -395,6 +427,26 @@ argument to visualize the remaining blobs you did not throw away.
 Sometimes several iterations of non-max suppression followed by visualization
 are needed before you get visually pleasing results.
 
+Details will be provided elsewhere below explaining how visualize these blobs
+(using the "**-spheres**" argument),
+as well as how to discard low-quality and overlapping blobs
+(using the "**-spheres-nonmax**" argument).
+
+
+#### Recommendation:
+
+Blob-detection is computationally expensive,
+but it only has to be performed once.
+Typically, users will perform blob detection with the default (permissive)
+score thresholds, so that they keep most of the minima and maxima.
+Then later, they will run **filter_mrc** with the
+"**-spheres**" and "**-minima-threshold**" (or "**-maxima-threshold")
+arguments several times with different thresholds to decide which of
+these blobs are worth keeping.
+
+
+## Morphology
+
 ### -watershed-minima
 
 If the "**-watershed**" argument is selected, the image will be segmented
@@ -403,19 +455,42 @@ using the
 algorithm.
 Afterwards, each voxel in the image will be assigned to an integer 
 indicating the local-minima basin to which it belongs.
-Voxels which lie on "ridges" 
+By default voxels which lie at the "ridges" 
 (ie., at the boundary of multiple different drainage basins),
 are assigned a value of 0.
-Note: These minima are sorted according to depth and begin at 1, not zero.
+(You can prevent this using the
+ "**-watershed-hide-boundaries**" argument.)
+
+*Note:* These minima are sorted according to depth and begin at 1, not zero.
 (Hence voxels in the first minima's basin, ie, the global minima basin, will be
  assigned to intensities of 1.  Voxels in the next deepest basin, 2, etc...)
-Note: The locations of the corresponding local minima can be found by
+
+*Note:* The locations of the corresponding local minima can be found by
 invoking the program on the same image using the "**-find-minima**" argument.
 (They are also sorted according to minima depth.)
-*Note: Oversegmentation can be reduced by performing a Gaussian blur 
+
+*Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
+are considered by default.
+(You can use the **-neighbor-connectivity nc** argument to skip
+ 3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
+ This may increase the number of spurious basins discovered.)
+
+*Note:* Oversegmentation can be reduced by performing a Gaussian blur 
 on the image to remove small, insignificant local minima beforehand.
 (This algorithm is usually only applied to images that have been smoothed
-or filtered in advance.)*
+or filtered in advance.)
+
+*BUG WARNING:
+          Basins beginning at non-point-like local minima are currently ignored.
+          (Such extrema consist of multiple adjacent voxels
+           of identical brightness.)
+          This is a bug.
+          This feature was intended to be applied to noisy microscope images
+          (having 32bit depth) which have already been processed using
+          Gaussian blurring, Tensor-voting, or other kinds of filters.
+          For these images, adjacent voxels of identical brightness
+          are very unlikely.
+          This bug will get fixed eventually.*
 
 
 ### -watershed-threshold  threshold
@@ -423,10 +498,11 @@ or filtered in advance.)*
 If the "**-watershed-threshold**" argument is also supplied, then voxels
 whose intensity exceeds *threshold*, will be assigned to -1.
 
-
 ### -watershed-maxima
 
 This performs watershed segmentation starting from maxima instead of minima.
+
+
 
 
 
@@ -808,6 +884,56 @@ for example:
 
 ## Annotation of detected objects in an image
 
+## -spheres filename
+
+The "**-spheres**" argument does not perform a filtering operation
+on the original image.
+Instead it reads a text file containing between 3 and 5 columns (eg "filename")
+indicating the location, size, and brightness of a series of points in space.
+After reading that file, a new image will be created
+(the same size as the input image)
+with each blob represented (by default) by a hollow spherical shell
+that surrounds the point of interest.
+
+Each line in the file corresponds to a different sphere.
+The first three numbers on each line are assumed to store the x,y, and z
+coordinates of the center of that sphere.
+If the file contains only 3 columns, the "spheres" will be only 1-voxel wide
+by default.
+If the file contains a 4th column, then it is assumed to store the diameter of
+the sphere (in physical units, not voxels).
+(Either way, the sphere size can be overridden using
+ the "**-sphere-diameter d**" argument.)
+If the file contains a 5th column, it is assumed to represent the brightness
+of that sphere.
+(This can be overridden using the "**-sphere-foreground brightness**" argument.)
+Incidentally, the format of this file matches the formmat of the text file
+generated during blob detection (using the "**-blob**" argument).
+
+The thickness of the shell can be controlled using the
+"**-spheres-shell-ratio ratio**" argument.
+Setting the "ratio" to 1 results in a solid rather than hollow sphere.
+(The default shell thickness is 0.08.
+ The minimum width of the shell is 1 voxel wide.)
+
+By default, these spherical shells will be superimposed upon the
+original image (whose voxel's brightness will be shifted and scaled
+so that the voxels remain easy to see in the presence of the spherical shells).
+The average *brightness* and *contrast* of these background voxels
+is controlled by the "**-sphere-background brightness**", and the
+"**-sphere-background-scale ratio**" arguments, respectively.
+(Using "**-sphere-background-scale 0**" makes this background image invisible.
+ The default scale ratio is 0.25.)
+
+When displayed in IMOD,
+blobs with good scores typically appear as black or white spheres,
+and grey spheres correspond to blobs with poor scores.
+The score of a given blob
+can be queried in IMOD by clicking on a voxel somewhere on the spherical shell
+and selecting the "Edit"->"Point"->"Value" menu option.)
+
+
+
 
 ## -spheres-nonmax  
 ```
@@ -824,24 +950,24 @@ The new list of blobs can then be visualized later by running
 Note that the "**-spheres-nonmax**" argument by itself does nothing.
 You must run it with other arguments telling it which blobs you want to discard.
 Typically you would run *filter_mrc* together with the "**-spheres-nonmax**",
-**-blob-maxima-threshold** (OR **-blob-minima-threshold**), AND the
+**-maxima-threshold** (OR **-minima-threshold**), AND the
 **-max-volume-overlap** arguments, simultaneously.  (See below for details.)
 
 #### Automatic disposal of poor scoring blobs
 ```
-   -blob-minima-ratio  ratio_min
-   -blob-maxima-ratio  ratio_max
+   -minima-ratio  ratio_min
+   -maxima-ratio  ratio_max
 ```
-The *-blob-maxima-ratio* argument allows you to discard maxima whose score 
+The *-maxima-ratio* argument allows you to discard maxima whose score 
 is less than *ratio_max* times the blob with the highest score,
 (where *ratio_max* is a number between 0 and 1.
- *-blob-minima-ratio* behaves in a similar way.)
+ *-minima-ratio* behaves in a similar way.)
 Alternatively, if you prefer, you can specify the exact threshold used
 to discard local minima and maxima (instead of specifying ratios),
 using the following arguments:
 ```
-   -blob-minima-threshold  thresh_min
-   -blob-maxima-threshold  thresh_max
+   -minima-threshold  thresh_min
+   -maxima-threshold  thresh_max
 ```
 ...where "thresh_min" and "thresh_max" are the thresholds below which,
 and above which, the blob score must lie in order not to be discarded,
@@ -872,8 +998,9 @@ when the volume overlapping region between the two spheres exceeds *fraction*
 multiplied by the volume of the *larger* sphere.
 (A larger *fraction* means that more overlap is permitted.  
 Setting it to 1.0 disables overlap prevention.)
-In addition, you can specify the maximum amount of overlap with the *smaller*
+Additionally, you can specify the maximum amount of overlap with the *smaller*
 of the two spheres using the "**-max-volume-overlap-small fraction**" argument.
+(See example below.)
 
 Alternatively, you can use the
 "**-radial-sepration fraction**" argument
@@ -882,9 +1009,19 @@ multiplied by the sum of their radii.
 The "**fraction**" parameter is a number between 0 and 1.
 (A larger number means less overlap is permitted.
  Setting *fraction=0.0* allows complete overlap and disables this argument.)
-
-*NOTE:* You can *either* discard blobs based on *overlapping volume*
+*Note:* You can *either* discard blobs based on *overlapping volume*
 or *overlapping radii*, but not both.
+
+##### Example: Hierarchical blob detection
+Sometimes a small spherical blob may reside *within* a significantly larger 
+sphere. If the small sphere's volume is less than half of the larger sphere
+(for example), you may want to keep both spheres.
+To prevent the small sphere from being discarded, you can use
+**-max-volume-overlap 0.5** together with
+**-max-volume-overlap-small 1**.
+*(This cannot be done using the -radial-separation argument.)*
+
+
 
 
 
@@ -897,58 +1034,16 @@ or Gaussian width (σ) of the objects
 that you wish to detect within the image (instead of the object's diameter).
 
 
+
 ####  Visualizing blobs using the "**-spheres**" argument
 
-AFTER blob-detection AND nonmax-suppression *(discussed elsewhere)*, you can
-visualize the resulting blobs using the "**-spheres**" and "**-out**" arguments.
-In that case, a new tomogram will be created with each blob represented
-by a hollow spherical shell that surrounds the point of
-interest, whose *radius* and *brightness* indicate *size* and *score* of
-that blob, respectively.
-*(The intensity of voxels belonging to the spherical
-shell should exactly match the score of that blob.  
-In IMOD, blobs with good scores typically appear as black or white spheres,
-and grey spheres correspond to blobs with poor scores.
-The score of a given blob
-can be queried in IMOD by clicking on a voxel somewhere on the spherical shell
-and selecting the "Edit"->"Point"->"Value" menu option.)
-
-The radii and brightnesses of the spheres can be overidden using the
-"**-sphere-radius r**"
-and "**-sphere-foreground intensity**" arguments, respectively.
-(Note: The *r* parameter should be in physical units/Angstroms, not voxels.
- If you prefer to scale all the radii up or down by the same ratio,
- use the "**-sphere-scale ratio**" argument instead.)
-
-The thickness of the shell can be controlled using the
-"**-spheres-shell-ratio ratio**" argument.
-Setting the "ratio" to 1 results in a solid rather than hollow sphere.
-(The default shell thickness is 0.08.
- The minimum width of the shell is 1 voxel wide.)
-
-By default, these spherical shells will be superimposed upon the
-original image (whose voxel's brightness will be shifted and scaled
-so that the voxels remain easy to see in the presence of the spherical shells).
-The average *brightness* and *contrast* of these background voxels
-is controlled by the "**-sphere-background brightness**", and the
-"**-sphere-background-scale ratio**" arguments, respectively.
-(Using "**-sphere-background-scale 0**" makes this background image invisible.
- The default scale ratio is 0.3.)
+Again, after blob-detection AND nonmax-suppression *(discussed elsewhere)*,
+you can visualize the resulting blobs using the "**-spheres**"
+and "**-out**" arguments.
 
 
 
 
-
-#### Recommendation:
-
-Blob-detection is computationally expensive,
-but it only has to be performed once.
-Typically, users will perform blob detection with the default (permissive)
-score thresholds, so that they keep most of the minima and maxima.
-Then later, they will run **filter_mrc** with the
-"**-spheres**" and "**-blob-minima-threshold**" (or "**-blob-maxima-threshold")
-arguments several times with different thresholds to decide which of
-these blobs are worth keeping.
 
 
 

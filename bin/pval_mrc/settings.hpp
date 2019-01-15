@@ -46,6 +46,7 @@ class Settings {
   float num_particles;      //number of particles in this volume (if known)
 
   bool use_min_density;     //Are we interested in density minima or maxima?
+  bool extrema_on_boundary = false; //Consider density minima on image boundaries?
 
   
   Settings();

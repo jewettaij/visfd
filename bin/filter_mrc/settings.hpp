@@ -169,6 +169,8 @@ class Settings {
   bool find_maxima = false;
   string find_minima_file_name;
   string find_maxima_file_name;
+  int neighbor_connectivity = 3;
+  bool extrema_on_boundary = true;
   //REMOVE THIS CRUFT:
   //float find_extrema_occlusion_ratio; // nonmax_min_radial_separation_ratio
 
@@ -190,6 +192,7 @@ class Settings {
   bool sphere_decals_shell_thickness_is_ratio;
 
   bool watershed_use_minima;
+  bool watershed_show_boundaries;
   float watershed_threshold;
 
   string out_normals_fname;
