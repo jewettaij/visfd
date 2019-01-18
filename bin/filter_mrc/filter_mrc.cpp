@@ -997,9 +997,8 @@ HandleExtrema(Settings settings,
               MrcSimple &mask,
               float voxel_width[3])
 {
-  //By now the user has stored some filtered image in tomo_out.  If not, it
-  //should have the same contents as tomo_in.(we initially set tomo_out=tomo_in)
-  tomo_out.FindMinMaxMean();
+  //hopefully the next line is unnecessary. (it should already have been done)
+  tomo_in.FindMinMaxMean(); //update the min, max, mean header params
 
   //default values disable the thresholds:
   // REMOVE THIS CRUFT:
@@ -1030,8 +1029,8 @@ HandleExtrema(Settings settings,
     pv_maxima_scores = &maxima_scores;
   }
 
-  FindExtrema3D(tomo_out.header.nvoxels,
-                tomo_out.aaafI,
+  FindExtrema3D(tomo_in.header.nvoxels,
+                tomo_in.aaafI,
                 mask.aaafI,
                 pv_minima_crds_voxels,
                 pv_maxima_crds_voxels,
@@ -1041,6 +1040,7 @@ HandleExtrema(Settings settings,
                 maxima_threshold,
                 settings.neighbor_connectivity,
                 settings.extrema_on_boundary,
+                tomo_out.aaafI, //<--an image showing where the minima are?
                 &cerr);
 
   // non-max suppression

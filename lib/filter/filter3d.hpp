@@ -2323,21 +2323,11 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds,
 /// voxel intensities are not sufficiently low or high, respectively.
 /// If the aaafMask[][][] is not equal to NULL, then local minima and maxima
 /// will be ignored if the corresponding entry in aaafMask[][][] equals 0.
-/// @note  BUG WARNING:
-/// Non-point-like local minima and maxima are currently ignored.
-/// (Such extrema consist of multiple adjacent voxels of identical brightness.)
-/// This is a bug.
-/// This feature was intended to be applied to noisy microscope images
-/// (having 32bit depth) which have already been processed using
-/// Gaussian blurring, Tensor-voting, or other kinds of filters.
-/// For these images, adjacent voxels of identical brightness are very unlikely.
-/// This bug will get fixed eventually.
-
 
 template<class Scalar, class Integer>
 static void
 _FindExtrema3D(int const image_size[3],
-               Scalar const *const *const *aaafI,
+               Scalar const *const *const *aaafSource,
                Scalar const *const *const *aaafMask,
                vector<Integer> *pv_minima_indices,
                vector<Integer> *pv_maxima_indices,
@@ -2347,133 +2337,329 @@ _FindExtrema3D(int const image_size[3],
                Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
                int connectivity=3,                      //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
                bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+               Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
                ostream *pReportProgress=NULL)  // print progress to the user?
 {
-  assert(aaafI);
-
-  // how big is the search neighborhood around each minima?
-  int r_neigh_sqd = connectivity;
-  int r_neigh = ceil(sqrt(r_neigh_sqd));
+  assert(aaafSource);
 
   bool find_minima = (pv_minima_indices != NULL);
   bool find_maxima = (pv_maxima_indices != NULL);
 
+  vector<Integer> minima_indices; //store minima indices here
+  vector<Integer> maxima_indices; //store maxima indices here
+  vector<Scalar> minima_scores;
+  vector<Scalar> maxima_scores;
+  if (pv_minima_indices == NULL)
+    pv_minima_indices = &minima_indices;
+  if (pv_maxima_indices == NULL)
+    pv_maxima_indices = &maxima_indices;
+  if (pv_minima_scores == NULL)
+    pv_minima_scores = &minima_scores;
+  if (pv_maxima_scores == NULL)
+    pv_maxima_scores = &maxima_scores;
+
+
+  ptrdiff_t ***aaaiExtrema; //which voxels belong to this plateau?
+  ptrdiff_t *aiExtrema;
+  Alloc3D(image_size,
+          &aiExtrema,
+          &aaaiExtrema);
+
+  // We will assign voxels in aaaiExtrema[][][] to the following values:
+  ptrdiff_t NEITHER = 0;//(means this voxel is neither a local minima or maxima)
+  ptrdiff_t UNDEFINED = image_size[0] * image_size[1] * image_size[2] + 1;
+  ptrdiff_t QUEUED    = image_size[0] * image_size[1] * image_size[2] + 2;
+  // ... or we will assign the voxel to an integer denoting which
+  //     local minima or maxima it belongs to.
+  //Note: Both "UNDEFINED" and "QUEUED" are impossible values (in this respect).
+  //      There cannot be that many local maxima or minima in the image.
+
+
+  for (int iz = 0; iz < image_size[2]; iz++)
+    for (int iy = 0; iy < image_size[1]; iy++)
+      for (int ix = 0; ix < image_size[0]; ix++)
+        aaaiExtrema[iz][iy][ix] = UNDEFINED;
+
+
+  if (pReportProgress)
+    *pReportProgress
+      << " -- Attempting to allocate space for one more image.       --\n"
+      << " -- (If this crashes your computer, find a computer with   --\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n"
+      << "\n";
+
   if (pReportProgress)
     *pReportProgress << "---- searching for local minima & maxima ----\n";
 
-  #pragma omp parallel
+  // Figure out which neighbors to consider when searching neighboring voxels
+  int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
+  int num_neighbors = 0;
   {
-    // (The following variables are private for each thread/processor.
-    // Later, the global list of minima and maxima will be updated with the
-    // information collected from each processor at the end of this iteration)
+    // How big is the search neighborhood around each minima?
+    int r_neigh_sqd = connectivity;
+    int r_neigh = floor(sqrt(r_neigh_sqd));
+    
+    vector<array<int, 3> > vNeighbors;
+    for (int jz = -r_neigh; jz <= r_neigh; jz++) {
+      for (int jy = -r_neigh; jy <= r_neigh; jy++) {
+        for (int jx = -r_neigh; jx <= r_neigh; jx++) {
+          array<int, 3> j_xyz;
+          j_xyz[0] = jx;
+          j_xyz[1] = jy;
+          j_xyz[2] = jz;
+          if ((jx == 0) && (jy == 0) && (jz == 0))
+            continue;
+          else if (jx*jx+jy*jy+jz*jz > r_neigh_sqd)
+            continue;
+          else
+            vNeighbors.push_back(j_xyz);
+        }
+      }
+    }
+    // Convert the list of neighbors vNeigh to a contiguous 2D C-style array:
+    num_neighbors = vNeighbors.size();
+    neighbors = new int[num_neighbors][3];
+    for (int j = 0; j < num_neighbors; j++)
+      for (int d = 0; d < 3; d++)
+        neighbors[j][d] = vNeighbors[j][d];
+    // We will use neighbors[][] from now on..
+  } // ...done figuring out the list of voxel neighbors
 
-    vector<Integer> minima_indices_proc; //store minima indices here
-    vector<Integer> maxima_indices_proc; //store maxima indices here
-    vector<Scalar> minima_scores_proc;   //what was the blob's score?
-    vector<Scalar> maxima_scores_proc;   //(score = intensity after filtering)
 
-    for (int iz = 0; iz < image_size[2]; iz++) {
-      #pragma omp for collapse(2)
-      for (int iy = 0; iy < image_size[1]; iy++) {
-        for (int ix = 0; ix < image_size[0]; ix++) {
-          // Search the 26 surrounding voxels to see if this voxel is
-          // either a minima or a maxima
-          bool is_minima = true;
-          bool is_maxima = true;
-          // ---- loop over neighbors ----
-          // Let (jx,jy,jz) denote the index offset for the neighbor voxels
-          // (located at ix+jx,iy+jy,iz+jz)
-          for (int jz = -r_neigh; jz <= r_neigh; jz++) {
-            for (int jy = -r_neigh; jy <= r_neigh; jy++) {
-              for (int jx = -r_neigh; jx <= r_neigh; jx++) {
-                if (jx*jx+jy*jy+jz+jz > r_neigh_sqd)
-                  continue;
-                int ix_jx = ix+jx;
-                int iy_jy = iy+jy;
-                int iz_jz = iz+jz;
-                if ((ix+jx <0) || (ix+jx >= image_size[0]) ||
-                    (iy+jy <0) || (iy+jy >= image_size[1]) ||
-                    (iz+jz <0) || (iz+jz >= image_size[2]))
-                  continue;
-                if (jx==0 && jy==0 && jz==0)
-                  continue;
-                if (aaafMask && (aaafMask[iz+jz][iy+jy][ix+jx] == 0)) {
-                  is_minima = false;
-                  is_maxima = false;
-                  continue;
-                }
-                if (aaafI[iz+jz][iy+jy][ix+jx] <=
-                    aaafI[iz][iy][ix])
-                  is_minima = false;
-                if (aaafI[iz+jz][iy+jy][ix+jx] >=
-                    aaafI[iz][iy][ix])
-                  is_maxima = false;
+  // Now search the image for minima, maxima.
+  // Do not assume that the local minima or maxima are point-like.
+  // They could be "plateaus".
+  // So at every voxel location ix,iy,iz, search for neighboring voxels
+  // with identical intensities (brightness).  These voxels collectively are
+  // a "plateau".  Find the neighbors of these voxels to determine whether
+  // this "plateau" is also a local minima or maxima.
+  for (int iz0 = 0; iz0 < image_size[2]; iz0++) {
+
+    if (pReportProgress)
+      *pReportProgress << "  searching for extrema at z="<<iz0+1<<" (of "<<image_size[2]<<")" << endl;
+
+    for (int iy0 = 0; iy0 < image_size[1]; iy0++) {
+
+      for (int ix0 = 0; ix0 < image_size[0]; ix0++) {
+
+        if (aaafMask && aaafMask[iz0][iy0][ix0] == 0.0)
+          continue;
+
+        bool is_minima = true;
+        bool is_maxima = true;
+
+
+        #ifndef NDEBUG
+        set<array<int, 3> > visited;
+        #endif
+
+
+        // It's possible that a local minima or maxima consists of more than one
+        // adjacent voxels with identical intensities (brightnesses).
+        // These voxels belong to a "plateau" of voxels of the same height
+        // which are above (or below) all of the surrounding voxels.
+        // (Note: Most of the time this plateau consists of only one voxel.)
+        // The "q_plateau" variable is a data structure to keep track of which
+        // voxels belong to the current plateau.
+        queue<array<int, 3> > q_plateau;
+        array<int, 3> i_xyz;
+        i_xyz[0] = ix0; //note:this can be shortened to 1 line with make_array()
+        i_xyz[1] = iy0;
+        i_xyz[2] = iz0;
+        q_plateau.push(i_xyz);
+
+        // We also need a reverse lookup table to check whether a given voxel
+        // is in the queue (or has already been previously assigned).
+        // That's what aaaiExtrema[][][] is.
+        // If aaaiExtrema[iz][iy][ix] == QUEUED, then we know it's in the queue.
+        // We need to come up with an impossible value for QUEUED:
+        aaaiExtrema[iz0][iy0][ix0] = QUEUED; //make sure we don't visit it twice
+
+
+        if ((ix0 == 46) && (iy0 == 0) && (iz0 == 0)) // FOR DEBUGGING ONLY...
+          i_xyz[0] = ix0;                            // ...DELETE THIS LATER
+
+
+        while (! q_plateau.empty())
+        {
+          array<int, 3> p = q_plateau.front();
+          q_plateau.pop();
+          int ix = p[0];
+          int iy = p[1];
+          int iz = p[2];
+          assert(aaaiExtrema[iz][iy][ix] == QUEUED);
+
+
+          #ifndef NDEBUG
+          assert(visited.find(p) == visited.end());
+          visited.insert(p);
+          #endif
+
+
+          for (int j = 0; j < num_neighbors; j++) {
+            int jx = neighbors[j][0];
+            int jy = neighbors[j][1];
+            int jz = neighbors[j][2];
+            int iz_jz = iz + jz;
+            int iy_jy = iy + jy;
+            int ix_jx = ix + jx;
+            if (((iz_jz < 0) || (image_size[2] <= iz_jz))
+                ||
+                ((iy_jy < 0) || (image_size[1] <= iy_jy))
+                ||
+                ((ix_jx < 0) || (image_size[0] <= ix_jx))
+                ||
+                (aaafMask && (aaafMask[iz_jz][iy_jy][ix_jx] == 0.0)))
+            {
+              if (! allow_borders) {
+                is_minima = false;
+                is_maxima = false;
               }
+              continue;
             }
-          }
-          if (is_minima && find_minima) {
-            if (((! aaafMask) || (aaafMask[iz][iy][ix] != 0)) &&
-                ((aaafI[iz][iy][ix] <= minima_threshold)
-                  // || (maxima_threshold < minima_threshold)
-                 ))
+            if ((aaafSource[iz_jz][iy_jy][ix_jx] == aaafSource[iz][iy][ix]) &&
+                (aaaiExtrema[iz_jz][iy_jy][ix_jx] == UNDEFINED)) //don't visit twice
             {
-              // convert from a 3D location (ix,iy,iz) to a 1D index ("index")
-              Integer index = ix + image_size[0]*(iy + image_size[1]*iz);
-              //minima_crds_proc.push_back(ixiyiz);
-              minima_indices_proc.push_back(index);
-              minima_scores_proc.push_back(aaafI[iz][iy][ix]);
+              // then add this voxel to the q_plateau
+              array<int, 3> ij_xyz;
+              ij_xyz[0] = ix_jx;
+              ij_xyz[1] = iy_jy;
+              ij_xyz[2] = iz_jz;
+              q_plateau.push(ij_xyz);
+              aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;
+
+              if ((ix_jx==46)&&(iy_jy==1)&&(iz_jz==0)) // FOR DEBUGGING ONLY...
+                ij_xyz[0] = ix_jx;                     // ...DELETE THIS LATER
+
+              #ifndef NDEBUG
+              assert(visited.find(ij_xyz) == visited.end());
+              #endif
             }
+            else {
+              if (aaafMask && (aaafMask[iz+jz][iy+jy][ix+jx] == 0)) {
+                is_minima = false;
+                is_maxima = false;
+                continue;
+              }
+              if (aaafSource[iz+jz][iy+jy][ix+jx] <= aaafSource[iz][iy][ix])
+                is_minima = false;
+              if (aaafSource[iz+jz][iy+jy][ix+jx] >= aaafSource[iz][iy][ix])
+                is_maxima = false;
+            }
+          } //for (int j = 0; j < num_neighbors; j++)
+        } // while (! q_plateau.empty())
+
+
+        // If thix voxel is either a minima or a maxima, add it to the list.
+        if (is_minima && find_minima) {
+          if (((! aaafMask) || (aaafMask[iz0][iy0][ix0] != 0)) &&
+              ((aaafSource[iz0][iy0][ix0] <= minima_threshold)
+               // || (maxima_threshold < minima_threshold)
+               ))
+          {
+            // convert from a 3D location (ix,iy,iz) to a 1D index ("index")
+            Integer index = ix0 + image_size[0]*(iy0 + image_size[1]*iz0);
+            //minima_crds.push_back(ixiyiz);
+            pv_minima_indices->push_back(index);
+            pv_minima_scores->push_back(aaafSource[iz0][iy0][ix0]);
           }
-          if (is_maxima && find_maxima) {
-            if (((! aaafMask) || (aaafMask[iz][iy][ix] != 0)) &&
-                ((aaafI[iz][iy][ix] >= maxima_threshold)
-                  // || (maxima_threshold < minima_threshold)
-                 ))
+        }
+        if (is_maxima && find_maxima) {
+          if (((! aaafMask) || (aaafMask[iz0][iy0][ix0] != 0)) &&
+              ((aaafSource[iz0][iy0][ix0] >= maxima_threshold)
+               // || (maxima_threshold < minima_threshold)
+               ))
+          {
+            // convert from a 3D location (ix,iy,iz) to a 1D index ("index")
+            Integer index = ix0 + image_size[0]*(iy0 + image_size[1]*iz0);
+            //maxima_crds.push_back(ixiyiz);
+            pv_maxima_indices->push_back(index);
+            pv_maxima_scores->push_back(aaafSource[iz0][iy0][ix0]);
+          }
+        }
+
+
+
+        #ifndef NDEBUG
+        visited.clear();
+        #endif
+
+
+
+        //now loop through those same voxels again to reset the aaaiExtrema array
+
+        // What to store in aaaiExtrema[][][] for voxels in this plateau?
+        ptrdiff_t assigned_plateau_label;
+        if (is_maxima)
+          assigned_plateau_label = pv_maxima_scores->size();
+        else if (is_minima)
+          assigned_plateau_label = -pv_minima_scores->size();
+        else
+          assigned_plateau_label = NEITHER;
+        aaaiExtrema[iz0][iy0][ix0] = assigned_plateau_label;
+
+
+        assert(q_plateau.empty());
+        q_plateau.push(i_xyz);
+
+
+        while (! q_plateau.empty())
+        {
+          array<int, 3> p = q_plateau.front();
+          q_plateau.pop();
+          int ix = p[0];
+          int iy = p[1];
+          int iz = p[2];
+          assert(aaaiExtrema[iz][iy][ix] != QUEUED);
+
+          #ifndef NDEBUG
+          assert(visited.find(p) == visited.end());
+          visited.insert(p);
+          #endif
+
+
+          for (int j = 0; j < num_neighbors; j++) {
+            int jx = neighbors[j][0];
+            int jy = neighbors[j][1];
+            int jz = neighbors[j][2];
+            int iz_jz = iz + jz;
+            int iy_jy = iy + jy;
+            int ix_jx = ix + jx;
+            if (((iz_jz < 0) || (image_size[2] <= iz_jz))
+                ||
+                ((iy_jy < 0) || (image_size[1] <= iy_jy))
+                ||
+                ((ix_jx < 0) || (image_size[0] <= ix_jx))
+                ||
+                (aaafMask && (aaafMask[iz_jz][iy_jy][ix_jx] == 0.0)))
+              continue;
+            if (aaaiExtrema[iz_jz][iy_jy][ix_jx] == QUEUED)//don't visit twice
             {
-              // convert from a 3D location (ix,iy,iz) to a 1D index ("index")
-              Integer index = ix + image_size[0]*(iy + image_size[1]*iz);
-              //maxima_crds_proc.push_back(ixiyiz);
-              maxima_indices_proc.push_back(index);
-              maxima_scores_proc.push_back(aaafI[iz][iy][ix]);
+              assert(aaafSource[iz_jz][iy_jy][ix_jx] == aaafSource[iz][iy][ix]);
+              // then add this voxel to the q_plateau
+              array<int, 3> ij_xyz;
+              ij_xyz[0] = ix_jx;
+              ij_xyz[1] = iy_jy;
+              ij_xyz[2] = iz_jz;
+              q_plateau.push(ij_xyz);
+
+              // Commenting out:
+              //assert(! (is_minima && is_maxima));  WRONG
+              // Actually this is possible.  For example in an image where all
+              // the voxels are identical, all voxels are BOTH minima a maxima.
+              // This is such a rare, pathelogical case, I don't worry about it.
+              // (The aaaiExtrema[][][] array is only used to prevent visiting
+              //  the same voxel twice.  It doesn't matter what is stored there
+              //  as long as it fulfills this role.)
+
+              aaaiExtrema[iz_jz][iy_jy][ix_jx] = assigned_plateau_label;
             }
-          }
-          assert(! (is_minima && is_maxima));
-        } //for (Integer ix=0; ix<image_size[0]; ix++) {
-      } //for (Integer iy=0; iy<image_size[1]; iy++) {
-    } //for (Integer iz=0; iz<image_size[2]; iz++) {
+          } //for (int j = 0; j < num_neighbors; j++)
+        } // while (! q_plateau.empty())
+      } // for (int ix0 = 0; ix0 < image_size[0]; ix0++)
+    } // for (int iy0 = 0; iy0 < image_size[1]; iy0++)
+  } // for (int iz0 = 0; iz0 < image_size[2]; iz0++)
 
-    #pragma omp critical
-    {
-      if (pv_minima_indices) {
-        // Append the newly minima and maxima discovered by this processor
-        // to the global list of minima and maxima:
-        pv_minima_indices->insert(pv_minima_indices->end(),
-                                  minima_indices_proc.begin(),
-                                  minima_indices_proc.end());
-        minima_indices_proc.clear();
-        if (pv_minima_scores)
-          pv_minima_scores->insert(pv_minima_scores->end(),
-                                   minima_scores_proc.begin(),
-                                   minima_scores_proc.end());
-        minima_scores_proc.clear();
-      }
-
-      if (pv_maxima_indices) {
-        // Append the newly maxima and maxima discovered by this processor
-        // to the global list of maxima and maxima:
-        pv_maxima_indices->insert(pv_maxima_indices->end(),
-                                  maxima_indices_proc.begin(),
-                                  maxima_indices_proc.end());
-        maxima_indices_proc.clear();
-        if (pv_maxima_scores)
-          pv_maxima_scores->insert(pv_maxima_scores->end(),
-                                   maxima_scores_proc.begin(),
-                                   maxima_scores_proc.end());
-        maxima_scores_proc.clear();
-      }
-    } //#pragma omp critical
-
-  } //#pragma omp parallel
 
   // Sort the minima and maxima in increasing and decreasing order, respectively
   Integer n_minima, n_maxima;
@@ -2501,6 +2687,12 @@ _FindExtrema3D(int const image_size[3],
       score_index.clear();
       apply_permutation(*pv_minima_indices, permutation);
       apply_permutation(*pv_minima_scores, permutation);
+      // Optional: The minima in the image are not in sorted order either. Fix?
+      for (int iz = 0; iz < image_size[2]; iz++)
+        for (int iy = 0; iy < image_size[1]; iy++)
+          for (int ix = 0; ix < image_size[0]; ix++)
+            if (aaaiExtrema[iz][iy][ix] < 0)
+              aaaiExtrema[iz][iy][ix]=permutation[(-aaaiExtrema[iz][iy][ix])-1];
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
     }
@@ -2530,9 +2722,39 @@ _FindExtrema3D(int const image_size[3],
       apply_permutation(*pv_maxima_scores, permutation);
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
+      // Optional: The maxima in the image are not in sorted order either. Fix?
+      for (int iz = 0; iz < image_size[2]; iz++)
+        for (int iy = 0; iy < image_size[1]; iy++)
+          for (int ix = 0; ix < image_size[0]; ix++)
+            if (aaaiExtrema[iz][iy][ix] > 0)
+              aaaiExtrema[iz][iy][ix] = permutation[aaaiExtrema[iz][iy][ix]-1];
     }
   }
-} //_FindExtrema3D()
+
+  if (aaafDest) {
+    for (int iz = 0; iz < image_size[2]; iz++) {
+      for (int iy = 0; iy < image_size[1]; iy++) {
+        for (int ix = 0; ix < image_size[0]; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue; // don't modify voxels outside the mask
+          aaafDest[iz][iy][ix] = aaaiExtrema[iz][iy][ix];
+          // Until now, minima in the image are represented by negative integers
+          // and maxima are represented by positive integers.
+          if (((! find_minima) || (! find_maxima)) &&
+              (aaaiExtrema[iz][iy][ix] < 0))
+            // If we only asked for minima OR maxima (not both)
+            // then just use positive integers only.
+            aaaiExtrema[iz][iy][ix] = -aaaiExtrema[iz][iy][ix];
+        }
+      }
+    }
+  }
+
+  Dealloc3D(image_size,
+            &aiExtrema,
+            &aaaiExtrema);
+
+} // _FindLocalExtrema3D()
 
 
 
@@ -2549,6 +2771,7 @@ _FindExtrema3D(int const image_size[3],
                Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
                int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
                bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+               Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
                ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
@@ -2570,6 +2793,7 @@ _FindExtrema3D(int const image_size[3],
                    -std::numeric_limits<Scalar>::infinity(),
                    connectivity,
                    allow_borders,
+                   aaafDest,
                    pReportProgress);
   }
   else {
@@ -2586,8 +2810,10 @@ _FindExtrema3D(int const image_size[3],
                    threshold,
                    connectivity,
                    allow_borders,
+                   aaafDest,
                    pReportProgress);
   }
+  
 } //_FindExtrema3D()
 
 
@@ -2625,6 +2851,7 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
               Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
               bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+              Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
               ostream *pReportProgress=NULL   //!< optional: print progress to the user?
                    )
 {
@@ -2659,6 +2886,7 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
                  maxima_threshold,
                  connectivity,
                  allow_borders,
+                 aaafDest,
                  pReportProgress);
 
   // Now convert the indices back to x,y,z coordinates
@@ -2718,6 +2946,7 @@ FindExtrema3D(int const image_size[3],
               Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
               bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
+              Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
               ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
@@ -2740,6 +2969,7 @@ FindExtrema3D(int const image_size[3],
                   -std::numeric_limits<Scalar>::infinity(),
                   connectivity,
                   allow_borders,
+                  aaafDest,
                   pReportProgress);
   }
   else {
@@ -2756,6 +2986,7 @@ FindExtrema3D(int const image_size[3],
                   threshold,
                   connectivity,
                   allow_borders,
+                  aaafDest,
                   pReportProgress);
   }
 } // FindExtrema3D()
@@ -2781,21 +3012,12 @@ FindExtrema3D(int const image_size[3],
 //         then std::numeric_limits::infinity is used by default.
 /// @note  If aaafMask!=NULL then voxels in aaafDest are not modified if
 ///        their corresponding entry in aaafMask equals 0.
-/// @note  BUG WARNING:
-/// Basins beginning at non-point-like local minima are currently ignored.
-/// (Such extrema consist of multiple adjacent voxels of identical brightness.)
-/// This is a bug.
-/// This feature was intended to be applied to noisy microscope images
-/// (having 32bit depth) which have already been processed using
-/// Gaussian blurring, Tensor-voting, or other kinds of filters.
-/// For these images, adjacent voxels of identical brightness are very unlikely.
-/// This bug will get fixed eventually.
 
 template<class Scalar, class Label, class Coordinate>
 void
 Watershed3D(int const image_size[3],                 //!< #voxels in xyz
             Scalar const *const *const *aaafSource,  //!< intensity of each voxel
-            Label ***aaafDest,                       //!< watershed segmentation results go here
+            Label ***aaaiDest,                       //!< watershed segmentation results go here
             Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
             Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
             bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
@@ -2807,7 +3029,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 {
   assert(image_size);
   assert(aaafSource);
-  assert(aaafDest);
+  assert(aaaiDest);
 
 
   // Figure out which neighbors to consider when searching neighboring voxels
@@ -2875,19 +3097,20 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
                 halt_threshold,
                 connectivity,
                 true,
+                static_cast<Scalar***>(NULL),
                 pReportProgress);
 
   Label WATERSHED_BOUNDARY = 0; //an impossible value
   Label UNDEFINED = pv_extrema_locations->size() + 1; //an impossible value
   Label QUEUED = pv_extrema_locations->size() + 2; //an impossible value
 
-  //initialize aaafDest[][][]
+  //initialize aaaiDest[][][]
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
         if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
           continue;
-        aaafDest[iz][iy][ix] = UNDEFINED;
+        aaaiDest[iz][iy][ix] = UNDEFINED;
       }
     }
   }
@@ -2948,8 +3171,8 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
                       icrds));
 
     
-    assert(aaafDest[iz][iy][ix] == UNDEFINED);
-    aaafDest[iz][iy][ix] = QUEUED;
+    assert(aaaiDest[iz][iy][ix] == UNDEFINED);
+    aaaiDest[iz][iy][ix] = QUEUED;
 
   } // for (size_t i=0; i < pv_extrema_locations->size(); i++)
 
@@ -2997,19 +3220,19 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 
     if (i_score > halt_threshold * SIGN_FACTOR) {
       // stop when the voxel brightness(*SIGN_FACTOR) exceeds the halt_threshold
-      aaafDest[iz][iy][ix] = UNDEFINED;
+      aaaiDest[iz][iy][ix] = UNDEFINED;
       continue;
     }
 
     if (aaafMask && aaafMask[iz][iy][ix] == 0.0) {
       // ignore voxel if the user specified a mask and the voxel does not belong
-      aaafDest[iz][iy][ix] = UNDEFINED;
+      aaaiDest[iz][iy][ix] = UNDEFINED;
       continue;
     }
 
-    assert(aaafDest[iz][iy][ix] == QUEUED);
+    assert(aaaiDest[iz][iy][ix] == QUEUED);
     // Now we assign this voxel to the basin
-    aaafDest[iz][iy][ix] = i_which_basin + 1;
+    aaaiDest[iz][iy][ix] = i_which_basin + 1;
     // (Note: This will prevent the voxel from being visited again.)
 
 
@@ -3058,16 +3281,16 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
       if (aaafMask && (aaafMask[iz_jz][iy_jy][ix_jx] == 0.0))
         continue;
 
-      if (aaafDest[iz_jz][iy_jy][ix_jx] == WATERSHED_BOUNDARY) {
+      if (aaaiDest[iz_jz][iy_jy][ix_jx] == WATERSHED_BOUNDARY) {
         // do nothing
       }
-      else if (aaafDest[iz_jz][iy_jy][ix_jx] == QUEUED) {
+      else if (aaaiDest[iz_jz][iy_jy][ix_jx] == QUEUED) {
         // do nothing
       }
-      else if (aaafDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)
+      else if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)
       {
 
-        aaafDest[iz_jz][iy_jy][ix_jx] = QUEUED;
+        aaaiDest[iz_jz][iy_jy][ix_jx] = QUEUED;
 
         // and push this neighboring voxels onto the queue.
         // (...if they have not been assigned to a basin yet.  This
@@ -3082,7 +3305,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
                           neighbor_crds));
       }
       else {
-        if (aaafDest[iz_jz][iy_jy][ix_jx] != aaafDest[iz][iy][ix])
+        if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
         {
           if (show_boundaries)
           {
@@ -3092,13 +3315,13 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
             // This is the voxel with the higher intensity (*SIGN_FACTOR).
             assert(SIGN_FACTOR * aaafSource[iz_jz][iy_jy][ix_jx]  <=
                    SIGN_FACTOR * aaafSource[iz][iy][ix]);
-            aaafDest[iz][iy][ix] = WATERSHED_BOUNDARY;
+            aaaiDest[iz][iy][ix] = WATERSHED_BOUNDARY;
           }
           else {
-            aaafDest[iz][iy][ix] = i_which_basin + 1;
+            aaaiDest[iz][iy][ix] = i_which_basin + 1;
           }
-        } // if (aaafDest[iz_jz][iy_jy][ix_jx] != aaafDest[iz][iy][ix])
-      } // else clause for "if (aaafDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)"
+        } // if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
+      } // else clause for "if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)"
     } // for (int j = 0; j < num_neighbors; j++)
   } //while (q.size() != 0)
 
@@ -3111,7 +3334,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
   for (int iz=0; iz<image_size[2]; iz++)
     for (int iy=0; iy<image_size[1]; iy++)
       for (int ix=0; ix<image_size[0]; ix++)
-        assert(aaafDest[iz][iy][ix] != QUEUED);
+        assert(aaaiDest[iz][iy][ix] != QUEUED);
   #endif //#ifndef NDEBUG
 
 } //Watershed3D()
@@ -4751,7 +4974,7 @@ private:
     Scalar sigmas[3] = {sigma, sigma, sigma};
     radial_decay_lookup =
       GenFilterGenGauss3D(sigmas,
-                          static_cast<float>(2.0),
+                          static_cast<Scalar>(2.0),
                           halfwidth);
 
     AllocDisplacement();
