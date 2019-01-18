@@ -2476,10 +2476,6 @@ _FindExtrema3D(int const image_size[3],
         aaaiExtrema[iz0][iy0][ix0] = QUEUED; //make sure we don't visit it twice
 
 
-        if ((ix0 == 46) && (iy0 == 0) && (iz0 == 0)) // FOR DEBUGGING ONLY...
-          i_xyz[0] = ix0;                            // ...DELETE THIS LATER
-
-
         while (! q_plateau.empty())
         {
           array<int, 3> p = q_plateau.front();
@@ -2527,9 +2523,6 @@ _FindExtrema3D(int const image_size[3],
               ij_xyz[2] = iz_jz;
               q_plateau.push(ij_xyz);
               aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;
-
-              if ((ix_jx==46)&&(iy_jy==1)&&(iz_jz==0)) // FOR DEBUGGING ONLY...
-                ij_xyz[0] = ix_jx;                     // ...DELETE THIS LATER
 
               #ifndef NDEBUG
               assert(visited.find(ij_xyz) == visited.end());
