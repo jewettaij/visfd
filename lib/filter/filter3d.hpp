@@ -2445,6 +2445,9 @@ _FindExtrema3D(int const image_size[3],
         if (aaafMask && aaafMask[iz0][iy0][ix0] == 0.0)
           continue;
 
+        if (aaaiExtrema[iz0][iy0][ix0] != UNDEFINED)
+          continue;
+
         bool is_minima = true;
         bool is_maxima = true;
 
@@ -2462,11 +2465,11 @@ _FindExtrema3D(int const image_size[3],
         // The "q_plateau" variable is a data structure to keep track of which
         // voxels belong to the current plateau.
         queue<array<int, 3> > q_plateau;
-        array<int, 3> i_xyz;
-        i_xyz[0] = ix0; //note:this can be shortened to 1 line with make_array()
-        i_xyz[1] = iy0;
-        i_xyz[2] = iz0;
-        q_plateau.push(i_xyz);
+        array<int, 3> i_xyz0;
+        i_xyz0[0] = ix0;//note:this can be shortened to 1 line with make_array()
+        i_xyz0[1] = iy0;
+        i_xyz0[2] = iz0;
+        q_plateau.push(i_xyz0);
 
         // We also need a reverse lookup table to check whether a given voxel
         // is in the queue (or has already been previously assigned).
@@ -2513,8 +2516,11 @@ _FindExtrema3D(int const image_size[3],
               }
               continue;
             }
-            if ((aaafSource[iz_jz][iy_jy][ix_jx] == aaafSource[iz][iy][ix]) &&
-                (aaaiExtrema[iz_jz][iy_jy][ix_jx] == UNDEFINED)) //don't visit twice
+
+            if (aaaiExtrema[iz_jz][iy_jy][ix_jx] != UNDEFINED) //don't visit twice
+              continue;
+
+            if (aaafSource[iz_jz][iy_jy][ix_jx] == aaafSource[iz][iy][ix])
             {
               // then add this voxel to the q_plateau
               array<int, 3> ij_xyz;
@@ -2529,15 +2535,12 @@ _FindExtrema3D(int const image_size[3],
               #endif
             }
             else {
-              if (aaafMask && (aaafMask[iz+jz][iy+jy][ix+jx] == 0)) {
+              if (aaafSource[iz+jz][iy+jy][ix+jx] < aaafSource[iz][iy][ix])
                 is_minima = false;
+              else if (aaafSource[iz+jz][iy+jy][ix+jx] > aaafSource[iz][iy][ix])
                 is_maxima = false;
-                continue;
-              }
-              if (aaafSource[iz+jz][iy+jy][ix+jx] <= aaafSource[iz][iy][ix])
-                is_minima = false;
-              if (aaafSource[iz+jz][iy+jy][ix+jx] >= aaafSource[iz][iy][ix])
-                is_maxima = false;
+              else
+                assert(false);
             }
           } //for (int j = 0; j < num_neighbors; j++)
         } // while (! q_plateau.empty())
@@ -2593,7 +2596,7 @@ _FindExtrema3D(int const image_size[3],
 
 
         assert(q_plateau.empty());
-        q_plateau.push(i_xyz);
+        q_plateau.push(i_xyz0);
 
 
         while (! q_plateau.empty())
@@ -2626,9 +2629,10 @@ _FindExtrema3D(int const image_size[3],
                 ||
                 (aaafMask && (aaafMask[iz_jz][iy_jy][ix_jx] == 0.0)))
               continue;
-            if (aaaiExtrema[iz_jz][iy_jy][ix_jx] == QUEUED)//don't visit twice
+            if (aaaiExtrema[iz_jz][iy_jy][ix_jx] == QUEUED) //don't visit twice
             {
               assert(aaafSource[iz_jz][iy_jy][ix_jx] == aaafSource[iz][iy][ix]);
+
               // then add this voxel to the q_plateau
               array<int, 3> ij_xyz;
               ij_xyz[0] = ix_jx;
@@ -2637,7 +2641,7 @@ _FindExtrema3D(int const image_size[3],
               q_plateau.push(ij_xyz);
 
               // Commenting out:
-              //assert(! (is_minima && is_maxima));  WRONG
+              //assert(! (is_minima && is_maxima));   <- wrong
               // Actually this is possible.  For example in an image where all
               // the voxels are identical, all voxels are BOTH minima a maxima.
               // This is such a rare, pathelogical case, I don't worry about it.
@@ -3193,9 +3197,9 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     }
   }
 
-  #ifndef NDEBUG
-  set<array<Coordinate, 3> > visited;
-  #endif
+  //#ifndef NDEBUG
+  //set<array<Coordinate, 3> > visited;
+  //#endif
 
   while (! q.empty())
   {
@@ -3238,14 +3242,16 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
         *pReportProgress << " percent complete: " << percentage << endl;
     }
 
-    #ifndef NDEBUG
-    array<Coordinate, 3> ixiyiz;
-    ixiyiz[0] = ix;
-    ixiyiz[1] = iy;
-    ixiyiz[2] = iz;
-    assert(visited.find(ixiyiz) == visited.end());
-    visited.insert(ixiyiz);
-    #endif //#ifndef NDEBUG
+
+    //#ifndef NDEBUG
+    //array<Coordinate, 3> ixiyiz;
+    //ixiyiz[0] = ix;
+    //ixiyiz[1] = iy;
+    //ixiyiz[2] = iz;
+    //assert(visited.find(ixiyiz) == visited.end());
+    //visited.insert(ixiyiz);
+    //#endif //#ifndef NDEBUG
+
 
     // ---------- Meyer (and Beucher's?) inter-pixel flood algorith: ---------
     // Check the voxels that surround voxel (ix,iy,iz)
