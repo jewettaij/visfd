@@ -1999,17 +1999,27 @@ VisualizeBlobs(int const image_size[3], //!< image size
 
 
 
+/// @brief invert a permutation
+template<class T, class Integer>
+void
+invert_permutation(const vector<Integer>& p,
+                   vector<T>& p_inv)
+{
+  for (Integer i = 0; i < p.size(); i++)
+    p_inv[p[i]] = i;
+}
+
+
 
 /// @brief apply permutation in-place
-///
-/// credit: Raymond Chen
-template<class T>
+template<class T, class Integer>
 void
 apply_permutation(vector<T>& v,
-                  vector<size_t>& indices) {
+                  vector<Integer>& indices)
+{
   vector<T> v_copy(v);
-  for (size_t i = 0; i < indices.size(); i++) {
-    size_t j = indices[i];
+  for (Integer i = 0; i < indices.size(); i++) {
+    Integer j = indices[i];
     v[i] = v_copy[j];
   }
 }
@@ -2452,9 +2462,9 @@ _FindExtrema3D(int const image_size[3],
         bool is_maxima = true;
 
 
-        #ifndef NDEBUG
-        set<array<int, 3> > visited;
-        #endif
+        //#ifndef NDEBUG
+        //set<array<int, 3> > visited;
+        //#endif
 
 
         // It's possible that a local minima or maxima consists of more than one
@@ -2479,6 +2489,13 @@ _FindExtrema3D(int const image_size[3],
         aaaiExtrema[iz0][iy0][ix0] = QUEUED; //make sure we don't visit it twice
 
 
+
+        if ((ix0 == 145) && (iy0 == 0) && (iz0 == 0))//for DEBUGGING
+          aaaiExtrema[iz0][iy0][ix0] = QUEUED;       // DELETE THIS LATER
+        if ((ix0 == 63) && (iy0 == 37) && (iz0 == 75))  // for DEBUGGING ONLY
+          aaaiExtrema[iz0][iy0][ix0] = QUEUED;          // DELETE THIS LATER
+
+
         while (! q_plateau.empty())
         {
           array<int, 3> p = q_plateau.front();
@@ -2489,10 +2506,10 @@ _FindExtrema3D(int const image_size[3],
           assert(aaaiExtrema[iz][iy][ix] == QUEUED);
 
 
-          #ifndef NDEBUG
-          assert(visited.find(p) == visited.end());
-          visited.insert(p);
-          #endif
+          //#ifndef NDEBUG
+          //assert(visited.find(p) == visited.end());
+          //visited.insert(p);
+          //#endif
 
 
           for (int j = 0; j < num_neighbors; j++) {
@@ -2517,22 +2534,30 @@ _FindExtrema3D(int const image_size[3],
               continue;
             }
 
-            if (aaaiExtrema[iz_jz][iy_jy][ix_jx] != UNDEFINED) //don't visit twice
-              continue;
+
 
             if (aaafSource[iz_jz][iy_jy][ix_jx] == aaafSource[iz][iy][ix])
             {
-              // then add this voxel to the q_plateau
-              array<int, 3> ij_xyz;
-              ij_xyz[0] = ix_jx;
-              ij_xyz[1] = iy_jy;
-              ij_xyz[2] = iz_jz;
-              q_plateau.push(ij_xyz);
-              aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;
+              if (aaaiExtrema[iz_jz][iy_jy][ix_jx] == UNDEFINED)//don't visit twice
+              {
+                // then add this voxel to the q_plateau
+                array<int, 3> ij_xyz;
+                ij_xyz[0] = ix_jx;
+                ij_xyz[1] = iy_jy;
+                ij_xyz[2] = iz_jz;
+                q_plateau.push(ij_xyz);
+                aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;
 
-              #ifndef NDEBUG
-              assert(visited.find(ij_xyz) == visited.end());
-              #endif
+                
+                if ((ix_jx == 145) && (iy_jy == 0) && (iz_jz == 0))//for DEBUGGING
+                  aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;          // DELETE THIS LATER
+                if ((ix_jx == 63) && (iy_jy == 36) && (iz_jz == 74))//for DEBUGGING
+                  aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;          // DELETE THIS LATER
+
+                //#ifndef NDEBUG
+                //assert(visited.find(ij_xyz) == visited.end());
+                //#endif
+              }
             }
             else {
               if (aaafSource[iz+jz][iy+jy][ix+jx] < aaafSource[iz][iy][ix])
@@ -2576,9 +2601,9 @@ _FindExtrema3D(int const image_size[3],
 
 
 
-        #ifndef NDEBUG
-        visited.clear();
-        #endif
+        //#ifndef NDEBUG
+        //visited.clear();
+        //#endif
 
 
 
@@ -2608,10 +2633,10 @@ _FindExtrema3D(int const image_size[3],
           int iz = p[2];
           assert(aaaiExtrema[iz][iy][ix] != QUEUED);
 
-          #ifndef NDEBUG
-          assert(visited.find(p) == visited.end());
-          visited.insert(p);
-          #endif
+          //#ifndef NDEBUG
+          //assert(visited.find(p) == visited.end());
+          //visited.insert(p);
+          //#endif
 
 
           for (int j = 0; j < num_neighbors; j++) {
@@ -2685,11 +2710,13 @@ _FindExtrema3D(int const image_size[3],
       apply_permutation(*pv_minima_indices, permutation);
       apply_permutation(*pv_minima_scores, permutation);
       // Optional: The minima in the image are not in sorted order either. Fix?
+      vector<Integer> perm_inv;
+      invert_permutation(permutation, perm_inv);
       for (int iz = 0; iz < image_size[2]; iz++)
         for (int iy = 0; iy < image_size[1]; iy++)
           for (int ix = 0; ix < image_size[0]; ix++)
             if (aaaiExtrema[iz][iy][ix] < 0)
-              aaaiExtrema[iz][iy][ix]=permutation[(-aaaiExtrema[iz][iy][ix])-1];
+              aaaiExtrema[iz][iy][ix]=perm_inv[(-aaaiExtrema[iz][iy][ix])-1];
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
     }
@@ -2720,11 +2747,13 @@ _FindExtrema3D(int const image_size[3],
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
       // Optional: The maxima in the image are not in sorted order either. Fix?
+      vector<Integer> perm_inv;
+      invert_permutation(permutation, perm_inv);
       for (int iz = 0; iz < image_size[2]; iz++)
         for (int iy = 0; iy < image_size[1]; iy++)
           for (int ix = 0; ix < image_size[0]; ix++)
             if (aaaiExtrema[iz][iy][ix] > 0)
-              aaaiExtrema[iz][iy][ix] = permutation[aaaiExtrema[iz][iy][ix]-1];
+              aaaiExtrema[iz][iy][ix] = perm_inv[aaaiExtrema[iz][iy][ix]-1];
     }
   }
 
