@@ -2016,11 +2016,11 @@ invert_permutation(const vector<Integer>& p,
 template<class T, class Integer>
 void
 apply_permutation(vector<T>& v,
-                  vector<Integer>& indices)
+                  vector<Integer>& p)
 {
   vector<T> v_copy(v);
-  for (Integer i = 0; i < indices.size(); i++) {
-    Integer j = indices[i];
+  for (Integer i = 0; i < p.size(); i++) {
+    Integer j = p[i];
     v[i] = v_copy[j];
   }
 }
@@ -2490,13 +2490,6 @@ _FindExtrema3D(int const image_size[3],
         aaaiExtrema[iz0][iy0][ix0] = QUEUED; //make sure we don't visit it twice
 
 
-
-        if ((ix0 == 145) && (iy0 == 0) && (iz0 == 0))//for DEBUGGING
-          aaaiExtrema[iz0][iy0][ix0] = QUEUED;       // DELETE THIS LATER
-        if ((ix0 == 63) && (iy0 == 37) && (iz0 == 75))  // for DEBUGGING ONLY
-          aaaiExtrema[iz0][iy0][ix0] = QUEUED;          // DELETE THIS LATER
-
-
         while (! q_plateau.empty())
         {
           array<int, 3> p = q_plateau.front();
@@ -2548,12 +2541,6 @@ _FindExtrema3D(int const image_size[3],
                 ij_xyz[2] = iz_jz;
                 q_plateau.push(ij_xyz);
                 aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;
-
-                
-                if ((ix_jx == 145) && (iy_jy == 0) && (iz_jz == 0))//for DEBUGGING
-                  aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;          // DELETE THIS LATER
-                if ((ix_jx == 63) && (iy_jy == 36) && (iz_jz == 74))//for DEBUGGING
-                  aaaiExtrema[iz_jz][iy_jy][ix_jx] = QUEUED;          // DELETE THIS LATER
 
                 //#ifndef NDEBUG
                 //assert(visited.find(ij_xyz) == visited.end());
