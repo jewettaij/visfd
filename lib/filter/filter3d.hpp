@@ -2124,11 +2124,11 @@ typedef enum eSortBlobCriteria {
 ///   their diameters (instead of their corresponding "sigma" values).
 template<class Scalar>
 void
-DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds,
-                        vector<Scalar>& blob_diameters, 
-                        vector<Scalar>& blob_scores,
-                        SortBlobCriteria sort_blob_criteria, //!< priority to high or low scoring blobs?
-                        Scalar min_radial_separation_ratio, //!< discard blobs too close
+DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
+                        vector<Scalar>& blob_diameters,  //!< diameger of each blob
+                        vector<Scalar>& blob_scores, //!< priority of each blob
+                        SortBlobCriteria sort_blob_criteria, //!< give priority to high or low scoring blobs?
+                        Scalar min_radial_separation_ratio, //!< discard blobs if closer than this (ratio of sum of radii)
                         Scalar max_volume_overlap_large, //!< discard blobs which overlap too much with the large blob
                         Scalar max_volume_overlap_small, //!< discard blobs which overlap too much with the small blob
                         ostream *pReportProgress = NULL, //!< report progress back to the user?
@@ -2335,31 +2335,35 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds,
 /// If the aaafMask[][][] is not equal to NULL, then local minima and maxima
 /// will be ignored if the corresponding entry in aaafMask[][][] equals 0.
 
-template<class Scalar, class Integer>
+template<class Scalar, class IntegerIndex, class Integer>
 static void
-_FindExtrema3D(int const image_size[3],
-               Scalar const *const *const *aaafSource,
-               Scalar const *const *const *aaafMask,
-               vector<Integer> *pv_minima_indices,
-               vector<Integer> *pv_maxima_indices,
-               vector<Scalar> *pv_minima_scores,
-               vector<Scalar> *pv_maxima_scores,
+_FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
+               Scalar const *const *const *aaafSource, //!< image array aaafSource[iz][iy][ix]
+               Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+               vector<IntegerIndex> *pv_minima_indices, //!< a list of integers uniquely identifying the location of each minima
+               vector<IntegerIndex> *pv_maxima_indices, //!< a list of integers uniquely identifying the location of each maxima
+               vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafSource[iz][iy][ix] values here (if not NULL)
+               vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafSource[iz][iy][ix] values here (if not NULL)
+               vector<Integer> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
+               vector<Integer> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
                Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  // Ignore minima which are not sufficiently low
                Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
                int connectivity=3,                      //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-               bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
-               Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
-               ostream *pReportProgress=NULL)  // print progress to the user?
+               bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+               Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
+               ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   assert(aaafSource);
 
   bool find_minima = (pv_minima_indices != NULL);
   bool find_maxima = (pv_maxima_indices != NULL);
 
-  vector<Integer> minima_indices; //store minima indices here
-  vector<Integer> maxima_indices; //store maxima indices here
-  vector<Scalar> minima_scores;
-  vector<Scalar> maxima_scores;
+  vector<IntegerIndex> minima_indices; //store minima indices here
+  vector<IntegerIndex> maxima_indices; //store maxima indices here
+  vector<Scalar>  minima_scores;  //store the brightness of the minima here
+  vector<Scalar>  maxima_scores;  //store the brightness of the maxima here
+  vector<Integer> minima_nvoxels; //store number of voxels in each minima here
+  vector<Integer> maxima_nvoxels; //store number of voxels in each maxima here
   if (pv_minima_indices == NULL)
     pv_minima_indices = &minima_indices;
   if (pv_maxima_indices == NULL)
@@ -2368,6 +2372,10 @@ _FindExtrema3D(int const image_size[3],
     pv_minima_scores = &minima_scores;
   if (pv_maxima_scores == NULL)
     pv_maxima_scores = &maxima_scores;
+  if (pv_minima_nvoxels == NULL)
+    pv_minima_nvoxels = &minima_nvoxels;
+  if (pv_maxima_nvoxels == NULL)
+    pv_maxima_nvoxels = &maxima_nvoxels;
 
 
   ptrdiff_t ***aaaiExtrema; //which voxels belong to this plateau?
@@ -2481,6 +2489,7 @@ _FindExtrema3D(int const image_size[3],
         i_xyz0[1] = iy0;
         i_xyz0[2] = iz0;
         q_plateau.push(i_xyz0);
+        size_t n_plateau = 0; // the number of voxels in this plateau
 
         // We also need a reverse lookup table to check whether a given voxel
         // is in the queue (or has already been previously assigned).
@@ -2489,7 +2498,6 @@ _FindExtrema3D(int const image_size[3],
         // We need to come up with an impossible value for QUEUED:
         aaaiExtrema[iz0][iy0][ix0] = QUEUED; //make sure we don't visit it twice
 
-
         while (! q_plateau.empty())
         {
           array<int, 3> p = q_plateau.front();
@@ -2497,6 +2505,7 @@ _FindExtrema3D(int const image_size[3],
           int ix = p[0];
           int iy = p[1];
           int iz = p[2];
+          n_plateau++;
           assert(aaaiExtrema[iz][iy][ix] == QUEUED);
 
 
@@ -2559,7 +2568,7 @@ _FindExtrema3D(int const image_size[3],
         } // while (! q_plateau.empty())
 
 
-        // If thix voxel is either a minima or a maxima, add it to the list.
+        // If this voxel is either a minima or a maxima, add it to the list.
         if (is_minima && find_minima) {
           if (((! aaafMask) || (aaafMask[iz0][iy0][ix0] != 0)) &&
               ((aaafSource[iz0][iy0][ix0] <= minima_threshold)
@@ -2567,10 +2576,11 @@ _FindExtrema3D(int const image_size[3],
                ))
           {
             // convert from a 3D location (ix,iy,iz) to a 1D index ("index")
-            Integer index = ix0 + image_size[0]*(iy0 + image_size[1]*iz0);
+            IntegerIndex index = ix0 + image_size[0]*(iy0 + image_size[1]*iz0);
             //minima_crds.push_back(ixiyiz);
             pv_minima_indices->push_back(index);
             pv_minima_scores->push_back(aaafSource[iz0][iy0][ix0]);
+            pv_minima_nvoxels->push_back(n_plateau);
           }
         }
         if (is_maxima && find_maxima) {
@@ -2580,10 +2590,11 @@ _FindExtrema3D(int const image_size[3],
                ))
           {
             // convert from a 3D location (ix,iy,iz) to a 1D index ("index")
-            Integer index = ix0 + image_size[0]*(iy0 + image_size[1]*iz0);
+            IntegerIndex index = ix0 + image_size[0]*(iy0 + image_size[1]*iz0);
             //maxima_crds.push_back(ixiyiz);
             pv_maxima_indices->push_back(index);
             pv_maxima_scores->push_back(aaafSource[iz0][iy0][ix0]);
+            pv_maxima_nvoxels->push_back(n_plateau);
           }
         }
 
@@ -2672,7 +2683,7 @@ _FindExtrema3D(int const image_size[3],
 
 
   // Sort the minima and maxima in increasing and decreasing order, respectively
-  Integer n_minima, n_maxima;
+  IntegerIndex n_minima, n_maxima;
   bool descending_order;
 
   if (pv_minima_indices) {
@@ -2680,8 +2691,8 @@ _FindExtrema3D(int const image_size[3],
     n_minima = pv_minima_indices->size();
     if (n_minima > 0) {
       descending_order = false;
-      vector<tuple<Scalar, Integer> > score_index(n_minima);
-      for (Integer i = 0; i < n_minima; i++)
+      vector<tuple<Scalar, IntegerIndex> > score_index(n_minima);
+      for (IntegerIndex i = 0; i < n_minima; i++)
         score_index[i] = make_tuple((*pv_minima_scores)[i], i);
       if (pReportProgress)
         *pReportProgress << "-- Sorting minima according to their scores... ";
@@ -2691,14 +2702,15 @@ _FindExtrema3D(int const image_size[3],
       else
         sort(score_index.begin(),
              score_index.end());
-      vector<Integer> permutation(n_minima);
-      for (Integer i = 0; i < score_index.size(); i++)
+      vector<IntegerIndex> permutation(n_minima);
+      for (IntegerIndex i = 0; i < score_index.size(); i++)
         permutation[i] = get<1>(score_index[i]);
       score_index.clear();
       apply_permutation(*pv_minima_indices, permutation);
       apply_permutation(*pv_minima_scores, permutation);
+      apply_permutation(*pv_minima_nvoxels, permutation);
       // Optional: The minima in the image are not in sorted order either. Fix?
-      vector<Integer> perm_inv;
+      vector<IntegerIndex> perm_inv;
       invert_permutation(permutation, perm_inv);
       for (int iz = 0; iz < image_size[2]; iz++)
         for (int iy = 0; iy < image_size[1]; iy++)
@@ -2715,8 +2727,8 @@ _FindExtrema3D(int const image_size[3],
     n_maxima = pv_maxima_indices->size();
     if (n_maxima > 0) {
       descending_order = true;
-      vector<tuple<Scalar, Integer> > score_index(n_maxima);
-      for (Integer i = 0; i < n_maxima; i++)
+      vector<tuple<Scalar, IntegerIndex> > score_index(n_maxima);
+      for (IntegerIndex i = 0; i < n_maxima; i++)
         score_index[i] = make_tuple((*pv_maxima_scores)[i], i);
       if (pReportProgress)
         *pReportProgress << "-- Sorting maxima according to their scores... ";
@@ -2726,16 +2738,17 @@ _FindExtrema3D(int const image_size[3],
       else
         sort(score_index.begin(),
              score_index.end());
-      vector<Integer> permutation(n_maxima);
-      for (Integer i = 0; i < score_index.size(); i++)
+      vector<IntegerIndex> permutation(n_maxima);
+      for (IntegerIndex i = 0; i < score_index.size(); i++)
         permutation[i] = get<1>(score_index[i]);
       score_index.clear();
       apply_permutation(*pv_maxima_indices, permutation);
       apply_permutation(*pv_maxima_scores, permutation);
+      apply_permutation(*pv_maxima_nvoxels, permutation);
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
       // Optional: The maxima in the image are not in sorted order either. Fix?
-      vector<Integer> perm_inv;
+      vector<IntegerIndex> perm_inv;
       invert_permutation(permutation, perm_inv);
       for (int iz = 0; iz < image_size[2]; iz++)
         for (int iy = 0; iy < image_size[1]; iy++)
@@ -2774,18 +2787,19 @@ _FindExtrema3D(int const image_size[3],
 
 
 
-template<class Scalar, class Integer>
+template<class Scalar, class IntegerIndex, class Integer>
 static void
-_FindExtrema3D(int const image_size[3],
-               Scalar const *const *const *aaafI,
-               Scalar const *const *const *aaafMask,
-               vector<Integer> &extrema_indices,
-               vector<Scalar> &extrema_scores,
-               bool seek_minima=true,    // search for minima or maxima?
+_FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
+               Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
+               Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+               vector<IntegerIndex> &extrema_indices, //!< a list of integers uniquely identifying the location of each minima or maxima
+               vector<Scalar> &extrema_scores, //!< corresponding voxel brightness at that location
+               vector<Integer> &extrema_nvoxels, //!< how many voxels belong to each minima or maxima?
+               bool seek_minima=true,    //!< search for minima or maxima?
                Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
                int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-               bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
-               Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
+               bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+               Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
                ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
@@ -2793,6 +2807,7 @@ _FindExtrema3D(int const image_size[3],
   // to a template expression: Template argument deduction/substitution fails.
   // We need to re-cast "NULL" as a pointer with the correct type.
   // One way to do that is to define these new versions of NULL:
+  vector<IntegerIndex> *NULL_vI = NULL;  
   vector<Integer> *NULL_vi = NULL;  
   vector<Scalar> *NULL_vf = NULL;  
   if (seek_minima) {
@@ -2800,9 +2815,11 @@ _FindExtrema3D(int const image_size[3],
                    aaafI,
                    aaafMask,
                    &extrema_indices, // store maxima locations here
-                   NULL_vi, // <-- don't search for maxima_crds,
+                   NULL_vI, // <-- don't search for maxima
                    &extrema_scores, // store minima values here
-                   NULL_vf, // <-- don't search for maxima_scores,
+                   NULL_vf, // <-- don't search for maxima
+                   &extrema_nvoxels, // store number of voxels in each minima
+                   NULL_vi, // <-- don't search for maxima
                    threshold,
                    -std::numeric_limits<Scalar>::infinity(),
                    connectivity,
@@ -2816,10 +2833,12 @@ _FindExtrema3D(int const image_size[3],
     _FindExtrema3D(image_size,
                    aaafI,
                    aaafMask,
-                   NULL_vi, // <-- don't search for minima_crds,
+                   NULL_vI, // <-- don't search for minima_crds,
                    &extrema_indices, // store maxima locations here
                    NULL_vf, // <-- don't search for minima_scores,
                    &extrema_scores, // store maxima values here
+                   NULL_vi, // <-- don't search for minima
+                   &extrema_nvoxels, // store number of voxels in each maxima
                    std::numeric_limits<Scalar>::infinity(),
                    threshold,
                    connectivity,
@@ -2852,7 +2871,7 @@ _FindExtrema3D(int const image_size[3],
 ///          are not as trustworthy since some of the 26 neighboring voxels
 ///          will not be available for comparison.
 
-template<class Scalar, class Coordinate>
+template<class Scalar, class Coordinate, class Integer>
 void
 FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
               Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
@@ -2861,11 +2880,13 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
               vector<array<Coordinate, 3> > *pv_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
               vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
               vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
+              vector<Integer> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
+              vector<Integer> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
               Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
               Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-              bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
-              Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
+              bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+              Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
               ostream *pReportProgress=NULL   //!< optional: print progress to the user?
                    )
 {
@@ -2896,6 +2917,8 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
                  pv_maxima_indices,
                  pv_minima_scores,
                  pv_maxima_scores,
+                 pv_minima_nvoxels,
+                 pv_maxima_nvoxels,
                  minima_threshold,
                  maxima_threshold,
                  connectivity,
@@ -2949,18 +2972,19 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
 ///         That version is faster than invoking this function twice.)
 ///         See the description of that version for details.
 
-template<class Scalar, class Coordinate>
+template<class Scalar, class Coordinate, class Integer>
 void
-FindExtrema3D(int const image_size[3],
-              Scalar const *const *const *aaafI,
-              Scalar const *const *const *aaafMask,
-              vector<array<Coordinate, 3> > &extrema_crds,
-              vector<Scalar> &extrema_scores,
-              bool seek_minima=true,    // search for minima or maxima?
+FindExtrema3D(int const image_size[3],            //!< size of input image array
+              Scalar const *const *const *aaafI,   //!< input image array
+              Scalar const *const *const *aaafMask, //!< if not NULL then zero entries indicate which voxels to ignore
+              vector<array<Coordinate, 3> > &extrema_crds, //!< store the location of each extrema
+              vector<Scalar> &extrema_scores, //!< store the brightness of each extrema
+              vector<Integer> &extrema_nvoxels, //!< store number of voxels in each extrema (usually 1)
+              bool seek_minima=true,    //!< search for minima or maxima?
               Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-              bool allow_borders=true,  // if true, plateaus that touch the image border (or mask boundary) are valid extrema
-              Scalar ***aaafDest=NULL,  // optional: create an image showing where the extrema are?
+              bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+              Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
               ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
@@ -2970,15 +2994,18 @@ FindExtrema3D(int const image_size[3],
   // One way to do that is to define these new versions of NULL:
   vector<array<Coordinate, 3> > *NULL_vai3 = NULL;  
   vector<Scalar> *NULL_vf = NULL;  
+  vector<Integer> *NULL_vi = NULL;  
 
   if (seek_minima) {
     FindExtrema3D(image_size,
                   aaafI,
                   aaafMask,
-                  &extrema_crds,   // store minima locations here
-                  NULL_vai3,       // <-- don't search for maxima_crds,
-                  &extrema_scores, // store minima values here
-                  NULL_vf,         // <-- don't search for maxima_scores,
+                  &extrema_crds,    // store minima locations here
+                  NULL_vai3,        // <-- don't search for maxima
+                  &extrema_scores,  // store minima values here
+                  NULL_vf,          // <-- don't search for maxima
+                  &extrema_nvoxels, // store number of voxels in each minima
+                  NULL_vi,          // <-- don't search for maxima
                   threshold,
                   -std::numeric_limits<Scalar>::infinity(),
                   connectivity,
@@ -2992,10 +3019,12 @@ FindExtrema3D(int const image_size[3],
     FindExtrema3D(image_size,
                   aaafI,
                   aaafMask,
-                  NULL_vai3,       // <-- don't search for minima_crds
-                  &extrema_crds,   // store maxima locations here
-                  NULL_vf,         // don't search for minima_scores
-                  &extrema_scores, // <-- store maxima values here
+                  NULL_vai3,        // <-- don't search for minima
+                  &extrema_crds,    // store maxima locations here
+                  NULL_vf,          // <-- don't search for minima
+                  &extrema_scores,  // store maxima values here
+                  NULL_vi,          // <-- don't search for minima
+                  &extrema_nvoxels, // store number of voxels in each maxima
                   std::numeric_limits<Scalar>::infinity(),
                   threshold,
                   connectivity,
@@ -3018,12 +3047,12 @@ FindExtrema3D(int const image_size[3],
 ///         the image, indicating the basin to which the voxel belongs)
 ///      2) 0
 ///         (if show_boundaries == true, and if
-////         the voxel is located at the boundary between 2 or more basins)
+///          the voxel is located at the boundary between 2 or more basins)
 ///      3) N_BASINS + 1
 ///         (when the voxel's intensity passes the threshold set by the caller)
 ///      4) left unmodified (if aaafMask!=NULL and aaafMask[iz][iy][ix]==0)
 /// @note  If the "halt_threshold" argument is not supplied by the caller,
-//         then std::numeric_limits::infinity is used by default.
+///         then std::numeric_limits::infinity is used by default.
 /// @note  If aaafMask!=NULL then voxels in aaafDest are not modified if
 ///        their corresponding entry in aaafMask equals 0.
 
@@ -3101,12 +3130,16 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
   if (pv_extrema_scores == NULL)
     pv_extrema_scores = &extrema_scores;
 
+  vector<size_t> extrema_nvoxels;
+  vector<size_t> *pv_extrema_nvoxels = &extrema_nvoxels;
+
   // Find all the local minima (or maxima?) in the image.
   FindExtrema3D(image_size,
                 aaafSource,
                 aaafMask,
                 *pv_extrema_locations,
                 *pv_extrema_scores,
+                *pv_extrema_nvoxels,
                 start_from_minima, //<-- minima or maxima?
                 halt_threshold,
                 connectivity,

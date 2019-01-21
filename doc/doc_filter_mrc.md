@@ -272,38 +272,35 @@ or
 The **-find-minima** and **-find-maxima** arguments will
 create a file containing the locations of the local minima or maxima
 of the voxel brightnesses within the image, respectively.
+A "minima" is defined as one or more neighboring voxels
+of identical brightness, surrounded by neighbors of higher brightness.
+By default, all 26 neighboring voxels are counted as neighbors, 
+however this can be overridden using the **-neighbor-connectivity** argument.
+(See below.)
 
-The file is a 5-column ascii text file.
+This will generate a text file indicating the location of the minima.
+This file is a 5-column ascii text file.
+Each file is a 5-column ascii text file with the following format:
+```
+x1 y1 z1 num_voxels1 brightness1
+x2 y2 z2 num_voxels2 brightness2
+ :  :  :   :     :
+xM yM zM num_voxelsM brightnessM
+```
 The x,y,z coordinates of each minima or maxima are in the first 3 columns,
-followed by the "diameter" of the minima (which is "0" by default), and finally
+followed by the number of voxels in the maxima or minimaa (which is usually 1), and finally
 it's "score" (which is the brightness of the voxel at that location).
-*(This format is identical to the format used by the
+*(This format is nearly identical to the format used by the
   "-blob",  "-blobr",  "-blobd" and "-spheres" arguments.)*
-These arguments are typically used together with the following arguments:
-```
-  -minima-threshold   threshold
-```
-or
-```
-  -maxima-threshold   threshold
-```
-This allows users to discard poor scoring minima (or maxima),
-minima whose "scores" do not fall below (or above) "threshold".
+When a minima or maxima contains multiple voxels of identical brightness,
+the position of one of the voxels among them is chosen arbitrarily.
+You can use the "**-out filename.rec**" to create 
+an image showing which voxels belong to each minima or maxima.
+(In that image, the voxel brightness will be an integer indicating 
+ the minima or maxima to which the voxel belongs, if any, starting at 1.  
+ When both minima and maxima are
+ displayed, the minima are represented by negative integers.)
 
-It is also useful to discard minima which are too close together:
-```
-  -sphere-radius    radius
-```
-and
-```
-  -blobr-separation  ratio
-```
-The "**-sphere-radius** argument allows you to assign a radius to each minima
-(or maxima).  If a pair of minima (or maxima) lie within the sum of their
-radii (*2\*radius*) then the poorer scoring minima will be discarded.
-(The "*radius*" will also be written to the 4th column of the "filename" file.
-*If the "-blobr-separation ratio" argument is supplied, then minima or maxima
- will be discarded if the distance between them falls below 2\*radius\*ratio.*)
 
 *Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
 are considered by default.
@@ -316,25 +313,32 @@ of the image (or on the boundary of the mask region), are considered.
 To ignore these extrema (ie, to consider only voxels which are surrounded
 by other voxels) use the "**-ignore-boundary-extrema-**" argument.
 
-**Note: This only detects point-like local minima and maxima.**
-To be considered a "local minima", all 28 adjacent voxels must have
-intensities which are brighter than the central voxel.
-Local minima containing more than one voxel of the same brightness will
-be ignored.
-This means an image containing a region of identically bright voxels
-will generate a huge number of "local minima".
+The "**-find-minima**" and "**-find-maxima**" arguments 
+are sometimes used together with the following arguments:
+```
+  -minima-threshold   threshold
+```
+or
+```
+  -maxima-threshold   threshold
+```
+This allows users to discard poor scoring minima (or maxima),
+minima whose "scores" do not fall below (or above) "threshold".
 
-***BUG WARNING:***
-         *Non-point-like local minima or maxima are not currently detected.
-          (Such extrema consist of multiple adjacent voxels
-           of identical brightness.)
-          This is a bug.
-          This feature was intended to be applied to noisy microscope images
-          (having 32bit depth) which have already been processed using
-          Gaussian blurring, Tensor-voting, or other kinds of filters.
-          For these images, adjacent voxels of identical brightness
-          are very unlikely.
-          This bug will get fixed eventually.*
+It may be useful to discard minima which are too close together:
+```
+  -sphere-radius    radius
+```
+and
+```
+  -blobr-separation  ratio
+```
+The "**-sphere-radius** argument allows you to assign a radius to each minima
+(or maxima).  When used together with "**-blobr-separation**", it means that
+if a pair of minima (or maxima) lie within the sum of their
+radii times ratio (*2\*radius\*ratio*)
+then the poorer scoring minima will be discarded.
+
 
 
 

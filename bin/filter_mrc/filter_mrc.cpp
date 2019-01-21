@@ -33,8 +33,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc.cpp");
-string g_version_string("0.12.5");
-string g_date_string("2018-1-20");
+string g_version_string("0.12.6");
+string g_date_string("2018-1-21");
 
 
 
@@ -997,8 +997,20 @@ HandleExtrema(Settings settings,
               MrcSimple &mask,
               float voxel_width[3])
 {
+  assert(tomo_in.aaafI);
   //hopefully the next line is unnecessary. (it should already have been done)
   tomo_in.FindMinMaxMean(); //update the min, max, mean header params
+
+  // optional: zero out the output image in case the user wants us to
+  //           create an image showing where the voxels are
+  assert(tomo_out.header.nvoxels[0] = tomo_in.header.nvoxels[0]);
+  assert(tomo_out.header.nvoxels[1] = tomo_in.header.nvoxels[1]);
+  assert(tomo_out.header.nvoxels[2] = tomo_in.header.nvoxels[2]);
+  assert(tomo_out.aaafI);
+  for (int iz = 0; iz < tomo_out.header.nvoxels[2]; iz++)
+    for (int iy = 0; iy < tomo_out.header.nvoxels[1]; iy++)
+      for (int ix = 0; ix < tomo_out.header.nvoxels[0]; ix++)
+        tomo_out.aaafI[iz][iy][ix] = 0.0;
 
   //default values disable the thresholds:
   // REMOVE THIS CRUFT:
@@ -1010,23 +1022,28 @@ HandleExtrema(Settings settings,
   
   vector<array<float, 3> > minima_crds_voxels;
   vector<array<float, 3> > maxima_crds_voxels;
-
   vector<float> minima_scores;
   vector<float> maxima_scores;
-
+  vector<size_t> minima_nvoxels;
+  vector<size_t> maxima_nvoxels;
   vector<array<float, 3> > *pv_minima_crds_voxels = NULL;
   vector<array<float, 3> > *pv_maxima_crds_voxels = NULL;
   vector<float> *pv_minima_scores = NULL;
   vector<float> *pv_maxima_scores = NULL;
+  vector<size_t> *pv_minima_nvoxels = NULL;
+  vector<size_t> *pv_maxima_nvoxels = NULL;
+
 
   if (settings.find_minima) {
     pv_minima_crds_voxels = &minima_crds_voxels;
     pv_minima_scores = &minima_scores;
+    pv_minima_nvoxels = &minima_nvoxels;
   }
 
   if (settings.find_maxima) {
     pv_maxima_crds_voxels = &maxima_crds_voxels;
     pv_maxima_scores = &maxima_scores;
+    pv_maxima_nvoxels = &maxima_nvoxels;
   }
 
   FindExtrema3D(tomo_in.header.nvoxels,
@@ -1036,6 +1053,8 @@ HandleExtrema(Settings settings,
                 pv_maxima_crds_voxels,
                 pv_minima_scores,
                 pv_maxima_scores,
+                pv_minima_nvoxels,
+                pv_maxima_nvoxels,
                 minima_threshold,
                 maxima_threshold,
                 settings.neighbor_connectivity,
@@ -1103,7 +1122,8 @@ HandleExtrema(Settings settings,
       minima_file << minima_crds_voxels[i][0] * voxel_width[0] << " "
                   << minima_crds_voxels[i][1] * voxel_width[1] << " "
                   << minima_crds_voxels[i][2] * voxel_width[2] << " "
-                  << minima_diameters[i] << " "
+                  //<< minima_diameters[i] << " "
+                  << minima_nvoxels[i] << " "
                   << minima_scores[i] << "\n";
   }
   if ((maxima_crds_voxels.size() > 0) && settings.find_maxima) {
@@ -1115,7 +1135,8 @@ HandleExtrema(Settings settings,
       coords_file << maxima_crds_voxels[i][0] * voxel_width[0] << " "
                   << maxima_crds_voxels[i][1] * voxel_width[1] << " "
                   << maxima_crds_voxels[i][2] * voxel_width[2] << " "
-                  << maxima_diameters[i] << " "
+                  //<< maxima_diameters[i] << " "
+                  << maxima_nvoxels[i] << " "
                   << maxima_scores[i] << "\n";
   }
 } //HandleExtrema()
