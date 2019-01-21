@@ -2005,6 +2005,7 @@ void
 invert_permutation(const vector<Integer>& p,
                    vector<T>& p_inv)
 {
+  p_inv.resize(p.size());
   for (Integer i = 0; i < p.size(); i++)
     p_inv[p[i]] = i;
 }
@@ -2716,7 +2717,7 @@ _FindExtrema3D(int const image_size[3],
         for (int iy = 0; iy < image_size[1]; iy++)
           for (int ix = 0; ix < image_size[0]; ix++)
             if (aaaiExtrema[iz][iy][ix] < 0)
-              aaaiExtrema[iz][iy][ix]=perm_inv[(-aaaiExtrema[iz][iy][ix])-1];
+              aaaiExtrema[iz][iy][ix]=-perm_inv[(-aaaiExtrema[iz][iy][ix])-1]-1;
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
     }
@@ -2753,7 +2754,7 @@ _FindExtrema3D(int const image_size[3],
         for (int iy = 0; iy < image_size[1]; iy++)
           for (int ix = 0; ix < image_size[0]; ix++)
             if (aaaiExtrema[iz][iy][ix] > 0)
-              aaaiExtrema[iz][iy][ix] = perm_inv[aaaiExtrema[iz][iy][ix]-1];
+              aaaiExtrema[iz][iy][ix] = perm_inv[aaaiExtrema[iz][iy][ix]-1]+1;
     }
   }
 
