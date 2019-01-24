@@ -480,13 +480,13 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
                     ostream *pReportEquation=NULL//!< optional:report equation used to the user
                     )
 {
-  Scalar window_threshold = 1.0;
+  Scalar truncate_threshold = 1.0;
   for (int d=0; d<3; d++) {
     Scalar h = ((width[d]>0)
                  ? exp(-pow(truncate_halfwidth[d]/width[d], m_exp))
                  : 1.0);
-    if (h < window_threshold)
-      window_threshold = h;
+    if (h < truncate_threshold)
+      truncate_threshold = h;
   }
   Filter3D<Scalar, int> filter(truncate_halfwidth);
   Scalar total = 0;
@@ -495,7 +495,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
       for (int ix=-filter.halfwidth[0]; ix<=filter.halfwidth[0]; ix++) {
         Scalar r = sqrt(SQR(ix/width[0])+SQR(iy/width[1])+SQR(iz/width[2]));
         Scalar h = ((r>0) ? exp(-pow(r, m_exp)) : 1.0);
-        if (std::abs(h) < window_threshold)
+        if (std::abs(h) < truncate_threshold)
           h = 0.0; //This eliminates corner entries which fall below threshold
                    //(and eliminates anisotropic artifacts due to these corners)
                    //There's no reason to keep any entries less than min value.
@@ -514,7 +514,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 
         //FOR DEBUGGING REMOVE EVENTUALLY:
         if (pReportEquation)
-          *pReportEquation << "GenGauss3D:" //<< window_threshold
+          *pReportEquation << "GenGauss3D:" //<< truncate_threshold
                            << " aaafH["<<iz<<"]["<<iy<<"]["<<ix<<"] = "
                            << filter.aaafH[iz][iy][ix] << endl;
       }
@@ -3394,6 +3394,265 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 
 
 
+/// @brief Calculate the fluctuations in intensity around every voxel lying in
+///        a Gaussian-weighted ellipsoidal volume with half-width along x,y,z
+///        given by sigma[].  (You can approximate a uniform sphere by setting
+///        all entries in sigma[] equal to eachother, and by setting
+///        template_background_exponent argument to a large number.)
+///        Voxels outside the truncation window are not considered.
+///        The width of the truncation window is σ*filter_truncate_ratio.
+///        If a non-NULL aaafMask argument is supplied, then voxels from
+///        aaafSource will be ignored if aaafMask[iz][iy][ix] is zero
+///        (and the resulting filtered output will be normalized accordingly
+///         unless the "normalize" argument is set to false).
+/// @note  Generalized Gaussians can be computed by setting
+///         template_background_exponent to a number which is != 2
+///        (Setting it to a high value, for example, will approximate what
+///         the intensity fluctuations would be within a (uniformly weighted)
+///         spherical volume of radius=sigma.)  This will slow the calculation.
+
+template<class Scalar, class Integer>
+void
+LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z directions
+                  Scalar const *const *const *aaafSource, //!< original image
+                  Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
+                  Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+                  Scalar sigma[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
+                  Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
+                  Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
+                  bool normalize = true, //!< normalize the result?
+                  ostream *pReportProgress = NULL //!< report progress to the user?
+                  )
+{
+  // Filter weights, w_i:
+  Filter3D<Scalar, int>
+    w = GenFilterGenGauss3D(sigma,
+                            template_background_exponent,
+                            //template_profile.halfwidth);
+                            filter_truncate_ratio,
+                            static_cast<Scalar*>(NULL),
+                            static_cast<ostream*>(NULL));
+  // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
+  // That's not what we want for the weights, w_i:
+  // The weights w_i should be 1 in the viscinity we care about, and 0 outside
+  // So, we can undo this normalization by dividing all the w_i weights
+  // by their maximum value max(w_i)    (at the central peak)
+  // This will mean the maximum w_i is 1, and the others decay to 0, as we want
+  Scalar wpeak = w.aaafH[0][0][0];
+  w.MultiplyScalar(1.0 / wpeak);
+  Scalar neighborhood_nvoxels = 1.0 / wpeak;
+  // wpeak = (2*π*σ^2)^(-3/2) = height of a 3D Gaussian distribution of width σ.
+  // = 1 / integral of an unnormalized 3D Gaussian,exp(-0.5*(x^2+y^2+z^2)/(σ^2))
+
+
+  if (pReportProgress)
+    *pReportProgress << " ------ Calculating the average of nearby voxels: ------\n";
+
+
+  // P = original image after subtracting average nearby intensities:
+  //     (equivalently, the original image after subtracting low frequencies)
+  // P_dot_P = fluctuations around this local average value
+
+  if (pReportProgress)
+    *pReportProgress
+      << " -- Attempting to allocate space for two more images.       --\n"
+      << " -- (If this crashes your computer, find a computer with   --\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
+  Scalar ***aaafP;
+  Scalar *afP;
+  Alloc3D(image_size,
+          &afP,
+          &aaafP);
+  Scalar *afP_dot_P;
+  Scalar ***aaafP_dot_P;
+  Alloc3D(image_size,
+          &afP_dot_P,
+          &aaafP_dot_P);
+
+  // Initially, set the contents of aaafP equal to the source image.
+  for (int iz = 1; iz < image_size[2]-1; iz++)
+    for (int iy = 1; iy < image_size[1]-1; iy++)
+      for (int ix = 1; ix < image_size[0]-1; ix++)
+        aaafP[iz][iy][ix] = aaafSource[iz][iy][ix];
+
+  // First, let's calculate the weighted average voxel intensity in the 
+  // source image
+  if (template_background_exponent == 2.0) {
+
+    // then do it the fast way with seperable (ordinary) Gaussian filters
+    ApplyGauss3D(image_size,
+                 aaafSource,
+                 aaafP,    // <-- save result here
+                 aaafMask,
+                 sigma,
+                 filter_truncate_ratio,
+                 normalize,
+                 pReportProgress);
+  }
+  else {
+    w.Apply(image_size,
+            aaafSource,
+            aaafP,    // <-- save result here
+            aaafMask,
+            normalize,
+            pReportProgress);
+  }
+
+  // Subtract the average value from the image intensity, and store in P:
+  for(int iz=0; iz<image_size[2]; iz++)
+    for(int iy=0; iy<image_size[1]; iy++)
+      for(int ix=0; ix<image_size[0]; ix++)
+        aaafP[iz][iy][ix] = aaafSource[iz][iy][ix] - aaafP[iz][iy][ix];
+
+
+  // Now, calculate <P_, P_>
+
+  // Because memory is so precious, we must reuse arrays whenever we can.
+  // So we will now use "P" (which used to denote voxel intensity)
+  // to store the square of intensity instead
+  for(int iz=0; iz<image_size[2]; iz++)
+    for(int iy=0; iy<image_size[1]; iy++)
+      for(int ix=0; ix<image_size[0]; ix++)
+        aaafP[iz][iy][ix] *= aaafP[iz][iy][ix];
+
+  if (pReportProgress)
+    *pReportProgress << "\n"
+      " ------ Calculating fluctuations around that average ------\n" << endl;
+
+  if (template_background_exponent == 2.0) {
+    // then do it the fast way with seperable (ordinary) Gaussian filters
+    ApplyGauss3D(image_size,
+                 aaafP,
+                 aaafP_dot_P,    // <-- save result here
+                 aaafMask,
+                 sigma,
+                 filter_truncate_ratio,
+                 normalize,
+                 pReportProgress);
+  }
+  else {
+    w.Apply(image_size,
+            aaafP,
+            aaafP_dot_P,  // <-- store result here
+            aaafMask,
+            normalize,
+            pReportProgress);
+  }
+
+  // Now calculate "rms" (sqrt(variance))
+  // Save the result in tomo_out
+
+  // Write out RMS variance from the average of nearby voxels:
+  for(int iz=0; iz<image_size[2]; iz++) {
+    for(int iy=0; iy<image_size[1]; iy++) {
+      for(int ix=0; ix<image_size[0]; ix++) {
+        //     variance = <P_, P_>
+
+        Scalar variance = aaafP_dot_P[iz][iy][ix];
+
+        //Optional:
+        //Compensate for dividing by w.aaafH[][][] by "wpeak" earlier.
+        //This enables us to interpret variance as RMSE, (a.k.a. root-
+        //mean-squared-error.  The formula above only calculates the
+        //"mean" if w_i are normalized, which they were before we divided
+        //them all by wpeak.  (Also: This insures that this fast method is
+        //equivalent to the "SlowDebug" method commented out above.)
+        //(Note: It is important for other reasons that w_i (w.aaafH[][][])
+        //       were not normalized until this point.)
+
+        variance *= wpeak;
+
+        if (variance < 0.0)
+          variance = 0.0;
+
+        aaafDest[iz][iy][ix] = sqrt(variance);
+      } //for(int ix=0; ix<image_size[0]; ix++)
+    } //for(int iy=0; iy<image_size[1]; iy++)
+  } //for(int iz=0; iz<image_size[2]; iz++)
+
+  Dealloc3D(image_size,
+            &afP,
+            &aaafP);
+  Dealloc3D(image_size,
+            &afP_dot_P,
+            &aaafP_dot_P);
+} //LocalFluctuations()
+
+
+
+
+/// @brief Calculate the fluctuations in intensity around every voxel lying in
+///        a Gaussian-weighted ellipsoidal volume with half-width along x,y,z
+///        given by radius[].  (You can approximate a uniform sphere by setting
+///        all entries in radius[] equal to eachother, and by setting
+///        template_background_exponent argument to a large number.)
+///        Voxels outside the truncation window are not considered.
+///        The width of the truncation window is σ*filter_truncate_ratio.
+///        If a non-NULL aaafMask argument is supplied, then voxels from
+///        aaafSource will be ignored if aaafMask[iz][iy][ix] is zero
+///        (and the resulting filtered output will be normalized accordingly
+///         unless the "normalize" argument is set to false).
+///
+/// What's the relationship between the Gaussian width parameter sigma (σ),
+/// and the radius (r)?
+///
+/// The number of voxels belonging to a Gaussian is equal to the integral
+/// of the unnormalized Gaussian (which is exp(-0.5*(x^2+y^2+z^2)/(σ^2)))
+/// integrated over all space, resulting in (2*π*σ^2)^(3/2).
+/// This is effectively the volume of the Gaussian (denoted "v" below).
+/// Let's approximate this by a sphere of radius r containing the same volume v
+/// v = (4/3)*π*r^3 = the number of voxels in the sphere
+/// solving for r:
+/// @code
+/// <-> r = (3/(4π))^(1/3)  *  v^(1/3)
+///       substituting v = (2*π*σ^2)^(3/2)
+/// --> r = σ * 3^(1/3) * 2^(1/2-2/3) * π^(1/2 - 1/3)
+///       = σ * (9π/2)^(1/6)
+///      ~= 1.5549880806696572 σ
+/// @endcode
+/// @note  Generalized Gaussians can be computed by setting
+///         template_background_exponent to a number which is != 2
+///        (Setting it to a high value, for example, will approximate what
+///         the intensity fluctuations would be within a (uniformly weighted)
+///         spherical volume of radius=sigma.
+///        If you do this, you will have to multiply your radius arguments by
+///        1.5549880806696572 beforehand to compensate.
+
+template<class Scalar, class Integer>
+void
+LocalFluctuationsRadial(Integer const image_size[3], //!< number of voxels in x,y,z directions
+                        Scalar const *const *const *aaafSource, //!< original image
+                        Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
+                        Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+                        Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
+                        Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
+                        Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
+                        bool normalize = true, //!< normalize the result?
+                        ostream *pReportProgress = NULL //!< report progress to the user?
+                        )
+{
+  Scalar sigma[3];
+
+  Scalar ratio_r_over_sigma = pow((9.0/2)*M_PI, 1.0/6);
+  //Scalar ratio_r_over_sigma = sqrt(3.0);  //earlier crude estimate (don't use)
+
+  for (int d = 0; d < 3; d++)
+    sigma[d] = (radius[d] / ratio_r_over_sigma);
+
+  LocalFluctuations(image_size,
+                    aaafSource,
+                    aaafDest,
+                    aaafMask,
+                    sigma,
+                    template_background_exponent,
+                    filter_truncate_ratio,
+                    normalize,
+                    pReportProgress);
+}
+
+
+
+
 
 using namespace selfadjoint_eigen3;
 
@@ -4209,7 +4468,7 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
   // The following "linear" metric produces interesting results, but
   // the resulting membrane structures that are detected are not well
   // separated from the huge amount of background noise.  DON'T USE:
-  //float Linear_norm = lambda1 - lambda2;
+  //Scalar Linear_norm = lambda1 - lambda2;
   //score = Linear_norm / SQR(gradient);
 
 

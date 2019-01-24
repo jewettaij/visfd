@@ -3,13 +3,33 @@
 *.o
 *.a
 
+# binary files (but not their directories which have matching names)
+
 combine_mrc
+!combine_mrc/
+
 convert_to_float
+!convert_to_float/
+
 crop_mrc
+!crop_mrc/
+
 filter_mrc
+!filter_mrc/
+
 print_mrc_stats
+!print_mrc_stats/
+
 sum_voxels
+!sum_voxels/
+
 pval_mrc
+!pval_mrc/
+
+
+# Unignore all dirs
+# !*/   COMMENTING OUT
+
 
 # text-editor temporary files:
 *~

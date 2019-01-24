@@ -1145,6 +1145,8 @@ HandleExtrema(Settings settings,
 
 
 
+
+
 static void
 HandleLocalFluctuations(Settings settings,
                         MrcSimple &tomo_in,
@@ -1153,145 +1155,19 @@ HandleLocalFluctuations(Settings settings,
                         float voxel_width[3])
 // Calculate the fluctuations of nearby voxel intensities
 {
-
-  // Filter weights, w_i:
-  Filter3D<float, int>
-    w = GenFilterGenGauss3D(settings.template_background_radius,
-                            settings.template_background_exponent,
-                            //template_profile.halfwidth);
-                            settings.filter_truncate_ratio,
-                            settings.filter_truncate_threshold,
-                            static_cast<float*>(NULL),
-                            static_cast<ostream*>(NULL));
-  // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
-  // That's not what we want for the weights, w_i:
-  // The weights w_i should be 1 in the viscinity we care about, and 0 outside
-  // So, we can undo this normalization by dividing all the w_i weights
-  // by their maximum value max(w_i)    (at the central peak)
-  // This will mean the maximum w_i is 1, and the others decay to 0, as we want
-  float wpeak = w.aaafH[0][0][0];
-  w.MultiplyScalar(1.0 / wpeak);
-
-
-  cerr << " ------ Calculating the average of nearby voxels: ------\n";
-  // P = original image (after subtracting average nearby intensities):
-
-  MrcSimple P = tomo_in; //this will take care of allocating the array
-
-  float template_background_sigma[3];
-  for (int d = 0; d < 3; d++)
-    template_background_sigma[d] = (settings.template_background_radius[d]
-                                    /
-                                    sqrt(3.0));
-
-  // First, let's calculate the weighted average voxel intensity in the 
-  // source image
-  if (settings.template_background_exponent == 2.0) {
-
-    // then do it the fast way with seperable (ordinary) Gaussian filters
-    ApplyGauss3D(tomo_in.header.nvoxels,
-                 tomo_in.aaafI,
-                 P.aaafI,    // <-- save result here
-                 mask.aaafI,
-                 template_background_sigma,
-                 settings.filter_truncate_ratio,
-                 settings.filter_truncate_threshold,
-                 true,
-                 &cerr);
-  }
-  else {
-    w.Apply(tomo_in.header.nvoxels,
-            tomo_in.aaafI,
-            P.aaafI,    // <-- save result here
-            mask.aaafI,
-            true,
-            &cerr);
-  }
-
-  // Subtract the average value from the image intensity, and store in P:
-  for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
-    for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
-      for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
-        P.aaafI[iz][iy][ix] = tomo_in.aaafI[iz][iy][ix]-P.aaafI[iz][iy][ix];
-
-  // Calculate <P_, P_>
-
-  // Because memory is so precious, we must reuse arrays whenever we can.
-  // So we will now use "P" (which used to denote voxel intensity)
-  // to store the square of intensity instead
-  for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
-    for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
-      for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
-        P.aaafI[iz][iy][ix] *= P.aaafI[iz][iy][ix];
-
-  cerr << "\n"
-    " ------ Calculating fluctuations around that average ------\n" << endl;
-
-  //   Original code:  Commented out because it requires too much memory:
-  //MrcSimple P_dot_P = tomo_in; //(this takes care of allocating the array)
-  //   Memory efficient, ugly code:
-  // We're done with tomo_in.  Re-use this array to store P_dot_P temporarilly,
-  // but give it a new name, to make the code slightly less confusing to read:
-  float ***P_dot_P_aaafI = tomo_in.aaafI;
-
-  if (settings.template_background_exponent == 2.0) {
-    // then do it the fast way with seperable (ordinary) Gaussian filters
-    ApplyGauss3D(tomo_in.header.nvoxels,
-                 P.aaafI,
-                 //P_dot_P.aaafI,
-                 P_dot_P_aaafI,    // <-- save result here
-                 mask.aaafI,
-                 template_background_sigma,
-                 settings.filter_truncate_ratio,
-                 settings.filter_truncate_threshold,
-                 true,
-                 &cerr);
-  }
-  else {
-    w.Apply(tomo_in.header.nvoxels,
-            P.aaafI,
-            //P_dot_P.aaafI,
-            P_dot_P_aaafI,  // <-- store result here
-            mask.aaafI,
-            false,
-            &cerr);
-  }
-
-  // Now calculate "rms" (sqrt(variance))
-  // Save the result in tomo_out
-
-  // Rrite out RMS variance from the average of nearby voxels:
-  for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-    for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-      for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
-        //     variance = <P_, P_>
-
-        //float variance = (P_dot_P.aaafI[iz][iy][ix]
-        float variance = P_dot_P_aaafI[iz][iy][ix];
-
-        //Optional:
-        //Compensate for dividing by w.aaafH[][][] by "wpeak" earlier.
-        //This enables us to interpret variance as RMSE, (a.k.a. root-
-        //mean-squared-error.  The formula above only calculates the
-        //"mean" if w_i are normalized, which they were before we divided
-        //them all by wpeak.  (Also: This insures that this fast method is
-        //equivalent to the "SlowDebug" method commented out above.)
-        //(Note: It is important for other reasons that w_i (w.aaafH[][][])
-        //       were not normalized until this point.)
-
-        variance *= wpeak;
-
-        if (variance < 0.0)
-          variance = 0.0;
-
-        tomo_out.aaafI[iz][iy][ix] = sqrt(variance);
-      } //for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
-    } //for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
-  } //for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
+  LocalFluctuationsRadial(tomo_in.header.nvoxels,
+                          tomo_in.aaafI,
+                          tomo_out.aaafI,
+                          mask.aaafI,
+                          settings.template_background_radius,
+                          settings.template_background_exponent,
+                          settings.filter_truncate_ratio,
+                          settings.filter_truncate_threshold,
+                          true,
+                          &cerr);
 
   tomo_out.FindMinMaxMean();
-  
-} //HandleLocalFluctuations()
+}
 
 
 

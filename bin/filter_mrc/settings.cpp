@@ -999,6 +999,9 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         m_exp = stof(vArgs[i+1]);
         n_exp = m_exp;
+        #ifndef DISABLE_TEMPLATE_MATCHING
+        template_background_exponent = n_exp;
+        #endif
         exponents_set_by_user = true;
       }
       catch (invalid_argument& exc) {

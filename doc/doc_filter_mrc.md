@@ -641,30 +641,49 @@ confused with the discussion here.
 ### -fluct,   -fluct-aniso
 Usage:
 ```
-  fluct  σ
+  fluct  r
 ```
 The "**-fluct**" filter calculates the magnitude of
 the voxel intensity fluctuations relative to their local surroundings.
 This is useful for finding regions in an image with nearly uniform brightness
 and regions whose brightness fluctuates wildly.
+*r* is the effective search radius.
 
 To compute this, near every voxel, a Gaussian-weighted average
-intensity is computed (who'se Gaussian width is σ).
+intensity is computed with the same effective radius, *r*.
 A Gaussian-weighted squared-difference between all the nearby voxel intensities
 and this local average intensity is also computed.
 A new image is generated whose voxel intensities equal this
 local average squared difference intensity of nearby voxels.
+
 The "**-fluct-aniso**" variant allows the user to control the width
 of the Gaussian independently in the x,y,z directions:
 ```
-  fluct-aniso   σ_x  σ_y  σ_z
+  fluct-aniso   r_x  r_y  r_z
 ```
-*(Implementation detail:
+#### Implementation detail:
+ The width of the Gaussian, σ, is chosen so that the effective
+ number of voxels under the 3D Gaussian,
+ (which can be interpreted as the 3D integral of the unnormalized 3D Gaussian,
+ (2\*π\*σ^2)^(3/2))
+ equals the volume of a sphere of radius r
+ (4/3)\*π\*r^3.
+ This yields σ=(9π/2)^(-1/6)r.
+
  It might seem more straightforward to simply consider the fluctuations in
  brightnesses of all of the voxels which lie within a fixed radius from
  each target voxel.  However using Gaussian weighted averages instead
- accomplishes the same goal and is much more
- [computationally efficient](https://en.wikipedia.org/wiki/Separable_filter).)*
+ accomplishes essentially the same goal and is much more
+ [computationally efficient](https://en.wikipedia.org/wiki/Separable_filter).
+
+ If you prefer, instead of using a Gaussian, you can instead perform the
+ fluctuation calculation over a hard spherical region by using the
+ "-exponent n" argument.
+ (This parameter is 2 by default.  Changing it will slow down the calculation.)
+ As n is increased, the region over which the fluctuations in brightness
+ are calculated becomes more and more like a uniform sphere with radius σ.
+ (So if you do this, be sure to multiply your radius argument, r,
+  by (9π/2)^(1/6)≈1.5549880806696572 to compensate.)
 
 
 

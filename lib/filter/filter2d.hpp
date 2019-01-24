@@ -347,11 +347,11 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
                     Scalar *pA=NULL,    //optional:report A coeff to user
                     ostream *pReportProgress = NULL)
 {
-  Scalar window_threshold = 1.0;
+  Scalar truncate_threshold = 1.0;
   for (int d=0; d<2; d++) {
     Scalar h = ((width[d]>0) ? exp(-pow(halfwidth[d]/width[d], m_exp)) : 1.0);
-    if (h < window_threshold)
-      window_threshold = h;
+    if (h < truncate_threshold)
+      truncate_threshold = h;
   }
 
   Filter2D<Scalar, int> filter(halfwidth);
@@ -360,7 +360,7 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
     for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
       Scalar r = sqrt(SQR(ix/width[0]) + SQR(iy/width[1]));
       Scalar h = ((r>0) ? exp(-pow(r, m_exp)) : 1.0);
-      if (std::abs(h) < window_threshold)
+      if (std::abs(h) < truncate_threshold)
         h = 0.0; // this eliminates corner entries which fall below threshold
                  // (and eliminates anisotropic artifacts due to these corners)
                  // There's no reason to keep any entries less than min value.
@@ -378,7 +378,7 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
                  
       //FOR DEBUGGING REMOVE EVENTUALLY
       if (pReportProgress)
-        *pReportProgress << "GenGauss2D:" //<< window_threshold
+        *pReportProgress << "GenGauss2D:" //<< truncate_threshold
                          <<" aafH["<<iy<<"]["<<ix<<"] = "
                          << filter.aafH[iy][ix] << endl;
     }
