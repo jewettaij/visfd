@@ -109,11 +109,11 @@ class MrcSimple {
   void Invert(float ***aaafMask=NULL); 
 
   // Print information about the tomogram size and format
-  inline void PrintStats(ostream &out) { header.PrintStats(out); }
+  void PrintStats(ostream &out) { header.PrintStats(out); }
 
   // ------ Constructors, destructors, memory-allocation ------
 
-  inline void Init() {
+  void Init() {
     afI = NULL;
     aaafI = NULL;
     header.mode = MrcHeader::MRC_MODE_FLOAT;
@@ -142,7 +142,7 @@ class MrcSimple {
   MrcSimple(int const set_nvoxels[3],
             float ***aaaf_contents);
 
-  inline MrcSimple& operator = (const MrcSimple& source) {
+  MrcSimple& operator = (const MrcSimple& source) {
     header = source.header;
     Dealloc(); // (just in case)
     Alloc();   // allocates and initializes afI and aaafI
@@ -156,7 +156,7 @@ class MrcSimple {
            *sizeof(float));
   }
 
-  inline MrcSimple(const MrcSimple& source) { //(not tested yet)
+  MrcSimple(const MrcSimple& source) { //(not tested yet)
     Init();
     operator=(source);
   }
@@ -178,16 +178,18 @@ class MrcSimple {
 
 
 // Although not necessarily recommended, you can use << or >> to read/write
-inline istream& operator >> (istream& mrc_file, 
-                             MrcSimple& tomo)
+static inline
+istream& operator >> (istream& mrc_file, 
+                      MrcSimple& tomo)
 {
   tomo.Read(mrc_file);
   return mrc_file;
 }
 
 
-inline ostream& operator << (ostream& mrc_file,
-                             MrcSimple& tomo)
+static inline
+ostream& operator << (ostream& mrc_file,
+                      MrcSimple& tomo)
 {
   tomo.Write(mrc_file);
   return mrc_file;

@@ -29,7 +29,7 @@ using namespace std;
 
 
 template<class RealNum >
-inline RealNum ABS(RealNum x) { return ((x<0.0) ? -x: x); }
+static inline RealNum ABS(RealNum x) { return ((x<0.0) ? -x: x); }
 
 
 MrcSimple::

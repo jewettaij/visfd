@@ -203,7 +203,7 @@ public:
 
 
 
-  inline Filter3D(const Filter3D<Scalar, Integer>& source) {
+  Filter3D(const Filter3D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH and aaafH
     //for(Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
@@ -238,7 +238,7 @@ public:
   }
 
 
-  inline void swap(Filter3D<Scalar, Integer> &other) {
+  void swap(Filter3D<Scalar, Integer> &other) {
     std::swap(afH, other.afH);
     std::swap(aaafH, other.aaafH);
     std::swap(halfwidth, other.halfwidth);
@@ -246,7 +246,7 @@ public:
   }
 
 
-  inline Filter3D<Scalar, Integer>&
+  Filter3D<Scalar, Integer>&
     operator = (Filter3D<Scalar, Integer> source) {
     this->swap(source);
     return *this;
@@ -4542,7 +4542,7 @@ public:
     SetSigma(set_sigma, filter_cutoff_ratio);
   }
 
-  inline TV3D(const Filter3D<Scalar, Integer>& source) {
+  TV3D(const Filter3D<Scalar, Integer>& source) {
     Resize(source.halfwidth); // allocates and initializes afH and aaafH
     std::copy(source.aafDisplacement,
               source.aafDisplacement + (array_size[0] * array_size[1] * array_size[2]),
@@ -5273,7 +5273,7 @@ private:
 
 
 
-  inline void swap(TV3D<Scalar,Integer,VectorContainer,TensorContainer> &other)
+  void swap(TV3D<Scalar,Integer,VectorContainer,TensorContainer> &other)
   {
     std::swap(sigma, other.sigma);
     std::swap(exponent, other.exponent);
@@ -5285,7 +5285,7 @@ private:
   }
 
 
-  inline TV3D<Scalar,Integer,VectorContainer,TensorContainer>&
+  TV3D<Scalar,Integer,VectorContainer,TensorContainer>&
     operator = (TV3D<Scalar,Integer,VectorContainer,TensorContainer> source)
   {
     this->swap(source);

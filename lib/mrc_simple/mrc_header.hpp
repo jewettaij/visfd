@@ -142,16 +142,18 @@ public:
 
 
 // Although not necessarily recommended, you can use << or >> to read/write
-inline istream& operator>>(istream& mrc_file, 
-                           MrcHeader& mrc_header)
+static inline
+istream& operator>>(istream& mrc_file, 
+                    MrcHeader& mrc_header)
 {
   mrc_header.Read(mrc_file);
   return mrc_file;
 }
 
 
-inline ostream& operator<<(ostream& mrc_file, 
-                           const MrcHeader& mrc_header)
+static inline
+ostream& operator<<(ostream& mrc_file, 
+                    const MrcHeader& mrc_header)
 {
   mrc_header.Write(mrc_file);
   return mrc_file;

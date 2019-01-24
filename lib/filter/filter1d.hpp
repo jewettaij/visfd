@@ -10,7 +10,7 @@ using namespace std;
 
 
 template<class Scalar >
-inline Scalar SQR(Scalar x) { return x*x; }
+static inline Scalar SQR(Scalar x) { return x*x; }
 
 
 template<class Scalar, class Integer>
@@ -341,7 +341,7 @@ public:
   }
 
 
-  inline Filter1D(const Filter1D<Scalar, Integer>& source) {
+  Filter1D(const Filter1D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH
     //for(Integer i=-halfwidth; i<=halfwidth; i++)
@@ -359,13 +359,13 @@ public:
     Dealloc();
   }
 
-  inline void swap(Filter1D<Scalar, Integer> &other) {
+  void swap(Filter1D<Scalar, Integer> &other) {
     std::swap(afH, other.afH);
     std::swap(halfwidth, other.halfwidth);
     std::swap(array_size, other.array_size);
   }
 
-  inline Filter1D<Scalar, Integer>&
+  Filter1D<Scalar, Integer>&
     operator = (Filter1D<Scalar, Integer> source) {
     this->swap(source);
     return *this;

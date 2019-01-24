@@ -269,7 +269,7 @@ public:
   }
 
 
-  inline Filter2D(const Filter2D<Scalar, Integer>& source) {
+  Filter2D(const Filter2D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH and aafH
     //for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
@@ -313,7 +313,7 @@ public:
   }
 
 
-  inline void swap(Filter2D<Scalar, Integer> &other) {
+  void swap(Filter2D<Scalar, Integer> &other) {
     std::swap(afH, other.afH);
     std::swap(aafH, other.aafH);
     std::swap(halfwidth, other.halfwidth);
@@ -321,7 +321,7 @@ public:
   }
 
 
-  inline Filter2D<Scalar, Integer>&
+  Filter2D<Scalar, Integer>&
     operator = (Filter2D<Scalar, Integer> source) {
     this->swap(source);
     return *this;

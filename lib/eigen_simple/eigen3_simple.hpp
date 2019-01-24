@@ -43,8 +43,9 @@ namespace selfadjoint_eigen3
 
 
   template <class Scalar>
-  static inline void computeRoots3(const Scalar m[3][3],
-                                   Scalar roots[3])
+  static void
+  computeRoots3(const Scalar m[3][3],
+                Scalar roots[3])
   {
     const Scalar s_inv3 = 1.0/3.0;
     const Scalar s_sqrt3 = std::sqrt(3.0);
@@ -81,9 +82,10 @@ namespace selfadjoint_eigen3
 
 
   template <class Scalar>
-  static inline void extract_kernel3(const Scalar mat[3][3],
-                                     Scalar res[3],
-                                     Scalar representative[3])
+  static void
+  extract_kernel3(const Scalar mat[3][3],
+                  Scalar res[3],
+                  Scalar representative[3])
   {
     using std::abs;
 
@@ -131,14 +133,15 @@ namespace selfadjoint_eigen3
 
 
   template <class Scalar>
-  inline void DiagonalizeSym3(const Scalar mat[3][3],
-                              Scalar eivals[3], // store eigenvalues here
-                              // If the user supplies a 2D eivects array,
-                              // then the 3 eigenvectors will be stored in
-                              // the 3 rows of the "eivects" 2D array
-                              // (ie, eivects[0], eivects[1], eivects[2])
-                              Scalar eivects[][3] = NULL,
-                              EigenOrderType eival_order = INCREASING_EIVALS)
+  void
+  DiagonalizeSym3(const Scalar mat[3][3],
+                  Scalar eivals[3], // store eigenvalues here
+                  // If the user supplies a 2D eivects array,
+                  // then the 3 eigenvectors will be stored in
+                  // the 3 rows of the "eivects" 2D array
+                  // (ie, eivects[0], eivects[1], eivects[2])
+                  Scalar eivects[][3] = NULL,
+                  EigenOrderType eival_order = INCREASING_EIVALS)
   {
     const Scalar EPSILON = std::numeric_limits<Scalar>::epsilon();
     // Shift the matrix to the mean eigenvalue and map the matrix

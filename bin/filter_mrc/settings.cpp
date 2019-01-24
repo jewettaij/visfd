@@ -14,7 +14,7 @@ using namespace std;
 
 
 template<class RealNum>
-inline RealNum MAX(RealNum x, RealNum y) { return ((x<y) ? y : x); }
+static inline RealNum MAX(RealNum x, RealNum y) { return ((x<y) ? y : x); }
 
 
 Settings::Settings() {

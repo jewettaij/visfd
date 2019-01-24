@@ -40,7 +40,7 @@ public:
   Scalar ****aaaafI; // Stores the image data
 
 
-  inline int
+  int
   nchannels() {
     return n_channels_per_voxel;
   }
@@ -63,7 +63,7 @@ public:
     Resize(image_size, aaafMask, pReportProgress);
   }
 
-  inline void
+  void
   Resize(int const set_image_size[3],
          Scalar const *const *const *aaafMask = NULL,
          ostream *pReportProgress = NULL  //!< print progress to the user?
@@ -80,7 +80,7 @@ public:
 
 private:
 
-  inline void
+  void
   Alloc(int const set_image_size[3],
         Scalar const *const *const *aaafMask = NULL,
         ostream *pReportProgress = NULL  //!< print progress to the user?
@@ -133,7 +133,7 @@ private:
   } //Alloc()
 
 
-  inline void
+  void
   Dealloc()
   {
     delete [] afI;
