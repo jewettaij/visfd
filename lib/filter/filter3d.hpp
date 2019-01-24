@@ -2013,11 +2013,11 @@ invert_permutation(const vector<Integer>& p,
 
 
 
-/// @brief apply permutation in-place
+/// @brief apply a permutation to a std::vector in-place
 template<class T, class Integer>
 void
-apply_permutation(vector<T>& v,
-                  vector<Integer>& p)
+apply_permutation(vector<Integer>& p,
+                  vector<T>& v)
 {
   vector<T> v_copy(v);
   for (Integer i = 0; i < p.size(); i++) {
@@ -2059,9 +2059,9 @@ SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
     for (size_t i = 0; i < score_index.size(); i++)
       permutation[i] = get<1>(score_index[i]);
     score_index.clear();
-    apply_permutation(blob_crds,  permutation);
-    apply_permutation(blob_diameters, permutation);
-    apply_permutation(blob_scores, permutation);
+    apply_permutation(permutation, blob_crds);
+    apply_permutation(permutation, blob_diameters);
+    apply_permutation(permutation, blob_scores);
     if (pReportProgress)
       *pReportProgress << "done --" << endl;
   }
@@ -2707,9 +2707,9 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
       for (IntegerIndex i = 0; i < score_index.size(); i++)
         permutation[i] = get<1>(score_index[i]);
       score_index.clear();
-      apply_permutation(*pv_minima_indices, permutation);
-      apply_permutation(*pv_minima_scores, permutation);
-      apply_permutation(*pv_minima_nvoxels, permutation);
+      apply_permutation(permutation, *pv_minima_indices);
+      apply_permutation(permutation, *pv_minima_scores);
+      apply_permutation(permutation, *pv_minima_nvoxels);
       // Optional: The minima in the image are not in sorted order either. Fix?
       vector<IntegerIndex> perm_inv;
       invert_permutation(permutation, perm_inv);
@@ -2743,9 +2743,9 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
       for (IntegerIndex i = 0; i < score_index.size(); i++)
         permutation[i] = get<1>(score_index[i]);
       score_index.clear();
-      apply_permutation(*pv_maxima_indices, permutation);
-      apply_permutation(*pv_maxima_scores, permutation);
-      apply_permutation(*pv_maxima_nvoxels, permutation);
+      apply_permutation(permutation, *pv_maxima_indices);
+      apply_permutation(permutation, *pv_maxima_scores);
+      apply_permutation(permutation, *pv_maxima_nvoxels);
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
       // Optional: The maxima in the image are not in sorted order either. Fix?
