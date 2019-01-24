@@ -10,6 +10,11 @@ template <class Scalar>
 static inline Scalar Trace3(const Scalar m[3][3]) {
   return m[0][0]+m[1][1]+m[2][2];
 }
+template <class Scalar>
+static inline Scalar Trace3(const array<array<int, 3>, 3>& m) {
+  return m[0][0]+m[1][1]+m[2][2];
+}
+
 
 template <class Scalar>
 static inline void CrossProduct(const Scalar a[3],
@@ -23,15 +28,54 @@ static inline void CrossProduct(const Scalar a[3],
 }
 
 template <class Scalar>
+static inline void CrossProduct(const array<Scalar, 3>& a,
+                                const array<Scalar, 3>& b,
+                                array<Scalar, 3>& dest)
+{
+  dest[2] = a[0]*b[1] - a[1]*b[0];
+  // ...and cyclic permutations...
+  dest[0] = a[1]*b[2] - a[2]*b[1];
+  dest[1] = a[2]*b[0] - a[0]*b[2];
+}
+
+
+
+template <class Scalar>
 static inline Scalar DotProduct3(const Scalar a[3], const Scalar b[3]) {
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
+
+template <class Scalar>
+static inline Scalar DotProduct3(const array<Scalar, 3>& a,
+                                 const array<Scalar, 3>& b) {
+  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
 
 
 template <class Scalar>
 static inline Scalar SquaredNorm3(const Scalar a[3]) {
   return DotProduct3(a, a);
 }
+
+template <class Scalar>
+static inline Scalar SquaredNorm3(const array<Scalar, 3>& a) {
+  return DotProduct3(a, a);
+}
+
+
+
+template <class Scalar>
+static inline Scalar Length3(const Scalar a[3]) {
+  return sqrt(DotProduct3(a, a));
+}
+
+template <class Scalar>
+static inline Scalar Length3(const array<Scalar, 3>& a) {
+  return sqrt(DotProduct3(a, a));
+}
+
+
 
 template <class Scalar>
 static inline void Normalize3(Scalar a[3]) {

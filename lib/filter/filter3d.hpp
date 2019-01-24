@@ -7,27 +7,28 @@
 #define _FILTER3D_HPP
 
 #include <cstring>
+#include <cassert>
+#include <cmath>
+#include <limits>
 #include <ostream>
 #include <vector>
 #include <tuple>
 #include <set>
-#include <cassert>
 #include <queue>
-#include <cmath>
-#include <limits>
 using namespace std;
-#include <err_report.hpp>
-#include <alloc3d.hpp>
-#include <filter1d.hpp>  // defines "Filter1D" (used in "ApplyGauss()")
+#include <err_report.hpp> // defines the "InputErr" exception type
+#include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
+#include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable3D())
 #include <filter3d_utils.hpp> // defines "AverageArr()" and similar functions
-#include <eigen3_simple.hpp>
+#include <eigen3_simple.hpp> // defines matrix diagonalizers (DiagonalizeSym3())
+#include <lin3_utils.hpp> // defines DotProduct3(),CrossProduct(),quaternions...
 
 
 
 /// @brief A simple class for general linear convolutional filters in 3D
 ///
 /// @note  In practice, this class is not used often because separable filters
-///        based on Gaussians are much faster.  -A 2018-9-11
+///        based on Gaussians are much faster.
 
 template<class Scalar, class Integer>
 
@@ -4066,8 +4067,8 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
               << "    "<<hessian[1][0]<<","<<hessian[1][1]<<","<<hessian[1][2]<<"\n"
               << "    "<<hessian[2][0]<<","<<hessian[2][1]<<","<<hessian[2][2]<<"\n";
 
-          float eivals[3];
-          float eivects[3][3];
+          Scalar eivals[3];
+          Scalar eivects[3][3];
           DiagonalizeSym3(hessian,
                           eivals,
                           eivects,
@@ -4108,13 +4109,13 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
             (iy==image_size[1]/2) &&
             (iz==image_size[2]/2))
         {
-          float shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
+          Scalar shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
           shoemake[0]       = aaaafDest[iz][iy][ix][3];
           shoemake[1]       = aaaafDest[iz][iy][ix][4];
           shoemake[2]       = aaaafDest[iz][iy][ix][5];
-          float quat[4];
-          Shoemake2Quaternion(shoemake, quat); //convert to 3x3 matrix
-          float eivects[3][3];
+          Scalar quat[4];
+          Shoemake2Quaternion(shoemake, quat); //convert to quaternion
+          Scalar eivects[3][3];
           Quaternion2Matrix(quat, eivects); //convert to 3x3 matrix
           if (pReportProgress)
             *pReportProgress
@@ -4199,7 +4200,7 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
   // REMOVE THIS CRUFT
   // The "score_ratio" variable is the score function used in Eq(5) of
   // Martinez-Sanchez++Fernandez_JStructBiol2011.  IT PERFORMS POORLY.
-  //float score_ratio;
+  //double score_ratio;
   //score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
   //               / SQR(gradient);
   //score_ratio *= score_ratio;
@@ -4241,6 +4242,7 @@ ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
   double lambda2 = diagonalizedMatrix3[1];
   return lambda1 - lambda2;  // the "stickness" (See TensorVoting paper)
 }
+
 
 
 
@@ -4317,28 +4319,31 @@ public:
   ///         "stick" fields in 3D:
   ///         (1) Stick-fields corresponding to planar-surface-like features,
   ///         (2) Stick-fields corresponding to curve-like features.
-  ///         This function expects a 3D array of normalized "vectors"
+  ///         This function expects a 3D array of "vectors" (aaaafV argument)
   ///         (one vector for each voxel in the original image, 3 numbers each).
   ///         These "vectors" can have user-defined type (implementation),
   ///         however they must support 1-dimensional subscripting (i=0,1,2).
-  ///         This function also expects an array of numbers ("saliencies")
-  ///         which store the strength of each vector.
-  ///         (Note: Do not multiply each vector by its saliency.
-  ///                The length of each vector is expected to be 1.0)
+  ///         Optionally, the caller can supply an array of numbers
+  ///         ("saliencies") which store the "strength" of each vector.
+  ///         If the aaafSaliency[][][] array argument == NULL, then these
+  ///         saliencies will be inferred from the magnitude of the vectors.
+  ///         which are stored in the aaaafV array.
+  ///         (Otherwise, the vectors are assumed to have been normalized.)
+  ///         
   /// After this function is invoked, aaaafDest will store an array of
   /// diagonalized tensors, one tensor for each voxel in the original image
   /// (unless aaafMaskDest!=NULL and the corresponding entry there is 0).
   ///
   /// @note:  The computation time for this algorithm is proportional to the 
   ///         number of voxels with non-zero aaafSaliency[][][] values.
-  ///         Hence, the speed can be dramatically increased by discarding
+  ///         Hence, the speed can be dramatically increased by zeroing
   ///         voxels with low saliency.  For typical cryo-EM images of
   ///         cells, 95% of the voxels can usually be discarded (by setting
   ///         their saliencies to zero), with no effect on the output.
 
   void
   TVDenseStick(Integer const image_size[3],  //!< source image size
-               Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
+               Scalar const *const *const *aaafSaliency,  //!< optional saliency (score) of each voxel (usually based on Hessian eigenvalues)
                VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
                TensorContainer ***aaaafDest,  //!< votes will be collected here
                Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
@@ -4349,14 +4354,16 @@ public:
                ostream *pReportProgress=NULL  //!< print progress to the user?
                )
   {
+    assert(aaaafV);
+
     if (pReportProgress)
       *pReportProgress
         << " -- Attempting to allocate space for one more image.\n"
         << " -- (If this crashes your computer, find a computer with\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
 
-    float *afDenominator = NULL;
-    float ***aaafDenominator = NULL;
+    Scalar *afDenominator = NULL;
+    Scalar ***aaafDenominator = NULL;
 
     if (normalize && aaafMaskSource) {
       Alloc3D(image_size,
@@ -4364,8 +4371,34 @@ public:
               &aaafDenominator);
     }
 
+    // If the user did not specify an aaafSaliency[] array (if NULL),
+    // then we must create our own temporary saliency array.
+    Scalar const *const *const *saliency_array = aaafSaliency;
+    Scalar *_afSaliency = NULL;
+    Scalar ***_aaafSaliency = NULL;
+
+    if (! aaafSaliency) {
+      // If the caller did not specify an aaafSaliency array, then
+      // infer the saliency from the magnitude of aaaafV
+      Alloc3D(image_size,
+              &(_afSaliency),
+              &(_aaafSaliency));
+      for (Integer iz=0; iz<image_size[2]; iz++) {
+        #pragma omp parallel for collapse(2)
+        for (Integer iy=0; iy<image_size[1]; iy++) {
+          for (Integer ix=0; ix<image_size[0]; ix++) {
+            if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+              continue;
+            _aaafSaliency[iz][iy][ix] = Length3(aaaafV[iz][iy][ix]);
+          }
+        }
+      }
+      saliency_array = _aaafSaliency;
+    } //if (! aaafSaliency)
+
+
     TVDenseStick(image_size,
-                 aaafSaliency,
+                 saliency_array,
                  aaaafV,
                  aaaafDest,
                  aaafMaskSource,
@@ -4620,7 +4653,7 @@ private:
           if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0.0))
             continue;
           // The eigenvalues are in the first 3 entries of aaaafDest[iz][iy][ix]
-          float *eivals = aaaafDest[iz][iy][ix];
+          Scalar *eivals = aaaafDest[iz][iy][ix];
           assert(eivals);
           for (int d=0; d<3; d++)
             assert(eivals[d] >= 0.0);

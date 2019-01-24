@@ -1,7 +1,28 @@
 #ifndef _MULTICHANNEL_IMAGE3D_HPP
 #define _MULTICHANNEL_IMAGE3D_HPP
 
+
 template<class Scalar>
+
+/// @brief   This class is useful IF you have a volumetric multi-channel image
+///             (ie, multiple numbers are stored for every voxel)
+///          AND you want to avoid allocating space for voxels you don't need.
+///        The constructor will allocate the aaaafI[][][][] array which 
+///        is public.  The constructor also accepts a "aaafMask" argument.
+///        It will only allocate space for voxels if the corresponding entry
+///        in the aaafMask[iz][iy][ix] array is non-zero.  If zero, then
+///        aaaafI[iz][iy][ix]=NULL.  If not, it points to an array of N numbers.
+///        ("N" is the number of channels, an argument to the constructor.)
+///        The resulting array, aaaafI, can be passed to any function
+///        which expects multi-channel images (and accepts a aaafMask argument).
+///        This includes all tensor-voting operations.
+///         
+/// @note  In practice, this often does not usually save that much space.
+///        Keep in mind that, at a minimum, this data structure allocates a
+///        pointer for every voxel in the image (8 bytes for a 64 bit system)
+///        regardless of the contents of the aaafMask[][][] array.
+///        However for the 6-channel images used in Tensor-Voting, the space
+///        savings can be substantial.
 
 class CompactMultiChannelImage3D
 {
