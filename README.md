@@ -110,8 +110,8 @@ Documentation for this program is located
 
 
 ## Development Status: *alpha*
-Program names and command line
-arguments may change in the future.
+Program names, command line arguments, file names, and function names
+(in the API) may all change in the future.
 
 
 ## Compilation
