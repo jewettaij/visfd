@@ -1033,7 +1033,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //} //if (vArgs[i] == "-window")
 
 
-    else if (vArgs[i] == "-window-ratio")
+    else if (vArgs[i] == "-truncate")
     {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -1048,10 +1048,10 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a number.\n");
       }
       num_arguments_deleted = 2;
-    } // if (vArgs[i] == "-window-ratio")
+    } // if (vArgs[i] == "-truncate")
 
 
-    else if ((vArgs[i] == "-cutoff") || (vArgs[i] == "-window-cutoff"))
+    else if (vArgs[i] == "-truncate-threshold")
     {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -1064,7 +1064,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a number.\n");
       }      
       num_arguments_deleted = 2;
-    } // if (vArgs[i] == "-cutoff")
+    } // if (vArgs[i] == "-truncate-thresold")
 
 
     else if (vArgs[i] == "-thresh") {

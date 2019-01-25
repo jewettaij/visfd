@@ -552,7 +552,7 @@ In this case, the "s" parameter is specified in voxels, not physical distance.)
 if you use the default exponent of 2.
 *Changing the exponent will slow down the filter considerably.*
 
-The filter is truncated far away from the central peak at a point which is chosen automatically according the σ, σ_x, σ_y, σ_z parameters selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
+The filter is truncated far away from the central peak at a point which is chosen automatically according the σ, σ_x, σ_y, σ_z parameters selected by the user.  However this can be customized using the "-truncate-threshold" and "-truncate" arguments if necessary (see below).
 
 ### -dog
 When the "**-dog**" or "**-dog-aniso**" filter is selected, a
@@ -1126,11 +1126,19 @@ All other voxels will be ignored during filtering.
 
 
 
-## Additional Arguments:
+## Miscellaneous
+
+### -np  num_processors
+  Specify the number of processors to use during the calculation.
+  (By default this is the typically number of cores of your CPU,
+   including hyperthreaded cores.)
+  This argument is not available if you did not compile the program
+  to enable support for OpenMP.
+
 
 ### Filter Size
 ```
-   -cutoff threshold
+   -truncate-threshold threshold
 ```
 This specifies the number of voxels in the filter which will be convolved
 with the image.
@@ -1139,17 +1147,17 @@ the filter intensity decays to less than **threshold** (a fraction),
 compared to its peak value.
 (For Difference-of-Gaussian filters, both Gaussians must decay to this value.)
 If unspecified, this parameter is set to 0.02.
-(This overrides the "-window-ratio" argument.)
+(This overrides the "-truncate-ratio" argument.)
 
 ```
-   -window-ratio Wx Wy Wz
+   -truncate Wx Wy Wz
 ```
 If you prefer to specify the size of the filter window manually, you can
 use the "-window-ratio" argument.
 This argument specifies the size of the 3-D filter box in x,y, directions
 (in units of the **a** and **b** distance parameters, or **σ** ("sigma")
  parameters which appear in the formulas above).
-This overrides the "-cutoff threshold" argument.
+This overrides the "-truncate-threshold threshold" argument.
 
 *(Note: Incidentally, the product of these 3 numbers, Wx*Wy*Wz, is proportional to the running time of the filter.
 However when using the "-gauss" or "-gdog" filters with default exponent settings,
@@ -1171,7 +1179,6 @@ instead of Angstroms.
 This argument has no effect if the "-w" argument is used.
 
 
-## Miscellaneous
 
 ### -distance-points  coordinate_file
 
@@ -1212,7 +1219,7 @@ The A and B coefficients will be automatically chosen
 so that each Gaussian is normalized.
 (The sum of h(x,y,z) over x,y,z is 0.
  The sum of the A and B terms over x,y,z is 1.)
-The filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "**-cutoff**" and "**-window-ratio**" arguments if necessary (see below).
+The filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "**-truncate-threshold**" and "**-truncate**" arguments if necessary (see below).
 ![A comparison of Difference-of-Generalized-Gaussians filter weights](./images/example_dogxy_w=2.516nm_a=13nm_b=20nm_m=2_n=2__vs__m=6_n=16.svg)
 ```
    filter_mrc -w 25.16 -dog 130 200 -exponents 2 2
@@ -1274,7 +1281,7 @@ the results of using different Gaussian-widths
 (the same way they are compared when using
 "**-blob**", "**-blobr**", and "**-blob**").
 
-In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-cutoff" and "-window-ratio" arguments if necessary (see below).
+In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-truncate-threshold" and "-truncate" arguments if necessary (see below).
 
 *Note:* The Gaussian "σ" arguments (*σ*, *σ_x*, *σ_y*, and *σ_z*)
 and the *t* ("time") scaling parameter (traditionally used

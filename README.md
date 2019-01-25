@@ -38,7 +38,6 @@ brightness inversions,
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
-and
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf),
 and brightness-fluctuation
 filters.

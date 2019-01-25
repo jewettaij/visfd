@@ -318,8 +318,9 @@ public:
 
 
  private:
+
   /// @brief Apply a filter to the source image (aaafSource) at a particular
-  ///        voxel location.  This function was not intended for public use.
+  ///        voxel location.
   /// @param ix  the voxel's position in that 3D image
   /// @param iy  the voxel's position in that 3D image
   /// @param iz  the voxel's position in that 3D image
@@ -329,6 +330,8 @@ public:
   /// @param pDenominator=if you want to store the sum of the weights considered, pass a pointer to a number
   /// (useful if the sum was not complete due to some voxels being masked out,
   ///  or because the filter extends beyond the boundaries of the image)
+  /// @note: THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
+  
   Scalar ApplyToVoxel(Integer ix,
                        Integer iy,
                        Integer iz,
@@ -610,23 +613,25 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 
 
 
-// @brief ApplySeparable3D applies a separable filter on a 3D array.
-//        It assumes separate Filter1D objects have already been created 
-//        which will blur the image in each direction (x,y,z).
-//        This function supports masks (which exclude voxels from consideration)
-//        One unusual feature of this function is its ability to efficiently
-//        normalize the resulting filtered image in the presence of a mask
-//        (as well as near the image boundaries). Consequently, the image does
-//        not necessarily fade to black near the boundaries of the image 
-//        (or the mask) but instead assumes the shade of the surrounding voxels.
-//        (This could be handled afterwards, but it would be 16.67% slower.)
-//        This function is invoked by ApplyGauss3D().
-//        This function was not intended for public use.
-// @return  This function returns the effective height of the central peak of
-//          the 3D filter.  (This is just the product of the central peaks of
-//          each of the 1D filters.)  For normalized Gaussian shaped filters,
-//          this peak height can be used to calculate the effective width
-//          of the Gaussian to the caller (in case that information is useful).
+/// @brief ApplySeparable3D applies a separable filter on a 3D array.
+///        It assumes separate Filter1D objects have already been created 
+///        which will blur the image in each direction (x,y,z).
+///       This function supports masks (which exclude voxels from consideration)
+///        One unusual feature of this function is its ability to efficiently
+///        normalize the resulting filtered image in the presence of a mask
+///        (as well as near the image boundaries). Consequently, the image does
+///        not necessarily fade to black near the boundaries of the image 
+///       (or the mask) but instead assumes the shade of the surrounding voxels.
+///        (This could be handled afterwards, but it would be 16.67% slower.)
+///        This function is invoked by ApplyGauss3D().
+/// @return  This function returns the effective height of the central peak of
+///          the 3D filter.  (This is just the product of the central peaks of
+///          each of the 1D filters.)  For normalized Gaussian shaped filters,
+///          this peak height can be used to calculate the effective width
+///          of the Gaussian to the caller (in case that information is useful).
+///
+/// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
+
 template<class Scalar>
 static Scalar
 ApplySeparable3D(int const image_size[3],              //!<number of voxels in x,y,z directions
@@ -998,9 +1003,10 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
 /// this weighted average brightness of the voxels near a particular location,
 /// ...by the sum of the weights which were used to calculate that average.
 /// (at that location).
-/// This function was not intended for public use.
 ///
 /// @returns the "A" coefficient (determined by normalization)
+///
+/// @note: THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
 template<class Scalar>
 static Scalar
@@ -1082,7 +1088,7 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 
 
-/// @brief Apply a Gaussian filter (blur) to a 3D image
+/// @brief Apply an ellipsoidal Gaussian filter (blur) to a 3D image
 ///
 /// @code h(x,y,z)=A*exp(-0.5*((x/σ_x)^2+(y/σ_y)^2+(z/σ_z)^2) @endcode
 /// The constant "A" is determined by normalization.
@@ -1090,12 +1096,11 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 /// Voxels outside the boundary of the image or outside the mask are not
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
-/// This function was not intended for public use.
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
 template<class Scalar>
-static Scalar
+Scalar
 ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
              Scalar const *const *const *aaafSource,   //!< source image (3D array)
              Scalar ***aaafDest,     //!< filtered (blurred) image stored here
@@ -1126,7 +1131,7 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 
 
-/// @brief Apply a Gaussian filter (blur) to a 3D image
+/// @brief Apply a spherical Gaussian filter (blur) to a 3D image
 ///
 /// @code h(x,y,z)=A*exp(-0.5*((x^2+y^2+z^2)/σ^2) @endcode
 /// The constant "A" is determined by normalization.
@@ -2317,12 +2322,14 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
 
 
-/// @brief  The following function finds the local minima and maxima in an image
-///         This version of the function was not intended for public use.
+/// @brief  The following function finds EITHER local minima OR local maxima
+///         in an image.
 ///
 /// For this version, the location where each minima or maxima occurs (ix,iy,iz)
 /// is represented by an integer (called an "index") which equals:
+/// @code
 ///          index = ix + iy*image_size[0] + iz*image_size[0]*image_size[1]
+/// @endcode
 /// where ix,iy,iz are the coordinates of the corresponding voxel in the image,
 /// and image_size[] stores the size of the image in the x,y,z directions.
 /// If pv_minima_indices!=NULL, then *pv_minima_indices will store a list
@@ -2335,6 +2342,8 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 /// voxel intensities are not sufficiently low or high, respectively.
 /// If the aaafMask[][][] is not equal to NULL, then local minima and maxima
 /// will be ignored if the corresponding entry in aaafMask[][][] equals 0.
+///
+/// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
 template<class Scalar, class IntegerIndex, class Integer>
 static void
@@ -2787,6 +2796,17 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
 
 
 
+/// @brief  The following function finds EITHER local minima OR local maxima
+///         in an image.
+///
+/// For this version, the location where each minima or maxima occurs (ix,iy,iz)
+/// is represented by an integer (called an "index") which equals:
+/// @code
+///          index = ix + iy*image_size[0] + iz*image_size[0]*image_size[1]
+/// @endcode
+/// where ix,iy,iz are the coordinates of the corresponding voxel in the image.
+///
+/// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
 template<class Scalar, class IntegerIndex, class Integer>
 static void
@@ -2859,7 +2879,6 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
 ///          increasing and decreasing order respectively.  (IE they are sorted
 ///          so that the most significant local minima or maxima will appear
 ///          first in the list.)
-///          corresponding entries in the aaafI array.
 ///          If either pv_minima_crds or pv_maxima_crds is NULL, then
 ///          the minima or maxima will be ignored.
 ///          The optional pv_minima_scores and pv_maxima_scores store the
@@ -5397,9 +5416,9 @@ private:
 /// This version requires that the caller has already created individual
 /// filters for the two gaussians.
 /// All this function does is subtract one filter from the other (and rescale).
-/// DEPRECIATION WARNING:  It's not clear if this type if filter is useful.
-///                        I may delete this function in the future.
-/// THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
+/// @note: DEPRECIATION WARNING: It's not clear if this filter is useful.
+///                              I may delete this function in the future.
+/// @note: THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
 
 template<class Scalar>
 static
