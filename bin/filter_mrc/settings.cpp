@@ -124,6 +124,9 @@ Settings::Settings() {
   out_thresh2_use_clipping = false;
   out_thresh_a_value = 0.0;
   out_thresh_b_value = 1.0;
+  use_gauss_thresholds = false;
+  out_thresh_gauss_x0 = 0.0;
+  out_thresh_gauss_sigma = 1.0;
   //missing_wedge_min[0]=-90.0; // By default, the "missing wedge" includes all
   //missing_wedge_max[0]=90.0;  // orientations around the Y axis which lie
   //missing_wedge_min[1]=-30.0; // between -30 and +30 degrees (relative to the
@@ -1141,6 +1144,42 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by 4 numbers.\n");
       }
       num_arguments_deleted = 5;
+    }
+
+
+    else if (vArgs[i] == "-thresh-range") {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        use_thresholds = true;
+        use_dual_thresholds = true;
+        out_threshold_01_a = stof(vArgs[i+1]);
+        out_threshold_01_b = stof(vArgs[i+1]);
+        out_threshold_10_a = stof(vArgs[i+2]);
+        out_threshold_10_b = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 4 numbers.\n");
+      }
+      num_arguments_deleted = 3;
+    }
+
+
+    else if (vArgs[i] == "-thresh-gauss") {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        use_thresholds = true;
+        use_gauss_thresholds = true;
+        out_thresh_gauss_x0 = stof(vArgs[i+1]);
+        out_thresh_gauss_sigma = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 4 numbers.\n");
+      }
+      num_arguments_deleted = 3;
     }
 
 

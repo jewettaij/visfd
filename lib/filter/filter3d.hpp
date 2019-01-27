@@ -3675,6 +3675,55 @@ LocalFluctuationsRadial(Integer const image_size[3], //!< number of voxels in x,
 
 using namespace selfadjoint_eigen3;
 
+
+/// @brief  Calculate the hessian of a 3D image at a particular position 
+///         ix, iy, iz, from the differences between neighboring voxels.
+///         It is the responsibility of the caller to smooth the source image
+///         (if necessary) before this function is called.
+/// @note   You must insure that ix,iy,iz (and their neighbors!) lie within
+///         the boundaries of the image.  THERE IS NO BOUNDS CHECKING.
+template<class Scalar>
+void
+CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
+                               int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                               Scalar (*hessian)[3]  //store resulting 3x3 matrixhere
+                               )
+{
+  assert(aaafSource);
+  assert(hessian);
+
+  hessian[0][0] = (aaafSource[iz][iy][ix+1] + 
+                   aaafSource[iz][iy][ix-1] - 
+                   2*aaafSource[iz][iy][ix]);
+  hessian[1][1] = (aaafSource[iz][iy+1][ix] + 
+                   aaafSource[iz][iy-1][ix] - 
+                   2*aaafSource[iz][iy][ix]);
+  hessian[2][2] = (aaafSource[iz+1][iy][ix] + 
+                   aaafSource[iz-1][iy][ix] - 
+                   2*aaafSource[iz][iy][ix]);
+
+  hessian[0][1] = 0.25 * (aaafSource[iz][iy+1][ix+1] + 
+                          aaafSource[iz][iy-1][ix-1] - 
+                          aaafSource[iz][iy-1][ix+1] - 
+                          aaafSource[iz][iy+1][ix-1]);
+  hessian[1][0] = hessian[0][1];
+
+  hessian[1][2] = 0.25 * (aaafSource[iz+1][iy+1][ix] + 
+                          aaafSource[iz-1][iy-1][ix] - 
+                          aaafSource[iz-1][iy+1][ix] - 
+                          aaafSource[iz+1][iy-1][ix]);
+  hessian[2][1] = hessian[1][2];
+
+  hessian[2][0] = 0.25 * (aaafSource[iz+1][iy][ix+1] + 
+                          aaafSource[iz-1][iy][ix-1] - 
+                          aaafSource[iz+1][iy][ix-1] - 
+                          aaafSource[iz-1][iy][ix+1]);
+  hessian[0][2] = hessian[2][0];
+} //CalcHessianFiniteDifferences3D()
+
+
+
+
 /// @brief  Calculate matrix of 2nd derivatives (the hessian)
 ///         as well as the the vector of 1st derivatives (the gradient)
 ///         of the source image (aaafSource), at every location where aaafMask
@@ -3791,36 +3840,11 @@ CalcHessian3D(int const image_size[3], //!< source image size
         }
 
         if (aaaafHessian) {
+
           Scalar hessian[3][3];
-          hessian[0][0] = (aaafSmoothed[iz][iy][ix+1] + 
-                           aaafSmoothed[iz][iy][ix-1] - 
-                           2*aaafSmoothed[iz][iy][ix]);
-          hessian[1][1] = (aaafSmoothed[iz][iy+1][ix] + 
-                           aaafSmoothed[iz][iy-1][ix] - 
-                           2*aaafSmoothed[iz][iy][ix]);
-          hessian[2][2] = (aaafSmoothed[iz+1][iy][ix] + 
-                           aaafSmoothed[iz-1][iy][ix] - 
-                           2*aaafSmoothed[iz][iy][ix]);
-
-          hessian[0][1] = 0.25 * (aaafSmoothed[iz][iy+1][ix+1] + 
-                                  aaafSmoothed[iz][iy-1][ix-1] - 
-                                  aaafSmoothed[iz][iy-1][ix+1] - 
-                                  aaafSmoothed[iz][iy+1][ix-1]);
-          hessian[1][0] = hessian[0][1];
-
-          hessian[1][2] = 0.25 * (aaafSmoothed[iz+1][iy+1][ix] + 
-                                  aaafSmoothed[iz-1][iy-1][ix] - 
-                                  aaafSmoothed[iz-1][iy+1][ix] - 
-                                  aaafSmoothed[iz+1][iy-1][ix]);
-          hessian[2][1] = hessian[1][2];
-
-          hessian[2][0] = 0.25 * (aaafSmoothed[iz+1][iy][ix+1] + 
-                                  aaafSmoothed[iz-1][iy][ix-1] - 
-                                  aaafSmoothed[iz+1][iy][ix-1] - 
-                                  aaafSmoothed[iz-1][iy][ix+1]);
-          hessian[0][2] = hessian[2][0];
-
-
+          CalcHessianFiniteDifferences3D(aaafSmoothed,
+                                         ix, iy, iz,
+                                         hessian);
 
           #ifndef NDEBUG
           // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED

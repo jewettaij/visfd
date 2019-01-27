@@ -33,8 +33,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.13.1");
-string g_date_string("2018-1-24");
+string g_version_string("0.13.2");
+string g_date_string("2018-1-26");
 
 
 
@@ -956,7 +956,14 @@ HandleThresholds(Settings settings,
   for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
     for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
       for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
-        if (! settings.use_dual_thresholds) {
+        if (settings.use_gauss_thresholds)
+          tomo_out.aaafI[iz][iy][ix] =
+            SelectIntensityRangeGauss(tomo_out.aaafI[iz][iy][ix],
+                                      settings.out_thresh_gauss_x0,
+                                      settings.out_thresh_gauss_sigma,
+                                      settings.out_thresh_a_value,
+                                      settings.out_thresh_b_value);
+        else if (! settings.use_dual_thresholds) {
           if (settings.out_threshold_01_a == settings.out_threshold_01_b)
             tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >=
                                            settings.out_threshold_01_a)

@@ -149,6 +149,9 @@ class Settings {
   bool  out_thresh2_use_clipping_sigma;
   float out_thresh_a_value;
   float out_thresh_b_value;
+  bool use_gauss_thresholds;
+  float out_thresh_gauss_x0;
+  float out_thresh_gauss_sigma;
 
   #ifndef DISABLE_BOOTSTRAPPING
   int bs_ntests;            //number of bootstrap tests to perform

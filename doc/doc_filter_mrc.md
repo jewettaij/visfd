@@ -711,8 +711,8 @@ while keeping the average voxel brightness the same.
 Inverting an image can be useful to prepare files which you plan
 to read with other programs (such as ChimeraX and IMOD).
 
-### -rescale
 
+### -rescale
 
 If you use the **-rescale** argument, then
 image voxel intensities in the final image
@@ -726,12 +726,15 @@ minimum and maximum voxel intensities are 0 and 1.
   Instead, you can use the "histogram_mrc.py" script to
   see if your intensity values lie in the range you expect.)*
 
+
 ### -clip a b
+
 The "**--clip a b**" argument will
 restrict the range of voxel intensities to a range of your choosing.
 This can be useful to eliminate extremely dark or bright voxels from
 your image.
-(Such spurious voxels can make template matching less reliable.)
+(Such spurious voxels can make it difficult to
+ detect faint objects in the original image.)
 
 ```
 -clip 0.48 0.52
@@ -907,6 +910,53 @@ for example:
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
        It displays the range of voxel intensities in an image.*
+
+
+### -thresh-range  range_a  range_b
+    Select a range of voxels whose intensities fall within
+    the range from *range_a* to *range_b*.
+    Each voxel's new intensity will be a function of its former intensity.
+    If the range_a < range_b, then the thresholding function will be
+
+```
+output
+intensity
+
+    /|\
+  1  |              ___________________
+     |             |                   |
+     |             |                   |
+  0  |_____________|                   |________________\ input
+                 range_a             range_b            / intensity
+```
+
+ Or, if range_b < range_a, then:
+
+```
+    /|\
+  1  |_____________                     ________________\
+     |             |                   |                /
+     |             |                   |
+  0  |             |___________________|                
+                 range_b             range_a
+```
+    (This is shorthand for "-thresh4 range_a range_a range_b range_b")
+
+### -thresh-gauss  x0  σ
+    Select a range of voxels whose intensities fall within a Gaussian
+    centered around *x0* with standard deviation σ.
+    
+```
+    output
+    intensity
+      /|\
+    1  |                       _---_
+       |                     ,'  :  `.
+       |                    /    :    \
+       |                _.-'     :sigma`-,_
+    0  '------------''''         :         ````------------> input
+                                                             intensity
+```
 
 
 
