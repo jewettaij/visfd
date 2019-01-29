@@ -56,7 +56,7 @@ within narrow confined spaces can be detected accurately without penalty.
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 The *source code* for the filters used by this program
-is located here
+is located 
 [here](./lib/filter/).
 
 

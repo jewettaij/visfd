@@ -139,8 +139,8 @@ class Settings {
   bool rescale01_out;
   bool invert_output;
 
-  bool use_thresholds;
-  bool use_dual_thresholds;
+  bool  use_intensity_map;
+  bool  use_dual_thresholds;
   float out_threshold_01_a;
   float out_threshold_01_b;
   float out_threshold_10_a;
@@ -149,7 +149,10 @@ class Settings {
   bool  out_thresh2_use_clipping_sigma;
   float out_thresh_a_value;
   float out_thresh_b_value;
-  bool use_gauss_thresholds;
+  bool  use_rescale_multiply;
+  float out_rescale_multiply;
+  float out_rescale_offset;
+  bool  use_gauss_thresholds;
   float out_thresh_gauss_x0;
   float out_thresh_gauss_sigma;
 

@@ -37,3 +37,18 @@ which uses a permissive open source license.
 License details for that code can be found in the
 [LICENSE.md](lib/eigen_simple/LICENSE.md)
 file located in that directory.
+*Unless you are using filtering operations which calculate Hessians
+ for edge and ridge detection, this notice is not relevant to you.*
+
+
+## IMOD dependency
+***Note:***
+Files located in the "lib/mrc_simple" directory contain
+a short excerpt of code which was adapted from ***IMOD***,
+a set of programs which can read and write MRC (.rec) files.
+That code uses the GPL license (version 2).
+License details can be found in the
+[COPYRIGHT.txt](lib/mrc_simple/COPYRIGHT.txt)
+file located in that directory.
+*Unless you are using the "mrc_simple" code to read or write MRC/REC files,
+ this notice is not relevant to you.*

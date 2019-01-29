@@ -33,8 +33,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.13.2");
-string g_date_string("2018-1-26");
+string g_version_string("0.13.3");
+string g_date_string("2018-1-28");
 
 
 
@@ -280,7 +280,7 @@ BlobDogNM(int const image_size[3], //!<source image size
           Scalar truncate_ratio,      //!< how many sigma before truncating?
           Scalar minima_threshold=0.5,  //!< discard blobs with unremarkable scores
           Scalar maxima_threshold=0.5,  //!< discard blobs with unremarkable scores
-          bool    use_threshold_ratios=true, //!< threshold=ratio*best_score?
+          bool   use_threshold_ratios=true, //!< threshold=ratio*best_score?
           Scalar sep_ratio_thresh=1.0,          //!< minimum radial separation between blobs
           Scalar nonmax_max_overlap_large=1.0,  //!< maximum volume overlap with larger blob
           Scalar nonmax_max_overlap_small=1.0,  //!< maximum volume overlap with smaller blob
@@ -956,7 +956,11 @@ HandleThresholds(Settings settings,
   for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
     for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
       for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
-        if (settings.use_gauss_thresholds)
+        if (settings.use_rescale_multiply) {
+          tomo_out.aaafI[iz][iy][ix] *= settings.out_rescale_multiply;
+          tomo_out.aaafI[iz][iy][ix] += settings.out_rescale_offset;
+        }
+        else if (settings.use_gauss_thresholds)
           tomo_out.aaafI[iz][iy][ix] =
             SelectIntensityRangeGauss(tomo_out.aaafI[iz][iy][ix],
                                       settings.out_thresh_gauss_x0,
@@ -1664,7 +1668,9 @@ int main(int argc, char **argv) {
     }
 
     if (settings.rescale01_in)
-      tomo_in.Rescale01(mask.aaafI);
+      tomo_in.Rescale01(mask.aaafI,
+                        settings.out_threshold_01_a,
+                        settings.out_threshold_01_b);
 
     // ---- make an array that will store the new tomogram we will create ----
 
@@ -1931,7 +1937,7 @@ int main(int argc, char **argv) {
 
     // ----- thresholding: -----
     
-    if (settings.use_thresholds) {
+    if (settings.use_intensity_map) {
 
       HandleThresholds(settings, tomo_in, tomo_out, mask, voxel_width);
 
@@ -1967,7 +1973,9 @@ int main(int argc, char **argv) {
     // --- Rescale so that the lowest, highest voxels have density 0 and 1? ---
 
     if (settings.rescale01_out)
-      tomo_out.Rescale01(mask.aaafI);
+      tomo_out.Rescale01(mask.aaafI,
+                         settings.out_threshold_01_a,
+                         settings.out_threshold_01_b);
 
 
 

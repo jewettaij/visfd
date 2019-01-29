@@ -398,7 +398,9 @@ void MrcSimple::FindMinMaxMean(float ***aaafMask) {
 }
 
 
-void MrcSimple::Rescale01(float ***aaafMask)
+void MrcSimple::Rescale01(float ***aaafMask,
+                          float outA,
+                          float outB)
 {
   FindMinMaxMean(aaafMask); // find the min, max voxel intensities, considering
                             // only voxels where aaafMask[z][y][x] != 0
@@ -407,8 +409,8 @@ void MrcSimple::Rescale01(float ***aaafMask)
   for(Int iz=0; iz<header.nvoxels[2]; iz++) {
     for(Int iy=0; iy<header.nvoxels[1]; iy++) {
       for(Int ix=0; ix<header.nvoxels[0]; ix++) {
-        aaafI[iz][iy][ix] = 
-          (aaafI[iz][iy][ix] - dmin) / (dmax - dmin);
+        aaafI[iz][iy][ix] = outA +
+          (outB-outA) * (aaafI[iz][iy][ix] - dmin) / (dmax - dmin);
       }
     }
   }

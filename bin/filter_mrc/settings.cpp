@@ -115,15 +115,18 @@ Settings::Settings() {
   planar_tv_num_iters = 0;
   planar_tv_truncate_ratio = sqrt(2.0);
 
-  use_thresholds = false;
+  use_intensity_map = false;
   use_dual_thresholds = false;
-  out_threshold_01_a = 1.0;
-  out_threshold_01_b = 1.0;
-  out_threshold_10_a = 1.0;
-  out_threshold_10_b = 1.0;
+  out_threshold_01_a = 0.0;
+  out_threshold_01_b = 0.0;
+  out_threshold_10_a = 0.0;
+  out_threshold_10_b = 0.0;
   out_thresh2_use_clipping = false;
   out_thresh_a_value = 0.0;
   out_thresh_b_value = 1.0;
+  use_rescale_multiply = false;
+  out_rescale_multiply = 1.0;
+  out_rescale_offset = 0.0;
   use_gauss_thresholds = false;
   out_thresh_gauss_x0 = 0.0;
   out_thresh_gauss_sigma = 1.0;
@@ -273,35 +276,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       voxel_width_divide_by_10 = true;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-a2nm")
-
-
-    else if ((vArgs[i] == "-no-rescale") || (vArgs[i] == "-norescale"))
-    {
-      rescale01_in = false;
-      rescale01_out = false;
-      num_arguments_deleted = 1;
-    } // if (vArgs[i] == "-norescale")
-
-
-    else if (vArgs[i] == "-rescale")
-    {
-      if (filter_type == NONE) {
-        rescale01_in = true;
-        out_threshold_01_a = 0.0;
-        out_threshold_01_b = 1.0;
-      }
-      else {
-        rescale01_out = true;
-      }
-      num_arguments_deleted = 1;
-    } // if (vArgs[i] == "-rescale")
-
-
-    else if (vArgs[i] == "-invert")
-    {
-      invert_output = true;
-      num_arguments_deleted = 1;
-    } // if (vArgs[i] == "-invert")
 
 
     else if ((vArgs[i] == "-gauss-aniso") || (vArgs[i] == "-ggauss-aniso"))
@@ -1070,11 +1044,78 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-truncate-thresold")
 
 
+
+
+    else if (vArgs[i] == "-rescale")
+    {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_rescale_multiply = true;
+        out_rescale_multiply = stof(vArgs[i+1]);
+        out_rescale_offset = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 2 numbers:\n"
+                       " outA  outB\n"
+                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
+      }
+      num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-rescale")
+
+
+    else if (vArgs[i] == "-rescale-min-max")
+    {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        out_threshold_01_a = stof(vArgs[i+1]);
+        out_threshold_01_b = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 2 numbers:\n"
+                       " outA  outB\n"
+                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
+      }
+      if (filter_type == NONE) {
+        rescale01_in = true;
+      }
+      else {
+        rescale01_out = true;
+      }
+      num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-rescale-min-max")
+
+
+    else if ((vArgs[i] == "-no-rescale") || (vArgs[i] == "-norescale"))
+    {
+      rescale01_in = false;
+      rescale01_out = false;
+      out_threshold_01_a = 1.0;
+      out_threshold_01_b = 1.0;
+      num_arguments_deleted = 1;
+    } // if (vArgs[i] == "-norescale")
+
+
+    else if (vArgs[i] == "-invert")
+    {
+      invert_output = true;
+      num_arguments_deleted = 1;
+    } // if (vArgs[i] == "-invert")
+
+
     else if (vArgs[i] == "-thresh") {
       try {
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
-        use_thresholds = true;
+        use_intensity_map = true;
         use_dual_thresholds = false;
         out_threshold_01_a = stof(vArgs[i+1]);
         out_threshold_01_b = out_threshold_01_a;
@@ -1091,7 +1132,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
-        use_thresholds = true;
+        use_intensity_map = true;
         use_dual_thresholds = false;
         out_threshold_01_a = stof(vArgs[i+1]);
         out_threshold_01_b = stof(vArgs[i+2]);
@@ -1110,7 +1151,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
-        use_thresholds = true;
+        use_intensity_map = true;
         use_dual_thresholds = false;
         out_threshold_01_a = stof(vArgs[i+1]);
         out_threshold_01_b = stof(vArgs[i+2]);
@@ -1132,7 +1173,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if (i+4 >= vArgs.size())
           throw invalid_argument("");
-        use_thresholds = true;
+        use_intensity_map = true;
         use_dual_thresholds = true;
         out_threshold_01_a = stof(vArgs[i+1]);
         out_threshold_01_b = stof(vArgs[i+2]);
@@ -1151,7 +1192,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
-        use_thresholds = true;
+        use_intensity_map = true;
         use_dual_thresholds = true;
         out_threshold_01_a = stof(vArgs[i+1]);
         out_threshold_01_b = stof(vArgs[i+1]);
@@ -1170,7 +1211,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
-        use_thresholds = true;
+        use_intensity_map = true;
         use_gauss_thresholds = true;
         out_thresh_gauss_x0 = stof(vArgs[i+1]);
         out_thresh_gauss_sigma = stof(vArgs[i+2]);
@@ -1992,7 +2033,7 @@ Settings::ParseArgs(vector<string>& vArgs)
          (filter_type == BLOB) ||
          (filter_type == SPHERE_NONMAX_SUPPRESSION)))
        ||
-       use_thresholds ||
+       use_intensity_map ||
        invert_output))
   {
     throw InputErr("Error: You must specify the name of the tomogram you want to create\n"

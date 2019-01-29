@@ -1,0 +1,43 @@
+A significant fraction of the code in the mrc_simple directory comes from IMOD.
+Here is the copyright notice that comes with IMOD.
+
+IMOD Version 4.9.0                     Copyright Notice and Credits
+--------------------------------------------------------------------------
+Except as noted, ALL SOFTWARE LISTED IS Copyright (C) 1994-2017
+the Regents of the University of Colorado.
+
+All portions of IMOD, except as noted below, are open source under the
+General Public License (GPL) version 2.0.  A copy of this license is in the
+file GPL.txt.  (All license files referred to here are in the directory
+'licenses' in the binary distribution or 'dist' in the source code.)  The 
+libraries written entirely in C/C++ are released under the Lesser GPL (see
+LGPL.txt).  Software may be modified and redistributed under the terms of
+these licenses.  The source can be found at
+http://bio3d.colorado.edu/imod/nightlyBuild
+and
+http://bio3d.colorado.edu/imod/openSource
+
+THIS SOFTWARE AND/OR DOCUMENTATION IS PROVIDED WITH NO WARRANTY,
+EXPRESS OR IMPLIED, INCLUDING, WITHOUT LIMITATION, WARRANTY OF
+MERCHANTABILITY AND WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE.
+
+Programs were written by David Mastronarde, James Kremer, Rick
+Gaudette, Sue Held, Quanren Xiong, and John Heumann at the University 
+of Colorado, some based on work and libraries from the MRC.  We thank David
+Agard and Hans Chen for the original MRC source code, Wah Chiu for a Unix
+version of low-level MRC file routines used in the FORTRAN parts, and Chuck
+Robertson for much work on the port to Linux.
+
+This work was supported in the past by NIH P41 grants from NCRR and NIGMS to
+J. Richard McIntosh and Andreas Hoenger; and by NIBIB grant EB005027 to 
+David Mastronarde.
+
+Contact:  mast at colorado dot edu
+    www:  http://bio3d.colorado.edu/imod/index.html
+    University of Colorado, Dept. of MCD Biology, 347 UCB, Boulder, CO 80309
+
+---- NOTE: THE ORIGINAL COPYRIGHT.txt FILE CONTAINS A LONG LIST OF
+----       CREDITS TO AUTHORS AND INSTITUTIONS WHO CONTRIBUTED CODE FOR
+----       IMOD FEATURES THAT WERE NOT USED IN THIS LIBRARY ("mrc_simple").
+----       This is not relevant and was omitted.
+

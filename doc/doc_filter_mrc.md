@@ -712,19 +712,49 @@ Inverting an image can be useful to prepare files which you plan
 to read with other programs (such as ChimeraX and IMOD).
 
 
-### -rescale
 
-If you use the **-rescale** argument, then
+### -rescale m b
+    
+    Rescale the voxel intensities (multiply them by *m*)
+    and add an offset (b).  Afterwards, *new_intensity = m\*old_intensity + b*.
+    
+```
+         output
+        intensity
+           /|\        /
+            |        /
+            |       /     /|
+            |      /   m / |
+            |     /     /__|
+            |    /                      
+  <---------|---/------------------->  input
+        /|\ |  /                       intensity
+      b  |  | /
+        \|/ |/
+            /
+           /|
+          / |
+         /  |/
+```
+
+
+### -rescale-min-max outA outB
+
+If you use the **-rescale-min-max** argument, then
 image voxel intensities in the final image
 (after all other processing has been applied)
 will be shifted and rescaled so that the
-minimum and maximum voxel intensities are 0 and 1.
+minimum and maximum voxel intensities will be *outA* and *outB*.
 
-*(Note: As of 2018-1-31, IMOD reports voxel brightnesses between 0 and 255
-  even if the actual voxel brightnesses are floating point numbers between
-  0 and 1.  Keep this in mind when using that software.
-  Instead, you can use the "histogram_mrc.py" script to
-  see if your intensity values lie in the range you expect.)*
+*(Note: As of 2018-6-30, the "Black" and "White" controls in *IMOD*
+  report values between 0 and 255, even if the actual voxel brightnesses
+  in the file are floating point numbers (between 0 and 1, for example).
+  Ignore those numbers.
+  You can find the brightness of a particular voxel by left-clicking
+  on that voxel (to move the yellow-cursor)
+  and then by selecting the "Edit"->"Point"->"Value" menu option within IMOD.
+  You can also use the "histogram_mrc.py" script to
+  see if your intensity values in the image lie in the range you expect.)*
 
 
 ### -clip a b
@@ -782,30 +812,79 @@ below or above the average intensity value, respectively
 
 ### -thresh  threshold
 
-If the "-thresh" argument is passed, it must be followed by a number ("thresh01").  Voxels with intensities *below* this number will be replaced 0, and voxels *above* this number will be replaced with 1.  For example:
+If the "-thresh" argument is passed, it must be followed by a number
+("thresh01").
+Voxels with intensities *below* this number will be replaced 0,
+and voxels *above* this number will be replaced with 1 (by default, see below).
+For example:
 ```
 -thresh 0.5
 ```
 results in:
 ```
- output
- intensity
-  /|\                      _____________________________\
- 1 |                      |                             /
-   |                      |                 
-   |                      |            
- 0 |______________________|  __________________________\ input
-                          ^                            / intensity
-                         0.5
-                     (threshold)
+          output
+         intensity
+            /|\
+             |
+   outB   -->|                       __________________________\
+(usually 1)  |                      |                          /
+             |                      |                 
+             |                      |            
+   outA   -->|______________________|  ________________________\ input
+(usually 0)                         ^                          / intensity
+                                   0.5
+                               (threshold)
 
 ```
-
 
 *Note: When choosing thresholds, the
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
        It displays the range of voxel intensities in an image.*
+
+
+*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+       resulting voxel intensities from outA to outB (instead of from 0 to 1).*
+
+
+
+
+### -thresh-range  range_a  range_b
+    Select a range of voxels whose intensities fall within
+    the range from *range_a* to *range_b*.
+    Each voxel's new intensity will be a function of its former intensity.
+    If the range_a < range_b, then the thresholding function will be
+
+```
+         output
+        intensity
+           /|\
+            |
+            |
+   outB  -->|              ___________________
+(usually 1) |             |                   |
+            |             |                   |
+   outA  -->|_____________|                   |________________\ input
+(usually 0)             range_a             range_b            / intensity
+```
+
+ Or, if range_b < range_a, then:
+
+```
+           /|\
+            |
+   outB  -->|_____________                     ________________\
+(usually 1) |             |                   |                /
+            |             |                   |
+   outA  -->|             |___________________|                
+(usually 0)             range_b             range_a
+```
+
+*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+       resulting voxel intensities from outA to outB (instead of from 0 to 1).*
+
+*Note: This command is equivalent to "-thresh4 range_a range_a range_b range_b"*
+
 
 
 ### -thresh2  thresh_a  thresh_b
@@ -822,16 +901,18 @@ Graphically, the threshold filter resembles a step function
 with a smooth ramp between *thresh_a* and *thresh_b*:
 
 ```
- output
- intensity
-    /|\                              _________________
- 1   |                           _.-'                 
-     |                       _,-'                 
-     |                   _,-'            
- 0   |________________,-'                     ________\ input
-                      ^              ^                / intensity
-                     0.48          0.52
-                  (thresh_a)    (thresh_b)
+           output
+         intensity
+            /|\
+             |
+   outB   -->|                               _________________
+(usually 1)  |                           _.-'                 
+             |                       _,-'                 
+             |                   _,-'            
+   outB   -->|________________,-'                     ________\ input
+(usually 0)                   ^              ^                / intensity
+                             0.48          0.52
+                          (thresh_a)    (thresh_b)
 ```
 ***Alternatively***, if the threshold parameters are reversed
 (if ***thresh_b < thresh_a***), as in this example:
@@ -842,24 +923,27 @@ with a smooth ramp between *thresh_a* and *thresh_b*:
 (i.e., bright voxels become dark, and dark voxels become bright):
 
 ```
-   output
-  intensity
-     /|\
-      |
-  1   |________________
-      |                `-._
-      |                    `-._
-      |                        '-._         
-  0   |                            `-.___________________\ input
-                       ^              ^                  / intensity
-                      0.48          0.52
-                   (thresh_b)     (thresh_a)
+          output
+         intensity
+            /|\
+             |
+   outB   -->|________________
+(usually 1)  |                `-._
+             |                    `-._
+             |                        '-._         
+   outA   -->|                            `-.___________________\ input
+(usually 0)                  ^              ^                  / intensity
+                            0.48          0.52
+                        (thresh_b)     (thresh_a)
 ```
 
 *Note: When choosing thresholds, the
        [histogram_mrc.py program](doc_histogram_mrc.md)
        can be useful.
        It displays the range of voxel intensities in an image.*
+
+*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+       resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
 ### -thresh4  thresh01_a  thresh01_b  thresh10_a  thresh10_b
@@ -874,16 +958,17 @@ The resulting image voxels will be scaled
 between 0 and 1 according to the following function:
 
 ```
- output
- intensity
-  /|\
- 1 |                 ________________                
-   |             _,-'                `-._
-   |         _,-'                        `-._
- 0 |______,-'                                `-._______\ input
-         ^         ^                 ^         ^       / intensity
-        0.3       0.4               0.5       0.6
-   thresh_01_a  thresh_01_b    thresh_10_a  thresh_10_b
+         output
+        intensity
+           /|\
+            |
+   outB  -->|                 ________________                
+(usually 1) |             _,-'                `-._
+            |         _,-'                        `-._
+   outA  -->|______,-'                                `-._______\ input
+(usually 0)        ^         ^                ^         ^       / intensity
+                  0.3       0.4              0.5       0.6
+             thresh_01_a  thresh_01_b    thresh_10_a  thresh_10_b
 ```
 This assumes the numbers were listed in *increasing* order.
 ***Alternatively***, if the parameters are listed in *decreasing* order,
@@ -893,16 +978,17 @@ for example:
 ```
 ...then the output is inverted:
 ```
- output
- intensity
-  /|\                                                   
- 1 |_____                                       _________
-   |     `-._                               _.-'       
-   |         `-._                       _,-'             
- 0 |             `-._________________,-'          _______\ input
-         ^         ^                 ^         ^         / intensity
-        0.3       0.4               0.5       0.6
-   thresh_10_b  thresh_10_a    thresh_10_b  thresh_10_a
+         output
+        intensity
+           /|\                                                   
+            |                                                    
+   outB  -->|_____                                       _________
+(usually 1) |     `-._                               _.-'       
+            |         `-._                       _,-'             
+   outA  -->|             `-._________________,-'          _______\ input
+(usually 0)       ^         ^                 ^         ^         / intensity
+                 0.3       0.4               0.5       0.6
+             thresh_10_b  thresh_10_a    thresh_10_b  thresh_10_a
 ```
 
 
@@ -912,51 +998,31 @@ for example:
        It displays the range of voxel intensities in an image.*
 
 
-### -thresh-range  range_a  range_b
-    Select a range of voxels whose intensities fall within
-    the range from *range_a* to *range_b*.
-    Each voxel's new intensity will be a function of its former intensity.
-    If the range_a < range_b, then the thresholding function will be
+*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+       resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
-```
-output
-intensity
 
-    /|\
-  1  |              ___________________
-     |             |                   |
-     |             |                   |
-  0  |_____________|                   |________________\ input
-                 range_a             range_b            / intensity
-```
 
- Or, if range_b < range_a, then:
 
-```
-    /|\
-  1  |_____________                     ________________\
-     |             |                   |                /
-     |             |                   |
-  0  |             |___________________|                
-                 range_b             range_a
-```
-    (This is shorthand for "-thresh4 range_a range_a range_b range_b")
-
-### -thresh-gauss  x0  σ
+### -thresh-gauss x0 σ
     Select a range of voxels whose intensities fall within a Gaussian
     centered around *x0* with standard deviation σ.
     
 ```
-    output
-    intensity
-      /|\
-    1  |                       _---_
-       |                     ,'  :  `.
-       |                    /    :    \
-       |                _.-'     :sigma`-,_
-    0  '------------''''         :         ````------------> input
-                                                             intensity
+         output
+        intensity
+           /|\
+            |
+            |                       _---_
+(usually 1) |                     ,'  :  `.
+            |                    /    :<-->\
+            |                _.-'     :  σ  `-,_
+    outA -->'------------''''         :         ````------------> input
+(usually 0)                          x0                          intensity
 ```
+
+*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+       resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
 
@@ -1157,7 +1223,7 @@ assigned to 0 by default.
 *(Note that by default, voxel brightnesses
 are rescaled between 0 and 1 before and after filtering.  
 This means that "-mask-out 0" assigns these voxels same brightness as the lowest brightness voxels in the image.
-If you are using "-rescale", then
+If you are using "-rescale-min-max", then
 "-mask-out 1" assigns them to the brightest voxels in the image.)
 
 
