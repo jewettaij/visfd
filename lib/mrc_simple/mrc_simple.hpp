@@ -33,7 +33,7 @@ using namespace std;
 
 
 class MrcSimple {
- public:
+public:
   MrcHeader header;     ///< contains the size and dimensions of the tomogram:
                         ///<   (header.nvoxels[] stores the number of voxels
                         ///<                         in the x,y,z directions.
@@ -47,7 +47,7 @@ class MrcSimple {
   float ***aaafI;       ///< Useful if you prefer to use 3-index notation:
                         ///<    aafI[iz][iy][ix] =
                         ///<     afI[ix + iy*sizez + iz*sizex*sizey]
- private:
+private:
 
   /// @brief  Allocate memory for the tomogram (image).
   ///   Allocates and initializes afI and aaafI. Invoke
@@ -57,7 +57,7 @@ class MrcSimple {
   /// @brief  Deallocate memory for the tomogram (image).
   void Dealloc();
 
- public:
+public:
 
   /// @brief  Read an .MRC/.REC file
   void Read(string mrc_file_name,  //!<name of the file
@@ -107,14 +107,14 @@ class MrcSimple {
 
   // ------ Constructors, destructors, memory-allocation ------
 
-  private:
+private:
   void Init() {
     afI = NULL;
     aaafI = NULL;
     header.mode = MrcHeader::MRC_MODE_FLOAT;
   }
 
-  public:
+public:
   MrcSimple() {
     Init();
   }
@@ -124,9 +124,11 @@ class MrcSimple {
   }
 
 
-  /// @brief  Change the number of voxels in the image.
+  /// @brief  Change the size (number of voxels) in the image.
 
-  void Resize(int const set_nvoxels[3]) {
+  void Resize(int const set_nvoxels[3]//!<number of voxels in the xyz directions
+              )
+  {
     // Copy the contents of the image from an existing 3-D array
     Dealloc();
     for (int d=0; d < 3; d++) {
@@ -137,37 +139,47 @@ class MrcSimple {
     Alloc();
   }
 
-  MrcSimple(int const set_nvoxels[3],
-            float ***aaaf_contents);
 
-  MrcSimple& operator = (const MrcSimple& source) {
+  MrcSimple(int const set_nvoxels[3],//!< number of voxels in the xyz directions
+            float ***aaaf_contents //!< a 3D array of voxel values
+            );
+
+
+  MrcSimple(const MrcSimple& source):
+    MrcSimple(source.header.nvoxels,
+              source.aaafI)
+  {
     header = source.header;
-    Dealloc(); // (just in case)
-    Alloc();   // allocates and initializes afI and aaafI
-    //for(Int iz=0; iz<header.nvoxels[2]; iz++)
-    //  for(Int iy=0; iy<header.nvoxels[1]; iy++)
-    //    for(Int ix=0; ix<header.nvoxels[0]; ix++)
-    //      aaafI[iz][iy][ix] = source.aaafI[iz][iy][ix];
-    // Use memcpy() instead:
-    memcpy(afI, source.afI, 
-           header.nvoxels[0]*header.nvoxels[1]*header.nvoxels[2]
-           *sizeof(float));
   }
 
-  MrcSimple(const MrcSimple& source) { //(not tested yet)
-    Init();
-    operator=(source);
+  void swap(MrcSimple &other) {
+    std::swap(header, other.header);
+    std::swap(afI, other.afI);
+    std::swap(aaafI, other.aaafI);
+    // (do I need to do something fancier for multidimensional arrays (aaafI)?)
   }
 
- private:
+  MrcSimple&
+    operator = (MrcSimple source) {
+    this->swap(source);
+    return *this;
+  }
 
-  // If you want to read the header and array separately, you can do that too:
-  // using header.Read(mrc_file), and header.Write(mrc_file)
-  // After that, you can read and write the rest of the file using:
- 
-  //Invoke only after header.Read()
+
+private:
+
+  /// @brief
+  /// Invoke only after header.Read()
+  /// If you want to read the header and array separately, you can do that too:
+  /// using header.Read(mrc_file)
+  /// After that, you can read the rest of the file using:
   void ReadArray(istream& mrc_file, int const *axis_order);
-  //Invoke after header.Write()
+
+  /// @brief
+  /// Invoke only after header.Read()
+  /// If you want to write the header and array separately, you can do that too:
+  /// using header.Write(mrc_file)
+  /// After that, you can write the rest of the file using:
   void WriteArray(ostream& mrc_file) const; 
 
 }; //MrcSimple
@@ -175,7 +187,7 @@ class MrcSimple {
 
 
 
-// Although not necessarily recommended, you can use << or >> to read/write
+/// @brief you can also use >> to write the file
 static inline
 istream& operator >> (istream& mrc_file, 
                       MrcSimple& tomo)
@@ -185,6 +197,7 @@ istream& operator >> (istream& mrc_file,
 }
 
 
+/// @brief you can also use << to read the file
 static inline
 ostream& operator << (ostream& mrc_file,
                       MrcSimple& tomo)
