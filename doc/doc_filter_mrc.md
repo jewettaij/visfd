@@ -775,10 +775,6 @@ your image.
 -clip 0.48 0.52
 ```
 The resulting voxels intensities will lie in the range from 0.48 to 0.52.
-
-Note: If instead, you want the output intensities to range from 0 to 1,
-      (for example), then use the more general "**-thresh2**" argument
-      (see below).
 ```
  output
  intensity
@@ -791,6 +787,12 @@ Note: If instead, you want the output intensities to range from 0 to 1,
                      0.48          0.52
                   (thresh_a)    (thresh_b)
 ```
+
+*Note: If instead, you want the output intensities to range from*
+      **0 to 1**,
+      (for example), then use the more general*
+      "**-thresh2**"
+      *argument. (See below.)*
 
 *Note: Unfortunately, intensity values can be difficult to guess.
        When choosing thresholds, the
