@@ -721,7 +721,7 @@ to read with other programs (such as ChimeraX and IMOD).
 
 Rescale the voxel intensities (multiply the brightnesses by *m*)
 and add an offset (*b*).
-Afterwards *new_intensity = m\*old_intensity + b*.
+Afterwards *new_intensity=m\*old_intensity + b*.
     
 ```
          output
@@ -774,7 +774,11 @@ your image.
 ```
 -clip 0.48 0.52
 ```
-The resulting voxels will have intensities in the range from 0.48 to 0.52.
+The resulting voxels intensities will lie in the range from 0.48 to 0.52.
+
+Note: If instead, you want the output intensities to range from 0 to 1,
+      (for example), then use the more general "**-thresh2**" argument
+      (see below).
 ```
  output
  intensity
@@ -955,8 +959,8 @@ between 0 and 1 according to the following function:
 
 
 ### -thresh-gauss x0 σ
-    Select a range of voxels whose intensities fall within a Gaussian
-    centered around *x0* with standard deviation σ.
+Select a range of voxels whose intensities fall within a Gaussian
+centered around *x0* with standard deviation σ.
     
 ```
          output
