@@ -1179,10 +1179,19 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_threshold_01_b = stof(vArgs[i+2]);
         out_threshold_10_a = stof(vArgs[i+3]);
         out_threshold_10_b = stof(vArgs[i+4]);
+        bool all_increasing = ((out_threshold_01_a <= out_threshold_01_b) &&
+                               (out_threshold_01_b <= out_threshold_10_a) &&
+                               (out_threshold_10_a <= out_threshold_10_b));
+        bool all_decreasing = ((out_threshold_01_a >= out_threshold_01_b) &&
+                               (out_threshold_01_b >= out_threshold_10_a) &&
+                               (out_threshold_10_a >= out_threshold_10_b));
+        if (! (all_increasing || all_decreasing))
+          throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by 4 numbers.\n");
+                       " argument must be followed by 4 numbers\n"
+                       "       (These numbers must be either in increasing or decreasing order.)\n");
       }
       num_arguments_deleted = 5;
     }
