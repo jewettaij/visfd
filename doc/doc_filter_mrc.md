@@ -490,7 +490,11 @@ or filtered in advance.)
 ### -watershed-threshold  threshold
 
 If the "**-watershed-threshold**" argument is also supplied, then voxels
-whose intensity exceeds *threshold*, will be assigned to -1.
+whose intensity exceeds *threshold*, will be assigned to
+the *number of basins (whose depth lies below this value) + 1*.
+(Since this is an impossible value,
+ these will be the brightest voxels in the image.
+ IE. They will have the highest intensity.)
 
 ### -watershed-maxima
 
@@ -499,14 +503,14 @@ This performs watershed segmentation starting from maxima instead of minima.
 
 ### -watershed-boundary  label
 
-By default, voxels which lie on the border between 2 or more different basins
+By default, voxels which lie on the border between two or more different basins
 will be assigned a value of 0.
 When this argument is included, these voxels will have intensities
 which are assigned to *label* instead.  (This parameter is a number.)
 
 ### -watershed-hide-boundaries
 
-By default, voxels which lie on the border between 2 or more different basins
+By default, voxels which lie on the border between two or more different basins
 will be assigned a value of 0.
 When this argument is selected, the basin to which a boundary voxel is assigned
 will be chosen (arbitrarily) from among the neighboring basins.
