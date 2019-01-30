@@ -294,6 +294,7 @@ it's "score" (which is the brightness of the voxel at that location).
   "-blob",  "-blobr",  "-blobd" and "-spheres" arguments.)*
 When a minima or maxima contains multiple voxels of identical brightness,
 the position of one of the voxels among them is chosen arbitrarily.
+
 You can use the "**-out filename.rec**" to create 
 an image showing which voxels belong to each minima or maxima.
 (In that image, the voxel brightness will be an integer indicating 
@@ -313,6 +314,8 @@ of the image (or on the boundary of the mask region), are considered.
 To ignore these extrema (ie, to consider only voxels which are surrounded
 by other voxels) use the "**-ignore-boundary-extrema-**" argument.
 
+#### Non-max suppression
+
 The "**-find-minima**" and "**-find-maxima**" arguments 
 are sometimes used together with the following arguments:
 ```
@@ -322,10 +325,11 @@ or
 ```
   -maxima-threshold   threshold
 ```
-This allows users to discard poor scoring minima (or maxima),
-minima whose "scores" do not fall below (or above) "threshold".
+This allows users to discard poor scoring minima (or maxima), 
+whose "scores" (brightnesses) do not fall below (or above) "threshold".
 
-It may be useful to discard minima which are too close together:
+It may also be useful to discard minima which are too close together.
+This can be done using a combination of these two arguments:
 ```
   -sphere-radius    radius
 ```
@@ -336,7 +340,7 @@ and
 The "**-sphere-radius** argument allows you to assign a radius to each minima
 (or maxima).  When used together with "**-blobr-separation**", it means that
 if a pair of minima (or maxima) lie within the sum of their
-radii times ratio (*2\*radius\*ratio*)
+radii times ratio (*2\*radius\*ratio*), 
 then the poorer scoring minima will be discarded.
 
 
@@ -409,9 +413,9 @@ These blobs can be visualized using the "**-spheres**" argument (see below).
 
 
 
-#### Automatic disposal of blobs
+#### Automatic disposal of blobs (non-max suppression)
 
-***BY DEFAULT, ALL MINIMA AND MAXIMA ARE REPORTED DURING BLOB DETECTION***
+***By default, all minima and maxima are reported during blob detection ***
 (no matter how insignificant).
 Unfortunately, the blob-detector will typically an enormous number of 
 blobs in a typical image.
@@ -714,9 +718,10 @@ to read with other programs (such as ChimeraX and IMOD).
 
 
 ### -rescale m b
-    
-    Rescale the voxel intensities (multiply them by *m*)
-    and add an offset (b).  Afterwards, *new_intensity = m\*old_intensity + b*.
+
+Rescale the voxel intensities (multiply the brightnesses by *m*)
+and add an offset (*b*).
+Afterwards *new_intensity = m\*old_intensity + b*.
     
 ```
          output
@@ -868,18 +873,6 @@ results in:
 (usually 0)             range_a             range_b            / intensity
 ```
 
- Or, if range_b < range_a, then:
-
-```
-           /|\
-            |
-   outB  -->|_____________                     ________________\
-(usually 1) |             |                   |                /
-            |             |                   |
-   outA  -->|             |___________________|                
-(usually 0)             range_b             range_a
-```
-
 *Note: You can use the "-rescale-min-max outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
@@ -913,28 +906,6 @@ with a smooth ramp between *thresh_a* and *thresh_b*:
 (usually 0)                   ^              ^                / intensity
                              0.48          0.52
                           (thresh_a)    (thresh_b)
-```
-***Alternatively***, if the threshold parameters are reversed
-(if ***thresh_b < thresh_a***), as in this example:
-```
--thresh2 0.52 0.48
-```
-...then the output intensity will be inverted
-(i.e., bright voxels become dark, and dark voxels become bright):
-
-```
-          output
-         intensity
-            /|\
-             |
-   outB   -->|________________
-(usually 1)  |                `-._
-             |                    `-._
-             |                        '-._         
-   outA   -->|                            `-.___________________\ input
-(usually 0)                  ^              ^                  / intensity
-                            0.48          0.52
-                        (thresh_b)     (thresh_a)
 ```
 
 *Note: When choosing thresholds, the
@@ -970,27 +941,6 @@ between 0 and 1 according to the following function:
                   0.3       0.4              0.5       0.6
              thresh_01_a  thresh_01_b    thresh_10_a  thresh_10_b
 ```
-This assumes the numbers were listed in *increasing* order.
-***Alternatively***, if the parameters are listed in *decreasing* order,
-for example:
-```
- -thresh4 0.6 0.5 0.4 0.3
-```
-...then the output is inverted:
-```
-         output
-        intensity
-           /|\                                                   
-            |                                                    
-   outB  -->|_____                                       _________
-(usually 1) |     `-._                               _.-'       
-            |         `-._                       _,-'             
-   outA  -->|             `-._________________,-'          _______\ input
-(usually 0)       ^         ^                 ^         ^         / intensity
-                 0.3       0.4               0.5       0.6
-             thresh_10_b  thresh_10_a    thresh_10_b  thresh_10_a
-```
-
 
 *Note: When choosing thresholds, the
        [histogram_mrc.py program](doc_histogram_mrc.md)

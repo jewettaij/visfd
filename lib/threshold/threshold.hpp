@@ -2,6 +2,7 @@
 #define _THRESHOLD_HPP
 
 #include <cmath>
+#include <cassert>
 using namespace std;
 
 
@@ -20,13 +21,13 @@ bool IsBetween(X x, X a, X b) {
 ///
 ///           output
 ///           intensity
-///    outB    /|\                              _________________\
-/// (usually 1) |                           _.-'                 /
+///    outB    /|\                              __________________\
+/// (usually 1) |                           _.-'                  /
 ///             |                       _,-'                 
 ///             |                   _,-'            
-///    outA     |________________,-'                     ________\ input
-/// (usually 0)               thresh         thresh              / intensity
-///
+///    outA     |________________,-'                     _________\ input
+/// (usually 0)               thresh         thresh               / intensity
+///                            01_a           01_b
 /// @endcode
 ///
 ///
@@ -90,10 +91,10 @@ Number Threshold2(Number intensity,
 /// intensity
 ///
 ///     /|\
-/// outA |                 ________________                
+/// outB |                 ________________                
 ///      |             _,-'                `-._
 ///      |         _,-'                        `-._
-/// outB |______,-'                                `-._______\ input
+/// outA |______,-'                                `-._______\ input
 ///           thresh    thresh          thresh    thresh     / intensity
 ///            01_a      01_b            10_a      10_b
 ///
@@ -104,10 +105,10 @@ Number Threshold2(Number intensity,
 /// @code
 ///
 ///     /|\                                                   
-/// outA |_____                                       _______\ input
+/// outB |_____                                       _______\ input
 ///      |     `-._                               _.-'       / intensity
 ///      |         `-._                       _,-'
-/// outB |             `-._________________,-'
+/// outA |             `-._________________,-'
 ///           thresh    thresh          thresh    thresh
 ///            10_b      10_a            01_b      01_a
 ///
@@ -143,16 +144,30 @@ Number Threshold4(Number intensity,
     g = Threshold2(intensity,
                    threshold_10_a,
                    threshold_10_b);
-  else if (IsBetween(intensity,
-                     threshold_01_b,
-                     threshold_10_a))
-    g = 1.0;
+  else if (threshold_01_b <= threshold_10_a) {
+    if (IsBetween(intensity,
+                  threshold_01_b,
+                  threshold_10_a))
+      g = 1.0;
+    else
+      g = 0.0;
+  }
+  else if (threshold_10_b <= threshold_01_a) {
+    if (IsBetween(intensity,
+                  threshold_10_b,
+                  threshold_01_a))
+      g = 0.0;
+    else
+      g = 1.0;
+  }
   else
-    g = 0.0;
+    assert(false); //then thresholds are not in increasing or decreasing order
+
 
   return outA + g*(outB-outA);
 
 } // Threshold4()
+
 
 
 /// @brief  Read an intensity value and return a new intensity value
