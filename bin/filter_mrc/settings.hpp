@@ -199,6 +199,7 @@ class Settings {
 
   bool watershed_use_minima;
   bool watershed_show_boundaries;
+  float watershed_boundary_label;
   float watershed_threshold;
 
   string out_normals_fname;

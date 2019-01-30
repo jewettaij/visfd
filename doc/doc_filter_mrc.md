@@ -274,9 +274,7 @@ create a file containing the locations of the local minima or maxima
 of the voxel brightnesses within the image, respectively.
 A "minima" is defined as one or more neighboring voxels
 of identical brightness, surrounded by neighbors of higher brightness.
-By default, all 26 neighboring voxels are counted as neighbors, 
-however this can be overridden using the **-neighbor-connectivity** argument.
-(See below.)
+(See below for details about which voxels are considered *"neighbors"*.)
 
 This will generate a text file indicating the location of the minima.
 This file is a 5-column ascii text file.
@@ -488,18 +486,6 @@ on the image to remove small, insignificant local minima beforehand.
 (This algorithm is usually only applied to images that have been smoothed
 or filtered in advance.)
 
-*BUG WARNING:
-          Basins beginning at non-point-like local minima are currently ignored.
-          (Such extrema consist of multiple adjacent voxels
-           of identical brightness.)
-          This is a bug.
-          This feature was intended to be applied to noisy microscope images
-          (having 32bit depth) which have already been processed using
-          Gaussian blurring, Tensor-voting, or other kinds of filters.
-          For these images, adjacent voxels of identical brightness
-          are very unlikely.
-          This bug will get fixed eventually.*
-
 
 ### -watershed-threshold  threshold
 
@@ -511,6 +497,19 @@ whose intensity exceeds *threshold*, will be assigned to -1.
 This performs watershed segmentation starting from maxima instead of minima.
 
 
+### -watershed-boundary  label
+
+By default, voxels which lie on the border between 2 or more different basins
+will be assigned a value of 0.
+When this argument is included, these voxels will have intensities
+which are assigned to *label* instead.  (This parameter is a number.)
+
+### -watershed-hide-boundaries
+
+By default, voxels which lie on the border between 2 or more different basins
+will be assigned a value of 0.
+When this argument is selected, the basin to which a boundary voxel is assigned
+will be chosen (arbitrarily) from among the neighboring basins.
 
 
 
@@ -721,7 +720,7 @@ to read with other programs (such as ChimeraX and IMOD).
 
 Rescale the voxel intensities (multiply the brightnesses by *m*)
 and add an offset (*b*).
-Afterwards *new_intensity=m\*old_intensity + b*.
+Afterwards *new_intensity=m\*old_intensity+b*.
     
 ```
          output

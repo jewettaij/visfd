@@ -3085,7 +3085,8 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
             Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
             bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
             int connectivity=3,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
-            bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled with 0?
+            bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled?
+            Scalar boundary_label=0,       //!< if so, what intensity (ie. label) should boundary voxels be assigned to?
             vector<array<Coordinate, 3> > *pv_extrema_locations=NULL, //!< optional: the location of each minima or maxima
             vector<Scalar> *pv_extrema_scores=NULL, //!< optional: the voxel intensities (brightnesses) at these locations
             ostream *pReportProgress=NULL)  //!< print progress to the user?
@@ -3394,7 +3395,6 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     } // for (int j = 0; j < num_neighbors; j++)
   } //while (q.size() != 0)
 
-
   #ifndef NDEBUG
   // DEBUGGING
   // All of the voxels should either be assigned to a basin,
@@ -3405,6 +3405,17 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
       for (int ix=0; ix<image_size[0]; ix++)
         assert(aaaiDest[iz][iy][ix] != QUEUED);
   #endif //#ifndef NDEBUG
+
+  if (boundary_label != 0.0) {
+    // If the caller explicitly specified the brightness that voxels 
+    // on the boundaries between basins should be assigned to,
+    // then take care of that now.
+    for (int iz=0; iz<image_size[2]; iz++)
+      for (int iy=0; iy<image_size[1]; iy++)
+        for (int ix=0; ix<image_size[0]; ix++)
+          if (aaaiDest[iz][iy][ix] == WATERSHED_BOUNDARY)
+            aaaiDest[iz][iy][ix] = boundary_label;
+  }
 
 } //Watershed3D()
 

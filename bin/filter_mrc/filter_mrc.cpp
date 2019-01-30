@@ -1589,6 +1589,7 @@ HandleWatershed(Settings settings,
               settings.watershed_use_minima,
               settings.neighbor_connectivity,
               settings.watershed_show_boundaries,
+              settings.watershed_boundary_label,
               &extrema_crds,
               &extrema_scores,
               &cerr);

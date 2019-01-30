@@ -104,8 +104,9 @@ Settings::Settings() {
   nonmax_max_volume_overlap_large = 1.0;
 
   watershed_use_minima = true;
-  watershed_threshold = std::numeric_limits<float>::infinity();
+  watershed_boundary_label = 0.0;
   watershed_show_boundaries = true;
+  watershed_threshold = std::numeric_limits<float>::infinity();
 
   out_normals_fname = "";
   planar_hessian_score_threshold = 0.0;
@@ -1743,6 +1744,24 @@ Settings::ParseArgs(vector<string>& vArgs)
       filter_type = WATERSHED;
       watershed_show_boundaries = false;
       num_arguments_deleted = 1;
+    }
+
+
+    else if (vArgs[i] == "-watershed-boundary")
+    {
+      filter_type = WATERSHED;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        watershed_boundary_label = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      
+      num_arguments_deleted = 2;
     }
 
 
