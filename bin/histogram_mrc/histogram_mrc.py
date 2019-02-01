@@ -110,7 +110,7 @@ def main():
 
             plt.hist(hdata,
                      bins,
-                     normed=1,
+                     density=True,
                      facecolor='green',
                      alpha=0.75)
             plt.ylabel('Frequency')

@@ -501,19 +501,20 @@ the *number of basins (whose depth lies below this value) + 1*.
 This performs watershed segmentation starting from maxima instead of minima.
 
 
-### -watershed-boundary  label
-
-By default, voxels which lie on the border between two or more different basins
-will be assigned a value of 0.
-When this argument is included, these voxels will have intensities
-which are assigned to *label* instead.  (This parameter is a number.)
-
 ### -watershed-hide-boundaries
 
 By default, voxels which lie on the border between two or more different basins
 will be assigned a value of 0.
 When this argument is selected, the basin to which a boundary voxel is assigned
 will be chosen (arbitrarily) from among the neighboring basins.
+
+
+### -watershed-boundary  label
+
+By default, voxels which lie on the border between two or more different basins
+will be assigned a value of 0.
+When this argument is included, these voxels will have intensities
+which are assigned to *label* instead.  (This parameter is a number.)
 
 
 

@@ -25,7 +25,7 @@ using namespace std;
 
 
 
-/// @brief A simple class for general linear convolutional filters in 3D
+/// @brief A simple class for general linear (convolutional) filters in 3D
 ///
 /// @note  In practice, this class is not used often because separable filters
 ///        based on Gaussians are much faster.
@@ -3203,10 +3203,12 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
       "starting from " << pv_extrema_locations->size() << " different local "
                      << (start_from_minima ? "minima" : "maxima") << endl;
 
-  // Initialize the queue with the voxels at these minima locations
+  // Initialize the queue so that it only contains voxels which lie
+  // at the location of a local minima (or maxima).
+  // Also keep track of which minima (which "basin") they belong to.
 
   for (size_t i=0; i < pv_extrema_locations->size(); i++) {
-    // Create an entry in q for each of the local minima
+    // Create an entry in q for each of the local minima (or maxima)
 
     // Assign a different integer to each of these minima, starting at 1
     Label which_basin = i;
@@ -3226,10 +3228,10 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     assert(score <= halt_threshold * SIGN_FACTOR);
 
     // copy the ix,iy,iz coordinates into an array<Coordinate, 3>
-    // (It seems like there should be a way to do this in 1 line, but I'm
-    //  unfamiliar with array initializer syntax and I'm on a plane without
-    //  internet at the moment.  So I'll just do it the obvious way.)
     array<Coordinate, 3> icrds;
+    // (It seems like there should be a way to do this in 1 line, but I'm
+    //  unfamiliar with the new C++ array initializer syntax and I'm on a plane 
+    //  without internet at the moment.  So I'll just do it the obvious way.)
     icrds[0] = ix;
     icrds[1] = iy;
     icrds[2] = iz;
@@ -3238,7 +3240,6 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
                       which_basin,
                       icrds));
 
-    
     assert(aaaiDest[iz][iy][ix] == UNDEFINED);
     aaaiDest[iz][iy][ix] = QUEUED;
 
@@ -3325,10 +3326,28 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 
 
     // ---------- Meyer (and Beucher's?) inter-pixel flood algorith: ---------
-    // Check the voxels that surround voxel (ix,iy,iz)
-
-    // If voxel is adjacent to multiple basins, assign it to WATERSHED_BOUNDARY
-    // We must check the neighbors of this voxel to see whether this is true.
+    // Find all the local minima (or maxima) in the image.
+    // Each one of these minima (or maxima) is the center (seed) of a "basin"
+    // (a group of voxels that surround that minima or maxima).
+    // Initially these basins contain only the
+    // voxel(s) which are located at that local minima (or maxima).
+    // so we assign each of the voxels to the basin to which it belongs.
+    // Then we add nearby voxels (adjacent) voxels to each basin until
+    // a collision between basins occurs.
+    //
+    // Details:  Iterate over every voxel in the priority queue:
+    //
+    // Add each of the local minima (or maxima) voxels to a priority queue
+    // of voxels to be considered later.
+    //
+    // 1) Retrieve the next lowest (or highest) intensity voxel from this queue.
+    //    By definition, it will be adjacent to at least one basin.
+    //    (The basin to which the voxel belonged that added it to the queue.)
+    // 2) If that voxel is adjacent to only one basin assign it to that basin.
+    //    If it is adjacent to multiple basins, assign it to WATERSHED_BOUNDARY.
+    // 3) Search over that voxel's neighbors.  Add any neighboring voxels
+    //    which have not yet been assigned to a basin already to the queue.
+    // 4) Iterate until there are no more voxels left in the queue.
 
 
     // ---- loop over neighbors ----
@@ -3377,6 +3396,8 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
       else {
         if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
         {
+          assert(aaaiDest[iz][iy][ix] == i_which_basin + 1);
+
           if (show_boundaries)
           {
             // If these two neighboring voxels already belong to different 
@@ -3386,9 +3407,6 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
             assert(SIGN_FACTOR * aaafSource[iz_jz][iy_jy][ix_jx]  <=
                    SIGN_FACTOR * aaafSource[iz][iy][ix]);
             aaaiDest[iz][iy][ix] = WATERSHED_BOUNDARY;
-          }
-          else {
-            aaaiDest[iz][iy][ix] = i_which_basin + 1;
           }
         } // if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
       } // else clause for "if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)"

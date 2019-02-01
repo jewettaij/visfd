@@ -93,26 +93,27 @@ static inline void Normalize3(Scalar a[3]) {
 }
 
 template <class Scalar>
-static inline void Copy3(const Scalar source[3][3], Scalar dest[3][3]) {
+static inline void MatProduct3(const Scalar A[3][3],
+                               const Scalar B[3][3],
+                               Scalar dest[3][3]) {
+  for (int i=0; i<3; i++) {
+    for (int j=0; j<3; j++) {
+      dest[i][j] = 0.0;
+      for (int k=0; k<3; k++)
+        dest[i][j] += A[i][k] * B[k][j];
+    }
+  }
+}
+
+
+
+template <class Scalar>
+static inline void Copy3x3(const Scalar source[3][3], Scalar dest[3][3]) {
   //for (int i=0; i<3; i++)
   //  for (int j=0; j<3; j++)
   //    dest[i][j] = source[i][j];
   // Use memcpy() instead:
   memcpy(dest, source,  3*3*sizeof(Scalar));
-}
-
-template <class Scalar>
-static inline void Transpose3(const Scalar source[3][3], Scalar dest[3][3]) {
-  if (source != dest) {
-    for (int i=0; i<3; i++)
-      for (int j=0; j<3; j++)
-        dest[i][j] = source[j][i];
-  }
-  else {
-    for (int i=0; i<3; i++)
-      for (int j=0; j<3; j++)
-        swap(dest[i][j], dest[j][i]);
-  }
 }
 
 
@@ -125,11 +126,24 @@ static inline void Transpose3(Scalar m[3][3]) {
 
 
 template <class Scalar>
+static inline void Transpose3(const Scalar source[3][3], Scalar dest[3][3]) {
+  if (source != dest) {
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+        dest[i][j] = source[j][i];
+  }
+  else
+    Transpose3(dest);
+}
+
+
+template <class Scalar>
 static inline Scalar Determinant3(const Scalar m[3][3]) {
   Scalar v12[3];
   CrossProduct(m[0], m[1], v12);
   return DotProduct3(m[2], v12);
 }
+
 
 
 /// @brief  Convert a 3x3 rotation matrix (M) to a quaternion (q)
@@ -383,6 +397,56 @@ public:
 
 
 
+
+/// @brief  Calculate Tr(AB)
+
+template <class Scalar>
+static inline Scalar TraceProduct3(const Scalar A[3][3],
+                                   const Scalar B[3][3]) {
+  Scalar sum = 0.0;
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      sum += A[i][j] * B[j][i];
+  return sum;
+}
+
+/// @brief  Calculate Tr(AB)
+///   where A and B are represented as 1-D arrays containing 6 entries, instead
+///   of 3x3 arrays.  (See MapIndices_linear_to_3x3[] above for conversion.)
+
+template <class Scalar>
+static inline Scalar TraceProductSym3(const Scalar A[6],
+                                      const Scalar B[6])
+{
+  Scalar sum = 0.0;
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      sum += (A[ MapIndices_linear_to_3x3[i][j] ]
+              *
+              B[ MapIndices_linear_to_3x3[j][i] ]);
+  return sum;
+}
+
+
+template <class Scalar>
+static inline Scalar FrobeniusNormSqd3(const Scalar A[3][3]) {
+  return TraceProduct3(A, A);
+}
+
+template <class Scalar>
+static inline Scalar FrobeniusNorm3(const Scalar A[3][3]) {
+  return sqrt(TraceProduct3(A, A));
+}
+
+template <class Scalar>
+static inline Scalar FrobeniusNormSqdSym3(const Scalar A[6]) {
+  return TraceProductSym3(A, A);
+}
+
+template <class Scalar>
+static inline Scalar FrobeniusNormSym3(const Scalar A[6]) {
+  return sqrt(TraceProductSym3(A, A));
+}
 
 
 #endif //#ifndef _LIN3_UTILS_HPP

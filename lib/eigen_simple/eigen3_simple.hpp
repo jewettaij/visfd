@@ -148,7 +148,7 @@ namespace selfadjoint_eigen3
     // coefficients to [-1:1] to avoid over- and underflow.
     Scalar shift = Trace3(mat) / 3.0;
     Scalar scaledMat[3][3];
-    Copy3(mat, scaledMat);
+    Copy3x3(mat, scaledMat);
     // Apply the shift
     for (int d=0; d<3; d++)
       scaledMat[d][d] -= shift;
@@ -197,7 +197,7 @@ namespace selfadjoint_eigen3
         }
  
         Scalar tmp[3][3];
-        Copy3(scaledMat, tmp);
+        Copy3x3(scaledMat, tmp);
         // Compute the eigenvector of index k
         {
           // subtract eivals[k] * Identity from "tmp"
@@ -222,7 +222,7 @@ namespace selfadjoint_eigen3
         }
         else
         {
-          Copy3(scaledMat, tmp);
+          Copy3x3(scaledMat, tmp);
           for (int d=0; d<3; d++)
             tmp[d][d] -= eivals[l];
 
