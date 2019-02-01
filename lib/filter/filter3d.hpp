@@ -3912,9 +3912,6 @@ CalcHessian3D(int const image_size[3], //!< source image size
             &afSmoothed,
             &aaafSmoothed);
 
-  if (pReportProgress)
-    *pReportProgress << "done ----" << endl;
-
 } //CalcHessian3D()
 
 
@@ -4367,11 +4364,14 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
   assert(aaaafSource);
   if (pReportProgress && aaaafSource)
     *pReportProgress << "\n"
-      "---- Diagonalizing the Hessian everywhere (within the mask)... "
+      "---- Diagonalizing the Hessian everywhere (within the mask) ----"
                      << flush;
 
-  #pragma omp parallel for collapse(2)
   for (int iz = 1; iz < image_size[2]-1; iz++) {
+    if (pReportProgress)
+      *pReportProgress << "  z="<<iz+1<<" (of "<<image_size[2]<<")" << endl;
+
+    #pragma omp parallel for collapse(2)
     for (int iy = 1; iy < image_size[1]-1; iy++) {
       for (int ix = 1; ix < image_size[0]-1; ix++) {
         if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
