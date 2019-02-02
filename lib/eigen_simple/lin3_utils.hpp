@@ -79,19 +79,19 @@ static inline Scalar SquaredNorm3(const array<Scalar, 3>& a) {
 
 template <class Scalar>
 static inline Scalar Length3(const Scalar a[3]) {
-  return sqrt(DotProduct3(a, a));
+  return std::sqrt(SquaredNorm3(a));
 }
 
 template <class Scalar>
 static inline Scalar Length3(const array<Scalar, 3>& a) {
-  return sqrt(DotProduct3(a, a));
+  return std::sqrt(DotProduct3(a, a));
 }
 
 
 
 template <class Scalar>
 static inline void Normalize3(Scalar a[3]) {
-  Scalar L_inv = std::sqrt(SquaredNorm3(a));
+  Scalar L_inv = Length3(a);
   if (L_inv > 0.0) {
     L_inv = 1.0 / L_inv;
     for (int d=0; d<3; d++)
@@ -447,7 +447,7 @@ static inline Scalar FrobeniusNormSqd3(const Scalar A[3][3]) {
 
 template <class Scalar>
 static inline Scalar FrobeniusNorm3(const Scalar A[3][3]) {
-  return sqrt(TraceProduct3(A, A));
+  return std::sqrt(TraceProduct3(A, A));
 }
 
 template <class Scalar>
@@ -457,7 +457,7 @@ static inline Scalar FrobeniusNormSqdSym3(const Scalar A[6]) {
 
 template <class Scalar>
 static inline Scalar FrobeniusNormSym3(const Scalar A[6]) {
-  return sqrt(TraceProductSym3(A, A));
+  return std::sqrt(TraceProductSym3(A, A));
 }
 
 

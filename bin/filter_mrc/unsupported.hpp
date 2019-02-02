@@ -341,12 +341,12 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       Shoemake2Matrix(s_shoemake, s_eivects); //convert to 3x3 matrix
 
       if (aaaafVector) {
-        if (DotProduct3(s_eivects[0], //principal eivenvector
-                        aaaafVector[iz][iy][ix])
+        if (SQR(DotProduct3(s_eivects[0], //principal eivenvector
+                            aaaafVector[iz][iy][ix]))
             <
-            (threshold_tensor_saliency *
-             Length3(s_eivects[0]) *
-             Length3(aaaafVector[iz][iy][ix])))
+            (SQR(threshold_tensor_saliency) *
+             SquaredNorm3(s_eivects[0]) *
+             SquaredNorm3(aaaafVector[iz][iy][ix])))
           continue;
       }
 
@@ -429,12 +429,12 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
         //                     and aaaafSymTensor[iz_jz][iy_jy][ix_jx]
         // -----------------------------------------------
         if (aaaafSymmetricTensor) {
-          if (DotProduct3(aaaafVector[iz][iy][ix],
-                          aaaafVector[iz_jz][iy_jy][ix_jx])
+          if (SQR(DotProduct3(aaaafVector[iz][iy][ix],
+                              aaaafVector[iz_jz][iy_jy][ix_jx]))
               <
-              (threshold_tensor_neighbor *
-               Length3(aaaafVector[iz][iy][ix])*
-               Length3(aaaafVector[iz_jz][iy_jy][ix_jx])))
+              (SQR(threshold_tensor_neighbor) *
+               SquaredNorm3(aaaafVector[iz][iy][ix])*
+               SquaredNorm3(aaaafVector[iz_jz][iy_jy][ix_jx])))
             continue;
         }
       } // Difference between voxel ix,iy,iz and ix_jx,iy_jy,iz_jz too large?
