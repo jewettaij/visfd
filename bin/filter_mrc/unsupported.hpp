@@ -55,6 +55,8 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                   Label ***aaaiDest,                       //!< watershed segmentation results go here
                   Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
                   Scalar threshold_saliency=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
+                  Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
+                  bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
                   VectorContainer const *const *const *aaaafVector=NULL,
                   Scalar threshold_vector_saliency=1.0,    //!< voxels with incompatible saliency and vector are ignored (=1.0 disables)
                   Scalar threshold_vector_neighbor=1.0,    //!< neighboring voxels with incompatible vectors are ignored (=1.0 disables)
@@ -119,12 +121,12 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       threshold_saliency = -std::numeric_limits<Scalar>::infinity();
   }
 
-  vector<array<Coordinate, 3> > extrema_locations;
-  vector<Scalar> extrema_scores;
-
-  vector<size_t> extrema_nvoxels;
+  vector<array<Coordinate, 3> > extrema_locations; //where is the minima/maxima?
+  vector<Scalar> extrema_scores;  //how bright is this minima or maxima?
+  vector<size_t> extrema_nvoxels; //(needed to pacify syntax of FindExtrema3d())
 
   // Find all the local minima (or maxima?) in the image.
+
   FindExtrema3D(image_size,
                 aaafSaliency,
                 aaafMask,
@@ -318,21 +320,21 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       //  using the "Shoemake" representation of rotation matrices.
       //  Shoemake, Graphics Gems III (1992) pp. 124-132)
 
-      DiagonalizeSymCompact3(saliency_hessian,
-                             saliency_hessian_e,
-                             eival_order);
+      DiagonalizeFlatSym3(saliency_hessian,
+                          saliency_hessian_e,
+                          eival_order);
 
       Scalar s_eivals[3];
-      s_eivals[0]=saliency_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
-      s_eivals[1]=saliency_hessian.aaaafI[iz][iy][ix][1];
-      s_eivals[2]=saliency_hessian.aaaafI[iz][iy][ix][2]; //minimum eigenvalue
+      s_eivals[0]=saliency_hessian[0]; //maximum eigenvalue
+      s_eivals[1]=saliency_hessian[1];
+      s_eivals[2]=saliency_hessian[2]; //minimum eigenvalue
       // To save space the eigenvectors were stored as a "Shoemake" 
       // coordinates (similar to quaternions) instead of a 3x3 matrix.
       // So we must unpack the eigenvectors.
       Scalar s_shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
-      s_shoemake[0] = saliency_hessian.aaaafI[iz][iy][ix][3];
-      s_shoemake[1] = saliency_hessian.aaaafI[iz][iy][ix][4];
-      s_shoemake[2] = saliency_hessian.aaaafI[iz][iy][ix][5];
+      s_shoemake[0] = saliency_hessian[3];
+      s_shoemake[1] = saliency_hessian[4];
+      s_shoemake[2] = saliency_hessian[5];
 
       // Now lets extract the eigenvectors:
       Scalar s_eivects[3][3];
@@ -470,7 +472,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                                         basin2cluster[basin_j]);
           basin2cluster[basin_i] = merged_cluster_id;
           basin2cluster[basin_j] = merged_cluster_id;
-            
+
         } // if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
       } // else clause for "if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)"
     } // for (int j = 0; j < num_neighbors; j++)
@@ -519,9 +521,22 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
         aaaiDest[iz][iy][ix] = basin2cluster[ aaaiDest[iz][iy][ix] ];
 
   if (pv_cluster_centers != NULL) {
-    pv_cluster_centers.resize(n_clusters);
+    pv_cluster_centers->resize(n_clusters);
     for (size_t i = 0; i < n_clusters; i++)
       (*pv_cluster_centers)[i] = extrema_locations[ cluster2basin[i] ];
+  }
+
+  // Now, deal with the clusters which 
+  if (undefined_label_is_max)
+    label_undefined = n_clusters+1;
+
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaaiDest[iz][iy][ix] == UNDEFINED)
+          aaaiDest[iz][iy][ix] == label_undefined;
+      }
+    }
   }
 } // ConnectedClusters()
 

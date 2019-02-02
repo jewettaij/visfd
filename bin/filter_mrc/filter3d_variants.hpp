@@ -388,17 +388,17 @@ ApplyLog3D(int const image_size[3], //source image size
 
 template<class Scalar, class Integer>
 static void
-LocalFluctuationsRadial(Integer const image_size[3], //!< number of voxels in x,y,z directions
-                        Scalar const *const *const *aaafSource, //!< original image
-                        Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
-                        Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
-                        Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
-                        Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
-                        Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
-                        Scalar filter_truncate_threshold=0.02, //!< alternatively, specify how much the Gaussian must decay before we truncate it
-                        bool normalize = true, //!< normalize the result?
-                        ostream *pReportProgress = NULL //!< report progress to the user?
-                  )
+LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
+                          Scalar const *const *const *aaafSource, //!< original image
+                          Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
+                          Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+                          Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
+                          Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
+                          Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
+                          Scalar filter_truncate_threshold=0.02, //!< alternatively, specify how much the Gaussian must decay before we truncate it
+                          bool normalize = true, //!< normalize the result?
+                          ostream *pReportProgress = NULL //!< report progress to the user?
+                          )
 {
   if (filter_truncate_ratio < 0.0)
     // Choose the filter domain window based on the "truncate_threshold"
@@ -407,15 +407,15 @@ LocalFluctuationsRadial(Integer const image_size[3], //!< number of voxels in x,
     filter_truncate_ratio = pow(-log(filter_truncate_threshold),
                                 1.0 / template_background_exponent);
 
-  LocalFluctuationsRadial(image_size,
-                          aaafSource,
-                          aaafDest,
-                          aaafMask,
-                          radius,
-                          template_background_exponent,
-                          filter_truncate_ratio,
-                          normalize,
-                          pReportProgress);
+  LocalFluctuationsByRadius(image_size,
+                            aaafSource,
+                            aaafDest,
+                            aaafMask,
+                            radius,
+                            template_background_exponent,
+                            filter_truncate_ratio,
+                            normalize,
+                            pReportProgress);
 
 } //LocalFluctuations()
 

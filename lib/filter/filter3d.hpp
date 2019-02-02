@@ -3668,15 +3668,15 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
 
 template<class Scalar, class Integer>
 void
-LocalFluctuationsRadial(Integer const image_size[3], //!< number of voxels in x,y,z directions
-                        Scalar const *const *const *aaafSource, //!< original image
-                        Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
-                        Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
-                        Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
-                        Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
-                        Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
-                        bool normalize = true, //!< normalize the result?
-                        ostream *pReportProgress = NULL //!< report progress to the user?
+LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
+                          Scalar const *const *const *aaafSource, //!< original image
+                          Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
+                          Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+                          Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
+                          Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
+                          Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
+                          bool normalize = true, //!< normalize the result?
+                          ostream *pReportProgress = NULL //!< report progress to the user?
                         )
 {
   Scalar sigma[3];
@@ -4429,9 +4429,9 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
 
 
 
-        DiagonalizeSymCompact3(aaaafSource[iz][iy][ix],
-                               aaaafDest[iz][iy][ix],
-                               eival_order);
+        DiagonalizeFlatSym3(aaaafSource[iz][iy][ix],
+                            aaaafDest[iz][iy][ix],
+                            eival_order);
 
 
         #ifndef NDEBUG
@@ -4501,7 +4501,8 @@ UndiagonalizeHessianImage3D(int const image_size[3],  //!< source image size
         if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
           continue;
 
-        UndiagonalizeSymCompact3(aaaafSource, aaaafDest);
+        UndiagonalizeFlatSym3(aaaafSource[iz][iy][ix],
+                              aaaafDest[iz][iy][ix]);
 
       } //for (int ix = 1; ix < image_size[0]-1; ix++) {
     } //for (int iy = 1; iy < image_size[1]-1; iy++) {
@@ -4662,7 +4663,7 @@ public:
   ///         (Otherwise, the vectors are assumed to have been normalized.)
   ///         
   /// After this function is invoked, aaaafDest will store an array of
-  /// diagonalized tensors, one tensor for each voxel in the original image
+  /// tensors, one tensor for each voxel in the original image
   /// (unless aaafMaskDest!=NULL and the corresponding entry there is 0).
   ///
   /// @note:  The computation time for this algorithm is proportional to the 
@@ -4679,9 +4680,10 @@ public:
                TensorContainer ***aaaafDest,  //!< votes will be collected here
                Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
                Scalar const *const *const *aaafMaskDest=NULL,  //!< don't cast votes wherever mask==0
-               bool detect_curves_not_surfaces=false,
+               bool detect_curves_not_surfaces=false, //!< do "sticks" represent curve tangents (instead of surface normals)?
                //Scalar saliency_threshold = 0.0,
-               bool normalize=true,
+               bool normalize=true, //!< normalize aaaafDest due to incomplete sums near boundaries?
+               bool diagonalize_dest=false, //!< diagonalize each tensor in aaaafDest?
                ostream *pReportProgress=NULL  //!< print progress to the user?
                )
   {
@@ -4825,6 +4827,33 @@ public:
 
     } //if (normalize)
 
+    if (diagonalize_dest) {
+      // Diagonalize the resulting tensor.
+      // The resulting eigenvalues and eigenvectors can be analyzed by the caller.
+      DiagonalizeHessianImage3D(image_size,
+                                aaaafDest, //<--undiagonalized tensors (input)
+                                aaaafDest, //<--diagonalized tensors (output)
+                                aaafMaskDest,
+                                selfadjoint_eigen3::DECREASING_EIVALS,
+                                pReportProgress);
+
+      // DEBUG: assert that all eigenvalues are nonnegative
+      for (Integer iz=0; iz<image_size[2]; iz++) {
+        for (Integer iy=0; iy<image_size[1]; iy++) {
+          for (Integer ix=0; ix<image_size[0]; ix++) {
+            if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0.0))
+              continue;
+            // The eigenvalues are in the first 3 entries of aaaafDest[iz][iy][ix]
+            Scalar *eivals = aaaafDest[iz][iy][ix];
+            assert(eivals);
+            for (int d=0; d<3; d++)
+              assert(eivals[d] >= 0.0);
+          }
+        }
+      }
+
+    } // if (diagonalize_dest)
+
   } // TVDenseStick()
 
 
@@ -4966,31 +4995,6 @@ private:
 
     if (pReportProgress)
       *pReportProgress << "---- Diagonalizing Tensor Voting results ----" << endl;
-
-    // Diagonalize the resulting tensor.
-    // The resulting eigenvalues and eigenvectors can be analyzed by the caller.
-    DiagonalizeHessianImage3D(image_size,
-                              aaaafDest, //<--undiagonalized tensors (input)
-                              aaaafDest, //<--diagonalized tensors (output)
-                              aaafMaskDest,
-                              selfadjoint_eigen3::DECREASING_EIVALS,
-                              pReportProgress);
-
-
-    // DEBUG: assert that all eigenvalues are nonnegative
-    for (Integer iz=0; iz<image_size[2]; iz++) {
-      for (Integer iy=0; iy<image_size[1]; iy++) {
-        for (Integer ix=0; ix<image_size[0]; ix++) {
-          if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0.0))
-            continue;
-          // The eigenvalues are in the first 3 entries of aaaafDest[iz][iy][ix]
-          Scalar *eivals = aaaafDest[iz][iy][ix];
-          assert(eivals);
-          for (int d=0; d<3; d++)
-            assert(eivals[d] >= 0.0);
-        }
-      }
-    }
 
   } //TVDenseStick()
 

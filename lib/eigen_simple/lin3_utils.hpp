@@ -51,6 +51,18 @@ static inline Scalar DotProduct3(const array<Scalar, 3>& a,
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
+template <class Scalar>
+static inline Scalar DotProduct3(const Scalar a[3],
+                                 const array<Scalar, 3>& b) {
+  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+template <class Scalar>
+static inline Scalar DotProduct3(const array<Scalar, 3>& a,
+                                 const Scalar b[3]) {
+  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
 
 
 template <class Scalar>
@@ -447,6 +459,39 @@ template <class Scalar>
 static inline Scalar FrobeniusNormSym3(const Scalar A[6]) {
   return sqrt(TraceProductSym3(A, A));
 }
+
+
+
+/// @brief A function to extract eigenvectors (and eigenvalues) from
+///        a "flattened" symmetric 3x3 matrix which has already been
+///        "diagonalized" using selfadjoint_eigenvalues3::DiagonalizeFlatSym3().
+///        (This function is defined in "eigen_simple3.hpp".)
+/// @note Implementation detail:
+///       Currently, as of 2019-1, this means it is assumed that the first 3
+///       entries of m are assumed to be the eigenvalues, and the last 3 entries
+///       are the 3 eigenvectors expressed in "Shoemake" format.
+///       This could change.
+
+template <class Scalar>
+void ConvertDiagFlatSym2Evects3(const Scalar m[6],   //!< a symmetrix 3x3 matrix which has been diagonalized and flattened
+                                Scalar eivals[3],    //!< store eigenvalues here
+                                Scalar eivects[3][3] //!< store eigenvectors (as rows) here
+                                )
+{
+  eivals[0] = m[0]; //maximum eigenvalue
+  eivals[1] = m[1];
+  eivals[2] = m[2]; //minimum eigenvalue
+  // To save space the eigenvectors were stored as a "Shoemake" 
+  // coordinates (similar to quaternions) instead of a 3x3 matrix.
+  // So we must unpack the eigenvectors.
+  Scalar shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
+  shoemake[0] = m[3];
+  shoemake[1] = m[4];
+  shoemake[2] = m[5];
+  // Now extract the eigenvectors:
+  Shoemake2Matrix(shoemake, eivects);//convert to an array of eigenvectors(rows)
+}
+
 
 
 #endif //#ifndef _LIN3_UTILS_HPP

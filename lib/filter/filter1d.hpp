@@ -12,6 +12,12 @@ using namespace std;
 template<class Scalar >
 static inline Scalar SQR(Scalar x) { return x*x; }
 
+template<class Scalar >
+static inline Scalar MIN(Scalar a, Scalar b) { return ((a<=b) ? a : b); }
+
+template<class Scalar >
+static inline Scalar MAX(Scalar a, Scalar b) { return ((a>=b) ? a : b); }
+
 
 template<class Scalar, class Integer>
 

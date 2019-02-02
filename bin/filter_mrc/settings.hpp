@@ -202,6 +202,13 @@ class Settings {
   float watershed_boundary_label;
   float watershed_threshold;
 
+  bool cluster_connected_voxels;
+  float connect_threshold_saliency;
+  float connect_threshold_vector_saliency;
+  float connect_threshold_vector_neighbor;
+  float connect_threshold_tensor_saliency;
+  float connect_threshold_tensor_neighbor;
+
   string out_normals_fname;
   float planar_hessian_score_threshold;
   float planar_tv_score_threshold;

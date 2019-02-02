@@ -116,6 +116,13 @@ Settings::Settings() {
   planar_tv_num_iters = 0;
   planar_tv_truncate_ratio = sqrt(2.0);
 
+  cluster_connected_voxels = false;
+  connect_threshold_saliency = std::numeric_limits<float>::infinity();
+  connect_threshold_vector_saliency = 1.0;
+  connect_threshold_vector_neighbor = 1.0;
+  connect_threshold_tensor_saliency = 1.0;
+  connect_threshold_tensor_neighbor = 1.0;
+
   use_intensity_map = false;
   use_dual_thresholds = false;
   out_threshold_01_a = 0.0;
@@ -1765,6 +1772,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+
     else if ((vArgs[i] == "-planar") ||
              (vArgs[i] == "-plane") ||
              (vArgs[i] == "-membrane"))
@@ -1912,6 +1920,90 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     }
+
+
+
+    else if (vArgs[i] == "-connect-saliency")
+    {
+      cluster_connected_voxels = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        connect_threshold_saliency = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-connect-vector-saliency")
+    {
+      cluster_connected_voxels = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        connect_threshold_vector_saliency = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-connect-vector-neighbor")
+    {
+      cluster_connected_voxels = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        connect_threshold_vector_neighbor = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-connect-vector-neighbor")
+    {
+      cluster_connected_voxels = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        connect_threshold_vector_neighbor = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-connect-tensor-neighbor")
+    {
+      cluster_connected_voxels = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        connect_threshold_tensor_neighbor = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
 
     else if (vArgs[i] == "-np") {
       #ifdef DISABLE_OPENMP

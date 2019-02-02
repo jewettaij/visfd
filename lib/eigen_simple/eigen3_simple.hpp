@@ -266,11 +266,11 @@ namespace selfadjoint_eigen3
 
 
 
-  template <class CompactSymMatrix, class ConstCompactSymMatrix>
+  template <class FlatSymMatrix, class ConstFlatSymMatrix>
   void
-  DiagonalizeSymCompact3(ConstCompactSymMatrix source,
-                         CompactSymMatrix dest,
-                         EigenOrderType eival_order = INCREASING_EIVALS)
+  DiagonalizeFlatSym3(ConstFlatSymMatrix source,
+                      FlatSymMatrix dest,
+                      EigenOrderType eival_order = INCREASING_EIVALS)
   {
     // We need to define some temporary variables that store calculations.
     // These variables will be of type "Scalar" which should be the same
@@ -282,7 +282,7 @@ namespace selfadjoint_eigen3
     // ...so I'm just goint to use doubles instead for these temporary variables
     typedef double Scalar;
 
-    // Convert the "source" from type "CompactSymMatrix"
+    // Convert the "source" from type "FlatSymMatrix"
     // ...to an ordinary 3x3 array ("matrix"):
     Scalar matrix[3][3];
     for (int di=0; di<3; di++)
@@ -333,14 +333,14 @@ namespace selfadjoint_eigen3
     dest[4] = shoemake[1];
     dest[5] = shoemake[2];
 
-  } // DiagonalizeSymCompact3()
+  } // DiagonalizeFlatSym3()
 
 
 
-  template <class CompactSymMatrix, class ConstCompactSymMatrix>
+  template <class FlatSymMatrix, class ConstFlatSymMatrix>
   void
-  UndiagonalizeSymCompact3(CompactSymMatrix source,
-                           CompactSymMatrix dest)
+  UndiagonalizeFlatSym3(ConstFlatSymMatrix source,
+                        FlatSymMatrix dest)
   {
     // We need to define some temporary variables that store calculations.
     // These variables will be of type "Scalar" which should be the same
@@ -379,8 +379,24 @@ namespace selfadjoint_eigen3
       }
     }
 
-  } // UndiagonalizeSymCompact3()
+  } // UndiagonalizeFlatSym3()
 
+
+  template <class Scalar>
+  void ConvertFlatSym2Evects3(const Scalar m[6],    //!< a symmetrix 3x3 matrix which has been diagonalized and flattened
+                              Scalar eivals[3],     //!< store eigenvalues here
+                              Scalar eivects[3][3], //!< store eigenvectors (as rows) here
+                              EigenOrderType eival_order = INCREASING_EIVALS //!< choose the order of the eigenvalues and eigenvectors
+                              )
+  {
+    Scalar m_diag[6];
+    DiagonalizeFlatSym3(m,
+                        m_diag,
+                        eival_order);
+    ConvertDiagFlatSym2Evects3(m_diag,  //a matrix which has been diagonalized and flattened
+                               eivals,
+                               eivects);
+  }
 
 } // namespace selfadjoint_eigenvalues3
 

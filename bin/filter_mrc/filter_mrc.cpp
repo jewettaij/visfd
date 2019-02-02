@@ -1166,16 +1166,16 @@ HandleLocalFluctuations(Settings settings,
                         float voxel_width[3])
 // Calculate the fluctuations of nearby voxel intensities
 {
-  LocalFluctuationsRadial(tomo_in.header.nvoxels,
-                          tomo_in.aaafI,
-                          tomo_out.aaafI,
-                          mask.aaafI,
-                          settings.template_background_radius,
-                          settings.template_background_exponent,
-                          settings.filter_truncate_ratio,
-                          settings.filter_truncate_threshold,
-                          true,
-                          &cerr);
+  LocalFluctuationsByRadius(tomo_in.header.nvoxels,
+                            tomo_in.aaafI,
+                            tomo_out.aaafI,
+                            mask.aaafI,
+                            settings.template_background_radius,
+                            settings.template_background_exponent,
+                            settings.filter_truncate_ratio,
+                            settings.filter_truncate_threshold,
+                            true,
+                            &cerr);
 
   tomo_out.FindMinMaxMean();
 }
@@ -1386,7 +1386,6 @@ HandleRidgeDetectorPlanar(Settings settings,
                             selfadjoint_eigen3::DECREASING_EIVALS,
                             &cerr);
 
-
   // We need to store the direction of the most important eigenvector
   // somewhere.  To save space, why not store it in the aaaafGradient
   // array?  (At this point, we are no longer using it).
@@ -1412,20 +1411,11 @@ HandleRidgeDetectorPlanar(Settings settings,
           continue;                         //in the mask or on the boundary
 
         float eivals[3];
-        eivals[0] = c_hessian.aaaafI[iz][iy][ix][0]; //maximum eigenvalue
-        eivals[1] = c_hessian.aaaafI[iz][iy][ix][1];
-        eivals[2] = c_hessian.aaaafI[iz][iy][ix][2]; //minimum eigenvalue
-        // To save space the eigenvectors were stored as a "Shoemake" 
-        // coordinates (similar to quaternions) instead of a 3x3 matrix.
-        // So we must unpack the eigenvectors.
-        float shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
-        shoemake[0]       = c_hessian.aaaafI[iz][iy][ix][3];
-        shoemake[1]       = c_hessian.aaaafI[iz][iy][ix][4];
-        shoemake[2]       = c_hessian.aaaafI[iz][iy][ix][5];
-
-        // Now lets extract the eigenvectors:
         float eivects[3][3];
-        Shoemake2Matrix(shoemake, eivects); //convert to 3x3 matrix
+
+        ConvertDiagFlatSym2Evects3(c_hessian.aaaafI[iz][iy][ix],
+                                   eivals,
+                                   eivects);
 
         // REMOVE THIS CRUFT ?
         //float grad[3];
@@ -1527,12 +1517,17 @@ HandleRidgeDetectorPlanar(Settings settings,
                     false,  // (we want to detect surfaces not curves)
                     //settings.planar_hessian_score_threshold,
                     true,   // (do normalize near rectangular image bounaries)
+                    false,
                     &cerr);
 
     for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
       for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
         for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
-          float score = ScoreTensorPlanar(c_hessian.aaaafI[iz][iy][ix]);
+          float diagonalized_hessian[6];
+          DiagonalizeFlatSym3(c_hessian.aaaafI[iz][iy][ix],
+                              diagonalized_hessian,
+                              selfadjoint_eigen3::DECREASING_EIVALS);
+          float score = ScoreTensorPlanar(diagonalized_hessian);
           float peak_height = 1.0;
           if (tomo_background.aaafI)
             peak_height = (tomo_in.aaafI[iz][iy][ix] -
@@ -1543,6 +1538,52 @@ HandleRidgeDetectorPlanar(Settings settings,
       }
     }
   } // if (settings.planar_tv_sigma > 0.0)
+
+
+
+
+  if (settings.cluster_connected_voxels)
+  {
+    tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.)
+                        //  allocate a new 3D array to store the saliency)
+
+    // Copy the principal eigenvector of c_hessian into aaaafStickDirection
+    for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+      for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+        for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+          float eivals[3];
+          float eivects[3][3];
+          ConvertDiagFlatSym2Evects3(c_hessian.aaaafI[iz][iy][ix],
+                                     eivals,
+                                     eivects);
+          for (int d=0; d<3; d++)
+            aaaafStickDirection[iz][iy][ix][d] = eivects[0][d];
+        }
+      }
+    }
+
+    vector<array<int, 3> > cluster_centers;
+    ConnectedClusters(tomo_in.header.nvoxels,
+                      tomo_in.aaafI,
+                      tomo_out.aaafI, // connectivity will go here
+                      mask.aaafI,
+                      settings.connect_threshold_saliency,
+                      static_cast<float>(0),
+                      true,
+                      aaaafStickDirection,
+                      settings.connect_threshold_vector_saliency,
+                      settings.connect_threshold_vector_neighbor,
+                      c_hessian.aaaafI,
+                      settings.connect_threshold_tensor_saliency,
+                      settings.connect_threshold_tensor_neighbor,
+                      false,
+                      3,
+                      selfadjoint_eigen3::DECREASING_EIVALS,
+                      &cluster_centers,
+                      &cerr);  //!< print progress to the user
+
+  } // if (settings.cluster_connected_voxels)
+
 
 
 
@@ -1567,6 +1608,7 @@ HandleRidgeDetectorPlanar(Settings settings,
             &(aafGradient),
             &(aaaafGradient));
 } //HandleRidgeDetectorPlanar()
+
 
 
 
