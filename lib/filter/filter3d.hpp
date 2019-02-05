@@ -4364,8 +4364,7 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
   assert(aaaafSource);
   if (pReportProgress && aaaafSource)
     *pReportProgress << "\n"
-      "---- Diagonalizing the Hessian everywhere (within the mask) ----"
-                     << flush;
+      "---- Diagonalizing the Hessian everywhere (within the mask) ----\n";
 
   for (int iz = 1; iz < image_size[2]-1; iz++) {
     if (pReportProgress)
@@ -4451,11 +4450,12 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
           if (pReportProgress)
             *pReportProgress
               << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
-              << "quat2 = " << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n"
+              << "quat2 = "
+              << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n"
               << "eivects = \n"
-              << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
-              << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
-              << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
+              <<" "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
+              <<" "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
+              <<" "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
               << endl;
         }
         #endif  //#ifndef NDEBUG

@@ -470,6 +470,7 @@ static inline Scalar FrobeniusNormSym3(const Scalar A[6]) {
 ///       Currently, as of 2019-1, this means it is assumed that the first 3
 ///       entries of m are assumed to be the eigenvalues, and the last 3 entries
 ///       are the 3 eigenvectors expressed in "Shoemake" format.
+///          (Shoemake, Graphics Gems III (1992) pp. 124-132)
 ///       This could change.
 
 template <class Scalar>

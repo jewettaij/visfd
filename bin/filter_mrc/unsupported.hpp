@@ -170,7 +170,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
   if (pReportProgress)
     *pReportProgress <<
-      " ---- Watershed segmentation algorithm ----\n"
+      " ---- Clustering voxels belonging to different objects ----\n"
       "starting from " << extrema_locations.size() << " different local "
                        << (start_from_minima ? "minima" : "maxima") << endl;
 
@@ -312,39 +312,18 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       // inconsistencies between aaafSaliency and aaaafVector at this location
       // -----------------------------------------------
 
-      // The 3 eigenvalues and eigenvectors are stored in saliency_hessian_e.
-      Scalar saliency_hessian_e[6];
-
-      // The eigenvalues are the first 3 entries of 
-      //  The eigenvectors are stored compactly using 3 numbers
-      //  using the "Shoemake" representation of rotation matrices.
-      //  Shoemake, Graphics Gems III (1992) pp. 124-132)
-
-      DiagonalizeFlatSym3(saliency_hessian,
-                          saliency_hessian_e,
-                          eival_order);
-
       Scalar s_eivals[3];
-      s_eivals[0]=saliency_hessian[0]; //maximum eigenvalue
-      s_eivals[1]=saliency_hessian[1];
-      s_eivals[2]=saliency_hessian[2]; //minimum eigenvalue
-      // To save space the eigenvectors were stored as a "Shoemake" 
-      // coordinates (similar to quaternions) instead of a 3x3 matrix.
-      // So we must unpack the eigenvectors.
-      Scalar s_shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
-      s_shoemake[0] = saliency_hessian[3];
-      s_shoemake[1] = saliency_hessian[4];
-      s_shoemake[2] = saliency_hessian[5];
-
-      // Now lets extract the eigenvectors:
       Scalar s_eivects[3][3];
-      Shoemake2Matrix(s_shoemake, s_eivects); //convert to 3x3 matrix
+      ConvertFlatSym2Evects3(saliency_hessian,
+                             s_eivals,
+                             s_eivects,
+                             eival_order);
 
       if (aaaafVector) {
         if (SQR(DotProduct3(s_eivects[0], //principal eivenvector
                             aaaafVector[iz][iy][ix]))
             <
-            (SQR(threshold_tensor_saliency) *
+            (SQR(threshold_vector_saliency) *
              SquaredNorm3(s_eivects[0]) *
              SquaredNorm3(aaaafVector[iz][iy][ix])))
           continue;
