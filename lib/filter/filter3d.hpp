@@ -3370,12 +3370,12 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
       if (aaafMask && (aaafMask[iz_jz][iy_jy][ix_jx] == 0.0))
         continue;
 
-      if (aaaiDest[iz_jz][iy_jy][ix_jx] == WATERSHED_BOUNDARY) {
-        // do nothing
-      }
-      else if (aaaiDest[iz_jz][iy_jy][ix_jx] == QUEUED) {
-        // do nothing
-      }
+      if (aaaiDest[iz_jz][iy_jy][ix_jx] == WATERSHED_BOUNDARY)
+        continue;
+
+      else if (aaaiDest[iz_jz][iy_jy][ix_jx] == QUEUED)
+        continue;
+
       else if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)
       {
 

@@ -425,7 +425,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
 
       if (aaaiDest[iz_jz][iy_jy][ix_jx] == QUEUED) {
-        // do nothing
+        continue;
       }
       else if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)
       {
