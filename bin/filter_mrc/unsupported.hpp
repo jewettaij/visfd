@@ -304,7 +304,10 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
             (threshold_tensor_saliency *
              FrobeniusNormSym3(saliency_hessian) *
              FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix])))
+        {
+          aaaiDest[iz][iy][ix] = UNDEFINED;
           continue;
+        }
       }
 
       // -----------------------------------------------
@@ -326,7 +329,10 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
             (SQR(threshold_vector_saliency) *
              SquaredNorm3(s_eivects[0]) *
              SquaredNorm3(aaaafVector[iz][iy][ix])))
+        {
+          aaaiDest[iz][iy][ix] = UNDEFINED;
           continue;
+        }
       }
 
     } // Use inconsistencies in aaafSaliency to discard voxel ix,iy,iz?
@@ -337,7 +343,6 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
     // Now we assign this voxel to the basin
     aaaiDest[iz][iy][ix] = i_which_basin;
     // (Note: This will prevent the voxel from being visited again.)
-
 
     
 
