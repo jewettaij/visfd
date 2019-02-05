@@ -58,11 +58,11 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                   Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
                   bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
                   VectorContainer const *const *const *aaaafVector=NULL,
-                  Scalar threshold_vector_saliency=1.0,    //!< voxels with incompatible saliency and vector are ignored (=1.0 disables)
-                  Scalar threshold_vector_neighbor=1.0,    //!< neighboring voxels with incompatible vectors are ignored (=1.0 disables)
+                  Scalar threshold_vector_saliency=0.0,    //!< voxels with incompatible saliency and vector are ignored (=1.0 disables)
+                  Scalar threshold_vector_neighbor=0.0,    //!< neighboring voxels with incompatible vectors are ignored (=1.0 disables)
                   TensorContainer const *const *const *aaaafSymmetricTensor=NULL,
-                  Scalar threshold_tensor_saliency=1.0,    //!< voxels with incompatible saliency and tensor are ignored (=1.0 disables)
-                  Scalar threshold_tensor_neighbor=1.0,    //!< neighboring voxels with incompatible tensors are ignored (=1.0 disables)
+                  Scalar threshold_tensor_saliency=0.0,    //!< voxels with incompatible saliency and tensor are ignored (=1.0 disables)
+                  Scalar threshold_tensor_neighbor=0.0,    //!< neighboring voxels with incompatible tensors are ignored (=1.0 disables)
                   bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
                   int connectivity=3,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
                   EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS,
@@ -522,6 +522,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       }
     }
   }
+
 } // ConnectedClusters()
 
 
