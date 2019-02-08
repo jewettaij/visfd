@@ -3715,7 +3715,7 @@ template<class Scalar>
 void
 CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
                                int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
-                               Scalar (*hessian)[3]  //store resulting 3x3 matrixhere
+                               Scalar (*hessian)[3]  //!<store resulting 3x3 matrixhere
                                )
 {
   assert(aaafSource);
@@ -3751,6 +3751,55 @@ CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< sour
 } //CalcHessianFiniteDifferences3D()
 
 
+
+/// @brief  Calculate the hessian of a 3D image at a particular position 
+///         ix, iy, iz, from the differences between neighboring voxels.
+///         It is the responsibility of the caller to smooth the source image
+///         (if necessary) before this function is called.
+/// @note   You must supply the image_size (array size) as an argument because
+///         This version of the function provides bounds checking for ix,iy,iz.
+///         (At the boundaries of the image, it will substitute the voxel
+///          brightnesses from the nearest neighbor.)
+
+template<class Scalar>
+void
+CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
+                               int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                               Scalar (*hessian)[3],  //!< store resulting 3x3 matrixhere
+                               const int image_size[3] //!< number of voxels in xyz directions (for bounds checking)
+                               )
+{
+  assert(aaafSource);
+
+  int _ix = ix;
+  int _iy = iy;
+  int _iz = iz;
+
+  if (image_size) {
+    assert(image_size[0] >= 3);
+    assert(image_size[1] >= 3);
+    assert(image_size[2] >= 3);
+
+    if (_ix == 0)
+      _ix++;
+    else if (_ix == image_size[0]-1)
+      _ix--;
+
+    if (_iy == 0)
+      _iy++;
+    else if (_iy == image_size[1]-1)
+      _iy--;
+
+    if (_iz == 0)
+      _iz++;
+    else if (_iz == image_size[2]-1)
+      _iz--;
+  }
+
+  CalcHessianFiniteDifferences3D(aaafSource,
+                                 _ix, _iy, _iz,
+                                 hessian);
+}
 
 
 /// @brief  Calculate matrix of 2nd derivatives (the hessian)

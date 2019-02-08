@@ -278,10 +278,13 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       // First, condsider discarding voxel ix,iy,iz due to
       // inconsistencies between aaafSaliency and aaaafSymTensor here
       // -----------------------------------------------
+
       Scalar saliency_hessian3x3[3][3];
+
       CalcHessianFiniteDifferences3D(aaafSaliency, //!< source image
                                      ix, iy, iz,
-                                     saliency_hessian3x3);
+                                     saliency_hessian3x3,
+                                     image_size);
 
       // Confusing sign compatibility issue:
       // We assume that the tensor passed
