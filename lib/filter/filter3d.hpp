@@ -2388,8 +2388,8 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
     pv_maxima_nvoxels = &maxima_nvoxels;
 
 
-  ptrdiff_t ***aaaiExtrema; //which voxels belong to this plateau?
-  ptrdiff_t *aiExtrema;
+  ptrdiff_t ***aaaiExtrema; // 3-D array storing the plateau to which each voxel belongs (if any)
+  ptrdiff_t *aiExtrema;     // the same array, stored contiguously in 1-D
   Alloc3D(image_size,
           &aiExtrema,
           &aaaiExtrema);

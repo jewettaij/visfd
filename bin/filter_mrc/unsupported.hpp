@@ -54,18 +54,19 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                   Scalar const *const *const *aaafSaliency,  //!< intensity of each voxel
                   Label ***aaaiDest,                       //!< watershed segmentation results go here
                   Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
-                  Scalar threshold_saliency=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
+                  Scalar threshold_saliency=-std::numeric_limits<Scalar>::infinity(), //!< don't consider voxels with saliencies below this value
                   Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
                   bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
+                  bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)
                   VectorContainer const *const *const *aaaafVector=NULL,
                   Scalar threshold_vector_saliency=-1.0,    //!< voxels with incompatible saliency and vector are ignored (=1.0 disables)
                   Scalar threshold_vector_neighbor=-1.0,    //!< neighboring voxels with incompatible vectors are ignored (=1.0 disables)
+                  bool consider_dot_product_sign = true,        //!< does the sign of the dot product matter?  If not, compare abs(DotProduct()) with threshold_vector variables
                   TensorContainer const *const *const *aaaafSymmetricTensor=NULL,
                   Scalar threshold_tensor_saliency=-1.0,    //!< voxels with incompatible saliency and tensor are ignored (=1.0 disables)
                   Scalar threshold_tensor_neighbor=-1.0,    //!< neighboring voxels with incompatible tensors are ignored (=1.0 disables)
-                  bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
+                  bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                   int connectivity=3,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
-                  EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS,
                   vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
                   ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
@@ -110,15 +111,8 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
 
   Scalar SIGN_FACTOR = 1.0;
-  if (! start_from_minima) {
+  if (start_from_saliency_maxima) {
     SIGN_FACTOR = -1.0;
-    if (threshold_saliency == std::numeric_limits<Scalar>::infinity())
-      // Then the caller did not bother to specify a threshold.  Note: the
-      // default threshold assumes we are searching for minima, not maxima.
-      // If the caller did not specify a halting threshold, AND if we ARE
-      // looking for maxima (not minima), then we have to reverse the sign of
-      // the default threshold as well (this is a little confusing to me too):
-      threshold_saliency = -std::numeric_limits<Scalar>::infinity();
   }
 
   vector<array<Coordinate, 3> > extrema_locations; //where is the minima/maxima?
@@ -133,10 +127,10 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                 extrema_locations,
                 extrema_scores,
                 extrema_nvoxels,
-                start_from_minima, //<-- minima or maxima?
+                (! start_from_saliency_maxima), //<-- minima or maxima?
                 threshold_saliency,
                 connectivity,
-                true,
+                true,  // maxima are allowed to be located on the image border
                 static_cast<Scalar***>(NULL),
                 pReportProgress);
 
@@ -172,7 +166,8 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
     *pReportProgress <<
       " ---- Clustering voxels belonging to different objects ----\n"
       "starting from " << extrema_locations.size() << " different local "
-                       << (start_from_minima ? "minima" : "maxima") << endl;
+                     << (start_from_saliency_maxima ? "maxima" : "minima")
+                     << endl;
 
   // Initialize the queue with the voxels at these minima locations
 
@@ -209,7 +204,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                       which_basin,
                       icrds));
 
-    
+
     assert(aaaiDest[iz][iy][ix] == UNDEFINED);
     aaaiDest[iz][iy][ix] = QUEUED;
 
@@ -287,11 +282,34 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       CalcHessianFiniteDifferences3D(aaafSaliency, //!< source image
                                      ix, iy, iz,
                                      saliency_hessian3x3);
-      Scalar saliency_hessian[6];
+
+      // Confusing sign compatibility issue:
+      // We assume that the tensor passed
+      // by the caller will be positive-definite near a ridge.
+      // In other words, it's largest eigenvalue will be positive there,
+      // and its corresponding eigenvector is assumed to point in a direction
+      // where the 2nd-derivative is largest.
+      // In that case we must invert the sign of the hessian matrix before we
+      // compare it with the tensor, because we also assume the saliency is
+      // bright on a dark background.  Hence it's second derivative (ie. its 
+      // Hessian) along that direction will be negative instead of positive
+      // at that location.  Hence if both of these assumptions is true, 
+      // we must multiply the entries in saliency_hessian by -1 before 
+      // comparing them with the tensor.
+
+      if (tensor_is_positive_definite_near_ridge ==
+          start_from_saliency_maxima) {
+        for (int di = 0; di < 3; di++)
+          for (int dj = di; dj < 3; dj++)
+            saliency_hessian3x3[di][dj] *= -1.0;
+      }
 
       // To reduce memory consumption,
       // save the resulting 3x3 matrix in a smaller 1-D array (with 6 entries)
       // whose index is given by MapIndices_3x3_to_linear[][]
+
+      Scalar saliency_hessian[6];
+
       for (int di = 0; di < 3; di++)
         for (int dj = di; dj < 3; dj++)
           saliency_hessian[ MapIndices_3x3_to_linear[di][dj] ]
@@ -299,18 +317,12 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
       if (aaaafSymmetricTensor) {
 
-        float tp = TraceProductSym3(saliency_hessian, 
-                                    aaaafSymmetricTensor[iz][iy][ix]);
-        float fs = FrobeniusNormSym3(saliency_hessian);
-        float ft = FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]);
+        Scalar tp = TraceProductSym3(saliency_hessian, 
+                                     aaaafSymmetricTensor[iz][iy][ix]);
+        Scalar fs = FrobeniusNormSym3(saliency_hessian);
+        Scalar ft = FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]);
 
-        if (TraceProductSym3(saliency_hessian, 
-                             aaaafSymmetricTensor[iz][iy][ix])
-            <
-            (threshold_tensor_saliency *
-             FrobeniusNormSym3(saliency_hessian) *
-             FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix])))
-        {
+        if (tp < threshold_tensor_saliency * fs * ft) {
           aaaiDest[iz][iy][ix] = UNDEFINED;
           continue;
         }
@@ -323,19 +335,39 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
       Scalar s_eivals[3];
       Scalar s_eivects[3][3];
+
+      // the eigenvector of the saliency_hessian that we care about is the
+      // one with the largest eigenvalue (which is assumed to be positive).
+
+      selfadjoint_eigen3::EigenOrderType eival_order =
+        selfadjoint_eigen3::DECREASING_EIVALS; //<--first eigenvalue will be the largest
+
       ConvertFlatSym2Evects3(saliency_hessian,
                              s_eivals,
                              s_eivects,
                              eival_order);
 
       if (aaaafVector) {
-        if (SQR(DotProduct3(s_eivects[0], //principal eivenvector
-                            aaaafVector[iz][iy][ix]))
-            <
-            (SQR(threshold_vector_saliency) *
-             SquaredNorm3(s_eivects[0]) *
-             SquaredNorm3(aaaafVector[iz][iy][ix])))
-        {
+        bool threshold_exceeded = false;
+        if (consider_dot_product_sign) {
+          if (DotProduct3(s_eivects[0], //principal (first) eivenvector
+                          aaaafVector[iz][iy][ix])
+              <
+              (threshold_vector_saliency *
+               Length3(s_eivects[0]) *
+               Length3(aaaafVector[iz][iy][ix])))
+            threshold_exceeded = true;
+        }
+        else {
+          if (SQR(DotProduct3(s_eivects[0], //principal (first) eivenvector
+                              aaaafVector[iz][iy][ix]))
+              <
+              (SQR(threshold_vector_saliency) *
+               SquaredNorm3(s_eivects[0]) *
+               SquaredNorm3(aaaafVector[iz][iy][ix])))
+            threshold_exceeded = true;
+        }
+        if (threshold_exceeded) {
           aaaiDest[iz][iy][ix] = UNDEFINED;
           continue;
         }
@@ -419,13 +451,24 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
         //                     and aaaafSymTensor[iz_jz][iy_jy][ix_jx]
         // -----------------------------------------------
         if (aaaafSymmetricTensor) {
-          if (SQR(DotProduct3(aaaafVector[iz][iy][ix],
-                              aaaafVector[iz_jz][iy_jy][ix_jx]))
-              <
-              (SQR(threshold_tensor_neighbor) *
-               SquaredNorm3(aaaafVector[iz][iy][ix])*
-               SquaredNorm3(aaaafVector[iz_jz][iy_jy][ix_jx])))
-            continue;
+          if (consider_dot_product_sign) {
+            if (DotProduct3(aaaafVector[iz][iy][ix],
+                            aaaafVector[iz_jz][iy_jy][ix_jx])
+                <
+                (threshold_tensor_neighbor *
+                 Length3(aaaafVector[iz][iy][ix])*
+                 Length3(aaaafVector[iz_jz][iy_jy][ix_jx])))
+              continue;
+          }
+          else {
+            if (SQR(DotProduct3(aaaafVector[iz][iy][ix],
+                                aaaafVector[iz_jz][iy_jy][ix_jx]))
+                <
+                (SQR(threshold_tensor_neighbor) *
+                 SquaredNorm3(aaaafVector[iz][iy][ix])*
+                 SquaredNorm3(aaaafVector[iz_jz][iy_jy][ix_jx])))
+              continue;
+          }
         }
       } // Difference between voxel ix,iy,iz and ix_jx,iy_jy,iz_jz too large?
 

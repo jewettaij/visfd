@@ -1288,13 +1288,11 @@ HandleRidgeDetectorPlanar(Settings settings,
 {
   cerr << "filter_type = planar ridge detector\n";
 
-  bool black_on_white = true;
 
-  selfadjoint_eigen3::EigenOrderType eival_order;
-  if (black_on_white)
-    eival_order = selfadjoint_eigen3::DECREASING_EIVALS;
-  else
-    eival_order = selfadjoint_eigen3::INCREASING_EIVALS;
+  bool black_on_white = true;
+  selfadjoint_eigen3::EigenOrderType eival_order =
+    selfadjoint_eigen3::DECREASING_EIVALS; //we want the first eigenvalue to be the largest (assumed to be positive)
+
 
   float sigma = settings.width_a[0];
 
@@ -1346,8 +1344,10 @@ HandleRidgeDetectorPlanar(Settings settings,
   bool subtract_background = (settings.width_b[0] > 0.0);
   if (subtract_background) {
     tomo_background = tomo_in;
+
     int truncate_halfwidth = floor(settings.width_b[0] *
                                    settings.filter_truncate_ratio);
+
     ApplyGauss3D(tomo_in.header.nvoxels,
                  tomo_in.aaafI,
                  tomo_background.aaafI,
@@ -1359,6 +1359,7 @@ HandleRidgeDetectorPlanar(Settings settings,
 
     truncate_halfwidth = floor(settings.width_a[0] *
                                settings.filter_truncate_ratio);
+
     ApplyGauss3D(tomo_in.header.nvoxels,
                  tomo_in.aaafI,
                  tomo_out.aaafI,
@@ -1555,22 +1556,6 @@ HandleRidgeDetectorPlanar(Settings settings,
     tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.)
                         //  allocate a new 3D array to store the saliency)
 
-    if (black_on_white)
-      // The saliency array (tomo_in.aaafI) is a bright ridge on a dark
-      // background. If black_on_white==true, then we must invert the saliency.
-      // Recall that c_hessian.aaafI (the results of tensor voting) will be
-      // large along the direction that the 2nd-derivate changes most rapidly.
-      // When black_on_white==true, this is the direction of
-      // DECREASING brightness
-      // To make this match the sign of the hessian you would have gotten
-      // by taking the 2nd-derivative of the saliency (tomo_in.aaafI),
-      // you must invert it.
-      for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
-        for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
-          for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
-            tomo_in.aaafI[iz][iy][ix] *= -1.0;
-      
-
     // Copy the principal eigenvector of c_hessian into aaaafStickDirection
     for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
       for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
@@ -1587,22 +1572,23 @@ HandleRidgeDetectorPlanar(Settings settings,
     }
 
     vector<array<int, 3> > cluster_centers;
-    ConnectedClusters(tomo_in.header.nvoxels,
-                      tomo_in.aaafI,
-                      tomo_out.aaafI, // connectivity will go here
+    ConnectedClusters(tomo_in.header.nvoxels, //image size
+                      tomo_in.aaafI,  //<-saliency
+                      tomo_out.aaafI, //<-which cluster does each voxel belong to?  (results will be stored here)
                       mask.aaafI,
                       settings.connect_threshold_saliency,
-                      static_cast<float>(0),
-                      true,
+                      static_cast<float>(0.0), //this value is ignored, but it specifies the type of array we are using (eg float)
+                      true, //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
+                      true, //(clusters begin at regions of high saliency)
                       aaaafStickDirection,
                       settings.connect_threshold_vector_saliency,
                       settings.connect_threshold_vector_neighbor,
+                      false, //(eigenvector signs are arbitrary so ignore them)
                       c_hessian.aaaafI,
                       settings.connect_threshold_tensor_saliency,
                       settings.connect_threshold_tensor_neighbor,
-                      false,
+                      true, // the tensor should be positive definite near the target
                       3,
-                      eival_order,
                       &cluster_centers,
                       &cerr);  //!< print progress to the user
 
