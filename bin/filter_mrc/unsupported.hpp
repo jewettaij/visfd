@@ -59,12 +59,12 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                   bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
                   bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)
                   VectorContainer const *const *const *aaaafVector=NULL,
-                  Scalar threshold_vector_saliency=-1.0,    //!< voxels with incompatible saliency and vector are ignored (=1.0 disables)
-                  Scalar threshold_vector_neighbor=-1.0,    //!< neighboring voxels with incompatible vectors are ignored (=1.0 disables)
+                  Scalar threshold_vector_saliency=-1.1,    //!< voxels with incompatible saliency and vector are ignored (=1.0 disables)
+                  Scalar threshold_vector_neighbor=-1.1,    //!< neighboring voxels with incompatible vectors are ignored (=1.0 disables)
                   bool consider_dot_product_sign = true,        //!< does the sign of the dot product matter?  If not, compare abs(DotProduct()) with threshold_vector variables
                   TensorContainer const *const *const *aaaafSymmetricTensor=NULL,
-                  Scalar threshold_tensor_saliency=-1.0,    //!< voxels with incompatible saliency and tensor are ignored (=1.0 disables)
-                  Scalar threshold_tensor_neighbor=-1.0,    //!< neighboring voxels with incompatible tensors are ignored (=1.0 disables)
+                  Scalar threshold_tensor_saliency=-1.1,    //!< voxels with incompatible saliency and tensor are ignored (=1.0 disables)
+                  Scalar threshold_tensor_neighbor=-1.1,    //!< neighboring voxels with incompatible tensors are ignored (=1.0 disables)
                   bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                   int connectivity=3,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
                   vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
