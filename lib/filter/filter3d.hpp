@@ -3922,7 +3922,8 @@ CalcHessian3D(int const image_size[3], //!< source image size
           Scalar hessian[3][3];
           CalcHessianFiniteDifferences3D(aaafSmoothed,
                                          ix, iy, iz,
-                                         hessian);
+                                         hessian,
+                                         image_size);
 
           #ifndef NDEBUG
           // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
