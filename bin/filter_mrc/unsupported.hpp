@@ -551,10 +551,20 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
     
   // Now, assign all the voxels in aaaiDest[][][]
   // to their clusters instead of their basins.
-  for (int iz=0; iz<image_size[2]; iz++)
-    for (int iy=0; iy<image_size[1]; iy++)
-      for (int ix=0; ix<image_size[0]; ix++)
-        aaaiDest[iz][iy][ix] = basin2cluster[ aaaiDest[iz][iy][ix] ];
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaaiDest[iz][iy][ix] != UNDEFINED) {
+          assert(aaaiDest[iz][iy][ix]-1 < n_basins);
+          aaaiDest[iz][iy][ix] = basin2cluster[ aaaiDest[iz][iy][ix]-1 ];
+        }
+      }
+    }
+  }
+  
+  // Note: The "-1" in the lines above are necessary because
+  // aaaiDest[iz][iy][ix] stores the basin to which voxel ix,iy,iz belongs...
+  // ...PLUS 1.  (In other words, indexing begins at 1 not 0.)
 
   if (pv_cluster_centers != NULL) {
     pv_cluster_centers->resize(n_clusters);
