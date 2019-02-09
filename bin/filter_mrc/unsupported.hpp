@@ -504,6 +504,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
           // merge the two basins into the same cluster
           Label basin_i = aaaiDest[iz][iy][ix];
           Label basin_j = aaaiDest[iz_jz][iy_jy][ix_jx];
+
           Label merged_cluster_id = MIN(basin2cluster[basin_i],
                                         basin2cluster[basin_j]);
           basin2cluster[basin_i] = merged_cluster_id;
@@ -517,8 +518,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
   #ifndef NDEBUG
   // DEBUGGING
-  // All of the voxels should either be assigned to a basin,
-  // OR assigned to "WATERSHED_BOUNDARY" or to "UNDEFINED"
+  // All of the voxels should either be assigned to a basin or to "UNDEFINED"
   // (but not "QUEUED").  Check for that below:
   for (int iz=0; iz<image_size[2]; iz++)
     for (int iy=0; iy<image_size[1]; iy++)
@@ -548,24 +548,22 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
   for (size_t i=0; i < basin2cluster.size(); i++) {
     basin2cluster[i] = clusterold2clusternew[basin2cluster[i]];
   }
-    
+
   // Now, assign all the voxels in aaaiDest[][][]
   // to their clusters instead of their basins.
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
         if (aaaiDest[iz][iy][ix] != UNDEFINED) {
-          assert(aaaiDest[iz][iy][ix]-1 < n_basins);
-          aaaiDest[iz][iy][ix] = basin2cluster[ aaaiDest[iz][iy][ix]-1 ];
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            continue;
+          assert(aaaiDest[iz][iy][ix] < n_basins);
+          aaaiDest[iz][iy][ix] = basin2cluster[ aaaiDest[iz][iy][ix] ];
         }
       }
     }
   }
   
-  // Note: The "-1" in the lines above are necessary because
-  // aaaiDest[iz][iy][ix] stores the basin to which voxel ix,iy,iz belongs...
-  // ...PLUS 1.  (In other words, indexing begins at 1 not 0.)
-
   if (pv_cluster_centers != NULL) {
     pv_cluster_centers->resize(n_clusters);
     for (size_t i = 0; i < n_clusters; i++)
@@ -577,11 +575,28 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
   if (undefined_label_is_max)
     label_undefined = n_clusters+1;
 
+  // Final procesing: Replace "UNDEFINED" with "label_undefined", or add 1:
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
-        if (aaaiDest[iz][iy][ix] == UNDEFINED)
-          aaaiDest[iz][iy][ix] == label_undefined;
+
+        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          // as before: ignore voxels excluded by the mask
+          continue;
+
+        if (aaaiDest[iz][iy][ix] == UNDEFINED) {
+          aaaiDest[iz][iy][ix] = label_undefined;
+          continue;
+        }
+
+        // According to the function specifications, the aaaiDest[][][] array
+        // should store the cluster to which the voxel belongs.  This should be
+        // a number between 1 and n_clusters.  Currently, the number in the
+        // aaaiDest[][][] array lies between 0 and n_clusters-1 (0-indexing).
+        assert((0 <= aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<n_basins));
+
+        // Hence we should add 1 to it:
+        aaaiDest[iz][iy][ix] += 1;
       }
     }
   }
