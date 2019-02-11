@@ -1971,14 +1971,14 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-connect-vector-neighbor")
+    else if (vArgs[i] == "-connect-tensor-saliency")
     {
       cluster_connected_voxels = true;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        connect_threshold_vector_neighbor = stof(vArgs[i+1]);
+        connect_threshold_tensor_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
