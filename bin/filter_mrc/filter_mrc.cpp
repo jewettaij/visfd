@@ -1588,7 +1588,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                       settings.connect_threshold_tensor_saliency,
                       settings.connect_threshold_tensor_neighbor,
                       true, // the tensor should be positive definite near the target
-                      3,
+                      1,
                       &cluster_centers,
                       &cerr);  //!< print progress to the user
 

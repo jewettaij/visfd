@@ -3084,7 +3084,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
             Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
             Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
             bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
-            int connectivity=3,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
+            int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
             bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled?
             Scalar boundary_label=0,       //!< if so, what intensity (ie. label) should boundary voxels be assigned to?
             vector<array<Coordinate, 3> > *pv_extrema_locations=NULL, //!< optional: the location of each minima or maxima
@@ -3246,13 +3246,8 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
   } // for (size_t i=0; i < pv_extrema_locations->size(); i++)
 
 
-  // Loop over all the voxels on the periphery
-  // of the voxels with lower intensity (brightness).
-  // This is a priority-queue of voxels which lie adjacent to 
-  // the voxels which have been already considered.
-  // As we consider new voxels, add their neighbors to this queue as well
-  // until we process all voxels in the image.
-
+  // Count the number of voxels in the image we will need to consider.
+  // (This will be used for printing out progress estimates later.)
   size_t n_voxels_processed = 0;
   //size_t n_voxels_image = image_size[0] * image_size[1] * image_size[2];
   size_t n_voxels_image = 0;
@@ -3263,11 +3258,18 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
           continue;
         if (aaafSource[iz][iy][ix]*SIGN_FACTOR > halt_threshold*SIGN_FACTOR)
           continue;
-        // count the number of voxels in the image we will be looping over later
         n_voxels_image++;
       }
     }
   }
+
+
+  // Loop over all the voxels on the periphery
+  // of the voxels with lower intensity (brightness).
+  // This is a priority-queue of voxels which lie adjacent to 
+  // the voxels which have been already considered.
+  // As we consider new voxels, add their neighbors to this queue as well
+  // until we process all voxels in the image.
 
   //#ifndef NDEBUG
   //set<array<Coordinate, 3> > visited;

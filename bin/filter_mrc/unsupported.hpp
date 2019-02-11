@@ -164,7 +164,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
   if (pReportProgress)
     *pReportProgress <<
-      " ---- Clustering voxels belonging to different objects ----\n"
+      "-- Clustering voxels belonging to different objects --\n"
       "starting from " << extrema_locations.size() << " different local "
                      << (start_from_saliency_maxima ? "maxima" : "minima")
                      << endl;
@@ -210,19 +210,26 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
 
   } // for (size_t i=0; i < extrema_locations.size(); i++)
 
-  // Initially each basin is it's own cluster.
+
+  // Each cluster contains one or more "basins"
+  // A "basin" is a group of connected voxels which are all part of the
+  // same local minima (or maxima).
+  // Initially, each basin is it's own cluster.
   // (Later we may merge multiple basins into a single cluster.)
   vector<Label> basin2cluster(extrema_locations.size());
   for (size_t i=0; i < basin2cluster.size(); i++)
     basin2cluster[i] = i;
 
-  // Loop over all the voxels on the periphery
-  // of the voxels with lower intensity (brightness).
-  // This is a priority-queue of voxels which lie adjacent to 
-  // the voxels which have been already considered.
-  // As we consider new voxels, add their neighbors to this queue as well
-  // until we process all voxels in the image.
+  // Inverse lookup table
+  vector<set<Label> > cluster2basins(extrema_locations.size());
+  for (size_t i=0; i < basin2cluster.size(); i++) {
+    cluster2basins[i] = set<Label>();
+    cluster2basins[i].insert(i);
+  }
 
+
+  // Count the number of voxels in the image we will need to consider.
+  // (This will be used for printing out progress estimates later.)
   size_t n_voxels_processed = 0;
   //size_t n_voxels_image = image_size[0] * image_size[1] * image_size[2];
   size_t n_voxels_image = 0;
@@ -235,11 +242,17 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
             >
             SIGN_FACTOR * threshold_saliency)
           continue;
-        // count the number of voxels in the image we will be looping over later
         n_voxels_image++;
       }
     }
   }
+
+  // Loop over all the voxels on the periphery
+  // of the voxels with lower intensity (brightness).
+  // This is a priority-queue of voxels which lie adjacent to 
+  // the voxels which have been already considered.
+  // As we consider new voxels, add their neighbors to this queue as well
+  // until we process all voxels in the image.
 
   //#ifndef NDEBUG
   //set<array<Coordinate, 3> > visited;
@@ -497,18 +510,33 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                           neighbor_crds));
       }
       else {
-        if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
+        assert(aaaiDest[iz][iy][ix] == i_which_basin);
+
+        Label basin_i = aaaiDest[iz][iy][ix];
+        Label basin_j = aaaiDest[iz_jz][iy_jy][ix_jx];
+
+        Label cluster_i = basin2cluster[basin_i];
+        Label cluster_j = basin2cluster[basin_j];
+
+        if (cluster_i != cluster_j)
         {
-          assert(aaaiDest[iz][iy][ix] == i_which_basin);
+          // -- merge the two clusters to which basin_i and basin_j belong --
 
-          // merge the two basins into the same cluster
-          Label basin_i = aaaiDest[iz][iy][ix];
-          Label basin_j = aaaiDest[iz_jz][iy_jy][ix_jx];
-
-          Label merged_cluster_id = MIN(basin2cluster[basin_i],
-                                        basin2cluster[basin_j]);
-          basin2cluster[basin_i] = merged_cluster_id;
-          basin2cluster[basin_j] = merged_cluster_id;
+          // (arbitrarily) choose the cluster with the smaller ID number
+          // to absorb the other cluster, and delete the other cluster.
+          Label merged_cluster_id  = MIN(cluster_i, cluster_j);
+          Label deleted_cluster_id = MAX(cluster_i, cluster_j);
+          // copy the basins from the deleted cluster into the merged cluster
+          for (auto p = cluster2basins[deleted_cluster_id].begin();
+               p != cluster2basins[deleted_cluster_id].end();
+               p++)
+          {
+            Label basin_id = *p;
+            cluster2basins[merged_cluster_id].insert(basin_id);
+            basin2cluster[basin_id] = merged_cluster_id;
+          }
+          // -- delete all the basins from the deleted cluster --
+          cluster2basins[deleted_cluster_id].clear();
 
         } // if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
       } // else clause for "if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)"
@@ -527,22 +555,30 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
   #endif //#ifndef NDEBUG
 
 
+  // Optional: We don't need "cluster2basins" any more.  Free up its memory.
+  cluster2basins.clear();
+
+
   // Count the number of clusters
   size_t n_clusters = 0;
   size_t n_basins = basin2cluster.size();
   vector<size_t> clusterold2clusternew(n_basins);
-  vector<size_t> cluster2basin; //inverse lookup table
+  vector<size_t> cluster2deepestbasin; //inverse lookup table
   for (size_t i=0; i < n_basins; i++) {
     // (Originally, clusters were assigned to the ID number of the basin they
     //  started from.  But after merging multiple basins into the same cluster
     //  there are more basins than clusters.)
     clusterold2clusternew[i] = n_clusters;
     if (basin2cluster[i] == i) {
-      cluster2basin.push_back(i);
-      assert(cluster2basin[n_clusters] == i);
+      cluster2deepestbasin.push_back(i);
+      assert(cluster2deepestbasin[n_clusters] == i);
       n_clusters++;
     }
   }
+
+  if (pReportProgress)
+    *pReportProgress <<
+      "-- Number of clusters found: " << n_clusters << " --\n";
 
   // Renumber the clusters from 0 ... n_clusters-1
   for (size_t i=0; i < basin2cluster.size(); i++) {
@@ -567,7 +603,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
   if (pv_cluster_centers != NULL) {
     pv_cluster_centers->resize(n_clusters);
     for (size_t i = 0; i < n_clusters; i++)
-      (*pv_cluster_centers)[i] = extrema_locations[ cluster2basin[i] ];
+      (*pv_cluster_centers)[i] = extrema_locations[ cluster2deepestbasin[i] ];
   }
 
   // Now, deal with the clusters which the caller wants the "undefined"
