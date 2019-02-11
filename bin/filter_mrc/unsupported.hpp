@@ -66,7 +66,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                   Scalar threshold_tensor_saliency=-1.1,    //!< voxels with incompatible saliency and tensor are ignored (=1.0 disables)
                   Scalar threshold_tensor_neighbor=-1.1,    //!< neighboring voxels with incompatible tensors are ignored (=1.0 disables)
                   bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
-                  int connectivity=3,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
+                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
                   vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
                   ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
