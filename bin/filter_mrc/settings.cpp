@@ -118,10 +118,10 @@ Settings::Settings() {
 
   cluster_connected_voxels = false;
   connect_threshold_saliency = std::numeric_limits<float>::infinity();
-  connect_threshold_vector_saliency = -1.1;
-  connect_threshold_vector_neighbor = -1.1;
-  connect_threshold_tensor_saliency = -1.1;
-  connect_threshold_tensor_neighbor = -1.1;
+  connect_threshold_vector_saliency = M_SQRT1_2; //45 degree change maximum
+  connect_threshold_vector_neighbor = M_SQRT1_2; //45 degree change maximum
+  connect_threshold_tensor_saliency = M_SQRT1_2;
+  connect_threshold_tensor_neighbor = M_SQRT1_2;
 
   use_intensity_map = false;
   use_dual_thresholds = false;
