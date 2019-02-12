@@ -76,6 +76,27 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
   assert(aaafSaliency);
   assert(aaaiDest);
 
+
+  if (! consider_dot_product_sign) {
+    // Weird detail:
+    // A negative threshold_vector should mean that the caller wants us to
+    // ignore the vector argument and not attempt to compare vectors
+    // associated with each voxel.
+    // (At least that's how I invoke it. -AJ 2019-2-11)
+    // However if (consider_dot_product_sign==false), then the absolute
+    // value of the threshold is used, which will be a positive number.
+    // This will cause voxels whose dot product is less than the absolute
+    // value of this threshold to be ignored.
+    // This is not what we want.
+    // In that case we want to choose a threshold which is as low as possible
+    // for the absolute value of a dot product, which is 0.0;
+    if (threshold_vector_saliency < 0)
+      threshold_vector_saliency = 0.0;
+    if (threshold_vector_neighbor < 0)
+      threshold_vector_neighbor = 0.0;
+  }
+
+
   // Figure out which neighbors to consider when searching neighboring voxels
   int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
   int num_neighbors = 0;
