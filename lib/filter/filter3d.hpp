@@ -4801,7 +4801,7 @@ public:
     // OPTIONAL (probably not useful to most users)
     if (normalize) {
       if (pReportProgress)
-        *pReportProgress << "  Normalizing the result of tensor voting" << endl;
+        *pReportProgress << "  Normalizing the result of tensor voting...";
 
       if (aaafMaskSource) {
 
@@ -4825,6 +4825,9 @@ public:
         Dealloc3D(image_size,
                   &afDenominator,
                   &aaafDenominator);
+
+        if (pReportProgress)
+          *pReportProgress << "done." << endl;
 
       } // if (aaafMask)
       else {
@@ -4879,7 +4882,11 @@ public:
 
     } //if (normalize)
 
+
     if (diagonalize_dest) {
+      if (pReportProgress)
+        *pReportProgress << "---- Diagonalizing Tensor Voting results ----" << endl;
+
       // Diagonalize the resulting tensor.
       // The resulting eigenvalues and eigenvectors can be analyzed by the caller.
       DiagonalizeHessianImage3D(image_size,
@@ -5044,9 +5051,6 @@ private:
         }
       }
     }
-
-    if (pReportProgress)
-      *pReportProgress << "---- Diagonalizing Tensor Voting results ----" << endl;
 
   } //TVDenseStick()
 
