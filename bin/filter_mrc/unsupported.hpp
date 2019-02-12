@@ -502,7 +502,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
             if (SQR(DotProduct3(aaaafVector[iz][iy][ix],
                                 aaaafVector[iz_jz][iy_jy][ix_jx]))
                 <
-                (SQR(threshold_tensor_neighbor) *
+                (SQR(threshold_vector_neighbor) *
                  SquaredNorm3(aaaafVector[iz][iy][ix])*
                  SquaredNorm3(aaaafVector[iz_jz][iy_jy][ix_jx])))
               continue;
