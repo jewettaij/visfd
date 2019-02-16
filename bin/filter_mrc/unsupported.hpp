@@ -56,28 +56,28 @@
 
 template<class Scalar, class Label, class Coordinate, class VectorContainer, class TensorContainer>
 void
-ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
-                  Scalar const *const *const *aaafSaliency,  //!< intensity of each voxel
-                  Label ***aaaiDest,                       //!< watershed segmentation results go here
-                  Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
-                  Scalar threshold_saliency=-std::numeric_limits<Scalar>::infinity(), //!< don't consider voxels with saliencies below this value
-                  Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
-                  bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
-                  bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)
-                  VectorContainer const *const *const *aaaafVector=NULL,
-                  Scalar threshold_vector_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and vector are ignored (=-1.001 disables)
-                  Scalar threshold_vector_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible vectors are ignored (=-1.001 disables)
-                  bool consider_dot_product_sign = true,        //!< does the sign of the dot product matter?  If not, compare abs(DotProduct()) with threshold_vector variables
-                  TensorContainer const *const *const *aaaafSymmetricTensor=NULL,
-                  Scalar threshold_tensor_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and tensor are ignored (=-1.1 disables)
-                  Scalar threshold_tensor_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible tensors are ignored (=-1.1 disables)
-                  bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
-                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
-                  vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
-                  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                  VectorContainer ***aaaafVectorStandardized=NULL, //!< optional: place to store "standardized" vector directions
-                  #endif
-                  ostream *pReportProgress=NULL)  //!< print progress to the user?
+ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
+                 Scalar const *const *const *aaafSaliency,  //!< intensity of each voxel
+                 Label ***aaaiDest,                       //!< watershed segmentation results go here
+                 Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
+                 Scalar threshold_saliency=-std::numeric_limits<Scalar>::infinity(), //!< don't consider voxels with saliencies below this value
+                 Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
+                 bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
+                 bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)
+                 VectorContainer const *const *const *aaaafVector=NULL,
+                 Scalar threshold_vector_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and vector are ignored (=-1.001 disables)
+                 Scalar threshold_vector_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible vectors are ignored (=-1.001 disables)
+                 bool consider_dot_product_sign = true,        //!< does the sign of the dot product matter?  If not, compare abs(DotProduct()) with threshold_vector variables
+                 TensorContainer const *const *const *aaaafSymmetricTensor=NULL,
+                 Scalar threshold_tensor_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and tensor are ignored (=-1.1 disables)
+                 Scalar threshold_tensor_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible tensors are ignored (=-1.1 disables)
+                 bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
+                 int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
+                 vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
+                 #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                 VectorContainer ***aaaafVectorStandardized=NULL, //!< optional: place to store "standardized" vector directions
+                 #endif
+                 ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
 
   assert(image_size);
@@ -806,7 +806,7 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
   }
   #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
 
-} // ConnectedClusters()
+} // ClusterConnected()
 
 
 

@@ -1568,28 +1568,28 @@ HandleRidgeDetectorPlanar(Settings settings,
     }
 
     vector<array<int, 3> > cluster_centers;
-    ConnectedClusters(tomo_in.header.nvoxels, //image size
-                      tomo_in.aaafI,  //<-saliency
-                      tomo_out.aaafI, //<-which cluster does each voxel belong to?  (results will be stored here)
-                      mask.aaafI,
-                      settings.connect_threshold_saliency,
-                      static_cast<float>(0.0), //this value is ignored, but it specifies the type of array we are using (eg float)
-                      true, //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
-                      true, //(clusters begin at regions of high saliency)
-                      aaaafStickDirection,
-                      settings.connect_threshold_vector_saliency,
-                      settings.connect_threshold_vector_neighbor,
-                      false, //(eigenvector signs are arbitrary so ignore them)
-                      tmp_tensor.aaaafI,
-                      settings.connect_threshold_tensor_saliency,
-                      settings.connect_threshold_tensor_neighbor,
-                      true, // the tensor should be positive definite near the target
-                      1,
-                      &cluster_centers,
-                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                      aaaafStickDirection,
-                      #endif
-                      &cerr);  //!< print progress to the user
+    ClusterConnected(tomo_in.header.nvoxels, //image size
+                     tomo_in.aaafI,  //<-saliency
+                     tomo_out.aaafI, //<-which cluster does each voxel belong to?  (results will be stored here)
+                     mask.aaafI,
+                     settings.connect_threshold_saliency,
+                     static_cast<float>(0.0), //this value is ignored, but it specifies the type of array we are using (eg float)
+                     true, //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
+                     true, //(clusters begin at regions of high saliency)
+                     aaaafStickDirection,
+                     settings.connect_threshold_vector_saliency,
+                     settings.connect_threshold_vector_neighbor,
+                     false, //(eigenvector signs are arbitrary so ignore them)
+                     tmp_tensor.aaaafI,
+                     settings.connect_threshold_tensor_saliency,
+                     settings.connect_threshold_tensor_neighbor,
+                     true, // the tensor should be positive definite near the target
+                     1,
+                     &cluster_centers,
+                     #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                     aaaafStickDirection,
+                     #endif
+                     &cerr);  //!< print progress to the user
 
   } // if (settings.cluster_connected_voxels)
 
