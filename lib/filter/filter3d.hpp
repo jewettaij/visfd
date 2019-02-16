@@ -1,7 +1,7 @@
 ///   @file filter3d.hpp
 ///   @brief a collection of image processing operations on 3D arrays
 ///   @author Andrew Jewett
-///   @date 2018-9-14
+///   @date 2019-2-15
 
 #ifndef _FILTER3D_HPP
 #define _FILTER3D_HPP
@@ -638,7 +638,7 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
                  Scalar const *const *const *aaafSource, //!<image to which we want to apply the filter
                  Scalar ***aaafDest,                   //!<store the filtered image here
                  Scalar const *const *const *aaafMask, //!<if not NULL, ignore voxels if aaafMask[iz][iy][ix]!=0
-                 Filter1D<Scalar, int> aFilter[3], //!<preallocated 1D filters
+                 Filter1D<Scalar, int> aFilter[3],     //!<preallocated 1D filters
                  bool normalize = true, //!< normalize the result near the boundaries?
                  ostream *pReportProgress = NULL) //!< print out progress to the user?
 {
@@ -3355,6 +3355,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     // ---- loop over neighbors ----
     // Let (jx,jy,jz) denote the index offset for the neighbor voxels
     // (located at ix+jx,iy+jy,iz+jz)
+
     for (int j = 0; j < num_neighbors; j++) {
       int jx = neighbors[j][0];
       int jy = neighbors[j][1];

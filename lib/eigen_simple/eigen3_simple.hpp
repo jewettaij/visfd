@@ -310,6 +310,7 @@ namespace selfadjoint_eigen3
     // The eigenvectors are orthonormal, but not necessarily a rotation.
     // If the determinant is negative, then flip one of the eigenvectors
     // to insure the determinant is positive.  Handle this below:
+
     if (Determinant3(eivects) < 0.0) {
       for (int d=0; d<3; d++)
         eivects[0][d] *= -1.0;
@@ -318,10 +319,13 @@ namespace selfadjoint_eigen3
     // Note: Each eigenvector is a currently row-vector in eivects[3][3];
     // It's optional, but I prefer to transpose this, because I think of
     // each eigenvector as a column vector.  Either way should work.
+
     Transpose3(eivects);
+
     // convert the 3x3 matrix of eigenvector components down to 3 numbers
     // ("Shoemake" coordinates representing the rotation corresponding
     //  to the 3 eigenvectors of the 3x3 matrix.)
+
     Scalar shoemake[3];
     Matrix2Shoemake(eivects, shoemake);
 

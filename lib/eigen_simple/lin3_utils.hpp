@@ -10,6 +10,7 @@ template <class Scalar>
 static inline Scalar Trace3(const Scalar m[3][3]) {
   return m[0][0]+m[1][1]+m[2][2];
 }
+
 template <class Scalar>
 static inline Scalar Trace3(const array<array<int, 3>, 3>& m) {
   return m[0][0]+m[1][1]+m[2][2];
@@ -213,6 +214,8 @@ static inline void Matrix2Quaternion(const Scalar M[3][3], Scalar q[4])
 template<class RealNum>
 static inline void Quaternion2Matrix(const RealNum q[4], RealNum M[3][3])
 {
+  // Alternate convention for quaternion->rotation conversion
+  // This could be the convention where q[0] is real instead of q[3] (?I forgot)
   //M[0][0] =  (q[0]*q[0])-(q[1]*q[1])-(q[2]*q[2])+(q[3]*q[3]);
   //M[1][1] = -(q[0]*q[0])+(q[1]*q[1])-(q[2]*q[2])+(q[3]*q[3]);
   //M[2][2] = -(q[0]*q[0])-(q[1]*q[1])+(q[2]*q[2])+(q[3]*q[3]);
@@ -223,6 +226,8 @@ static inline void Quaternion2Matrix(const RealNum q[4], RealNum M[3][3])
   //M[0][2] = 2*(q[0]*q[2] + q[1]*q[3]);
   //M[2][0] = 2*(q[0]*q[2] - q[1]*q[3]);
 
+  // Quaternion->rotation conversion used here:
+  // This could be the convention where q[3] is real instead of q[0] (?I forgot)
   M[0][0] =  1.0 - 2*(q[2]*q[2]) - 2*(q[3]*q[3]);
   M[1][1] =  1.0 - 2*(q[1]*q[1]) - 2*(q[3]*q[3]);
   M[2][2] =  1.0 - 2*(q[1]*q[1]) - 2*(q[2]*q[2]);

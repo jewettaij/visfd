@@ -1204,11 +1204,11 @@ WriteBNPTSfile(string filename,
   fstream bnpts_file;
   bnpts_file.open(filename.c_str(), ios::out | ios::binary);
   for (size_t i=0; i < n; i++) {
-    float xyz[3];
+    float xyz[3];           //(convert from "Scalar" to float)
     xyz[0] = coords[i][0];  //(convert from "Scalar" to float)
     xyz[1] = coords[i][1];
     xyz[2] = coords[i][2];
-    float norm[3];
+    float norm[3];          //(convert from "Scalar" to float)
     norm[0] = norms[i][0];  //(convert from "Scalar" to float)
     norm[1] = norms[i][1];
     norm[2] = norms[i][2];
@@ -1227,45 +1227,39 @@ template<class Scalar, class VectorContainer>
 static void
 WriteOrientedPointCloud(string pointcloud_file_name,
                         const int image_size[3],
-                        Scalar const *const *const *aaafImage,
-                        CompactMultiChannelImage3D<Scalar> &hessian,
-                        Scalar threshold)
+                        VectorContainer const *const *const *aaaafVector,
+                        Scalar const *const *const *aaafMask = NULL,
+                        const Scalar *voxel_width=NULL)
 {
-  assert(aaafImage);
+  assert(aaafVector);
   vector<array<Scalar,3> > coords;
   vector<array<Scalar,3> > norms;
+
+  // Did the caller specify the physical width of each voxel?
+  Scalar _voxel_width[3] = {1.0, 1.0, 1.0};
+  if (voxel_width) {
+    _voxel_width[0] = voxel_width[0];
+    _voxel_width[1] = voxel_width[1];
+    _voxel_width[2] = voxel_width[2];
+  }
+
   for (int iz=0; iz < image_size[2]; iz++) {
     for (int iy=0; iy < image_size[1]; iy++) {
       for (int ix=0; ix < image_size[0]; ix++) {
-        Scalar metric = aaafImage[iz][iy][ix];
-        if ((abs(metric) >= abs(threshold)) &&
-            (metric*threshold > 0.0)) //same sign
-        {
-          // check if this is one of the voxels we want to consider
-          if (! hessian.aaaafI[iz][iy][ix])
-            // (if not, then this voxel lies outside the mask, so skip it)
-            continue;
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
 
-          array<Scalar,3> xyz;
-          xyz[0] = ix;
-          xyz[1] = iy;
-          xyz[2] = iz;
-          coords.push_back(xyz);
+        array<Scalar,3> xyz;
+        xyz[0] = ix * _voxel_width[0];
+        xyz[1] = iy * _voxel_width[1];
+        xyz[2] = iz * _voxel_width[2];
+        coords.push_back(xyz);
 
-          array<Scalar,3> norm;
-          Scalar quat[4];
-          quat[0] = hessian.aaaafI[iz][iy][ix][3];
-          quat[1] = hessian.aaaafI[iz][iy][ix][4];
-          quat[2] = hessian.aaaafI[iz][iy][ix][5];
-          quat[3] = hessian.aaaafI[iz][iy][ix][6];
-
-          Scalar eigenvects[3][3];
-          Quaternion2Matrix(quat, eigenvects);
-          norm[0] = eigenvects[0][0];
-          norm[1] = eigenvects[0][1];
-          norm[2] = eigenvects[0][2];
-          norms.push_back(norm);
-        }
+        array<Scalar,3> norm;
+        norm[0] = aaaafVector[iz][iy][ix][0];
+        norm[1] = aaaafVector[iz][iy][ix][1];
+        norm[2] = aaaafVector[iz][iy][ix][2];
+        norms.push_back(norm);
       }
     }
   }
@@ -1288,11 +1282,13 @@ HandleRidgeDetectorPlanar(Settings settings,
 {
   cerr << "filter_type = planar ridge detector\n";
 
+  int image_size[3];
+  for (int d = 0; d < 3; d++)
+    image_size[d] = tomo_in.header.nvoxels[d];
 
   bool black_on_white = true;
   selfadjoint_eigen3::EigenOrderType eival_order =
     selfadjoint_eigen3::DECREASING_EIVALS; //we want the first eigenvalue to be the largest (assumed to be positive)
-
 
   float sigma = settings.width_a[0];
 
@@ -1328,8 +1324,8 @@ HandleRidgeDetectorPlanar(Settings settings,
   // is only allocated (non-NULL) for voxels which were selected by the user
   // (ie voxels for which the mask is non-zero).  This can reduce memory usage
   // by a factor of up to 3 (for floats) for this array.
-  CompactMultiChannelImage3D<float> c_hessian(6);
-  c_hessian.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  CompactMultiChannelImage3D<float> tmp_tensor(6);
+  tmp_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
 
 
   // How did the user specify how wide to make the filter window?
@@ -1375,7 +1371,7 @@ HandleRidgeDetectorPlanar(Settings settings,
   CalcHessian3D(tomo_in.header.nvoxels,
                 tomo_in.aaafI,
                 aaaafGradient,
-                c_hessian.aaaafI,
+                tmp_tensor.aaaafI,
                 mask.aaafI,
                 sigma,
                 settings.filter_truncate_ratio,
@@ -1389,8 +1385,8 @@ HandleRidgeDetectorPlanar(Settings settings,
   // To save space, I chose to store the result in the same array.
 
   DiagonalizeHessianImage3D(tomo_in.header.nvoxels,
-                            c_hessian.aaaafI,
-                            c_hessian.aaaafI,
+                            tmp_tensor.aaaafI,
+                            tmp_tensor.aaaafI,
                             mask.aaafI,
                             eival_order,
                             &cerr);
@@ -1407,22 +1403,22 @@ HandleRidgeDetectorPlanar(Settings settings,
 
 
   // Optional: store the saliency (score) of each voxel in tomo_out.aaafI
-  for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
-    for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
-      for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
+  for(int iz=0; iz < image_size[2]; iz++)
+    for(int iy=0; iy < image_size[1]; iy++)
+      for(int ix=0; ix < image_size[0]; ix++)
         tomo_out.aaafI[iz][iy][ix] = 0.0;
 
-  for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-    for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-      for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+  for(int iz=0; iz < image_size[2]; iz++) {
+    for(int iy=0; iy < image_size[1]; iy++) {
+      for(int ix=0; ix < image_size[0]; ix++) {
 
-        if (! c_hessian.aaaafI[iz][iy][ix]) //ignore voxels that are either
+        if (! tmp_tensor.aaaafI[iz][iy][ix]) //ignore voxels that are either
           continue;                         //in the mask or on the boundary
 
         float eivals[3];
         float eivects[3][3];
 
-        ConvertDiagFlatSym2Evects3(c_hessian.aaaafI[iz][iy][ix],
+        ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
                                    eivals,
                                    eivects);
 
@@ -1436,9 +1432,9 @@ HandleRidgeDetectorPlanar(Settings settings,
 
         // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
         #ifndef NDEBUG
-        if ((ix==tomo_in.header.nvoxels[0]/2) &&
-            (iy==tomo_in.header.nvoxels[1]/2) &&
-            (iz==tomo_in.header.nvoxels[2]/2))
+        if ((ix == image_size[0] / 2) &&
+            (iy == image_size[1] / 2) &&
+            (iz == image_size[2] / 2))
         {
           cerr << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
                << "eivals = "<<eivals[0]<<","<<eivals[1]<<","<<eivals[2]<<"\n"
@@ -1450,7 +1446,7 @@ HandleRidgeDetectorPlanar(Settings settings,
         }
         #endif  //#ifndef NDEBUG
 
-        score = ScoreHessianPlanar(c_hessian.aaaafI[iz][iy][ix],
+        score = ScoreHessianPlanar(tmp_tensor.aaaafI[iz][iy][ix],
                                    aaaafGradient[iz][iy][ix]);
 
         float peak_height = 1.0;
@@ -1490,9 +1486,9 @@ HandleRidgeDetectorPlanar(Settings settings,
         }
 
 
-      } //for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++)
-    } //for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++)
-  } //for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
+      } //for(int ix=0; ix < image_size[0]; ix++)
+    } //for(int iy=0; iy < image_size[1]; iy++)
+  } //for(int iz=0; iz < image_size[2]; iz++)
 
 
 
@@ -1503,9 +1499,9 @@ HandleRidgeDetectorPlanar(Settings settings,
 
     // Use thresholding to reduce the number of voxels that we have to consider
     // Later, voxels with 0 saliency will be ignored.
-    for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-      for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-        for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+    for (int iz=0; iz < image_size[2]; iz++) {
+      for (int iy=0; iy < image_size[1]; iy++) {
+        for (int ix=0; ix < image_size[0]; ix++) {
           if (tomo_out.aaafI[iz][iy][ix] < settings.planar_hessian_score_threshold)
             tomo_out.aaafI[iz][iy][ix] = 0.0;
         }
@@ -1520,7 +1516,7 @@ HandleRidgeDetectorPlanar(Settings settings,
     tv.TVDenseStick(tomo_in.header.nvoxels,
                     tomo_out.aaafI,
                     aaaafStickDirection,
-                    c_hessian.aaaafI,
+                    tmp_tensor.aaaafI,
                     mask.aaafI,
                     mask.aaafI,
                     false,  // (we want to detect surfaces not curves)
@@ -1529,11 +1525,11 @@ HandleRidgeDetectorPlanar(Settings settings,
                     false,  // (diagonalize each tensor afterwards?)
                     &cerr);
 
-    for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-      for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-        for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+    for(int iz=0; iz < image_size[2]; iz++) {
+      for(int iy=0; iy < image_size[1]; iy++) {
+        for(int ix=0; ix < image_size[0]; ix++) {
           float diagonalized_hessian[6];
-          DiagonalizeFlatSym3(c_hessian.aaaafI[iz][iy][ix],
+          DiagonalizeFlatSym3(tmp_tensor.aaaafI[iz][iy][ix],
                               diagonalized_hessian,
                               eival_order);
           float score = ScoreTensorPlanar(diagonalized_hessian);
@@ -1556,13 +1552,13 @@ HandleRidgeDetectorPlanar(Settings settings,
     tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.)
                         //  allocate a new 3D array to store the saliency)
 
-    // Copy the principal eigenvector of c_hessian into aaaafStickDirection
-    for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-      for(int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-        for(int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+    // Copy the principal eigenvector of tmp_tensor into aaaafStickDirection
+    for(int iz=0; iz < image_size[2]; iz++) {
+      for(int iy=0; iy < image_size[1]; iy++) {
+        for(int ix=0; ix < image_size[0]; ix++) {
           float eivals[3];
           float eivects[3][3];
-          ConvertDiagFlatSym2Evects3(c_hessian.aaaafI[iz][iy][ix],
+          ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
                                      eivals,
                                      eivects);
           for (int d=0; d<3; d++)
@@ -1584,17 +1580,82 @@ HandleRidgeDetectorPlanar(Settings settings,
                       settings.connect_threshold_vector_saliency,
                       settings.connect_threshold_vector_neighbor,
                       false, //(eigenvector signs are arbitrary so ignore them)
-                      c_hessian.aaaafI,
+                      tmp_tensor.aaaafI,
                       settings.connect_threshold_tensor_saliency,
                       settings.connect_threshold_tensor_neighbor,
                       true, // the tensor should be positive definite near the target
                       1,
                       &cluster_centers,
+                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                      aaaafStickDirection,
+                      #endif
                       &cerr);  //!< print progress to the user
 
   } // if (settings.cluster_connected_voxels)
 
 
+
+  //Did the user ask us to generate output files containing surface orientation?
+  if (settings.out_normals_fname != "")
+  {
+
+
+    #if 0  // DELETEME   FOR GOD'S SAKE PLEASE REMOVE THIS CRUFT
+    // define the set of voxels we will use
+    for (int iz = 0; iz < image_size[2]; ++iz) {
+      for (int iy = 0; iy < image_size[1]; ++iy) {
+        for (int ix = 0; ix < image_size[0]; ++ix) {
+          tomo_out.aaafI[iz][iy][ix] = 0.0;
+          if ((! mask.aaafI) || (mask.aaafI[iz][iy][ix] != 0.0))
+            continue;
+          if (settings.select_cluster == tomo_out.aaaf[iz][iy][ix])
+            tomo_out.aaaf[iz][iy][ix] = 1.0;
+          else
+            tomo_out.aaaf[iz][iy][ix] = 0.0;
+        }
+      }
+    }
+
+    // next: convert the tensor into diagonal form
+    DiagonalizeHessianImage3D(image_size,
+                              tmp_tensor.aaaafI,
+                              tmp_tensor.aaaafI,
+                              mask.aaafI,
+                              eival_order,
+                              cerr);
+
+    StandardizeDiagonalTensorImage(image_size,
+                                   tmp_tensor.aaaafI, //source
+                                   tmp_tensor.aaaafI, //dest (change in-place)
+                                   tomo_out, //mask (consider only these voxels)
+                                   0 // base on the first eigenvector of the tensor
+                                   );
+
+    for (int iz = 0; iz < image_size[2]; ++iz) {
+      for (int iy = 0; iy < image_size[1]; ++iy) {
+        for (int ix = 0; ix < image_size[0]; ++ix) {
+          float eivals[3];
+          float eivects[3][3];
+          ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
+                                     eivals,
+                                     eivects);
+          aaaafStickDirection[iz][iy][ix][0] = eivects[0][0];
+          aaaafStickDirection[iz][iy][ix][1] = eivects[0][1];
+          aaaafStickDirection[iz][iy][ix][2] = eivects[0][2];
+        }
+      }
+    }
+
+    #endif //#if 0  // DELETEME
+
+
+    WriteOrientedPointCloud(settings.out_normals_fname,
+                            image_size,
+                            aaaafStickDirection,
+                            tomo_out.aaafI,
+                            voxel_width);
+
+  } //if (settings.out_normals_fname != "")
 
 
   ////Did the user ask us to generate any output files?
@@ -1604,19 +1665,10 @@ HandleRidgeDetectorPlanar(Settings settings,
   //    settings.out_file_name + string(".bnpts");
 
 
-  #if 0
-  //Did the user ask us to generate output files containing surface orientation?
-  if (settings.out_normals_fname != "")
-    WriteOrientedPointCloud(settings.out_normals_fname,
-                            tomo_out.header.nvoxels,
-                            tomo_out.aaafI,
-                            c_hessian,
-                            settings.planar_tv_score_threshold);
-  #endif
-
   Dealloc3D(tomo_in.header.nvoxels,
             &(aafGradient),
             &(aaaafGradient));
+
 } //HandleRidgeDetectorPlanar()
 
 
@@ -1630,10 +1682,14 @@ HandleWatershed(Settings settings,
                 MrcSimple &mask,
                 float voxel_width[3])
 {
+  int image_size[3];
+  for (int d = 0; d < 3; d++)
+    image_size[d] = tomo_in.header.nvoxels[d];
+
   vector<array<int, 3> > extrema_crds;
   vector<float> extrema_scores;
 
-  Watershed3D(tomo_in.header.nvoxels,
+   Watershed3D(tomo_in.header.nvoxels,
               tomo_in.aaafI,
               tomo_out.aaafI,
               mask.aaafI,
@@ -1647,13 +1703,13 @@ HandleWatershed(Settings settings,
               &cerr);
 
   // Did the user supply a mask?
-  // WatershedMeyers3D() intentionally does not modify voxels which lie 
+  // Watershed3D() intentionally does not modify voxels which lie 
   // outside the mask.  These voxels will have random undefined values 
   // unless we assign them manually.  We do this below.
   float UNDEFINED = -1;
-  for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
-    for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++)
-      for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
+  for (int iz = 0; iz < image_size[2]; iz++)
+    for (int iy = 0; iy < image_size[1]; iy++)
+      for (int ix = 0; ix < image_size[0]; ix++)
         if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
           tomo_out.aaafI[iz][iy][ix] = UNDEFINED;
 } //HandleWatershed()
@@ -1697,6 +1753,10 @@ int main(int argc, char **argv) {
       tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
     }
 
+    int image_size[3];
+    for (int d = 0; d < 3; d++)
+      image_size[d] = tomo_in.header.nvoxels[d];
+
     // ---- mask ----
 
     // Optional: if there is a "mask", read that too
@@ -1704,9 +1764,9 @@ int main(int argc, char **argv) {
     if (settings.mask_file_name != "") {
       cerr << "Reading mask \""<<settings.mask_file_name<<"\"" << endl;
       mask.Read(settings.mask_file_name, false);
-      if ((mask.header.nvoxels[0] != tomo_in.header.nvoxels[0]) ||
-          (mask.header.nvoxels[1] != tomo_in.header.nvoxels[1]) ||
-          (mask.header.nvoxels[2] != tomo_in.header.nvoxels[2]))
+      if ((mask.header.nvoxels[0] != image_size[0]) ||
+          (mask.header.nvoxels[1] != image_size[1]) ||
+          (mask.header.nvoxels[2] != image_size[2]))
         throw InputErr("Error: The size of the mask image does not match the size of the input image.\n");
       // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
       if (settings.use_mask_select) {
@@ -1742,9 +1802,9 @@ int main(int argc, char **argv) {
     }
     else {
       // Otherwise, infer it from the header of the MRC file
-      voxel_width[0] = tomo_in.header.cellA[0]/tomo_in.header.nvoxels[0];
-      voxel_width[1] = tomo_in.header.cellA[1]/tomo_in.header.nvoxels[1];
-      voxel_width[2] = tomo_in.header.cellA[2]/tomo_in.header.nvoxels[2];
+      voxel_width[0] = tomo_in.header.cellA[0]/image_size[0];
+      voxel_width[1] = tomo_in.header.cellA[1]/image_size[1];
+      voxel_width[2] = tomo_in.header.cellA[2]/image_size[2];
       if (settings.voxel_width_divide_by_10) {
         voxel_width[0] *= 0.1;
         voxel_width[1] *= 0.1;

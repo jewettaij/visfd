@@ -30,6 +30,11 @@
 ///         will not be added to any cluster.
 /// @note   Voxels whose saliency Hessian's principal eigenvector
 ///         and vector are incompatible will not be added to any cluster.
+/// @note   If aaaafVector and aaaafVectorStandardized are both non-NULL,
+///         then closed loops loops that have inconsistent direction will
+///         be cut at a location where their saliency is weak.
+///         (The goal is to avoid singularities like Möbius strips.)
+/// 
 ///
 /// @note DELETE THE NEXT COMMENT (not clear if relevant).
 ///
@@ -60,8 +65,8 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                   bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
                   bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)
                   VectorContainer const *const *const *aaaafVector=NULL,
-                  Scalar threshold_vector_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and vector are ignored (=-1.1 disables)
-                  Scalar threshold_vector_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible vectors are ignored (=-1.1 disables)
+                  Scalar threshold_vector_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and vector are ignored (=-1.001 disables)
+                  Scalar threshold_vector_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible vectors are ignored (=-1.001 disables)
                   bool consider_dot_product_sign = true,        //!< does the sign of the dot product matter?  If not, compare abs(DotProduct()) with threshold_vector variables
                   TensorContainer const *const *const *aaaafSymmetricTensor=NULL,
                   Scalar threshold_tensor_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and tensor are ignored (=-1.1 disables)
@@ -69,13 +74,15 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
                   bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                   int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
                   vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
+                  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                  VectorContainer ***aaaafVectorStandardized=NULL, //!< optional: place to store "standardized" vector directions
+                  #endif
                   ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
 
   assert(image_size);
   assert(aaafSaliency);
   assert(aaaiDest);
-
 
   if (! consider_dot_product_sign) {
     // Weird detail:
@@ -268,6 +275,27 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       }
     }
   }
+
+  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+  // initialize aaaafVectorStandardized[][][]
+  if (aaaafVector && aaaafVectorStandardized) {
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          aaaafVectorStandardized[iz][iy][ix] = aaaafVector[iz][iy][ix];
+        }
+      }
+    }
+  }
+  vector<char> basin2polarity(extrema_locations.size(), 1);
+  bool voxels_discarded_due_to_polarity = false;
+  Scalar voxel_discarded_due_to_polarity_saliency = -1.0;
+  int voxel_discarded_due_to_polarity_ix = -1; // an impossible value
+  int voxel_discarded_due_to_polarity_iy = -1; // an impossible value
+  int voxel_discarded_due_to_polarity_iz = -1; // an impossible value
+  #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+ 
+
 
   // Loop over all the voxels on the periphery
   // of the voxels with lower intensity (brightness).
@@ -530,7 +558,34 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
         q.push(make_tuple(-neighbor_score,
                           i_which_basin,
                           neighbor_crds));
-      }
+
+
+
+        #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+        if (aaaafVector && aaaafVectorStandardized &&
+            (! consider_dot_product_sign))
+        {
+          if (DotProduct3(aaaafVectorStandardized[iz][iy][ix],
+                          aaaafVectorStandardized[iz_jz][iy_jy][ix_jx])
+              <
+              0.0)
+          {
+            // Voxels within the same basin should always have directions which
+            // are compatible with each other.  (IE the dot product between
+            // them should not be negative.)  If this is not the case, 
+            // then invert the sign of the newcommers.
+            // (Note: The voxels within different basins are made compatible
+            //        by flipping the sign of their entry in "basin2polarity[]")
+            aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][0] *= -1.0;
+            aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][1] *= -1.0;
+            aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][2] *= -1.0;
+          }
+
+        } // if (aaaafVectorStandardized && (! consider_dot_product_sign))
+        #endif
+
+
+      } // else if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)
       else {
         assert(aaaiDest[iz][iy][ix] == i_which_basin);
 
@@ -540,7 +595,39 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
         Label cluster_i = basin2cluster[basin_i];
         Label cluster_j = basin2cluster[basin_j];
 
-        if (cluster_i != cluster_j)
+        #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+        bool polarity_match = true;
+        if (aaaafVectorStandardized && (! consider_dot_product_sign))
+        {
+          if (DotProduct3(aaaafVectorStandardized[iz][iy][ix],
+                          aaaafVectorStandardized[iz_jz][iy_jy][ix_jx])
+              *
+              basin2polarity[basin_i]
+              *
+              basin2polarity[basin_j]
+              <
+              0.0)
+            polarity_match = false;
+        }
+        #endif
+
+        if (cluster_i == cluster_j) {
+          if (! polarity_match) {
+            voxels_discarded_due_to_polarity = true;
+            voxel_discarded_due_to_polarity_ix = ix_jx;
+            voxel_discarded_due_to_polarity_iy = iy_jy;
+            voxel_discarded_due_to_polarity_iz = iz_jz;
+            voxel_discarded_due_to_polarity_saliency = aaafSaliency[iz_jz][iy_jy][ix_jx];
+            // In that case throw away this voxel.
+            // Hopefully this will prevent linking of voxels containing
+            // vector directors which cannot be reconciled.  Example:
+            // This should prevent surfaces which resemble a Möbius strip
+            // from forming a complete closed loop.  Hopefully it will
+            // cut the loop at the voxels with the most tenuous connections.
+            continue;
+          }
+        }
+        else //if (cluster_i != cluster_j)
         {
           // -- merge the two clusters to which basin_i and basin_j belong --
 
@@ -556,7 +643,17 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
             Label basin_id = *p;
             cluster2basins[merged_cluster_id].insert(basin_id);
             basin2cluster[basin_id] = merged_cluster_id;
+
+            #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+            if (aaaafVector && aaaafVectorStandardized &&
+                (! consider_dot_product_sign))
+            {
+              if (! polarity_match)
+                basin2polarity[basin_id] *= -1.0;
+            }
+            #endif
           }
+
           // -- delete all the basins from the deleted cluster --
           cluster2basins[deleted_cluster_id].clear();
 
@@ -607,6 +704,32 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
     basin2cluster[i] = clusterold2clusternew[basin2cluster[i]];
   }
 
+
+
+  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+  if (aaaafVector && aaaafVectorStandardized &&
+      (! consider_dot_product_sign))
+  {
+    // Now, finally incorporate the data we stored in basin2polarity[] into
+    // aaaafVectorStandardized.
+    // (We didn't do this earlier because entire basins flip polarity often
+    //  so we wait until we've.
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          Label basin_id = aaaiDest[iz][iy][ix];
+          assert((0 <= basin_id) && (basin_id < n_basins));
+          Scalar polarity = basin2polarity[basin_id];
+          aaaafVectorStandardized[iz][iy][ix][0] *= polarity;
+          aaaafVectorStandardized[iz][iy][ix][1] *= polarity;
+          aaaafVectorStandardized[iz][iy][ix][2] *= polarity;
+        }
+      }
+    }
+  } // if (aaaafVectorStandardized && (! consider_dot_product_sign))
+  #endif
+
+
   // Now, assign all the voxels in aaaiDest[][][]
   // to their clusters instead of their basins.
   for (int iz=0; iz<image_size[2]; iz++) {
@@ -615,8 +738,9 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
         if (aaaiDest[iz][iy][ix] != UNDEFINED) {
           if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
             continue;
-          assert(aaaiDest[iz][iy][ix] < n_basins);
-          aaaiDest[iz][iy][ix] = basin2cluster[ aaaiDest[iz][iy][ix] ];
+          Label basin_id = aaaiDest[iz][iy][ix];
+          assert((0 <= basin_id) && (basin_id < n_basins));
+          aaaiDest[iz][iy][ix] = basin2cluster[ basin_id ];
         }
       }
     }
@@ -658,6 +782,29 @@ ConnectedClusters(int const image_size[3],                   //!< #voxels in xyz
       }
     }
   }
+
+  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+  if (pReportProgress && voxels_discarded_due_to_polarity) {
+    *pReportProgress
+      << "WARNING: During clustering, some voxels were discarded to avoid\n"
+      << "         directional singularities.  More specifically:\n"
+      << "         some voxels were discarded in order to \"cut\" the conncted clusters\n"
+      << "         so that each remaining object (cluster) consist of voxels which\n"
+      << "         are consistently orientable.\n"
+      << "         (For example, a Möbius strip forms a closed loop whose surface\n"
+      << "          normals are not consistently orientable.  Such a loop would be cut\n"
+      << "          somewhere along its length.)\n"
+      << "         This cutting was done where the saliency (brightness/darkness) of the\n"
+      << "         object was weakest. The first such voxel discarded (cut) had saliency\n"
+      << "         " << voxel_discarded_due_to_polarity_saliency << "\n"
+      << "         ...and was located at position: ("
+      << voxel_discarded_due_to_polarity_ix << ", "
+      << voxel_discarded_due_to_polarity_iy << ", "
+      << voxel_discarded_due_to_polarity_iz << ")\n"
+      << "         (Note: Zero-indexing.  The first voxel has position 0,0,0 not 1,1,1)\n"
+      << endl;
+  }
+  #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
 
 } // ConnectedClusters()
 
