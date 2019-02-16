@@ -1231,7 +1231,7 @@ WriteOrientedPointCloud(string pointcloud_file_name,
                         Scalar const *const *const *aaafMask = NULL,
                         const Scalar *voxel_width=NULL)
 {
-  assert(aaafVector);
+  assert(aaaafVector);
   vector<array<Scalar,3> > coords;
   vector<array<Scalar,3> > norms;
 
