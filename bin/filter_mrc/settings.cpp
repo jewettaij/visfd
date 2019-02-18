@@ -122,6 +122,7 @@ Settings::Settings() {
   connect_threshold_vector_neighbor = M_SQRT1_2; //45 degree change maximum
   connect_threshold_tensor_saliency = M_SQRT1_2;
   connect_threshold_tensor_neighbor = M_SQRT1_2;
+  select_cluster = 0;
 
   use_intensity_map = false;
   use_dual_thresholds = false;
@@ -1999,6 +2000,24 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if (vArgs[i] == "-select-cluster")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        select_cluster = stoi(vArgs[i+1]);
+        if (select_cluster < 0)
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a nonnegative integer\n");
       }
       num_arguments_deleted = 2;
     }

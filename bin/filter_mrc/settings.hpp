@@ -208,6 +208,7 @@ class Settings {
   float connect_threshold_vector_neighbor;
   float connect_threshold_tensor_saliency;
   float connect_threshold_tensor_neighbor;
+  size_t select_cluster;
 
   string out_normals_fname;
   float planar_hessian_score_threshold;

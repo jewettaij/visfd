@@ -717,12 +717,20 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     for (int iz=0; iz<image_size[2]; iz++) {
       for (int iy=0; iy<image_size[1]; iy++) {
         for (int ix=0; ix<image_size[0]; ix++) {
-          Label basin_id = aaaiDest[iz][iy][ix];
-          assert((0 <= basin_id) && (basin_id < n_basins));
-          Scalar polarity = basin2polarity[basin_id];
-          aaaafVectorStandardized[iz][iy][ix][0] *= polarity;
-          aaaafVectorStandardized[iz][iy][ix][1] *= polarity;
-          aaaafVectorStandardized[iz][iy][ix][2] *= polarity;
+          if ((aaafMask && aaafMask[iz][iy][ix] == 0.0) ||
+              (aaaiDest[iz][iy][ix] == UNDEFINED)) {
+            aaaafVectorStandardized[iz][iy][ix][0] = 0.0;
+            aaaafVectorStandardized[iz][iy][ix][1] = 0.0;
+            aaaafVectorStandardized[iz][iy][ix][2] = 0.0;
+          }
+          else {
+            Label basin_id = aaaiDest[iz][iy][ix];
+            assert((0 <= basin_id) && (basin_id < n_basins));
+            Scalar polarity = basin2polarity[basin_id];
+            aaaafVectorStandardized[iz][iy][ix][0] *= polarity;
+            aaaafVectorStandardized[iz][iy][ix][1] *= polarity;
+            aaaafVectorStandardized[iz][iy][ix][2] *= polarity;
+          }
         }
       }
     }
@@ -737,6 +745,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       for (int ix=0; ix<image_size[0]; ix++) {
         if (aaaiDest[iz][iy][ix] != UNDEFINED) {
           if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            continue;
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
             continue;
           Label basin_id = aaaiDest[iz][iy][ix];
           assert((0 <= basin_id) && (basin_id < n_basins));

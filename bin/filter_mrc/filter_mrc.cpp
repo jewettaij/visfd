@@ -1599,23 +1599,36 @@ HandleRidgeDetectorPlanar(Settings settings,
   if (settings.out_normals_fname != "")
   {
 
-
-    #if 0  // DELETEME   FOR GOD'S SAKE PLEASE REMOVE THIS CRUFT
     // define the set of voxels we will use
+    float ***aaafSelectedVoxels;
+
+    // where is the lookup table to indicate which cluster a voxel belongs to?
+    float ***aaafVoxel2Cluster = NULL;
+    if (settings.cluster_connected_voxels)
+      aaafVoxel2Cluster = tomo_out.aaafI; //tomo_out set by ClusterConnected()
+
+    // (horrible hack.  I should not modify tomo_in.
+    aaafSelectedVoxels = tomo_in.aaafI;
+    //  Instead I should allocate a new 3D array to store the selected voxels.
+
     for (int iz = 0; iz < image_size[2]; ++iz) {
       for (int iy = 0; iy < image_size[1]; ++iy) {
         for (int ix = 0; ix < image_size[0]; ++ix) {
-          tomo_out.aaafI[iz][iy][ix] = 0.0;
-          if ((! mask.aaafI) || (mask.aaafI[iz][iy][ix] != 0.0))
+          aaafSelectedVoxels[iz][iy][ix] = 0.0;
+          if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
             continue;
-          if (settings.select_cluster == tomo_out.aaaf[iz][iy][ix])
-            tomo_out.aaaf[iz][iy][ix] = 1.0;
-          else
-            tomo_out.aaaf[iz][iy][ix] = 0.0;
+          if (! settings.cluster_connected_voxels)
+            aaafSelectedVoxels[iz][iy][ix] = 1.0;
+          else {
+            assert(aaafVoxel2Cluster);
+            if (settings.select_cluster == aaafVoxel2Cluster[iz][iy][ix])
+              aaafSelectedVoxels[iz][iy][ix] = 1.0;
+          }
         }
       }
     }
 
+    #if 0  // DELETEME   FOR GOD'S SAKE PLEASE REMOVE THIS CRUFT
     // next: convert the tensor into diagonal form
     DiagonalizeHessianImage3D(image_size,
                               tmp_tensor.aaaafI,
@@ -1627,7 +1640,7 @@ HandleRidgeDetectorPlanar(Settings settings,
     StandardizeDiagonalTensorImage(image_size,
                                    tmp_tensor.aaaafI, //source
                                    tmp_tensor.aaaafI, //dest (change in-place)
-                                   tomo_out, //mask (consider only these voxels)
+                                   tomo_in, //mask (consider only these voxels)
                                    0 // base on the first eigenvector of the tensor
                                    );
 
@@ -1645,14 +1658,13 @@ HandleRidgeDetectorPlanar(Settings settings,
         }
       }
     }
-
     #endif //#if 0  // DELETEME
 
 
     WriteOrientedPointCloud(settings.out_normals_fname,
                             image_size,
                             aaaafStickDirection,
-                            tomo_out.aaafI,
+                            aaafSelectedVoxels,
                             voxel_width);
 
   } //if (settings.out_normals_fname != "")
