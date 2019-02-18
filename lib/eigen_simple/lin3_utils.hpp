@@ -406,6 +406,7 @@ public:
   /// @returns   a pointer to a (size 2) array containing {di, dj}, where di<=dj
   ///            (this array is statically allocated so you don't have
   ///            to invoke delete[] on it later)
+
   static const int *MapIndices(int i)
   { return MapIndices_linear_to_3x3[i]; }
 
@@ -436,11 +437,31 @@ static inline Scalar TraceProductSym3(const Scalar A[6],
                                       const Scalar B[6])
 {
   Scalar sum = 0.0;
-  for (int i=0; i<3; i++)
-    for (int j=0; j<3; j++)
-      sum += (A[ MapIndices_linear_to_3x3[i][j] ]
-              *
-              B[ MapIndices_linear_to_3x3[j][i] ]);
+
+  //for (int i=0; i<3; i++)
+  //  for (int j=0; j<3; j++)
+  //    sum += (A[ MapIndices_linear_to_3x3[i][j] ]
+  //            *
+  //            B[ MapIndices_linear_to_3x3[j][i] ]);
+  // C
+  // For some reason, in gcc 7.3.0, the above lines of code generate this error:
+  // "warning: iteration 2 invokes undefined behavior [-Waggressive-loop-optimizations]"
+  // So I replaced the lines above with the following equivalent lines,
+  // which gets rid of the warning message:
+
+  sum =
+    A[ MapIndices_linear_to_3x3[0][0] ] * B[ MapIndices_linear_to_3x3[0][0] ]+
+    A[ MapIndices_linear_to_3x3[0][1] ] * B[ MapIndices_linear_to_3x3[1][0] ]+
+    A[ MapIndices_linear_to_3x3[0][2] ] * B[ MapIndices_linear_to_3x3[2][0] ]+
+
+    A[ MapIndices_linear_to_3x3[1][0] ] * B[ MapIndices_linear_to_3x3[0][1] ]+
+    A[ MapIndices_linear_to_3x3[1][1] ] * B[ MapIndices_linear_to_3x3[1][1] ]+
+    A[ MapIndices_linear_to_3x3[1][2] ] * B[ MapIndices_linear_to_3x3[2][1] ]+
+
+    A[ MapIndices_linear_to_3x3[2][0] ] * B[ MapIndices_linear_to_3x3[0][2] ]+
+    A[ MapIndices_linear_to_3x3[2][1] ] * B[ MapIndices_linear_to_3x3[1][2] ]+
+    A[ MapIndices_linear_to_3x3[2][2] ] * B[ MapIndices_linear_to_3x3[2][2] ];
+
   return sum;
 }
 
