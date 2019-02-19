@@ -1908,7 +1908,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-planar-bnpts") {
+    else if (vArgs[i] == "-planar-normals-file") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))

@@ -1592,9 +1592,10 @@ HandleRidgeDetectorPlanar(Settings settings,
         for(int ix=0; ix < image_size[0]; ix++) {
           float eivals[3];
           float eivects[3][3];
-          ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
-                                     eivals,
-                                     eivects);
+          ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
+                                 eivals,
+                                 eivects,
+                                 eival_order);
           for (int d=0; d<3; d++)
             aaaafStickDirection[iz][iy][ix][d] = eivects[0][d];
         }
