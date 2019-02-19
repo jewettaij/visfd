@@ -444,10 +444,9 @@ static inline Scalar TraceProductSym3(const Scalar A[6],
   //            *
   //            B[ MapIndices_linear_to_3x3[j][i] ]);
   // C
-  // For some reason, in gcc 7.3.0, the above lines of code generate this error:
+  // For some reason, in gcc, the above lines of code generate this error:
   // "warning: iteration 2 invokes undefined behavior [-Waggressive-loop-optimizations]"
-  // So I replaced the lines above with the following equivalent lines,
-  // which gets rid of the warning message:
+  // To get rid of this warning, I replaced these lines with the following:
 
   sum =
     A[ MapIndices_linear_to_3x3[0][0] ] * B[ MapIndices_linear_to_3x3[0][0] ]+
