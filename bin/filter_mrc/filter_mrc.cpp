@@ -1429,10 +1429,10 @@ HandleRidgeDetectorPlanar(Settings settings,
   // somewhere.  To save space, why not store it in the aaaafGradient
   // array?  (At this point, we are no longer using it).
 
-  array<float, 3> ***aaaafStickDirection = aaaafGradient;
+  array<float, 3> ***aaaafDirection = aaaafGradient;
 
   // This just effectively changes the name
-  // from "aaaafGradient" to "aaaafStickDirection".
+  // from "aaaafGradient" to "aaaafDirection".
   // The purpose of the name change is to make it easier to read the code later.
 
 
@@ -1451,6 +1451,9 @@ HandleRidgeDetectorPlanar(Settings settings,
 
         float eivals[3];
         float eivects[3][3];
+
+        if ((ix==16) && (iy==14) && (iz==13))   //DELETEME for debugging only!
+          eivals[0] = 0.0;    //DELETEME for debugging only!
 
         ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
                                    eivals,
@@ -1513,11 +1516,9 @@ HandleRidgeDetectorPlanar(Settings settings,
         #endif
 
 
-        if (settings.planar_tv_sigma > 0.0) {
-          aaaafStickDirection[iz][iy][ix][0] = eivects[0][0];
-          aaaafStickDirection[iz][iy][ix][1] = eivects[0][1];
-          aaaafStickDirection[iz][iy][ix][2] = eivects[0][2];
-        }
+        aaaafDirection[iz][iy][ix][0] = eivects[0][0];
+        aaaafDirection[iz][iy][ix][1] = eivects[0][1];
+        aaaafDirection[iz][iy][ix][2] = eivects[0][2];
 
 
       } //for(int ix=0; ix < image_size[0]; ix++)
@@ -1549,7 +1550,7 @@ HandleRidgeDetectorPlanar(Settings settings,
 
     tv.TVDenseStick(tomo_in.header.nvoxels,
                     tomo_out.aaafI,
-                    aaaafStickDirection,
+                    aaaafDirection,
                     tmp_tensor.aaaafI,
                     mask.aaafI,
                     mask.aaafI,
@@ -1586,7 +1587,7 @@ HandleRidgeDetectorPlanar(Settings settings,
     tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.)
                         //  allocate a new 3D array to store the saliency)
 
-    // Copy the principal eigenvector of tmp_tensor into aaaafStickDirection
+    // Copy the principal eigenvector of tmp_tensor into aaaafDirection
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
@@ -1597,7 +1598,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                                  eivects,
                                  eival_order);
           for (int d=0; d<3; d++)
-            aaaafStickDirection[iz][iy][ix][d] = eivects[0][d];
+            aaaafDirection[iz][iy][ix][d] = eivects[0][d];
         }
       }
     }
@@ -1611,7 +1612,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                      static_cast<float>(0.0), //this value is ignored, but it specifies the type of array we are using (eg float)
                      true, //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
                      true, //(clusters begin at regions of high saliency)
-                     aaaafStickDirection,
+                     aaaafDirection,
                      settings.connect_threshold_vector_saliency,
                      settings.connect_threshold_vector_neighbor,
                      false, //(eigenvector signs are arbitrary so ignore them)
@@ -1622,7 +1623,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                      1,
                      &cluster_centers,
                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                     aaaafStickDirection,
+                     aaaafDirection,
                      #endif
                      &cerr);  //!< print progress to the user
 
@@ -1687,9 +1688,9 @@ HandleRidgeDetectorPlanar(Settings settings,
           ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
                                      eivals,
                                      eivects);
-          aaaafStickDirection[iz][iy][ix][0] = eivects[0][0];
-          aaaafStickDirection[iz][iy][ix][1] = eivects[0][1];
-          aaaafStickDirection[iz][iy][ix][2] = eivects[0][2];
+          aaaafDirection[iz][iy][ix][0] = eivects[0][0];
+          aaaafDirection[iz][iy][ix][1] = eivects[0][1];
+          aaaafDirection[iz][iy][ix][2] = eivects[0][2];
         }
       }
     }
@@ -1698,7 +1699,7 @@ HandleRidgeDetectorPlanar(Settings settings,
 
     WriteOrientedPointCloud(settings.out_normals_fname,
                             image_size,
-                            aaaafStickDirection,
+                            aaaafDirection,
                             aaafSelectedVoxels,
                             voxel_width);
 
