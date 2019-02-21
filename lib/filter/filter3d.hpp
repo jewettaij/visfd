@@ -272,47 +272,115 @@ public:
   /// @param aaafW optional weights used when calculating the averages
   /// @return the (weighted) average value of the filter array aaafH
   Scalar Average(Scalar const *const *const *aaafW=NULL) const {
-    return AverageArr(array_size, aaafH, aaafW);
+    Scalar numer = 0.0;
+    Scalar denom = 0.0;
+    for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+      for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
+        for (int ix = -halfwidth[0]; ix <= halfwidth[0]; ix++) {
+          Scalar w = 1.0;
+          if (aaafW)
+            w = aaafW[iz][iy][ix];
+          numer += w * aaafH[iz][iy][ix];
+          denom += w;
+        }
+      }
+    }
+    return numer / denom;
   }
 
   /// @brief Calculate the (weighted) average squared values in the filter array, aaafH
   /// @param aaafW optional weights used when calculating the averages
   /// @return the (weighted) average squared values in the filter array aaafH
   Scalar AverageSqr(Scalar const *const *const *aaafW=NULL) const {
-    return _AveSqrArr(array_size, aaafH, aaafW);
+    Scalar numer = 0.0;
+    Scalar denom = 0.0;
+    for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+      for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
+        for (int ix = -halfwidth[0]; ix <= halfwidth[0]; ix++) {
+          Scalar w = 1.0;
+          if (aaafW)
+            w = aaafW[iz][iy][ix];
+          numer += w * SQR(aaafH[iz][iy][ix]);
+          denom += w;
+        }
+      }
+    }
+    return numer / denom;
   }
 
   /// @brief Calculate the (weighted) standard deviation of the filter array values
   /// @param aaafW optional weights used when calculating the standard deviation
   /// @return the (weighted) standard deviation of the filter array aaafH
   Scalar StdDev(Scalar const *const *const *aaafW=NULL) const {
-    return StdDevArr(array_size, aaafH, aaafW);
+    Scalar ave = Average(aaafW);
+    Scalar numer = 0.0;
+    Scalar denom = 0.0;
+    for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+      for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
+        for (int ix = -halfwidth[0]; ix <= halfwidth[0]; ix++) {
+          Scalar w = 1.0;
+          if (aaafW)
+            w = aaafW[iz][iy][ix];
+          numer += w * SQR(aaafH[iz][iy][ix] - ave);
+          denom += w;
+        }
+      }
+    }
+    return static_cast<Scalar>(sqrt(numer / denom));
   }
 
   /// @brief Calculate the (weighted) sum of the filter array values, aaafH
   /// @param aaafW optional weights used when calculating the sum
   /// @return the (weighted) sum of the filter array values
   Scalar Sum(Scalar const *const *const *aaafW=NULL) const {
-    return _SumArr(array_size, aaafH, aaafW);
+    Scalar sum = 0.0;
+    for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+      for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
+        for (int ix = -halfwidth[0]; ix <= halfwidth[0]; ix++) {
+          Scalar w = 1.0;
+          if (aaafW)
+            w = aaafW[iz][iy][ix];
+          sum += w * aaafH[iz][iy][ix];
+        }
+      }
+    }
+    return sum;
   }
 
   /// @brief Calculate the (weighted) sum of the squared filter array values
   /// @param aaafW optional weights used when calculating the sum
   /// @return the (weighted) sum of the squared filter array values
   Scalar SumSqr(Scalar const *const *const *aaafW=NULL) const {
-    return _SumSqrArr(array_size, aaafH, aaafW);
+    Scalar sum = 0.0;
+    for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
+      for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
+        for (int ix = -halfwidth[0]; ix <= halfwidth[0]; ix++) {
+          Scalar w = 1.0;
+          if (aaafW)
+            w = aaafW[iz][iy][ix];
+          sum += w * SQR(aaafH[iz][iy][ix]);
+        }
+      }
+    }
+    return sum;
   }
 
   /// @brief Add a number to all of the filter array values, aaafH
   /// @param offset  the number to add
   void AddScalar(Scalar offset) {
-    AddScalarArr(offset, array_size, aaafH);
+    for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++)
+      for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++)
+        for (int ix = -halfwidth[0]; ix <= halfwidth[0]; ix++)
+          aaafH[iz][iy][ix] += offset;
   }
 
   /// @brief multiply all of the filter array values (aaafH) by a number
   /// @param offset  the number to multiply
   void MultiplyScalar(Scalar scale) {
-    MultiplyScalarArr(scale, array_size, aaafH);
+    for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++)
+      for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++)
+        for (int ix = -halfwidth[0]; ix <= halfwidth[0]; ix++)
+          aaafH[iz][iy][ix] *= scale;
   }
 
 

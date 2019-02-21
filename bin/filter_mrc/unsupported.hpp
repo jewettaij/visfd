@@ -359,7 +359,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       // compare it with the tensor, because we also assume the saliency is
       // bright on a dark background.  Hence it's second derivative (ie. its 
       // Hessian) along that direction will be negative instead of positive
-      // at that location.  Hence if both of these assumptions is true, 
+      // at that location.  Hence if both of these assumptions are true, 
       // we must multiply the entries in saliency_hessian by -1 before 
       // comparing them with the tensor.
 
@@ -390,6 +390,10 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
         if (tp < threshold_tensor_saliency * fs * ft) {
           aaaiDest[iz][iy][ix] = UNDEFINED;
+
+          if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+            aaaiDest[iz][iy][ix] = UNDEFINED;   //DELETEME  DEBUGGING
+
           continue;
         }
       }
@@ -435,12 +439,15 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         }
         if (threshold_exceeded) {
           aaaiDest[iz][iy][ix] = UNDEFINED;
+
+          if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+            aaaiDest[iz][iy][ix] *= 1.00001;          //DELETEME  DEBUGGING
           continue;
         }
       }
 
     } // Use inconsistencies in aaafSaliency to discard voxel ix,iy,iz?
-      
+
 
 
     assert(aaaiDest[iz][iy][ix] == QUEUED);
@@ -508,7 +515,13 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               (threshold_tensor_neighbor *
                FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]) *
                FrobeniusNormSym3(aaaafSymmetricTensor[iz_jz][iy_jy][ix_jx])))
+          {
+
+            if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+              aaaiDest[iz][iy][ix] *= 1.00001;           //DELETEME  DEBUGGING
+
             continue;
+          }
         }
 
         // -----------------------------------------------
@@ -524,7 +537,12 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                 (threshold_tensor_neighbor *
                  Length3(aaaafVector[iz][iy][ix])*
                  Length3(aaaafVector[iz_jz][iy_jy][ix_jx])))
+            {
+
+              if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+                aaaafVectorStandardized[iz][iy][ix][0] *= 1.000001; //DELETEME  DEBUGGING
               continue;
+            }
           }
           else {
             if (SQR(DotProduct3(aaaafVector[iz][iy][ix],
@@ -533,7 +551,13 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                 (SQR(threshold_vector_neighbor) *
                  SquaredNorm3(aaaafVector[iz][iy][ix])*
                  SquaredNorm3(aaaafVector[iz_jz][iy_jy][ix_jx])))
+            {
+
+              if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+                aaaafVectorStandardized[iz][iy][ix][0]*=1.000001;   //DELETEME  DEBUGGING
+
               continue;
+            }
           }
         }
       } // Difference between voxel ix,iy,iz and ix_jx,iy_jy,iz_jz too large?
@@ -558,7 +582,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         q.push(make_tuple(-neighbor_score,
                           i_which_basin,
                           neighbor_crds));
-
 
 
         #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
@@ -587,6 +610,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
       } // else if (aaaiDest[iz_jz][iy_jy][ix_jx] == UNDEFINED)
       else {
+
         assert(aaaiDest[iz][iy][ix] == i_which_basin);
 
         Label basin_i = aaaiDest[iz][iy][ix];
@@ -618,6 +642,10 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             voxel_discarded_due_to_polarity_iy = iy_jy;
             voxel_discarded_due_to_polarity_iz = iz_jz;
             voxel_discarded_due_to_polarity_saliency = aaafSaliency[iz_jz][iy_jy][ix_jx];
+
+            if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+              voxels_discarded_due_to_polarity = true;   //DELETEME  DEBUGGING
+
             // In that case throw away this voxel.
             // Hopefully this will prevent linking of voxels containing
             // vector directors which cannot be reconciled.  Example:

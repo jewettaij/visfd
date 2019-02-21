@@ -100,7 +100,7 @@ Documentation for this program is located
 
 ## pval_mrc
 **pval_mrc** is a program for estimating the probability
-that a cloud of points in an image are distributed randomly.
+that a cloud of points in an image is distributed randomly.
 It looks for regions of high (or low) density in an image.
 (The user can specify a *-mask* argument to perform the analysis
  in small, confined, irregularly-shaped subvolumes from a larger image.)

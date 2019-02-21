@@ -1411,19 +1411,25 @@ HandleRidgeDetectorPlanar(Settings settings,
                 settings.filter_truncate_ratio,
                 &cerr);
 
-  // Now calculate the eigenvalues and eigenvectors of the hessian matrix
-  // located at each voxel.
-  // (This converts an array of 6 numbers representing the non-redundant
-  //  entries from the symmetrix 3x3 matrix, into 3 eigenvalues,
-  //  and 3 "Shoemake" coordinates, from which eigenvectors can be calculated)
-  // To save space, I chose to store the result in the same array.
 
-  DiagonalizeHessianImage3D(tomo_in.header.nvoxels,
-                            tmp_tensor.aaaafI,
-                            tmp_tensor.aaaafI,
-                            mask.aaafI,
-                            eival_order,
-                            &cerr);
+
+  // REMOVE THIS CRUFT:
+  // // Now calculate the eigenvalues and eigenvectors of the hessian matrix
+  // // located at each voxel.
+  // // (This converts an array of 6 numbers representing the non-redundant
+  // //  entries from the symmetrix 3x3 matrix, into 3 eigenvalues,
+  // // and 3 "Shoemake" coordinates, from which eigenvectors can be calculated)
+  // // To save space, I chose to store the result in the same array.
+  //
+  // DiagonalizeHessianImage3D(tomo_in.header.nvoxels,
+  //                           tmp_tensor.aaaafI,
+  //                           tmp_tensor.aaaafI,
+  //                           mask.aaafI,
+  //                           eival_order,
+  //                           &cerr);
+  // (END OF REMOVE THIS CRUFT)
+
+
 
   // We need to store the direction of the most important eigenvector
   // somewhere.  To save space, why not store it in the aaaafGradient
@@ -1455,9 +1461,10 @@ HandleRidgeDetectorPlanar(Settings settings,
         if ((ix==16) && (iy==14) && (iz==13))   //DELETEME for debugging only!
           eivals[0] = 0.0;    //DELETEME for debugging only!
 
-        ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
-                                   eivals,
-                                   eivects);
+        ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
+                               eivals,
+                               eivects,
+                               eival_order);
 
         // REMOVE THIS CRUFT ?
         //float grad[3];
