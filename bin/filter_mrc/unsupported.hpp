@@ -392,10 +392,15 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           aaaiDest[iz][iy][ix] = UNDEFINED;
 
           if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
-            aaaiDest[iz][iy][ix] = UNDEFINED;   //DELETEME  DEBUGGING
+            aaaiDest[iz][iy][ix] = UNDEFINED;          //DELETEME  DEBUGGING
 
-          // next line effectively deletes i_which_basin from basin2cluster[]
-          basin2cluster[i_which_basin] = -1;
+          // Are we deleting a voxel which is also a basin local minima/maxima?
+          if ((ix == extrema_locations[i_which_basin][0]) &&
+              (iy == extrema_locations[i_which_basin][1]) &&
+              (iz == extrema_locations[i_which_basin][2]))
+            // If so, then this entire basin should be deleted from consieration
+            // Next line effectively deletes i_which_basin from basin2cluster[]
+            basin2cluster[i_which_basin] = -1;
 
           continue;
         }
