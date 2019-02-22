@@ -1838,8 +1838,11 @@ int main(int argc, char **argv) {
            << voxel_width[2] << ")\n";
     }
 
-    if ((voxel_width[0] != voxel_width[1]) ||
-        (voxel_width[1] != voxel_width[2])) {
+    if ((abs((voxel_width[0] - voxel_width[1]) /
+             (0.5*(voxel_width[0] + voxel_width[1]))) > 0.0001) ||
+        (abs((voxel_width[0] - voxel_width[2]) /
+             (0.5*(voxel_width[0] + voxel_width[2]))) > 0.0001))
+    {
       stringstream err_msg;
       err_msg << "Error in tomogram header: Unequal voxel widths in the x, y and z directions:\n"
         "  voxel_width_x = " << voxel_width[0] << "\n"
