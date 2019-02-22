@@ -1402,8 +1402,8 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   // Using this blurred image, calculate the 2nd derivative matrix everywhere:
 
-  CalcHessian3D(tomo_in.header.nvoxels,
-                tomo_in.aaafI,
+  CalcHessian3D(tomo_out.header.nvoxels,
+                tomo_out.aaafI,
                 aaaafGradient,
                 tmp_tensor.aaaafI,
                 mask.aaafI,
