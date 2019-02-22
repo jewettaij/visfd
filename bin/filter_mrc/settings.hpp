@@ -75,6 +75,13 @@ class Settings {
   bool use_mask_select;
   int mask_out;
   bool use_mask_out;
+  bool mask_rectangle_in_voxels;
+  float mask_rectangle_xmin;
+  float mask_rectangle_xmax;
+  float mask_rectangle_ymin;
+  float mask_rectangle_ymax;
+  float mask_rectangle_zmin;
+  float mask_rectangle_zmax;
 
   typedef enum eFilterType {
     NONE,    //(the user has not selected a filter)

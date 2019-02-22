@@ -163,8 +163,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                 static_cast<Scalar***>(NULL),
                 pReportProgress);
 
-  Label UNDEFINED = extrema_locations.size() + 1; //an impossible value
-  Label QUEUED = extrema_locations.size() + 2; //an impossible value
+  ptrdiff_t UNDEFINED = extrema_locations.size() + 1; //an impossible value
+  ptrdiff_t QUEUED = extrema_locations.size() + 2; //an impossible value
 
   //initialize aaaiDest[][][]
   for (int iz=0; iz<image_size[2]; iz++) {
@@ -185,7 +185,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   priority_queue<tuple
                   <
                    Scalar,    // the "height" of that voxel (brightness)
-                   Label,     // the basin-ID to which the voxel belongs
+                   ptrdiff_t,     // the basin-ID to which the voxel belongs
                    array<Coordinate, 3>  // location of the voxel
                   >
                 > q;
@@ -204,7 +204,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     // Create an entry in q for each of the local minima
 
     // Assign a different integer to each of these minima, starting at 1
-    Label which_basin = i;
+    ptrdiff_t which_basin = i;
 
     int ix = extrema_locations[i][0];
     int iy = extrema_locations[i][1];
@@ -245,14 +245,14 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   // same local minima (or maxima).
   // Initially, each basin is it's own cluster.
   // (Later we may merge multiple basins into a single cluster.)
-  vector<Label> basin2cluster(extrema_locations.size());
+  vector<ptrdiff_t> basin2cluster(extrema_locations.size());
   for (size_t i=0; i < basin2cluster.size(); i++)
     basin2cluster[i] = i;
 
   // Inverse lookup table
-  vector<set<Label> > cluster2basins(extrema_locations.size());
+  vector<set<ptrdiff_t> > cluster2basins(extrema_locations.size());
   for (size_t i=0; i < basin2cluster.size(); i++) {
-    cluster2basins[i] = set<Label>();
+    cluster2basins[i] = set<ptrdiff_t>();
     cluster2basins[i].insert(i);
   }
 
@@ -310,7 +310,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
   while (! q.empty())
   {
-    tuple<Scalar, Label, array<Coordinate, 3> > p = q.top();
+    tuple<Scalar, ptrdiff_t, array<Coordinate, 3> > p = q.top();
     q.pop();
 
     // Figure out the properties of that voxel (position, intensity/score,basin)
@@ -393,6 +393,9 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
           if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
             aaaiDest[iz][iy][ix] = UNDEFINED;   //DELETEME  DEBUGGING
+
+          // next line effectively deletes i_which_basin from basin2cluster[]
+          basin2cluster[i_which_basin] = -1;
 
           continue;
         }
@@ -613,11 +616,11 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
         assert(aaaiDest[iz][iy][ix] == i_which_basin);
 
-        Label basin_i = aaaiDest[iz][iy][ix];
-        Label basin_j = aaaiDest[iz_jz][iy_jy][ix_jx];
+        ptrdiff_t basin_i = aaaiDest[iz][iy][ix];
+        ptrdiff_t basin_j = aaaiDest[iz_jz][iy_jy][ix_jx];
 
-        Label cluster_i = basin2cluster[basin_i];
-        Label cluster_j = basin2cluster[basin_j];
+        ptrdiff_t cluster_i = basin2cluster[basin_i];
+        ptrdiff_t cluster_j = basin2cluster[basin_j];
 
         #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
         bool polarity_match = true;
@@ -661,14 +664,14 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
           // (arbitrarily) choose the cluster with the smaller ID number
           // to absorb the other cluster, and delete the other cluster.
-          Label merged_cluster_id  = MIN(cluster_i, cluster_j);
-          Label deleted_cluster_id = MAX(cluster_i, cluster_j);
+          ptrdiff_t merged_cluster_id  = MIN(cluster_i, cluster_j);
+          ptrdiff_t deleted_cluster_id = MAX(cluster_i, cluster_j);
           // copy the basins from the deleted cluster into the merged cluster
           for (auto p = cluster2basins[deleted_cluster_id].begin();
                p != cluster2basins[deleted_cluster_id].end();
                p++)
           {
-            Label basin_id = *p;
+            ptrdiff_t basin_id = *p;
             cluster2basins[merged_cluster_id].insert(basin_id);
             basin2cluster[basin_id] = merged_cluster_id;
 
@@ -752,7 +755,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             aaaafVectorStandardized[iz][iy][ix][2] = 0.0;
           }
           else {
-            Label basin_id = aaaiDest[iz][iy][ix];
+            ptrdiff_t basin_id = aaaiDest[iz][iy][ix];
             assert((0 <= basin_id) && (basin_id < n_basins));
             Scalar polarity = basin2polarity[basin_id];
             aaaafVectorStandardized[iz][iy][ix][0] *= polarity;
@@ -776,7 +779,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             continue;
           if (aaaiDest[iz][iy][ix] == UNDEFINED)
             continue;
-          Label basin_id = aaaiDest[iz][iy][ix];
+          ptrdiff_t basin_id = aaaiDest[iz][iy][ix];
           assert((0 <= basin_id) && (basin_id < n_basins));
           aaaiDest[iz][iy][ix] = basin2cluster[ basin_id ];
         }

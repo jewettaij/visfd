@@ -3236,9 +3236,9 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
                 static_cast<Scalar***>(NULL),
                 pReportProgress);
 
-  Label WATERSHED_BOUNDARY = 0; //an impossible value
-  Label UNDEFINED = pv_extrema_locations->size() + 1; //an impossible value
-  Label QUEUED = pv_extrema_locations->size() + 2; //an impossible value
+  ptrdiff_t WATERSHED_BOUNDARY = 0; //an impossible value
+  ptrdiff_t UNDEFINED = pv_extrema_locations->size() + 1; //an impossible value
+  ptrdiff_t QUEUED = pv_extrema_locations->size() + 2; //an impossible value
 
   //initialize aaaiDest[][][]
   for (int iz=0; iz<image_size[2]; iz++) {
@@ -3259,7 +3259,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
   priority_queue<tuple
                   <
                    Scalar,    // the "height" of that voxel (brightness)
-                   Label,     // the basin-ID to which the voxel belongs
+                   ptrdiff_t,     // the basin-ID to which the voxel belongs
                    array<Coordinate, 3>  // location of the voxel
                   >
                 > q;
@@ -3279,7 +3279,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     // Create an entry in q for each of the local minima (or maxima)
 
     // Assign a different integer to each of these minima, starting at 1
-    Label which_basin = i;
+    ptrdiff_t which_basin = i;
 
     int ix = (*pv_extrema_locations)[i][0];
     int iy = (*pv_extrema_locations)[i][1];
@@ -3345,7 +3345,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 
   while (! q.empty())
   {
-    tuple<Scalar, Label, array<Coordinate, 3> > p = q.top();
+    tuple<Scalar, ptrdiff_t, array<Coordinate, 3> > p = q.top();
     q.pop();
 
     // Figure out the properties of that voxel (position, intensity/score,basin)

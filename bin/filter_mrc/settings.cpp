@@ -29,6 +29,14 @@ Settings::Settings() {
   use_mask_select = false;
   mask_out = 0.0;
   use_mask_out = true;
+  mask_rectangle_in_voxels = true;
+  mask_rectangle_xmin = 0;
+  mask_rectangle_xmax = -1; // xmax < xmin disables the mask rectangle
+  mask_rectangle_ymin = 0;
+  mask_rectangle_ymax = -1; // ymax < ymin disables the mask rectangle
+  mask_rectangle_zmin = 0;
+  mask_rectangle_zmax = -1; // zmax < zmin disables the mask rectangle
+
   voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
   voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
   filter_type = NONE;
@@ -247,6 +255,61 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } // if (vArgs[i] == "-mask-select")
+
+    else if ((vArgs[i] == "-mask-rect") ||
+             (vArgs[i] == "-mask-rectangle"))
+    {
+      try {
+        if ((i+6 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
+            (vArgs[i+4] == "") || (vArgs[i+4][0] == '-') ||
+            (vArgs[i+5] == "") || (vArgs[i+5][0] == '-') ||
+            (vArgs[i+6] == "") || (vArgs[i+6][0] == '-'))
+          throw invalid_argument("");
+        mask_rectangle_in_voxels = true;
+        mask_rectangle_xmin = stoi(vArgs[i+1]);
+        mask_rectangle_xmax = stoi(vArgs[i+2]);
+        mask_rectangle_ymin = stoi(vArgs[i+3]);
+        mask_rectangle_ymax = stoi(vArgs[i+4]);
+        mask_rectangle_zmin = stoi(vArgs[i+5]);
+        mask_rectangle_zmax = stoi(vArgs[i+6]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 6 integers.\n");
+      }
+      num_arguments_deleted = 7;
+    } // if (vArgs[i] == "-mask-rect")
+
+
+    else if ((vArgs[i] == "-mask-rect-dist") ||
+             (vArgs[i] == "-mask-rectangle-distance-units"))
+    {
+      try {
+        if ((i+6 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
+            (vArgs[i+4] == "") || (vArgs[i+4][0] == '-') ||
+            (vArgs[i+5] == "") || (vArgs[i+5][0] == '-') ||
+            (vArgs[i+6] == "") || (vArgs[i+6][0] == '-'))
+          throw invalid_argument("");
+        mask_rectangle_in_voxels = false;
+        mask_rectangle_xmin = stof(vArgs[i+1]);
+        mask_rectangle_xmax = stof(vArgs[i+2]);
+        mask_rectangle_ymin = stof(vArgs[i+3]);
+        mask_rectangle_ymax = stof(vArgs[i+4]);
+        mask_rectangle_zmin = stof(vArgs[i+5]);
+        mask_rectangle_zmax = stof(vArgs[i+6]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 6 numbers.\n");
+      }
+      num_arguments_deleted = 7;
+    } // if (vArgs[i] == "-mask-rectangle-physical")
 
 
     else if (vArgs[i] == "-mask-out")

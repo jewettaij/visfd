@@ -1812,39 +1812,6 @@ int main(int argc, char **argv) {
     for (int d = 0; d < 3; d++)
       image_size[d] = tomo_in.header.nvoxels[d];
 
-    // ---- mask ----
-
-    // Optional: if there is a "mask", read that too
-    MrcSimple mask;
-    if (settings.mask_file_name != "") {
-      cerr << "Reading mask \""<<settings.mask_file_name<<"\"" << endl;
-      mask.Read(settings.mask_file_name, false);
-      if ((mask.header.nvoxels[0] != image_size[0]) ||
-          (mask.header.nvoxels[1] != image_size[1]) ||
-          (mask.header.nvoxels[2] != image_size[2]))
-        throw InputErr("Error: The size of the mask image does not match the size of the input image.\n");
-      // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
-      if (settings.use_mask_select) {
-        for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
-          for (int iy=0; iy<mask.header.nvoxels[1]; iy++)
-            for (int ix=0; ix<mask.header.nvoxels[0]; ix++)
-              if (mask.aaafI[iz][iy][ix] == settings.mask_select)
-                mask.aaafI[iz][iy][ix] = 1.0;
-              else
-                mask.aaafI[iz][iy][ix] = 0.0;
-      }
-    }
-
-    if (settings.rescale01_in)
-      tomo_in.Rescale01(mask.aaafI,
-                        settings.out_threshold_01_a,
-                        settings.out_threshold_01_b);
-
-    // ---- make an array that will store the new tomogram we will create ----
-
-    cerr << "allocating space for new tomogram..." << endl;
-    MrcSimple tomo_out = tomo_in; //this will take care of allocating the array
-
     float voxel_width[3] = {1.0, 1.0, 1.0};
 
     // ---- Voxel size? ----
@@ -1871,12 +1838,6 @@ int main(int argc, char **argv) {
            << voxel_width[2] << ")\n";
     }
 
-    if ((voxel_width[0] <= 0.0) ||
-        (voxel_width[1] <= 0.0) ||
-        (voxel_width[2] <= 0.0))
-      throw InputErr("Error in tomogram header: Invalid voxel width(s).\n"
-                     "Use the -w argument to specify the voxel width.");
-
     if ((voxel_width[0] != voxel_width[1]) ||
         (voxel_width[1] != voxel_width[2])) {
       stringstream err_msg;
@@ -1891,7 +1852,6 @@ int main(int argc, char **argv) {
         "all 3 directions.  (For example \"-w "<<voxel_width[0]<<"\")\n";
       throw InputErr(err_msg.str().c_str());
     }
-
 
     settings.planar_tv_sigma /= voxel_width[0];
     for (int d=0; d<3; d++) {
@@ -1924,6 +1884,73 @@ int main(int argc, char **argv) {
     if (! settings.sphere_decals_shell_thickness_is_ratio)
       settings.sphere_decals_shell_thickness /= voxel_width[0];
 
+
+
+    // ---- mask ----
+
+    // Optional: if there is a "mask", read that too
+    MrcSimple mask;
+    if (settings.mask_file_name != "") {
+      cerr << "Reading mask \""<<settings.mask_file_name<<"\"" << endl;
+      mask.Read(settings.mask_file_name, false);
+      if ((mask.header.nvoxels[0] != image_size[0]) ||
+          (mask.header.nvoxels[1] != image_size[1]) ||
+          (mask.header.nvoxels[2] != image_size[2]))
+        throw InputErr("Error: The size of the mask image does not match the size of the input image.\n");
+      // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
+      if (settings.use_mask_select) {
+        for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
+          for (int iy=0; iy<mask.header.nvoxels[1]; iy++)
+            for (int ix=0; ix<mask.header.nvoxels[0]; ix++)
+              if (mask.aaafI[iz][iy][ix] == settings.mask_select)
+                mask.aaafI[iz][iy][ix] = 1.0;
+              else
+                mask.aaafI[iz][iy][ix] = 0.0;
+      }
+    }
+    else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
+      mask = tomo_in; //allocate an array for an image the same size as tomo_in
+      if (! settings.mask_rectangle_in_voxels) {
+        settings.mask_rectangle_xmin /= voxel_width[0];
+        settings.mask_rectangle_xmax /= voxel_width[0];
+        settings.mask_rectangle_ymin /= voxel_width[1];
+        settings.mask_rectangle_ymax /= voxel_width[1];
+        settings.mask_rectangle_zmin /= voxel_width[2];
+        settings.mask_rectangle_zmax /= voxel_width[2];
+      }
+
+      for (int iz=0; iz<mask.header.nvoxels[2]; iz++) {
+        for (int iy=0; iy<mask.header.nvoxels[1]; iy++) {
+          for (int ix=0; ix<mask.header.nvoxels[0]; ix++) {
+            if ((floor(settings.mask_rectangle_xmin) <= ix) &&
+                (ix <= ceil(settings.mask_rectangle_xmax)) && 
+                (floor(settings.mask_rectangle_ymin) <= iy) &&
+                (iy <= ceil(settings.mask_rectangle_ymax)) && 
+                (floor(settings.mask_rectangle_zmin) <= iz) &&
+                (iz <= ceil(settings.mask_rectangle_zmax)))
+              mask.aaafI[iz][iy][ix] = 1.0;
+            else
+              mask.aaafI[iz][iy][ix] = 0.0;
+          }
+        }
+      }
+    }
+
+    if (settings.rescale01_in)
+      tomo_in.Rescale01(mask.aaafI,
+                        settings.out_threshold_01_a,
+                        settings.out_threshold_01_b);
+
+    // ---- make an array that will store the new tomogram we will create ----
+
+    cerr << "allocating space for new tomogram..." << endl;
+    MrcSimple tomo_out = tomo_in; //this will take care of allocating the array
+
+    if ((voxel_width[0] <= 0.0) ||
+        (voxel_width[1] <= 0.0) ||
+        (voxel_width[2] <= 0.0))
+      throw InputErr("Error in tomogram header: Invalid voxel width(s).\n"
+                     "Use the -w argument to specify the voxel width.");
 
 
     // ---- filtering ----
