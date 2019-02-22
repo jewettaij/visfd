@@ -381,6 +381,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           saliency_hessian[ MapIndices_3x3_to_linear[di][dj] ]
             = saliency_hessian3x3[di][dj];
 
+      bool discard_this_voxel = false;
+
       if (aaaafSymmetricTensor) {
 
         Scalar tp = TraceProductSym3(saliency_hessian, 
@@ -389,20 +391,9 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         Scalar ft = FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]);
 
         if (tp < threshold_tensor_saliency * fs * ft) {
-          aaaiDest[iz][iy][ix] = UNDEFINED;
-
           if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
             aaaiDest[iz][iy][ix] = UNDEFINED;          //DELETEME  DEBUGGING
-
-          // Are we deleting a voxel which is also a basin local minima/maxima?
-          if ((ix == extrema_locations[i_which_basin][0]) &&
-              (iy == extrema_locations[i_which_basin][1]) &&
-              (iz == extrema_locations[i_which_basin][2]))
-            // If so, then this entire basin should be deleted from consieration
-            // Next line effectively deletes i_which_basin from basin2cluster[]
-            basin2cluster[i_which_basin] = -1;
-
-          continue;
+          discard_this_voxel = true;
         }
       }
 
@@ -426,7 +417,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                              eival_order);
 
       if (aaaafVector) {
-        bool threshold_exceeded = false;
+        bool vect_threshold_exceeded = false;
         if (consider_dot_product_sign) {
           if (DotProduct3(s_eivects[0], //principal (first) eivenvector
                           aaaafVector[iz][iy][ix])
@@ -434,7 +425,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               (threshold_vector_saliency *
                Length3(s_eivects[0]) *
                Length3(aaaafVector[iz][iy][ix])))
-            threshold_exceeded = true;
+            vect_threshold_exceeded = true;
         }
         else {
           if (SQR(DotProduct3(s_eivects[0], //principal (first) eivenvector
@@ -443,19 +434,28 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               (SQR(threshold_vector_saliency) *
                SquaredNorm3(s_eivects[0]) *
                SquaredNorm3(aaaafVector[iz][iy][ix])))
-            threshold_exceeded = true;
+            vect_threshold_exceeded = true;
         }
-        if (threshold_exceeded) {
-          aaaiDest[iz][iy][ix] = UNDEFINED;
-
+        if (vect_threshold_exceeded) {
           if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
             aaaiDest[iz][iy][ix] *= 1.00001;          //DELETEME  DEBUGGING
-          continue;
+          discard_this_voxel = true;
         }
       }
 
-    } // Use inconsistencies in aaafSaliency to discard voxel ix,iy,iz?
+      if (discard_this_voxel) {
+        aaaiDest[iz][iy][ix] = UNDEFINED;
+        // Are we deleting a voxel which is also a basin local minima/maxima?
+        if ((ix == extrema_locations[i_which_basin][0]) &&
+            (iy == extrema_locations[i_which_basin][1]) &&
+            (iz == extrema_locations[i_which_basin][2]))
+          // If so, then this entire basin should be deleted from consieration
+          // Next line effectively deletes i_which_basin from basin2cluster[]
+          basin2cluster[i_which_basin] = -1;
+        continue;
+      }
 
+    } // Use inconsistencies in aaafSaliency to discard voxel ix,iy,iz?
 
 
     assert(aaaiDest[iz][iy][ix] == QUEUED);
