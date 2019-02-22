@@ -8,8 +8,165 @@ using namespace std;
 
 
 
-// This file contains simple functions which operate on 3D arrays.
-// They are not specific to filtering, but are used in "filter3d.h".
+
+
+#include <eigen3_simple.hpp>  //defines namespace selfadjoint_eigen3
+
+using namespace selfadjoint_eigen3;
+
+
+/// @brief  Calculate the hessian of a 3D image at a particular position 
+///         ix, iy, iz, from the differences between neighboring voxels.
+///         It is the responsibility of the caller to smooth the source image
+///         (if necessary) before this function is called.
+/// @note   You must insure that ix,iy,iz (and their neighbors!) lie within
+///         the boundaries of the image.  THERE IS NO BOUNDS CHECKING.
+template<class Scalar>
+void
+CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
+                               int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                               Scalar (*hessian)[3]  //!<store resulting 3x3 matrixhere
+                               )
+{
+  assert(aaafSource);
+  assert(hessian);
+
+  hessian[0][0] = (aaafSource[iz][iy][ix+1] + 
+                   aaafSource[iz][iy][ix-1] - 
+                   2*aaafSource[iz][iy][ix]);
+  hessian[1][1] = (aaafSource[iz][iy+1][ix] + 
+                   aaafSource[iz][iy-1][ix] - 
+                   2*aaafSource[iz][iy][ix]);
+  hessian[2][2] = (aaafSource[iz+1][iy][ix] + 
+                   aaafSource[iz-1][iy][ix] - 
+                   2*aaafSource[iz][iy][ix]);
+
+  hessian[0][1] = 0.25 * (aaafSource[iz][iy+1][ix+1] + 
+                          aaafSource[iz][iy-1][ix-1] - 
+                          aaafSource[iz][iy-1][ix+1] - 
+                          aaafSource[iz][iy+1][ix-1]);
+  hessian[1][0] = hessian[0][1];
+
+  hessian[1][2] = 0.25 * (aaafSource[iz+1][iy+1][ix] + 
+                          aaafSource[iz-1][iy-1][ix] - 
+                          aaafSource[iz-1][iy+1][ix] - 
+                          aaafSource[iz+1][iy-1][ix]);
+  hessian[2][1] = hessian[1][2];
+
+  hessian[2][0] = 0.25 * (aaafSource[iz+1][iy][ix+1] + 
+                          aaafSource[iz-1][iy][ix-1] - 
+                          aaafSource[iz+1][iy][ix-1] - 
+                          aaafSource[iz-1][iy][ix+1]);
+  hessian[0][2] = hessian[2][0];
+} //CalcHessianFiniteDifferences3D()
+
+
+
+/// @brief  Calculate the hessian of a 3D image at a particular position 
+///         ix, iy, iz, from the differences between neighboring voxels.
+///         It is the responsibility of the caller to smooth the source image
+///         (if necessary) before this function is called.
+/// @note   This version of the function provides bounds checking for ix,iy,iz.
+///         (At the boundaries of the image, it will substitute the voxel
+///          brightnesses from the nearest neighbor.)
+/// @note   This function was not intended for public use.
+
+template<class Scalar>
+void
+CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
+                               int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                               Scalar (*hessian)[3],  //!< store resulting 3x3 matrixhere
+                               const int image_size[3] //!< number of voxels in xyz directions (for bounds checking)
+                               )
+{
+  assert(aaafSource);
+  assert(hessian);
+
+  int _ix = ix;
+  int _iy = iy;
+  int _iz = iz;
+
+  if (image_size) {
+    assert(image_size[0] >= 3);
+    assert(image_size[1] >= 3);
+    assert(image_size[2] >= 3);
+
+    if (_ix == 0)
+      _ix++;
+    else if (_ix == image_size[0]-1)
+      _ix--;
+
+    if (_iy == 0)
+      _iy++;
+    else if (_iy == image_size[1]-1)
+      _iy--;
+
+    if (_iz == 0)
+      _iz++;
+    else if (_iz == image_size[2]-1)
+      _iz--;
+  }
+
+  CalcHessianFiniteDifferences3D(aaafSource,
+                                 _ix, _iy, _iz,
+                                 hessian);
+}
+
+
+
+/// @brief  Calculate the hessian of a 3D image at a particular position 
+///         ix, iy, iz, from the differences between neighboring voxels.
+///         It is the responsibility of the caller to smooth the source image
+///         (if necessary) before this function is called.
+/// @note   This version of the function provides bounds checking for ix,iy,iz.
+///         (At the boundaries of the image, it will substitute the voxel
+///          brightnesses from the nearest neighbor.)
+/// @note   This function was not intended for public use.
+
+template<class Scalar>
+void
+CalcGradientFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
+                                int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                                Scalar *gradient,  //!< store resulting 3x3 matrixhere
+                                const int image_size[3] //!< number of voxels in xyz directions (for bounds checking)
+                                )
+{
+  assert(aaafSource);
+  assert(gradient);
+
+  int _ix = ix;
+  int _iy = iy;
+  int _iz = iz;
+
+  if (image_size) {
+    assert(image_size[0] >= 3);
+    assert(image_size[1] >= 3);
+    assert(image_size[2] >= 3);
+
+    if (_ix == 0)
+      _ix++;
+    else if (_ix == image_size[0]-1)
+      _ix--;
+    if (_iy == 0)
+      _iy++;
+    else if (_iy == image_size[1]-1)
+      _iy--;
+    if (_iz == 0)
+      _iz++;
+    else if (_iz == image_size[2]-1)
+      _iz--;
+  }
+
+  gradient[0]=0.5*(aaafSource[_iz][_iy][_ix+1] - 
+                   aaafSource[_iz][_iy][_ix-1]);
+  gradient[1]=0.5*(aaafSource[_iz][_iy+1][_ix] - 
+                   aaafSource[_iz][_iy-1][_ix]);
+  gradient[2]=0.5*(aaafSource[_iz+1][_iy][_ix] - 
+                   aaafSource[_iz-1][_iy][_ix]);
+}
+
+
+
 
 /// @brief 
 /// Compute a weighted average of the entries in a 3-dimensional array.

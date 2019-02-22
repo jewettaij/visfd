@@ -1402,8 +1402,8 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   // Using this blurred image, calculate the 2nd derivative matrix everywhere:
 
-  CalcHessian3D(tomo_out.header.nvoxels,
-                tomo_out.aaafI,
+  CalcHessian3D(tomo_in.header.nvoxels,
+                tomo_in.aaafI,
                 aaaafGradient,
                 tmp_tensor.aaaafI,
                 mask.aaafI,
@@ -1490,7 +1490,12 @@ HandleRidgeDetectorPlanar(Settings settings,
         }
         #endif  //#ifndef NDEBUG
 
-        score = ScoreHessianPlanar(tmp_tensor.aaaafI[iz][iy][ix],
+
+        if ((ix == 26) && (iy == 2) && (iz == 19))   //<-DELETEME for DEBUGGING
+          score = 0.0;   //<-DELETEME for DEBUGGING
+
+
+        score = ScoreHessianPlanar(eivals,
                                    aaaafGradient[iz][iy][ix]);
 
         float peak_height = 1.0;
