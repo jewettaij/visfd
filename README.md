@@ -1,7 +1,9 @@
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-mrc_simple_filter
+visfd
 ===========
+
+## Volumetric Image toolkit for Simple Feature Detection
 
 This is a C++ template library for 3D image processing
 ("[filter3d.hpp](./lib/filter/filter3d.hpp)")
@@ -27,14 +29,17 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
 ![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)  *<-- 2D slice through a segmented 3D tomogram:*
 
-**filter_mrc** is typically used for
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
+**filter_mrc** is a stand-alone program which uses many of the
+features of the **visfd** library.
+It is typically used for
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 filament (curve) detection,
 and 
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 [watershed segmentation](https://imagej.net/Classic_Watershed)
 with non-max suppression.
 A list of detected objects can be sorted, clustered and saved to a text file.
+
 **filter_mrc** can also be used to apply simple filters to images, including
 low-pass, high-pass,
 thresholding,
@@ -42,12 +47,12 @@ brightness inversions,
 fluctuations, 
 [generalized Gaussian blur](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
 [DoG](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
-[LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplaci
+[LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian)
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and 
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
 filters.
-It currently only supports the .mrc/.rec file format.
+This program currently only supports the .mrc/.rec image file format.
 
 
 
