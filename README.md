@@ -38,7 +38,7 @@ and
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 [watershed segmentation](https://imagej.net/Classic_Watershed)
 with non-max suppression.
-A list of detected objects can be sorted, clustered and saved to a text file.
+A list of detected objects can be sorted, clustered, and saved to a text file.
 
 **filter_mrc** can also be used to apply simple filters to images, including
 low-pass, high-pass,
