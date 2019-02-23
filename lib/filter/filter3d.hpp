@@ -20,7 +20,7 @@ using namespace std;
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
 #include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable3D())
 #include <filter3d_utils.hpp> // defines "AverageArr()" and similar functions
-#include <eigen3_simple.hpp> // defines matrix diagonalizers (DiagonalizeSym3())
+#include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
 #include <lin3_utils.hpp> // defines DotProduct3(),CrossProduct(),quaternions...
 
 
@@ -3525,11 +3525,12 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 ///         and groups voxels of similar saliency,
 ///         (and compatible tensor direction) together.
 ///
-/// @return The function does not have a return value, however after the
-///         function is finished, the aaaiDest[][][] array will store
-///         the cluster-ID associated with each voxel.
-///         (and the "pv_cluster_centers" argument, if != NULL, will store
-///          the location of the saliency maxima or minima for each cluster).
+/// @return The function does not have a return value.
+///         After the function is finished, the aaaiDest[][][] array will
+///         store the cluster-ID associated with each voxel.
+///         (Cluster-ID numbers begin at 1, not 0.)
+///         (The "pv_cluster_centers" argument, if != NULL, will store
+///          the location of the saliency maxima (or minima) for each cluster.)
 ///
 /// @note   Voxels below the saliency threshold are ignored, and will
 ///         assigned to the value of UNDEFINED, which (by default)
@@ -3910,7 +3911,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         Scalar ft = FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]);
 
         if (tp < threshold_tensor_saliency * fs * ft) {
-          if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+          if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
             aaaiDest[iz][iy][ix] = UNDEFINED;          //DELETEME  DEBUGGING
           discard_this_voxel = true;
         }
@@ -3956,7 +3957,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             vect_threshold_exceeded = true;
         }
         if (vect_threshold_exceeded) {
-          if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+          if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
             aaaiDest[iz][iy][ix] *= 1.00001;          //DELETEME  DEBUGGING
           discard_this_voxel = true;
         }
@@ -4044,7 +4045,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                FrobeniusNormSym3(aaaafSymmetricTensor[iz_jz][iy_jy][ix_jx])))
           {
 
-            if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+            if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
               aaaiDest[iz][iy][ix] *= 1.00001;           //DELETEME  DEBUGGING
 
             continue;
@@ -4066,7 +4067,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Length3(aaaafVector[iz_jz][iy_jy][ix_jx])))
             {
 
-              if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+              if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
                 aaaafVectorStandardized[iz][iy][ix][0] *= 1.000001; //DELETEME  DEBUGGING
               continue;
             }
@@ -4080,7 +4081,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  SquaredNorm3(aaaafVector[iz_jz][iy_jy][ix_jx])))
             {
 
-              if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+              if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
                 aaaafVectorStandardized[iz][iy][ix][0]*=1.000001;   //DELETEME  DEBUGGING
 
               continue;
@@ -4170,7 +4171,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             voxel_discarded_due_to_polarity_iz = iz_jz;
             voxel_discarded_due_to_polarity_saliency = aaafSaliency[iz_jz][iy_jy][ix_jx];
 
-            if ((ix == 26) && (iy == 2) && (iz == 19))   //DELETEME  DEBUGGING
+            if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
               voxels_discarded_due_to_polarity = true;   //DELETEME  DEBUGGING
 
             // In that case throw away this voxel.
@@ -4348,6 +4349,37 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     }
   }
 
+  #ifndef NDEBUG
+  {
+    vector<bool> clusters_visited(n_clusters, false);
+
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            // as before: ignore voxels excluded by the mask
+            continue;
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            continue;
+          assert((0<aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<=n_basins));
+          long which_cluster = aaaiDest[iz][iy][ix] - 1;
+          clusters_visited[which_cluster] = true;
+        }
+      }
+    }
+    // Check to make sure that every cluster in the list
+    // has at least one voxel associated with it.
+    for (int i=0; i < n_clusters; i++)
+      assert(clusters_visited[i] == true);
+    // NOTE: THIS ASSERTION COULD FAIL even if the program is working when 
+    //       the image is large and contains millions of clusters.
+    //       This is because aaaiDest[iz][iy][ix] is of type "Label" which
+    //       is usually "float", and single-precision floats cannot represent
+    //       integers above 1e+06 (I forget the exact number.)
+  }
+  #endif // #ifndef NDEBUG
+
+
   #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
   if (pReportProgress && voxels_discarded_due_to_polarity) {
     *pReportProgress
@@ -4371,36 +4403,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   }
   #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
 
-
-  #ifndef NDEBUG
-  {
-    vector<bool> clusters_visited(n_clusters, false);
-
-    for (int iz=0; iz<image_size[2]; iz++) {
-      for (int iy=0; iy<image_size[1]; iy++) {
-        for (int ix=0; ix<image_size[0]; ix++) {
-          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
-            // as before: ignore voxels excluded by the mask
-            continue;
-          if (aaaiDest[iz][iy][ix] == UNDEFINED)
-            continue;
-          assert((0<=aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<n_basins));
-          long which_cluster = aaaiDest[iz][iy][ix];
-          clusters_visited[which_cluster] = true;
-        }
-      }
-    }
-    // Check to make sure that every cluster in the list
-    // has at least one voxel associated with it.
-    for (int i=0; i < n_clusters; i++)
-      assert(clusters_visited[i] == true);
-    // NOTE: THIS ASSERTION COULD FAIL even if the program is working when 
-    //       the image is large and contains millions of clusters.
-    //       This is because aaaiDest[iz][iy][ix] is of type "Label" which
-    //       is usually "float", and single-precision floats cannot represent
-    //       integers above 1e+06 (I forget the exact number.)
-  }
-  #endif // #ifndef NDEBUG
 
 } // ClusterConnected()
 

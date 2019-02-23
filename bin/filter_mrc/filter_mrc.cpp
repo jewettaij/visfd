@@ -1458,7 +1458,7 @@ HandleRidgeDetectorPlanar(Settings settings,
         float eivals[3];
         float eivects[3][3];
 
-        if ((ix==16) && (iy==14) && (iz==13))   //DELETEME for debugging only!
+        if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
           eivals[0] = 0.0;    //DELETEME for debugging only!
 
         ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
@@ -1491,7 +1491,7 @@ HandleRidgeDetectorPlanar(Settings settings,
         #endif  //#ifndef NDEBUG
 
 
-        if ((ix == 26) && (iy == 2) && (iz == 19))   //<-DELETEME for DEBUGGING
+        if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
           score = 0.0;   //<-DELETEME for DEBUGGING
 
 
@@ -1675,39 +1675,6 @@ HandleRidgeDetectorPlanar(Settings settings,
         }
       }
     }
-
-    #if 0  // DELETEME   FOR GOD'S SAKE PLEASE REMOVE THIS CRUFT
-    // next: convert the tensor into diagonal form
-    DiagonalizeHessianImage3D(image_size,
-                              tmp_tensor.aaaafI,
-                              tmp_tensor.aaaafI,
-                              mask.aaafI,
-                              eival_order,
-                              cerr);
-
-    StandardizeDiagonalTensorImage(image_size,
-                                   tmp_tensor.aaaafI, //source
-                                   tmp_tensor.aaaafI, //dest (change in-place)
-                                   tomo_in, //mask (consider only these voxels)
-                                   0 // base on the first eigenvector of the tensor
-                                   );
-
-    for (int iz = 0; iz < image_size[2]; ++iz) {
-      for (int iy = 0; iy < image_size[1]; ++iy) {
-        for (int ix = 0; ix < image_size[0]; ++ix) {
-          float eivals[3];
-          float eivects[3][3];
-          ConvertDiagFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
-                                     eivals,
-                                     eivects);
-          aaaafDirection[iz][iy][ix][0] = eivects[0][0];
-          aaaafDirection[iz][iy][ix][1] = eivects[0][1];
-          aaaafDirection[iz][iy][ix][2] = eivects[0][2];
-        }
-      }
-    }
-    #endif //#if 0  // DELETEME
-
 
     WriteOrientedPointCloud(settings.out_normals_fname,
                             image_size,
