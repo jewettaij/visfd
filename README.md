@@ -40,7 +40,7 @@ and
 with non-max suppression.
 A list of detected objects can be sorted, clustered, and saved to a text file.
 
-**filter_mrc** can also be used to apply simple filters to images, including
+*(filter_mrc can also be used to apply simple filters to images, including
 low-pass, high-pass,
 thresholding,
 brightness inversions,
@@ -51,19 +51,14 @@ fluctuations,
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and 
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
-filters.
-This program currently only supports the .mrc/.rec image file format.
+filters.)
 
-
-
-All operations support normalized *masking*, so that objects which are located
-within narrow confined spaces can be detected accurately without penalty.
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 The *source code* for the filters used by this program
 is located 
 [here](./lib/filter/).
-
+This program currently only supports the .mrc/.rec image file format.
 
 
 ## combine_mrc
