@@ -121,20 +121,20 @@ Program names, command line arguments, file names, and function names
     source setup_gcc_linux.sh
     make
 
-(If you are not using the bash shell, enter "bash" into the terminal beforehand)
+(If you are not using the bash shell, enter "bash" into the terminal beforehand.)
 
-## Windows 10:
+## Windows:
 
-Install the *Windows Subsystem for Linux (WSL)* and run
+   It is recommended that you install the BASH shell environment on your computer, along with *gcc* and *make*.  (If you decide to use a different compiler, modify the "setup_gcc_linux.sh" file accordingly.)  There are several ways to do that.
 
-    sudo apt-get install build-essential
-
-and then follow the instructions above for linux.
-(Older windows users can install *Cygwin* or *MinGW*.)
-
-Alternatively, if you need support for programs that use a
-graphical user interface, you can install *virtualbox*
-and the newest version of *xubuntu*, and then follow the instructions above.
+   Perhaps the easiest way is to install [virtualbox](https://www.virtualbox.org) in windows together with a linux distribution with a lightweight desktop, such as [xubuntu](https://xubuntu.org).  Alternatively, if you are using Windows 10 or later, you can try installing the "Windows Subsystem for Linux (WSL)", as explained
+[here](https://solarianprogrammer.com/2017/04/15/install-wsl-windows-subsystem-for-linux/)
+and
+[here](https://msdn.microsoft.com/en-us/commandline/wsl/faq),
+or
+[Hyper-V](https://blogs.windows.com/buildingapps/2018/09/17/run-ubuntu-virtual-machines-made-even-easier-with-hyper-v-quick-create/).
+Otherwise, if you are using an older version of windows, try installing
+[CYGWIN](https://www.cygwin.com/) instead.
 
 ## Apple Mac:
 
