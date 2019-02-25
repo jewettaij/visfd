@@ -781,10 +781,20 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
       for (int ix = 0; ix < image_size[0]; ix++) {
 
 
-        //BUG?: "std::bad_alloc()" exception thrown here using OpenMP 2018-10-18
-        //      (This mysteriously seems to have "fixed" itself on 2019-10-24.
-        //       Seems too good to be true?  I'm leaving a record of the
-        //       problem here in case the problem resumes later on.)
+        // --------------------------------------------
+        //Bug? A "std::bad_alloc()" exception was thrown here using OpenMP 
+        //     on 2018-10-18.  The problem was not apparent before this time,
+        //     and does not occur when compiled without OpenMP support
+        //     (More specifically, it does not occur when using the
+        //      "setup_gcc_linux_dbg.sh" compile options which lack -fopenmp.)
+        //
+        //     This mysteriously seems to have "fixed" itself on 2018-10-24.
+        //     I'm leaving a record of the problem here in case the problem
+        //     resumes later on.
+        //     (Incidentally, the location of the bug was determined 
+        //      by filling the code with "fprintf()" statements.  
+        //      Placing an "fprintf()" after this line had no effect.)
+        // --------------------------------------------
 
 
         // Copy the data we need to the temporary arrays

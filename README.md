@@ -33,7 +33,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 features of the **visfd** library.
 It is typically used for
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
-filament (curve) detection,
+filament (curve) detection (*available soon*),
 and 
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
 [watershed segmentation](https://imagej.net/Classic_Watershed)
@@ -47,7 +47,7 @@ brightness inversions,
 fluctuations, 
 [generalized Gaussian blur](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
 [DoG](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
-[LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian)
+[LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and 
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
