@@ -18,6 +18,12 @@ static inline Scalar MIN(Scalar a, Scalar b) { return ((a<=b) ? a : b); }
 template<class Scalar >
 static inline Scalar MAX(Scalar a, Scalar b) { return ((a>=b) ? a : b); }
 
+template <class Scalar>
+static int SGN(Scalar val) {
+  return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));
+}
+
+
 
 template<class Scalar, class Integer>
 

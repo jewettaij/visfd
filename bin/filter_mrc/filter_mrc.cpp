@@ -1,4 +1,10 @@
-// (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)
+/// @brief
+/// This program allows the user to run one filter operation on an image file.
+/// This file contains main() as well as many functions named "Handle...()".
+/// Depending on which filter was selected, a different "Handle()" function
+/// will be invoked.
+/// Each of these "Handle...()" functions will collect the parameters supplied
+/// by the user and invoke an corresponding function from the visfd library.
 
 
 #include <cassert>
@@ -28,6 +34,7 @@ using namespace std;
 #include <mrc_simple.hpp>
 #include <random_gen.h>
 #include "settings.hpp"
+#include "file_io.hpp"
 #include "filter3d_variants.hpp"
 #include "unsupported.hpp"
 
@@ -254,168 +261,6 @@ HandleDogScaleFree(Settings settings,
 
 
 
-/// @brief Find scale-invariant blobs in the image as a function of diameter.
-///        This variant detects blobs and performs non-max suppression.
-///
-/// Algorithm described in:
-///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
-/// This version refers to blobs by their diameter (instead of "sigma").
-/// This version can discard blobs which overlap with existing blobs.
-/// (This is sometimes called "non-max suppression".)
-/// This function is not intended for public use.
-
-template<class Scalar>
-static void
-BlobDogNM(int const image_size[3], //!<source image size
-          Scalar const *const *const *aaafSource,   //!<source image
-          Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
-          const vector<Scalar>& blob_diameters, //!< blob widths to try, ordered
-          vector<array<Scalar,3> >& minima_crds, //!<store minima x,y,z coords here
-          vector<array<Scalar,3> >& maxima_crds, //!<store maxima x,y,z coords here
-          vector<Scalar>& minima_diameters, //!< corresponding width for that minima
-          vector<Scalar>& maxima_diameters, //!< corresponding width for that maxima
-          vector<Scalar>& minima_scores, //!< what was the blob's score?
-          vector<Scalar>& maxima_scores, //!< (score = intensity after filtering)
-          Scalar delta_sigma_over_sigma,//!< param for approximating LOG with DOG
-          Scalar truncate_ratio,      //!< how many sigma before truncating?
-          Scalar minima_threshold=0.5,  //!< discard blobs with unremarkable scores
-          Scalar maxima_threshold=0.5,  //!< discard blobs with unremarkable scores
-          bool   use_threshold_ratios=true, //!< threshold=ratio*best_score?
-          Scalar sep_ratio_thresh=1.0,          //!< minimum radial separation between blobs
-          Scalar nonmax_max_overlap_large=1.0,  //!< maximum volume overlap with larger blob
-          Scalar nonmax_max_overlap_small=1.0,  //!< maximum volume overlap with smaller blob
-          // optional arguments
-          ostream *pReportProgress = NULL, //!< report progress to the user?
-          Scalar ****aaaafI = NULL, //!<preallocated memory for filtered images
-          Scalar **aafI = NULL     //!<preallocated memory for filtered images
-          )
-{
-
-  BlobDogD(image_size,
-           aaafSource,
-           aaafMask,
-           blob_diameters,
-           minima_crds,
-           maxima_crds,
-           minima_diameters,
-           maxima_diameters,
-           minima_scores,
-           maxima_scores,
-           delta_sigma_over_sigma,
-           truncate_ratio,
-           minima_threshold,
-           maxima_threshold,
-           use_threshold_ratios,
-           pReportProgress,
-           aaaafI,
-           aafI);
-
-  if (pReportProgress)
-    *pReportProgress << "----------- Removing overlapping blobs -----------\n" << endl;
-
-
-  if (pReportProgress)
-    *pReportProgress << "--- Discarding overlapping minima blobs ---\n";
-
-  DiscardOverlappingBlobs(minima_crds,
-                          minima_diameters,
-                          minima_scores,
-                          PRIORITIZE_LOW_SCORES,
-                          sep_ratio_thresh,
-                          nonmax_max_overlap_large,
-                          nonmax_max_overlap_small,
-                          pReportProgress);
-
-  if (pReportProgress)
-    *pReportProgress << "done --\n"
-                     << "--- Discarding overlapping maxima blobs ---\n";
-
-  DiscardOverlappingBlobs(maxima_crds,
-                          maxima_diameters,
-                          maxima_scores,
-                          PRIORITIZE_HIGH_SCORES,
-                          sep_ratio_thresh,
-                          nonmax_max_overlap_large,
-                          nonmax_max_overlap_small,
-                          pReportProgress);
-
-} //BlobDogNM()
-
-
-
-
-
-/// @brief Find scale-invariant blobs in the image as a function of diameter.
-///        In this minor variant, the user can specify the filter window width
-///        either in units of sigma, or by specifying the decay threshold.
-///        This function was not intended for public use.
-///
-/// Algorithm described in:
-///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
-/// This version refers to blobs by their diameter (instead of "sigma").
-/// This version can discard blobs which overlap with existing blobs.
-/// (This is sometimes called "non-max suppression".)
-
-template<class Scalar>
-static
-void
-_BlobDogNM(int const image_size[3], //!<source image size
-           Scalar const *const *const *aaafSource,   //!<source image
-           Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
-           const vector<Scalar>& blob_diameters, //!<list of diameters to try (ordered)
-           vector<array<Scalar,3> >& minima_crds, //!<store minima x,y,z coords here
-           vector<array<Scalar,3> >& maxima_crds, //!<store maxima x,y,z coords here
-           vector<Scalar>& minima_diameters, //!<corresponding radius for that minima
-           vector<Scalar>& maxima_diameters, //!<corresponding radius for that maxima
-           vector<Scalar>& minima_scores, //!<what was the blobs score?
-           vector<Scalar>& maxima_scores, //!<(score = intensity after filtering)
-           Scalar delta_sigma_over_sigma, //!<difference in Gauss widths parameter
-           Scalar filter_truncate_ratio,     //!<how many sigma before truncating?
-           Scalar filter_truncate_threshold, //!<decay in filter before truncating
-           Scalar minima_threshold,       //!<discard unremarkable minima
-           Scalar maxima_threshold,       //!<discard unremarkable maxima
-           bool use_threshold_ratios=true, //!<threshold=ratio*best_score ?
-           Scalar sep_ratio_thresh=1.0,          //!<minimum radial separation between blobs
-           Scalar nonmax_max_overlap_large=1.0,  //!<maximum volume overlap with larger blob
-           Scalar nonmax_max_overlap_small=1.0,  //!<maximum volume overlap with smaller blob
-           ostream *pReportProgress = NULL,
-           Scalar ****aaaafI = NULL, //!<preallocated memory for filtered images
-           Scalar **aafI = NULL     //!<preallocated memory for filtered images
-           )
-{
-  
-  if (filter_truncate_ratio <= 0) {
-    assert(filter_truncate_threshold > 0.0);
-    //    filter_truncate_threshold = exp(-(1/2)*filter_truncate_ratio^2);
-    //    -> filter_truncate_ratio^2 = -2*log(filter_truncate_threshold)
-    filter_truncate_ratio = sqrt(-2*log(filter_truncate_threshold));
-  }
-
-  BlobDogNM(image_size,
-            aaafSource,
-            aaafMask,
-            blob_diameters,
-            minima_crds,
-            maxima_crds,
-            minima_diameters,
-            maxima_diameters,
-            minima_scores,
-            maxima_scores,
-            delta_sigma_over_sigma,
-            filter_truncate_ratio,
-            minima_threshold,
-            maxima_threshold,
-            use_threshold_ratios,
-            sep_ratio_thresh,
-            nonmax_max_overlap_large,
-            nonmax_max_overlap_small,
-            pReportProgress,
-            aaaafI,
-            aafI);
-
-} //_BlobDogNM(...,filter_truncate_ratio,filter_truncate_threshold,...)
-
-
 
 
 static void
@@ -489,13 +334,6 @@ HandleMinDistance(Settings settings,
     }
   }
 } //HandleMinDistance()
-
-
-
-
-
-
-
 
 
 
@@ -1186,123 +1024,47 @@ HandleLocalFluctuations(Settings settings,
 
 
 
-template <typename T>
-static int sgn(T val) {
-  return (T(0) < val) - (val < T(0));
-}
-
-
-
-template<class Scalar>
 static void
-WriteOrientedPointCloudBNPTS(string filename,
-                             vector<array<Scalar,3> > coords,
-                             vector<array<Scalar,3> > norms)
+HandleWatershed(Settings settings,
+                MrcSimple &tomo_in,
+                MrcSimple &tomo_out,
+                MrcSimple &mask,
+                float voxel_width[3])
 {
-  assert(coords.size() == norms.size());
-  size_t n = coords.size();
-  fstream bnpts_file;
-  bnpts_file.open(filename.c_str(), ios::out | ios::binary);
-  for (size_t i=0; i < n; i++) {
-    float xyz[3];           //(convert from "Scalar" to float)
-    xyz[0] = coords[i][0];  //(convert from "Scalar" to float)
-    xyz[1] = coords[i][1];
-    xyz[2] = coords[i][2];
-    float norm[3];          //(convert from "Scalar" to float)
-    norm[0] = norms[i][0];  //(convert from "Scalar" to float)
-    norm[1] = norms[i][1];
-    norm[2] = norms[i][2];
-    bnpts_file.write((char*)&(xyz[0]), sizeof(float));
-    bnpts_file.write((char*)&(xyz[1]), sizeof(float));
-    bnpts_file.write((char*)&(xyz[2]), sizeof(float));
-    bnpts_file.write((char*)&(norm[0]), sizeof(float));
-    bnpts_file.write((char*)&(norm[1]), sizeof(float));
-    bnpts_file.write((char*)&(norm[2]), sizeof(float));
-  }
-  bnpts_file.close();
-}
+  int image_size[3];
+  for (int d = 0; d < 3; d++)
+    image_size[d] = tomo_in.header.nvoxels[d];
+
+  vector<array<int, 3> > extrema_crds;
+  vector<float> extrema_scores;
+
+   Watershed3D(tomo_in.header.nvoxels,
+              tomo_in.aaafI,
+              tomo_out.aaafI,
+              mask.aaafI,
+              settings.watershed_threshold,
+              settings.watershed_use_minima,
+              settings.neighbor_connectivity,
+              settings.watershed_show_boundaries,
+              settings.watershed_boundary_label,
+              &extrema_crds,
+              &extrema_scores,
+              &cerr);
+
+  // Did the user supply a mask?
+  // Watershed3D() intentionally does not modify voxels which lie 
+  // outside the mask.  These voxels will have random undefined values 
+  // unless we assign them manually.  We do this below.
+  float UNDEFINED = -1;
+  for (int iz = 0; iz < image_size[2]; iz++)
+    for (int iy = 0; iy < image_size[1]; iy++)
+      for (int ix = 0; ix < image_size[0]; ix++)
+        if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
+          tomo_out.aaafI[iz][iy][ix] = UNDEFINED;
+} //HandleWatershed()
 
 
-template<class Scalar>
-static void
-WriteOrientedPointCloudOBJ(string filename,
-                           vector<array<Scalar,3> > coords,
-                           vector<array<Scalar,3> > norms)
-{
-  assert(coords.size() == norms.size());
-  
-  size_t n = coords.size();
-  fstream obj_file;
-  obj_file.open(filename.c_str(), ios::out);
-  obj_file << "# WaveFront *.obj file (generated by " << g_program_name <<")\n";
-  obj_file << "\n"
-           << "g obj1_\n"
-           << "\n";
-           
-  for (size_t i=0; i < n; i++)
-    obj_file << "v "
-             << coords[i][0] <<" "<< coords[i][1] <<" "<< coords[i][2] <<"\n";
 
-  obj_file << "\n";
-
-  for (size_t i=0; i < n; i++)
-    obj_file << "vn "
-             << norms[i][0] <<" "<< norms[i][1] <<" "<< norms[i][2] <<"\n";
-
-  obj_file.close();
-}
-
-
-template<class Scalar, class VectorContainer>
-static void
-WriteOrientedPointCloud(string pointcloud_file_name,
-                        const int image_size[3],
-                        VectorContainer const *const *const *aaaafVector,
-                        Scalar const *const *const *aaafMask = NULL,
-                        const Scalar *voxel_width=NULL)
-{
-  assert(aaaafVector);
-  vector<array<Scalar,3> > coords;
-  vector<array<Scalar,3> > norms;
-
-  // Did the caller specify the physical width of each voxel?
-  Scalar _voxel_width[3] = {1.0, 1.0, 1.0};
-  if (voxel_width) {
-    _voxel_width[0] = voxel_width[0];
-    _voxel_width[1] = voxel_width[1];
-    _voxel_width[2] = voxel_width[2];
-  }
-
-  for (int iz=0; iz < image_size[2]; iz++) {
-    for (int iy=0; iy < image_size[1]; iy++) {
-      for (int ix=0; ix < image_size[0]; ix++) {
-        if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
-          continue;
-
-        array<Scalar,3> xyz;
-        xyz[0] = ix * _voxel_width[0];
-        xyz[1] = iy * _voxel_width[1];
-        xyz[2] = iz * _voxel_width[2];
-        coords.push_back(xyz);
-
-        array<Scalar,3> norm;
-        norm[0] = aaaafVector[iz][iy][ix][0];
-        norm[1] = aaaafVector[iz][iy][ix][1];
-        norm[2] = aaaafVector[iz][iy][ix][2];
-        norms.push_back(norm);
-      }
-    }
-  }
-
-  WriteOrientedPointCloudBNPTS(pointcloud_file_name + ".bnpts",
-                               coords,
-                               norms);
-
-  WriteOrientedPointCloudOBJ(pointcloud_file_name,
-                             coords,
-                             norms);
-
-} //WriteOrientedPointCloud()
 
 
 
@@ -1697,49 +1459,6 @@ HandleRidgeDetectorPlanar(Settings settings,
             &(aaaafGradient));
 
 } //HandleRidgeDetectorPlanar()
-
-
-
-
-
-static void
-HandleWatershed(Settings settings,
-                MrcSimple &tomo_in,
-                MrcSimple &tomo_out,
-                MrcSimple &mask,
-                float voxel_width[3])
-{
-  int image_size[3];
-  for (int d = 0; d < 3; d++)
-    image_size[d] = tomo_in.header.nvoxels[d];
-
-  vector<array<int, 3> > extrema_crds;
-  vector<float> extrema_scores;
-
-   Watershed3D(tomo_in.header.nvoxels,
-              tomo_in.aaafI,
-              tomo_out.aaafI,
-              mask.aaafI,
-              settings.watershed_threshold,
-              settings.watershed_use_minima,
-              settings.neighbor_connectivity,
-              settings.watershed_show_boundaries,
-              settings.watershed_boundary_label,
-              &extrema_crds,
-              &extrema_scores,
-              &cerr);
-
-  // Did the user supply a mask?
-  // Watershed3D() intentionally does not modify voxels which lie 
-  // outside the mask.  These voxels will have random undefined values 
-  // unless we assign them manually.  We do this below.
-  float UNDEFINED = -1;
-  for (int iz = 0; iz < image_size[2]; iz++)
-    for (int iy = 0; iy < image_size[1]; iy++)
-      for (int ix = 0; ix < image_size[0]; ix++)
-        if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
-          tomo_out.aaafI[iz][iy][ix] = UNDEFINED;
-} //HandleWatershed()
 
 
 

@@ -31,7 +31,7 @@ so that the minimum and maximum voxel intensities are 0 and 1, respectively.
 ## Installation:
 
 
-**histogram_mrc.py** requires python 2.6 or higher and depends
+**histogram_mrc.py** requires python 2.7 or higher and depends
 on the **matplotlib** and **mrcfile** python modules.
 
 These modules can be installed using
@@ -61,12 +61,12 @@ sudo cp histogram_mrc.py /usr/local/bin
 
 Alternatively, you can edit your PATH variable manually to include
 the subdirectory where the "histogram_mrc.py" script is located.
-Suppose the directory with this README file is named ``mrc_simple_filter/doc''
+Suppose the directory with this README file is named ``visfd/doc''
 and it is located in your home directory:
 
 If you use the bash shell, typically you would edit your 
 `~/.profile`, `~/.bash_profile` or `~/.bashrc` files 
 to contain the following lines:
 
-    export PATH="$PATH:$HOME/mrc_simple_filter/bin/histogram_mrc"
+    export PATH="$PATH:$HOME/visfd/bin/histogram_mrc"
 

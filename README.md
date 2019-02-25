@@ -51,11 +51,11 @@ fluctuations,
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and 
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
-filters.)
+filters.)*
 
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
-The *source code* for the filters used by this program
+The source code for the filters used by this program
 is located 
 [here](./lib/filter/).
 This program currently only supports the .mrc/.rec image file format.
