@@ -3562,7 +3562,7 @@ typedef enum eClusterSortCriteria {
 ///         The clusters are sorted by their size (by default), and this is
 ///         relfected in their cluster-IDs.  (The largest cluster has ID 1)
 ///         (Cluster-ID numbers begin at 1, not 0.)
-///         (The "pv_cluster_centers" argument, if != NULL, will store
+///         (The "pv_cluster_maxima" argument, if != NULL, will store
 ///          the location of the saliency maxima (or minima) for each cluster.)
 ///
 /// @note   Voxels below the saliency threshold are ignored, and will
@@ -3626,7 +3626,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Scalar threshold_tensor_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible tensors are ignored (=-1.1 disables)
                  bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
-                 vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
+                 vector<array<Coordinate, 3> > *pv_cluster_maxima=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
                  vector<Scalar> *pv_cluster_sizes=NULL, //!< optional: what was the size of each cluster? (either the number of voxels, or the sum of voxel weights)
                  vector<Scalar> *pv_cluster_saliencies=NULL, //!< optional: what was the saliency (brightness) of each cluster's brightest voxel?
                  ClusterSortCriteria sort_criteria = ClusterSortCriteria::SORT_BY_SIZE, //!< which clusters get reported first? (by default, the biggest ones)
@@ -4168,7 +4168,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][1] *= -1.0;
             aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][2] *= -1.0;
           }
-
         } // if (aaaafVectorStandardized && (! consider_dot_product_sign))
         #endif
 
@@ -4301,7 +4300,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
   #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
   if (aaaafVector && aaaafVectorStandardized &&
-      (! consider_dot_product_sign))
+    (! consider_dot_product_sign))
   {
     // Now, finally incorporate the data we stored in basin2polarity[] into
     // aaaafVectorStandardized.
@@ -4327,8 +4326,29 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         }
       }
     }
+
+    if (pReportProgress && voxels_discarded_due_to_polarity) {
+      *pReportProgress
+        << "WARNING: During clustering, some voxels were discarded to avoid\n"
+        << "         directional singularities.  More specifically:\n"
+        << "         some voxels were discarded in order to \"cut\" the conncted clusters\n"
+        << "         so that each remaining object (cluster) consist of voxels which\n"
+        << "         are consistently orientable.\n"
+        << "         (For example, a Möbius strip forms a closed loop whose surface\n"
+        << "          normals are not consistently orientable.  Such a loop would be cut\n"
+        << "          somewhere along its length.)\n"
+        << "         This cutting was done where the saliency (brightness/darkness) of the\n"
+        << "         object was weakest. The first such voxel discarded (cut) had saliency\n"
+        << "         " << voxel_discarded_due_to_polarity_saliency << "\n"
+        << "         ...and was located at position: ("
+        << voxel_discarded_due_to_polarity_ix << ", "
+        << voxel_discarded_due_to_polarity_iy << ", "
+        << voxel_discarded_due_to_polarity_iz << ")\n"
+        << "         (Note: Zero-indexing.  The first voxel has position 0,0,0 not 1,1,1)\n"
+        << endl;
+    } // if (pReportProgress && voxels_discarded_due_to_polarity)
   } // if (aaaafVectorStandardized && (! consider_dot_product_sign))
-  #endif
+  #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
 
 
   // Now, assign all the voxels in aaaiDest[][][]
@@ -4346,7 +4366,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       }
     }
   }
-  
+
   // Keep track of the number of voxels in each cluster.
   // I call this the "size" of each cluster.
   //
@@ -4371,19 +4391,128 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       for (int ix=0; ix<image_size[0]; ix++) {
         if (aaaiDest[iz][iy][ix] == UNDEFINED)
           continue;
-        ptrdiff_t which_cluster = aaaiDest[iz][iy][ix];
+        ptrdiff_t cluster_id = aaaiDest[iz][iy][ix];
         if (aaafVoxelWeights)
-          cluster_sizes[which_cluster] += aaafVoxelWeights[iz][iy][ix];
+          cluster_sizes[cluster_id] += aaafVoxelWeights[iz][iy][ix];
         else
-          cluster_sizes[which_cluster] += 1.0;
+          cluster_sizes[cluster_id] += 1.0;
       }
     }
   }
 
-  if (pv_cluster_centers != NULL) {
-    pv_cluster_centers->resize(n_clusters);
+
+  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+  if (aaaafVectorStandardized && (! consider_dot_product_sign))
+  {
+    // At this point we have got the voxels pointing in directions which are
+    // consistent with each other at least, but we have not determined
+    // whether they are currently pointing outside or inside.
+    // Assuming that this cluster represents a closed surface,
+    // we would like them to be pointing outward.
+    //
+    // We use an extremely crude method to decide this:
+    // If the majority of voxels in a cluster are pointing away from 
+    // the cluster's center of mass, then we say that they are pointing outward.
+    // (More precisely, if the sum of the dot-products is positive...)
+    // If they are not, then we should flip all of the voxel directions...
+
+    // First, calculate the center of mass of each voxel
+    vector<array<long double, 3> > cluster_centers_of_mass(n_clusters);
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            continue;
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            continue;
+          ptrdiff_t cluster_id = aaaiDest[iz][iy][ix];
+          if (aaafVoxelWeights) {
+            // Example:
+            // Suppose the voxel directions correspond to surface normals.
+            // One reason the caller might pass a non-NULL aaafVoxelWeights
+            // array would be to store the surface area corresponding to
+            // each voxel.  If that's the case, then we are performing
+            // a surface area weighted center-of-mass for each cluster.
+            cluster_centers_of_mass[cluster_id][0] +=
+              ix * aaafVoxelWeights[iz][iy][ix];
+            cluster_centers_of_mass[cluster_id][1] +=
+              iy * aaafVoxelWeights[iz][iy][ix];
+            cluster_centers_of_mass[cluster_id][2] +=
+              iz * aaafVoxelWeights[iz][iy][ix];
+          }
+          else {
+            // Otherwise just calculate the average position of each cluster
+            cluster_centers_of_mass[cluster_id][0] += ix;
+            cluster_centers_of_mass[cluster_id][1] += iy;
+            cluster_centers_of_mass[cluster_id][2] += iz;
+          }
+        }
+      }
+    }
+    for (int i = 0; i < n_clusters; i++)
+      for (int d = 0; d < 3; d++)
+        // cluster_size[i] = sum of the weights of the i'th cluster
+        cluster_centers_of_mass[i][d] /= cluster_sizes[i];
+
+    // Do the majority of voxels point toward or away from the center of mass?
+    vector<long double> sum_dot_products(n_clusters, 0.0);
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            continue;
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            continue;
+          ptrdiff_t cluster_id = aaaiDest[iz][iy][ix];
+          Scalar r_minus_rcom[3];
+          r_minus_rcom[0] = ix - cluster_centers_of_mass[cluster_id][0];
+          r_minus_rcom[1] = iy - cluster_centers_of_mass[cluster_id][1];
+          r_minus_rcom[2] = iz - cluster_centers_of_mass[cluster_id][2];
+          long double delta_sum =
+            DotProduct3(r_minus_rcom, aaaafVectorStandardized[iz][iy][ix]);
+          if (aaafVoxelWeights) {
+            // Example:
+            // Suppose the voxel directions correspond to surface normals.
+            // One reason the caller might pass a non-NULL aaafVoxelWeights
+            // array would be to store the surface area corresponding to
+            // each voxel.  If that's the case, then the
+            // sum we are calculating here is the surface integral of the
+            // dot product between "r_minus_rcom" and the voxel direction.
+            delta_sum *= aaafVoxelWeights[iz][iy][ix];
+          }
+          sum_dot_products[cluster_id] += delta_sum;
+        } // for (int ix=0; ix<image_size[0]; ix++)
+      } // for (int iy=0; iy<image_size[1]; iy++)
+    } // for (int iz=0; iz<image_size[2]; iz++)
+
+    // note:the next 3 lines are not necessary since we only care about the sign
+    //for (int i = 0; i < n_clusters; i++)
+    //  // cluster_size[i] = sum of the weights of the i'th cluster
+    //  sum_dot_products[i] /= cluster_size[i];
+
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            continue;
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            continue;
+          ptrdiff_t cluster_id = aaaiDest[iz][iy][ix];
+          if (sum_dot_products[cluster_id] < 0.0)
+            for (int d = 0; d < 3; d++)
+              aaaafVectorStandardized[iz][iy][ix][d] *= -1.0;
+        }
+      }
+    }
+  } // if (aaaafVectorStandardized && (! consider_dot_product_sign))
+  #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+
+
+
+  if (pv_cluster_maxima != NULL) {
+    pv_cluster_maxima->resize(n_clusters);
     for (size_t i = 0; i < n_clusters; i++)
-      (*pv_cluster_centers)[i] = extrema_locations[ cluster2deepestbasin[i] ];
+      (*pv_cluster_maxima)[i] = extrema_locations[ cluster2deepestbasin[i] ];
   }
 
   if (pv_cluster_saliencies) {
@@ -4433,16 +4562,16 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     if (pReportProgress)
       *pReportProgress << "done --\n";
 
-    if (pv_cluster_centers)
-      apply_permutation(permutation, *pv_cluster_centers);
+    if (pv_cluster_maxima)
+      apply_permutation(permutation, *pv_cluster_maxima);
 
     for (int iz=0; iz<image_size[2]; iz++) {
       for (int iy=0; iy<image_size[1]; iy++) {
         for (int ix=0; ix<image_size[0]; ix++) {
           if (aaaiDest[iz][iy][ix] == UNDEFINED)
             continue;
-          ptrdiff_t which_cluster = aaaiDest[iz][iy][ix];
-          aaaiDest[iz][iy][ix] = permutation_inv[which_cluster];
+          ptrdiff_t cluster_id = aaaiDest[iz][iy][ix];
+          aaaiDest[iz][iy][ix] = permutation_inv[cluster_id];
         }
       }
     }
@@ -4496,8 +4625,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           if (aaaiDest[iz][iy][ix] == UNDEFINED)
             continue;
           assert((0<aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<=n_basins));
-          long which_cluster = aaaiDest[iz][iy][ix] - 1;
-          clusters_visited[which_cluster] = true;
+          long cluster_id = aaaiDest[iz][iy][ix] - 1;
+          clusters_visited[cluster_id] = true;
         }
       }
     }
@@ -4512,31 +4641,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     //       integers above 1e+06 (I forget the exact number.)
   }
   #endif // #ifndef NDEBUG
-
-
-  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-  if (pReportProgress && voxels_discarded_due_to_polarity) {
-    *pReportProgress
-      << "WARNING: During clustering, some voxels were discarded to avoid\n"
-      << "         directional singularities.  More specifically:\n"
-      << "         some voxels were discarded in order to \"cut\" the conncted clusters\n"
-      << "         so that each remaining object (cluster) consist of voxels which\n"
-      << "         are consistently orientable.\n"
-      << "         (For example, a Möbius strip forms a closed loop whose surface\n"
-      << "          normals are not consistently orientable.  Such a loop would be cut\n"
-      << "          somewhere along its length.)\n"
-      << "         This cutting was done where the saliency (brightness/darkness) of the\n"
-      << "         object was weakest. The first such voxel discarded (cut) had saliency\n"
-      << "         " << voxel_discarded_due_to_polarity_saliency << "\n"
-      << "         ...and was located at position: ("
-      << voxel_discarded_due_to_polarity_ix << ", "
-      << voxel_discarded_due_to_polarity_iy << ", "
-      << voxel_discarded_due_to_polarity_iz << ")\n"
-      << "         (Note: Zero-indexing.  The first voxel has position 0,0,0 not 1,1,1)\n"
-      << endl;
-  }
-  #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-
 
 } // ClusterConnected()
 
