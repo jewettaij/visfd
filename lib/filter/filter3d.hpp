@@ -2102,9 +2102,12 @@ void
 apply_permutation(vector<Integer>& p,
                   vector<T>& v)
 {
+  assert(p.size() == v.size());
+  int n = p.size();
   vector<T> v_copy(v);
-  for (Integer i = 0; i < p.size(); i++) {
+  for (Integer i = 0; i < n; i++) {
     Integer j = p[i];
+    assert((0 <= j) && (j < n));
     v[i] = v_copy[j];
   }
 }
@@ -4326,6 +4329,30 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   #endif
 
 
+  // Now, assign all the voxels in aaaiDest[][][]
+  // to their clusters instead of their basins.
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaaiDest[iz][iy][ix] == UNDEFINED)
+          continue;
+        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          continue;
+        ptrdiff_t basin_id = aaaiDest[iz][iy][ix];
+        assert((0 <= basin_id) && (basin_id < n_basins));
+        aaaiDest[iz][iy][ix] = basin2cluster[ basin_id ];
+      }
+    }
+  }
+  
+  if (pv_cluster_centers != NULL) {
+    pv_cluster_centers->resize(n_clusters);
+    for (size_t i = 0; i < n_clusters; i++)
+      (*pv_cluster_centers)[i] = extrema_locations[ cluster2deepestbasin[i] ];
+  }
+
+
+
   // In what order should we present the voxels?
   if ((sort_criteria == SORT_BY_SALIENCY) && (n_clusters > 0)) {
     // Do nothing.
@@ -4342,7 +4369,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     //
     // Later we will sort the clusters by their weights.
 
-    vector<long double> cluster_weights(n_clusters);
+    vector<long double> cluster_weights(n_clusters, 0.0);
 
     // I use floating point numbers because "weights" need not be integers.
     // (Note: "vector<Label>" or "vector<Scalar>" won't work here since, in
@@ -4366,7 +4393,9 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       }
     }
 
-    vector<tuple<Scalar, size_t> > weight_index(n_clusters);
+    vector<tuple<Scalar, size_t> > weight_index;
+    weight_index.resize(n_clusters);
+
     for (size_t i = 0; i < n_clusters; i++)
       weight_index[i] = make_tuple(cluster_weights[i], i);
 
@@ -4389,9 +4418,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     if (pReportProgress)
       *pReportProgress << "done --\n";
 
-    // DONT uncomment the next two lines unless you move this code
-    // AFTER the place where pv_cluster_centers is assigned.
-    // (Right now, pv_cluster_centers is not defined.)
     if (pv_cluster_centers)
       apply_permutation(permutation, *pv_cluster_centers);
 
@@ -4410,27 +4436,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
 
 
-  // Now, assign all the voxels in aaaiDest[][][]
-  // to their clusters instead of their basins.
-  for (int iz=0; iz<image_size[2]; iz++) {
-    for (int iy=0; iy<image_size[1]; iy++) {
-      for (int ix=0; ix<image_size[0]; ix++) {
-        if (aaaiDest[iz][iy][ix] == UNDEFINED)
-          continue;
-        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
-          continue;
-        ptrdiff_t basin_id = aaaiDest[iz][iy][ix];
-        assert((0 <= basin_id) && (basin_id < n_basins));
-        aaaiDest[iz][iy][ix] = basin2cluster[ basin_id ];
-      }
-    }
-  }
-  
-  if (pv_cluster_centers != NULL) {
-    pv_cluster_centers->resize(n_clusters);
-    for (size_t i = 0; i < n_clusters; i++)
-      (*pv_cluster_centers)[i] = extrema_locations[ cluster2deepestbasin[i] ];
-  }
 
   // Now, deal with the clusters which the caller wants the "undefined"
   // voxels to have a high instead of a low value.
