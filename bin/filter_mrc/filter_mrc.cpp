@@ -1201,9 +1201,6 @@ HandleRidgeDetectorPlanar(Settings settings,
         float eivals[3];
         float eivects[3][3];
 
-        if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-          eivals[0] = 0.0;    //DELETEME for debugging only!
-
         ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
                                eivals,
                                eivects,
@@ -1232,10 +1229,6 @@ HandleRidgeDetectorPlanar(Settings settings,
                << endl;
         }
         #endif  //#ifndef NDEBUG
-
-
-        if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-          score = 0.0;   //<-DELETEME for DEBUGGING
 
 
         score = ScoreHessianPlanar(eivals,

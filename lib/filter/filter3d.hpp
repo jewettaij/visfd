@@ -3948,8 +3948,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         Scalar ft = FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]);
 
         if (tp < threshold_tensor_saliency * fs * ft) {
-          if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-            aaaiDest[iz][iy][ix] = UNDEFINED;          //DELETEME  DEBUGGING
           discard_this_voxel = true;
         }
       }
@@ -3994,8 +3992,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             vect_threshold_exceeded = true;
         }
         if (vect_threshold_exceeded) {
-          if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-            aaaiDest[iz][iy][ix] *= 1.00001;          //DELETEME  DEBUGGING
           discard_this_voxel = true;
         }
       }
@@ -4081,10 +4077,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]) *
                FrobeniusNormSym3(aaaafSymmetricTensor[iz_jz][iy_jy][ix_jx])))
           {
-
-            if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-              aaaiDest[iz][iy][ix] *= 1.00001;           //DELETEME  DEBUGGING
-
             continue;
           }
         }
@@ -4103,9 +4095,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Length3(aaaafVector[iz][iy][ix])*
                  Length3(aaaafVector[iz_jz][iy_jy][ix_jx])))
             {
-
-              if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-                aaaafVectorStandardized[iz][iy][ix][0] *= 1.000001; //DELETEME  DEBUGGING
               continue;
             }
           }
@@ -4117,10 +4106,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  SquaredNorm3(aaaafVector[iz][iy][ix])*
                  SquaredNorm3(aaaafVector[iz_jz][iy_jy][ix_jx])))
             {
-
-              if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-                aaaafVectorStandardized[iz][iy][ix][0]*=1.000001;   //DELETEME  DEBUGGING
-
               continue;
             }
           }
@@ -4206,9 +4191,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             voxel_discarded_due_to_polarity_iy = iy_jy;
             voxel_discarded_due_to_polarity_iz = iz_jz;
             voxel_discarded_due_to_polarity_saliency = aaafSaliency[iz_jz][iy_jy][ix_jx];
-
-            if ((ix == 19) && (iy == 20) && (iz == 2))   //DELETEME  DEBUGGING
-              voxels_discarded_due_to_polarity = true;   //DELETEME  DEBUGGING
 
             // In that case throw away this voxel.
             // Hopefully this will prevent linking of voxels containing
