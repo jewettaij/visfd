@@ -40,8 +40,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.14.3");
-string g_date_string("2018-2-22");
+string g_version_string("0.14.4");
+string g_date_string("2018-2-26");
 
 
 
