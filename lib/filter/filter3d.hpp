@@ -3627,6 +3627,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
                  vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
+                 vector<Scalar> *pv_cluster_sizes=NULL, //!< optional: what was the size of each cluster? (either the number of voxels, or the sum of voxel weights)
+                 vector<Scalar> *pv_cluster_saliencies=NULL, //!< optional: what was the saliency (brightness) of each cluster's brightest voxel?
                  ClusterSortCriteria sort_criteria = ClusterSortCriteria::SORT_BY_SIZE, //!< which clusters get reported first? (by default, the biggest ones)
                  Scalar const *const *const *aaafVoxelWeights=NULL, //!< optional: weights of each voxel used when sort_criteria==SORT_BY_SIZE
                  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
@@ -4345,14 +4347,61 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     }
   }
   
+  // Keep track of the number of voxels in each cluster.
+  // I call this the "size" of each cluster.
+  //
+  // (If the caller supplied a non-NULL "aaafVoxelWeights" array, then instead
+  //  I define the "size" of a cluster as the sum of the entries in the
+  //  "aaafVoxelWeights[][][]" array for the voxels within that cluster.)
+  //
+  // Later we will sort the clusters by their sizes.
+
+  vector<long double> cluster_sizes(n_clusters, 0.0);
+
+  // I use floating point numbers because "sizes" need not be integers.
+  // (Note: "vector<Label>" or "vector<Scalar>" won't work here since, in
+  //        typical usage, both Label and Scalar are of type "float".
+  //        Typical MRC/REC files have 10^9 voxels, and adding 10^9 32-bit
+  //        floats together will definitely result in numeric underflow.
+  //        So we use "vector<double>" or "vector<long double>" precision 
+  //        instead to make sure we get an accurate total when adding.
+
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaaiDest[iz][iy][ix] == UNDEFINED)
+          continue;
+        ptrdiff_t which_cluster = aaaiDest[iz][iy][ix];
+        if (aaafVoxelWeights)
+          cluster_sizes[which_cluster] += aaafVoxelWeights[iz][iy][ix];
+        else
+          cluster_sizes[which_cluster] += 1.0;
+      }
+    }
+  }
+
   if (pv_cluster_centers != NULL) {
     pv_cluster_centers->resize(n_clusters);
     for (size_t i = 0; i < n_clusters; i++)
       (*pv_cluster_centers)[i] = extrema_locations[ cluster2deepestbasin[i] ];
   }
 
-
-
+  if (pv_cluster_saliencies) {
+    pv_cluster_saliencies->resize(n_clusters);
+    for (size_t i = 0; i < n_clusters; i++) {
+      int ix = extrema_locations[ cluster2deepestbasin[i] ][0];
+      int iy = extrema_locations[ cluster2deepestbasin[i] ][1];
+      int iz = extrema_locations[ cluster2deepestbasin[i] ][2];
+      (*pv_cluster_saliencies)[i] = aaafSaliency[iz][iy][ix];
+    }
+  }
+                   
+  if (pv_cluster_sizes) {
+    pv_cluster_sizes->resize(n_clusters);
+    for (size_t i = 0; i < n_clusters; i++)
+      (*pv_cluster_sizes)[i] = cluster_sizes[i];
+  }
+    
   // In what order should we present the voxels?
   if ((sort_criteria == SORT_BY_SALIENCY) && (n_clusters > 0)) {
     // Do nothing.
@@ -4360,57 +4409,23 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   }
   else if ((sort_criteria == SORT_BY_SIZE) && (n_clusters > 0))
   {
-    // Keep track of the number of voxels in each cluster.
-    // I call this the "weight" of each cluster.
-    //
-    // (If the caller supplied a non-NULL "aaafVoxelWeights" array, then instead
-    //  we keep track of the sum of the entries in the "aaafVoxelWeights[][][]"
-    //  array each cluster.)
-    //
-    // Later we will sort the clusters by their weights.
-
-    vector<long double> cluster_weights(n_clusters, 0.0);
-
-    // I use floating point numbers because "weights" need not be integers.
-    // (Note: "vector<Label>" or "vector<Scalar>" won't work here since, in
-    //        typical usage, both Label and Scalar are of type "float".
-    //        Typical MRC/REC files have 10^9 voxels, and adding 10^9 32-bit
-    //        floats together will definitely result in numeric underflow.
-    //        So we use "vector<double>" or "vector<long double>" precision 
-    //        instead to make sure we get an accurate total when adding.
-
-    for (int iz=0; iz<image_size[2]; iz++) {
-      for (int iy=0; iy<image_size[1]; iy++) {
-        for (int ix=0; ix<image_size[0]; ix++) {
-          if (aaaiDest[iz][iy][ix] == UNDEFINED)
-            continue;
-          ptrdiff_t which_cluster = aaaiDest[iz][iy][ix];
-          if (aaafVoxelWeights)
-            cluster_weights[which_cluster] += aaafVoxelWeights[iz][iy][ix];
-          else
-            cluster_weights[which_cluster] += 1.0;
-        }
-      }
-    }
-
-    vector<tuple<Scalar, size_t> > weight_index;
-    weight_index.resize(n_clusters);
+    vector<tuple<Scalar, size_t> > size_index(n_clusters);
 
     for (size_t i = 0; i < n_clusters; i++)
-      weight_index[i] = make_tuple(cluster_weights[i], i);
+      size_index[i] = make_tuple(cluster_sizes[i], i);
 
     if (pReportProgress)
-      *pReportProgress << "  sorting these "<<n_clusters<<" clusters according to their weights... ";
+      *pReportProgress << "  sorting these "<<n_clusters<<" clusters according to their sizes... ";
 
     // Sort the clusters in descending order,
     // with the largest clusters appearing first.
-    sort(weight_index.rbegin(),
-         weight_index.rend());
+    sort(size_index.rbegin(),
+         size_index.rend());
 
     vector<size_t> permutation(n_clusters);
-    for (size_t i = 0; i < weight_index.size(); i++)
-      permutation[i] = get<1>(weight_index[i]);
-    weight_index.clear();
+    for (size_t i = 0; i < size_index.size(); i++)
+      permutation[i] = get<1>(size_index[i]);
+    size_index.clear();
 
     vector<size_t> permutation_inv;
     invert_permutation(permutation, permutation_inv);

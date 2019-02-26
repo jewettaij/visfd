@@ -1359,6 +1359,8 @@ HandleRidgeDetectorPlanar(Settings settings,
     }
 
     vector<array<int, 3> > cluster_centers;
+    vector<float> cluster_sizes;
+    vector<float> cluster_saliencies;
     ClusterConnected(tomo_in.header.nvoxels, //image size
                      tomo_in.aaafI,  //<-saliency
                      tomo_out.aaafI, //<-which cluster does each voxel belong to?  (results will be stored here)
@@ -1377,6 +1379,8 @@ HandleRidgeDetectorPlanar(Settings settings,
                      true, // the tensor should be positive definite near the target
                      1,
                      &cluster_centers,
+                     &cluster_sizes,
+                     &cluster_saliencies,
                      ClusterSortCriteria::SORT_BY_SIZE,
                      static_cast<float***>(NULL),
                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
