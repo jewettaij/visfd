@@ -3522,6 +3522,24 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 
 
 
+
+/// @brief   The following enumerated constants are used as arguments
+///          to the ClusterConnected() function.
+///          You can use these options to control the order
+///          the order that the clusters are returned to the caller.
+///
+///          SORT_BY_SIZE will sort clusters by their size.
+///
+///          SORT_BY_SALIENCY will sort clusters by their brightest voxel.
+///          (The voxel with the highest saliency.)
+
+typedef enum eClusterSortCriteria {
+  SORT_BY_SALIENCY,
+  SORT_BY_SIZE
+} ClusterSortCriteria;
+
+
+
 /// @brief  This function is used to cluster voxels of high saliency
 ///         into islands which are connected together by adjacent voxels,
 ///         and are separated by regions of low saliency
@@ -3538,6 +3556,8 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 /// @return The function does not have a return value.
 ///         After the function is finished, the aaaiDest[][][] array will
 ///         store the cluster-ID associated with each voxel.
+///         The clusters are sorted by their size (by default), and this is
+///         relfected in their cluster-IDs.  (The largest cluster has ID 1)
 ///         (Cluster-ID numbers begin at 1, not 0.)
 ///         (The "pv_cluster_centers" argument, if != NULL, will store
 ///          the location of the saliency maxima (or minima) for each cluster.)
@@ -3604,6 +3624,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
                  vector<array<Coordinate, 3> > *pv_cluster_centers=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
+                 ClusterSortCriteria sort_criteria = ClusterSortCriteria::SORT_BY_SIZE, //!< which clusters get reported first? (by default, the biggest ones)
+                 Scalar const *const *const *aaafVoxelWeights=NULL, //!< optional: weights of each voxel used when sort_criteria==SORT_BY_SIZE
                  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                  VectorContainer ***aaaafVectorStandardized=NULL, //!< optional: place to store "standardized" vector directions
                  #endif
@@ -4304,20 +4326,102 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   #endif
 
 
+  // In what order should we present the voxels?
+  if ((sort_criteria == SORT_BY_SALIENCY) && (n_clusters > 0)) {
+    // Do nothing.
+    // (The blobs are already sorted by the height of their saliency maxima.)
+  }
+  else if ((sort_criteria == SORT_BY_SIZE) && (n_clusters > 0))
+  {
+    // Keep track of the number of voxels in each cluster.
+    // I call this the "weight" of each cluster.
+    //
+    // (If the caller supplied a non-NULL "aaafVoxelWeights" array, then instead
+    //  we keep track of the sum of the entries in the "aaafVoxelWeights[][][]"
+    //  array each cluster.)
+    //
+    // Later we will sort the clusters by their weights.
+
+    vector<long double> cluster_weights(n_clusters);
+
+    // I use floating point numbers because "weights" need not be integers.
+    // (Note: "vector<Label>" or "vector<Scalar>" won't work here since, in
+    //        typical usage, both Label and Scalar are of type "float".
+    //        Typical MRC/REC files have 10^9 voxels, and adding 10^9 32-bit
+    //        floats together will definitely result in numeric underflow.
+    //        So we use "vector<double>" or "vector<long double>" precision 
+    //        instead to make sure we get an accurate total when adding.
+
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            continue;
+          ptrdiff_t which_cluster = aaaiDest[iz][iy][ix];
+          if (aaafVoxelWeights)
+            cluster_weights[which_cluster] += aaafVoxelWeights[iz][iy][ix];
+          else
+            cluster_weights[which_cluster] += 1.0;
+        }
+      }
+    }
+
+    vector<tuple<Scalar, size_t> > weight_index(n_clusters);
+    for (size_t i = 0; i < n_clusters; i++)
+      weight_index[i] = make_tuple(cluster_weights[i], i);
+
+    if (pReportProgress)
+      *pReportProgress << "  sorting these "<<n_clusters<<" clusters according to their weights... ";
+
+    // Sort the clusters in descending order,
+    // with the largest clusters appearing first.
+    sort(weight_index.rbegin(),
+         weight_index.rend());
+
+    vector<size_t> permutation(n_clusters);
+    for (size_t i = 0; i < weight_index.size(); i++)
+      permutation[i] = get<1>(weight_index[i]);
+    weight_index.clear();
+
+    vector<size_t> permutation_inv;
+    invert_permutation(permutation, permutation_inv);
+
+    if (pReportProgress)
+      *pReportProgress << "done --\n";
+
+    // DONT uncomment the next two lines unless you move this code
+    // AFTER the place where pv_cluster_centers is assigned.
+    // (Right now, pv_cluster_centers is not defined.)
+    if (pv_cluster_centers)
+      apply_permutation(permutation, *pv_cluster_centers);
+
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            continue;
+          ptrdiff_t which_cluster = aaaiDest[iz][iy][ix];
+          aaaiDest[iz][iy][ix] = permutation_inv[which_cluster];
+        }
+      }
+    }
+
+  } // if (aaafVoxelWeights != NULL)
+
+
+
   // Now, assign all the voxels in aaaiDest[][][]
   // to their clusters instead of their basins.
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
-        if (aaaiDest[iz][iy][ix] != UNDEFINED) {
-          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
-            continue;
-          if (aaaiDest[iz][iy][ix] == UNDEFINED)
-            continue;
-          ptrdiff_t basin_id = aaaiDest[iz][iy][ix];
-          assert((0 <= basin_id) && (basin_id < n_basins));
-          aaaiDest[iz][iy][ix] = basin2cluster[ basin_id ];
-        }
+        if (aaaiDest[iz][iy][ix] == UNDEFINED)
+          continue;
+        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          continue;
+        ptrdiff_t basin_id = aaaiDest[iz][iy][ix];
+        assert((0 <= basin_id) && (basin_id < n_basins));
+        aaaiDest[iz][iy][ix] = basin2cluster[ basin_id ];
       }
     }
   }

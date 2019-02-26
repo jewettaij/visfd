@@ -1174,25 +1174,6 @@ HandleRidgeDetectorPlanar(Settings settings,
                 &cerr);
 
 
-
-  // REMOVE THIS CRUFT:
-  // // Now calculate the eigenvalues and eigenvectors of the hessian matrix
-  // // located at each voxel.
-  // // (This converts an array of 6 numbers representing the non-redundant
-  // //  entries from the symmetrix 3x3 matrix, into 3 eigenvalues,
-  // // and 3 "Shoemake" coordinates, from which eigenvectors can be calculated)
-  // // To save space, I chose to store the result in the same array.
-  //
-  // DiagonalizeHessianImage3D(tomo_in.header.nvoxels,
-  //                           tmp_tensor.aaaafI,
-  //                           tmp_tensor.aaaafI,
-  //                           mask.aaafI,
-  //                           eival_order,
-  //                           &cerr);
-  // (END OF REMOVE THIS CRUFT)
-
-
-
   // We need to store the direction of the most important eigenvector
   // somewhere.  To save space, why not store it in the aaaafGradient
   // array?  (At this point, we are no longer using it).
@@ -1396,6 +1377,8 @@ HandleRidgeDetectorPlanar(Settings settings,
                      true, // the tensor should be positive definite near the target
                      1,
                      &cluster_centers,
+                     ClusterSortCriteria::SORT_BY_SIZE,
+                     static_cast<float***>(NULL),
                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                      aaaafDirection,
                      #endif

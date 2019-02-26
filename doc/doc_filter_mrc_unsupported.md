@@ -5,6 +5,13 @@ This file contains documentation for features of the "filter_mrc" program
 which are no longer maintained or supported (and were probably never useful).
 This file may be deleted in the future.*
 
+When using "filter_mrc", the user must select the kind of filter that will 
+be used by supplying a list of command-line arguments to the program.
+*The complete list of arguments and filters for the "filter_mrc" program
+ is described [here](./doc_filter_mrc.md).*
+The small list of optional arguments shown below correspond to 
+a filters that will probably be deleted in the future.
+
 ### -doggxy
 The **-doggxy** argument must be followed by 3 numbers:
 ```

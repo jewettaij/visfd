@@ -31,7 +31,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 **filter_mrc** is a stand-alone program which uses many of the
 features of the **visfd** library.
-It is typically used for
+It was intended to be used for
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 filament (curve) detection (*available soon*),
 and 
