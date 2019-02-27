@@ -3,6 +3,9 @@
 *.o
 *.a
 
+# text-editor temporary files:
+*~
+
 # binary files (but not their directories which have matching names)
 
 combine_mrc
@@ -26,13 +29,25 @@ sum_voxels
 pval_mrc
 !pval_mrc/
 
-
 # Unignore all dirs
 # !*/   COMMENTING OUT
 
+# Continuous Integration Testing files:
 
-# text-editor temporary files:
-*~
+# Ignore the contents of the "shunit2" bash unit testing tool directory
+# (This directory is generated automatically by .travis.yml.)
+shunit2/
+
+# Ignore the files that were generated during continuous integration testing
+tests/test_image*.rec
+tests/test_image*.bnpts
+tests/test_image*.obj
+tests/test_image*.txt
+
+# ...but DON'T ignore the original source images (which are needed by the tests)
+!tests/test_image_membrane.rec
+
+
 
 # There are some python scripts bundled with this software.
 # The remainder of this file is (mostly) python specific:

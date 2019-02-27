@@ -1,7 +1,7 @@
 ///   @file filter3d.hpp
 ///   @brief a collection of image processing operations on 3D arrays
 ///   @author Andrew Jewett
-///   @date 2019-2-27
+///   @date 2019-2-26
 
 #ifndef _FILTER3D_HPP
 #define _FILTER3D_HPP
