@@ -41,6 +41,7 @@ shunit2/
 # Ignore the files that were generated during continuous integration testing
 tests/test_image*.rec
 tests/test_image*.bnpts
+tests/test_image*.ply
 tests/test_image*.obj
 tests/test_image*.txt
 
