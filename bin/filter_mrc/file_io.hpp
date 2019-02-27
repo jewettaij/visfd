@@ -158,7 +158,7 @@ WriteOrientedPointCloud(string pointcloud_file_name,
   //                           coords,
   //                           norms);
 
-  WriteOrientedPointCloudOBJ(pointcloud_file_name,
+  WriteOrientedPointCloudPLY(pointcloud_file_name,
                              coords,
                              norms);
 
