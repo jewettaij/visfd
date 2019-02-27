@@ -1,4 +1,5 @@
-language: cpp, bash
+language: cpp
+#language: bash
 compiler: gcc
 
 # (Optional? It's easier to add a modern compiler to newest versions of ubuntu)
