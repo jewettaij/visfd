@@ -1,7 +1,7 @@
 ///   @file filter3d.hpp
 ///   @brief a collection of image processing operations on 3D arrays
 ///   @author Andrew Jewett
-///   @date 2019-2-15
+///   @date 2019-2-27
 
 #ifndef _FILTER3D_HPP
 #define _FILTER3D_HPP
@@ -681,24 +681,35 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 
 
 
-/// @brief ApplySeparable3D applies a separable filter on a 3D array.
+/// @brief ApplySeparable3D applies a separable filter on a 3D array
+///        (aaafSource).  This important function is invoked by ApplyGauss3D(), 
+///        which itself is invoked by almost every function in this library.
 ///        It assumes separate Filter1D objects have already been created 
-///        which will blur the image in each direction (x,y,z).
-///       This function supports masks (which exclude voxels from consideration)
-///        One unusual feature of this function is its ability to efficiently
-///        normalize the resulting filtered image in the presence of a mask
-///        (as well as near the image boundaries). Consequently, the image does
-///        not necessarily fade to black near the boundaries of the image 
-///       (or the mask) but instead assumes the shade of the surrounding voxels.
-///        (This could be handled afterwards, but it would be 16.67% slower.)
-///        This function is invoked by ApplyGauss3D().
+///        which will blur the image successively in each direction (x,y,z).
+///        The caller can specify an optional mask image (aaafMask), which
+///        allows us to exclude certain voxels from consideration.
+///
 /// @return  This function returns the effective height of the central peak of
 ///          the 3D filter.  (This is just the product of the central peaks of
 ///          each of the 1D filters.)  For normalized Gaussian shaped filters,
 ///          this peak height can be used to calculate the effective width
 ///          of the Gaussian to the caller (in case that information is useful).
+///          The resulting blurred image is stored in the aaafDest[][][] array.
+///
+/// @note  One unusual feature of this function is its ability to efficiently
+///        normalize the resulting filtered image in the presence of a mask (as
+///        well as near the image boundaries). Consequently, the image does not
+///        necessarily fade to black near the boundaries of the image (or the
+///        mask) but instead assumes the shade of the remaining nearby voxels.
+///        This will slow down the filter (by a factor of about 1.83).
 ///
 /// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
+
+
+//  Note:  (Alternatively, this normalization could be handled by applying
+//         the filter (blur) to both the mask image and the original image
+//         and then dividing the two blurred images by each other. But the
+//         implementation here is a little bit faster than that (~17% faster).)
 
 template<class Scalar>
 static Scalar
@@ -782,7 +793,8 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
 
 
         // --------------------------------------------
-        //Bug? A "std::bad_alloc()" exception was thrown here using OpenMP 
+        // Heisenbug ?
+        //     A "std::bad_alloc()" exception was thrown here using OpenMP 
         //     on 2018-10-18.  The problem was not apparent before this time,
         //     and does not occur when compiled without OpenMP support
         //     (More specifically, it does not occur when using the
@@ -1115,6 +1127,7 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
                           pReportProgress);
 
 } //ApplyGauss3D(sigma, truncate_halfwidth, ...)
+
 
 
 
@@ -4542,7 +4555,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     invert_permutation(permutation, permutation_inv);
 
     if (pReportProgress)
-      *pReportProgress << "done --\n";
+      *pReportProgress << "done\n";
 
     if (pv_cluster_maxima)
       apply_permutation(permutation, *pv_cluster_maxima);
