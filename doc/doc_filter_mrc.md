@@ -28,11 +28,16 @@ and the detection and segmentation of **1D curves** and **2D surfaces**
 A list of detected objects can be saved to a text file.
 Annotated images can be saved to a new .mrc/.rec file.
 
+All filters support "masking".
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.
 The contributions from remaining voxels are normalized, so that objects located
-within narrow confined spaces can be detected accurately and without penalty.)*
+within narrow confined spaces can be detected accurately and without penalty.)
+Masks can also be used to give some voxels more consideration
+than others during the bluring (filtering) process.  (A.K.A. "weighting".)
+You can use a mask to to apply a filter to an image
+whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
 
 
@@ -1027,7 +1032,7 @@ The average *brightness* and *contrast* of these background voxels
 is controlled by the "**-sphere-background brightness**", and the
 "**-sphere-background-scale ratio**" arguments, respectively.
 (Using "**-sphere-background-scale 0**" makes this background image invisible.
- The default scale ratio is 0.25.)
+ The default scale ratio is 0.333.)
 
 When displayed in IMOD,
 blobs with good scores typically appear as black or white spheres,
@@ -1158,6 +1163,13 @@ ignore certain voxels from the source image (tomogram).
 Using "masks" allows the user to perform the filtering considering only a
 subset of voxels in the tomogram (ie, the "mask").
 
+Masks can also be used to give some voxels more consideration
+than others during the bluring (filtering) process.  (A.K.A. "weighting".)
+This effectively makes it possible to apply a filter to an image
+whose boundaries are smooth and gradual as opposed to jagged and rectangular,
+slowly fading from 1 to 0 (near a curve-shaped boundary, for example).
+
+
 ```
    -mask  file.mrc
 ```
@@ -1166,7 +1178,7 @@ The argument following the
 same size as the input tomogram.
 During the filtering process, only voxels belonging to the tomogram
 with non-zero voxel values in the "mask" tomogram will be considered,
-and these remaining voxels will be multiplied by the mask value there
+and these remaining voxels will be multiplied by the mask's voxel value
 before filtering.
 (Usually every voxel in the mask tomogram is a number between 0 and 1.)
  This allows you to use soft masks with gradual boundaries.)

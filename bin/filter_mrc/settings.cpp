@@ -93,7 +93,7 @@ Settings::Settings() {
   sphere_decals_shell_thickness = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
-  sphere_decals_background_scale = 0.25; //default dimming of original image to emphasize spheres
+  sphere_decals_background_scale = 0.333; //default dimming of original image to emphasize spheres
   sphere_decals_foreground_use_score = true;
   //sphere_decals_background_use_orig = true;
   sphere_decals_foreground_norm = false;

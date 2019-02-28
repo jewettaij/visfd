@@ -519,8 +519,6 @@ HandleVisualizeBlobs(Settings settings,
   reverse(shell_thicknesses.begin(), shell_thicknesses.end());
   reverse(scores.begin(), scores.end());
 
-  tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
-
   VisualizeBlobs(tomo_out.header.nvoxels,
                  tomo_out.aaafI,
                  mask.aaafI,
@@ -529,6 +527,7 @@ HandleVisualizeBlobs(Settings settings,
                  shell_thicknesses,
                  scores,
                  settings.sphere_decals_background,
+                 tomo_in.aaafI,
                  settings.sphere_decals_background_scale,
                  settings.sphere_decals_foreground_norm);
 
@@ -722,9 +721,6 @@ HandleBlobDetector(Settings settings,
         display_shell_thicknesses[i] = 1.0;
     }
 
-
-    tomo_out = tomo_in; //copy the voxels from the original image to tomo_out
-
     VisualizeBlobs(tomo_out.header.nvoxels,
                    tomo_out.aaafI,
                    mask.aaafI,
@@ -733,6 +729,7 @@ HandleBlobDetector(Settings settings,
                    display_shell_thicknesses,
                    display_scores,
                    settings.sphere_decals_background,
+                   tomo_in.aaafI,
                    settings.sphere_decals_background_scale,
                    false);
 

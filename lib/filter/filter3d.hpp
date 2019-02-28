@@ -1080,10 +1080,19 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
 
 /// @brief Apply a Gaussian filter (blur) to an image
 /// @code h(x,y,z)=A*exp(-0.5*((x/σ_x)^2+(y/σ_y)^2+(z/σ_z)^2) @endcode
-/// In this version, the user manually specifies the filter window width.
-/// Voxels outside the boundary of the image or outside the mask are not
+/// In this version, the caller can specify all 3 components of σ (σ_x,σ_y,σ_z).
+/// The filter must eventually be truncated.  In this version the caller
+/// specifies the filter truncation window width (truncation_halfwidth)
+/// in units of voxels.
+///
+/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
+/// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
+/// the averaging process.  (Usually the entries lie in the range from 0 to 1).
+/// Voxels outside the boundary of the image (or outside the mask) are not
 /// considered during the averaging (blurring) process, and the result after
 /// blurring is weighted accordingly (if normalize=true, which it is default).
+///
 ///    An explanation of normalization:
 /// Gaussian filters are a form of weighted averaging of nearby voxels.
 /// However sometimes these nearby voxels are unavailable because they either
@@ -1093,6 +1102,10 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
 /// this weighted average brightness of the voxels near a particular location,
 /// ...by the sum of the weights which were used to calculate that average.
 /// (at that location).
+/// This will prevent the resulting filtered image from fading to black
+/// near the image boundaries (or mask boundaries), and improve the chance
+/// that subsequent features you plan to detect there are not penalized
+/// simply due to lying close to the edge of the image.
 ///
 /// @returns the "A" coefficient (determined by normalization)
 ///
@@ -1133,10 +1146,18 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 /// @brief Apply a Gaussian filter (blur) to an image
 /// @code h(x,y,z)=A*exp(-0.5*(x^2+y^2+z^2)/σ^2) @endcode
-/// In this version, the user manually specifies the filter window width.
-/// Voxels outside the boundary of the image or outside the mask are not
+/// The filter must eventually be truncated.  In this version the caller
+/// specifies the filter truncation window width (truncation_halfwidth)
+/// in units of voxels.
+///
+/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
+/// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
+/// the averaging process.  (Usually the entries lie in the range from 0 to 1).
+/// Voxels outside the boundary of the image (or outside the mask) are not
 /// considered during the averaging (blurring) process, and the result after
 /// blurring is weighted accordingly (if normalize=true, which it is default).
+///
 ///    An explanation of normalization:
 /// Gaussian filters are a form of weighted averaging of nearby voxels.
 /// However sometimes these nearby voxels are unavailable because they either
@@ -1146,6 +1167,10 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 /// this weighted average brightness of the voxels near a particular location,
 /// ...by the sum of the weights which were used to calculate that average.
 /// (at that location).
+/// This will prevent the resulting filtered image from fading to black
+/// near the image boundaries (or mask boundaries), and improve the chance
+/// that subsequent features you plan to detect there are not penalized
+/// simply due to lying close to the edge of the image.
 ///
 /// @returns the "A" coefficient (determined by normalization)
 template<class Scalar>
@@ -1183,10 +1208,32 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 ///
 /// @code h(x,y,z)=A*exp(-0.5*((x/σ_x)^2+(y/σ_y)^2+(z/σ_z)^2) @endcode
 /// The constant "A" is determined by normalization.
-/// In this version, the user specifies the filter window-width in units of σ
-/// Voxels outside the boundary of the image or outside the mask are not
-/// considered during the averaging (blurring) process, and the resulting
-/// after blurring is weighted accordingly.  (normalize=true by default)
+/// In this version, the caller can specify all 3 components of σ (σ_x,σ_y,σ_z).
+/// The filter must eventually be truncated.  In this version the caller
+/// specifies the filter truncation window width ("truncate_ratio") in units
+/// of the Gaussian width parameter σ (as opposed to units of voxels).
+///
+/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
+/// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
+/// the averaging process.  (Usually the entries lie in the range from 0 to 1).
+/// Voxels outside the boundary of the image (or outside the mask) are not
+/// considered during the averaging (blurring) process, and the result after
+/// blurring is weighted accordingly (if normalize=true, which it is default).
+///
+///    An explanation of normalization:
+/// Gaussian filters are a form of weighted averaging of nearby voxels.
+/// However sometimes these nearby voxels are unavailable because they either
+/// lie outside the boundaries of the image, or they lie outside the mask
+///   (ie. in regions where 0 <= aaafMask[iz][iy][ix] < 1.0).
+/// In that case, we can "normalize" the resulting filtered image by dividing
+/// this weighted average brightness of the voxels near a particular location,
+/// ...by the sum of the weights which were used to calculate that average.
+/// (at that location).
+/// This will prevent the resulting filtered image from fading to black
+/// near the image boundaries (or mask boundaries), and improve the chance
+/// that subsequent features you plan to detect there are not penalized
+/// simply due to lying close to the edge of the image.
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
@@ -1222,14 +1269,36 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 
 
-/// @brief Apply a spherical Gaussian filter (blur) to a 3D image
+/// @brief Apply a spherically-symmetric Gaussian filter (blur) to a 3D image.
+///   This is the most useful, popular variant of the ApplyGauss3D() function.
 ///
 /// @code h(x,y,z)=A*exp(-0.5*((x^2+y^2+z^2)/σ^2) @endcode
 /// The constant "A" is determined by normalization.
-/// In this version, the user specifies the filter window-width in units of σ
-/// Voxels outside the boundary of the image or outside the mask are not
-/// considered during the averaging (blurring) process, and the resulting
-/// after blurring is weighted accordingly.  (normalize=true by default)
+/// The filter must eventually be truncated.  In this version the caller
+/// specifies the filter truncation window width ("truncate_ratio") in units
+/// of the Gaussian width parameter σ (as opposed to units of voxels).
+///
+/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
+/// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
+/// the averaging process.  (Usually the entries lie in the range from 0 to 1).
+/// Voxels outside the boundary of the image (or outside the mask) are not
+/// considered during the averaging (blurring) process, and the result after
+/// blurring is weighted accordingly (if normalize=true, which it is default).
+///
+///    An explanation of normalization:
+/// Gaussian filters are a form of weighted averaging of nearby voxels.
+/// However sometimes these nearby voxels are unavailable because they either
+/// lie outside the boundaries of the image, or they lie outside the mask
+///   (ie. in regions where 0 <= aaafMask[iz][iy][ix] < 1.0).
+/// In that case, we can "normalize" the resulting filtered image by dividing
+/// this weighted average brightness of the voxels near a particular location,
+/// ...by the sum of the weights which were used to calculate that average.
+/// (at that location).
+/// This will prevent the resulting filtered image from fading to black
+/// near the image boundaries (or mask boundaries), and improve the chance
+/// that subsequent features you plan to detect there are not penalized
+/// simply due to lying close to the edge of the image.
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
@@ -1268,7 +1337,7 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 ///             - B*exp(-0.5 * ((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
 /// @endcode
 /// The constants "A" and "B" are determined by normalization.
-/// In this version, the user manually specifies the filter window width.
+/// In this version, the user specifies the filter truncation width in voxels.
 /// Voxels outside the boundary of the image or outside the mask are not
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
@@ -1362,6 +1431,8 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
 /// Voxels outside the boundary of the image or outside the mask are not
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
+/// In this version, the user specifies the filter truncation width
+/// (truncate_ratio) in units of σ_x, σ_y, σ_z (in the x,y,z directions).
 
 template<class Scalar>
 void
@@ -1934,20 +2005,21 @@ BlobDogD(int const image_size[3], //!<source image size
 /// @brief  Create a 3D image containing multiple spheres (or spherical shells)
 ///         various sizes, thicknesses, and locations, specified by the caller.
 ///         The resulting spheres can (optionally) be superimposed with the
-///         existing image (if aaafImage contains data).  This is done by 
-///         rescaling the background image voxel brightnesses.
+///         existing image (if the aaafBackground image array is != NULL).
+///         This is done by rescaling the background image voxel brightnesses.
 
 template<class Scalar>
 void
 VisualizeBlobs(int const image_size[3], //!< image size
-               Scalar ***aaafImage,  //!< array where we should write new image
+               Scalar ***aaafDest,  //!< array where we should write new image
                Scalar const *const *const *aaafMask,   //!< ignore voxels where mask==0
-               vector<array<Scalar,3> > &centers, //!< center of each blob
-               vector<Scalar> &diameters,         //!< diameter of eachs pherical shell (in voxels)
-               vector<Scalar> &shell_thicknesses, //!< how thick is each spherical shell (in voxels)
-               vector<Scalar> &voxel_intensities_foreground, //!< voxels in spherical shell get this value
+               vector<array<Scalar,3> > &centers, //!< coordinates for the center of each sphere (blob)
+               vector<Scalar> &diameters,         //!< diameter of each spherical shell (in voxels)
+               vector<Scalar> &shell_thicknesses, //!< thickness of each spherical shell (in voxels)
+               vector<Scalar> &voxel_intensities_foreground, //!< assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
                Scalar voxel_intensity_background = 0.0, //!< assign background voxels to this value
-               Scalar voxel_intensity_background_rescale = 0.25, //!< superimpose with old image? Which weight?
+               Scalar const *const *const *aaafBackground = NULL,   //!< superimpose background image?
+               Scalar voxel_intensity_background_rescale = 0.333, //!< superimpose with old image? This is the ratio of the fluctuations in voxel intensities of the newly created background image relative to the average foreground voxel intensity.
                bool voxel_intensity_foreground_normalize = false, //!< divide brightnesses by number of voxels in spherical shell? (rarely useful)
                ostream *pReportProgress = NULL //!<optional: report progress to the user?
                )
@@ -1973,18 +2045,23 @@ VisualizeBlobs(int const image_size[3], //!< image size
   // rescale the brightnesses in the tomogram according to their average
   // value and standard deviation:
 
-  Scalar tomo_ave  =  AverageArr(image_size,
-                                 aaafImage,
-                                 aaafMask);
-  Scalar tomo_stddev  =  StdDevArr(image_size,
-                                   aaafImage,
-                                   aaafMask);
+  Scalar background_ave = 0.0;
+  Scalar background_stddev = 1.0;
 
-  double score_sum_sq = 0.0;
+  if (aaafBackground) {
+    background_ave  =  AverageArr(image_size,
+                                  aaafBackground,
+                                  aaafMask);
+    background_stddev  =  StdDevArr(image_size,
+                                    aaafBackground,
+                                    aaafMask);
+  }
+  double score_ave = 0.0;
   for (int i = 0; i < voxel_intensities_foreground.size(); i++)
-    score_sum_sq += SQR(voxel_intensities_foreground[i]);
-
-  double score_rms = sqrt(score_sum_sq / voxel_intensities_foreground.size());
+    score_ave += voxel_intensities_foreground[i];
+  if (voxel_intensities_foreground.size() > 0)
+    score_ave /= voxel_intensities_foreground.size();
+  double voxel_intensity_foreground_ave = score_ave;
 
   // The spherical shells will have brightnesses chosen according to their
   // scores. Rescale the tomogram intensities so that they are approximately
@@ -1993,15 +2070,15 @@ VisualizeBlobs(int const image_size[3], //!< image size
   for (int iz = 0; iz < image_size[2]; iz++) {
     for (int iy = 0; iy < image_size[1]; iy++) {
       for (int ix = 0; ix < image_size[0]; ix++) {
-        if (tomo_stddev > 0.0)
-          aaafImage[iz][iy][ix] =
-            ((aaafImage[iz][iy][ix] - tomo_ave) / tomo_stddev)
+        if (background_stddev > 0.0)
+          aaafDest[iz][iy][ix] =
+            ((aaafBackground[iz][iy][ix] - background_ave) / background_stddev)
             *
-            score_rms
+            voxel_intensity_foreground_ave
             *
             voxel_intensity_background_rescale;
         else
-          aaafImage[iz][iy][ix] = 0.0;
+          aaafDest[iz][iy][ix] = 0.0;
       }
     }
   }
@@ -2010,7 +2087,7 @@ VisualizeBlobs(int const image_size[3], //!< image size
   for (int iz=0; iz<image_size[2]; iz++)
     for (int iy=0; iy<image_size[1]; iy++)
       for (int ix=0; ix<image_size[0]; ix++)
-        aaafImage[iz][iy][ix] += voxel_intensity_background;
+        aaafDest[iz][iy][ix] += voxel_intensity_background;
 
 
   for (int i = 0; i < centers.size(); i++) {
@@ -2082,10 +2159,10 @@ VisualizeBlobs(int const image_size[3], //!< image size
                     == 0.0))
             continue;
           else
-            aaafImage[static_cast<int>(centers[i][2])+jz]
-                     [static_cast<int>(centers[i][1])+jy]
-                     [static_cast<int>(centers[i][0])+jx] =
-                          voxel_intensities_foreground[i] * imultiplier;
+            aaafDest[static_cast<int>(centers[i][2])+jz]
+                    [static_cast<int>(centers[i][1])+jy]
+                    [static_cast<int>(centers[i][0])+jx] =
+                         voxel_intensities_foreground[i] * imultiplier;
         }
       }
     }

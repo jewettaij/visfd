@@ -15,7 +15,7 @@ which use this library
 (including "[filter_mrc](./doc/doc_filter_mrc.md)", 
  "[combine_mrc](./doc/doc_combine_mrc.md)", 
  and
- "[pval_mrc](./doc/doc_pval_mrc.md)")
+ "[pval_mrc](./doc/doc_pval_mrc.md)").
 They are documented [here](./doc).
 Multiprocessor support is implemented using
 [OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
