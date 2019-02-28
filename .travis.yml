@@ -9,8 +9,8 @@ matrix:
       compiler: gcc
       # (Optional? update to a relatively recent linux distro)
       dist: xenial
-      install:
-        - sudo apt-get install -qq cppcheck
+      #install:
+      #  - sudo apt-get install -qq cppcheck
       script:
         - source for_debugging_and_profiling/setup_gcc_linux_dbg.sh
         - make clean
@@ -23,10 +23,16 @@ matrix:
         - cd ../
 
     - language: bash
+      dist: xenial
+      #install:
+      #  - sudo apt-get install -qq cppcheck
       before_script:
         # Install "shunit2"
         - git clone https://github.com/kward/shunit2 shunit2
       script:
+        - source for_debugging_and_profiling/setup_gcc_linux_dbg.sh
+        - make clean
+        - make
         - bash tests/test_fluctuation_filter.sh
         - bash tests/test_membrane_detection.sh
 
