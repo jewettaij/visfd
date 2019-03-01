@@ -271,11 +271,39 @@ because it can be a very expensive computation.
                      and it has a value of σ=thickness/√3)*
 
 
-### -planar-tv-angle-exponent  n
+### -planar-tv-angle-exponent  *n*
 The "**-planar-tv-angle-exponent**" parameter (*n*) 
 controls the penalty applied to membrane-like regions which are pointing
 in incompatible directions.  It is 4 be default.
 
+
+### -planar-threshold  *threshold*
+
+This will discard voxels whose saliency (after ridge detection)
+falls below *threshold*.
+This will make subsequent steps in the calculation
+**(such as tensor voting)** faster.
+Users can choose this threshold by running **filter_mrc** using only
+the "-planar" filter argument, and then visualizing the resulting file.
+*(In IMOD, you can click on the image and
+ select the "Edit"->"Point"->"Value" menu option to
+ see the saliency of voxels of interest.)*
+
+In practice, it is often easier to use the **-planar-best** argument
+because no intermediate visualization step is required.
+
+### -planar-best  *fraction*
+
+This will discard voxels whose saliency (after ridge detection)
+is not in the top *fraction* of voxels in the image
+(excluding masked voxels, if applicable).
+This will reduce the computation needed for any subsequent steps
+in the calculation 
+**(such as tensor voting)** 
+faster by a factor which is roughly proportional to this number.
+The *fraction* parameter should lie in the range from 0 to 1.
+(Using *0.1* is a conservative choice, but you can often get away 
+ with using lower values.)
 
 
 ### **-find-minima**, "**-find-maxima**"
