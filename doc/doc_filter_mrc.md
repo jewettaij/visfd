@@ -51,12 +51,25 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 filter_mrc -w 19.2 \
   -in tomogram.rec \
   -out membrane_tv.rec \
-  -planar 65.0 -planar-tv 5.0 -planar-tv-angle-exponent 4
+  -planar 60.0 -planar-best 0.08 \
+  -planar-tv 5.0 -planar-tv-angle-exponent 4
 ```
+
+Note: This will detect membranes whose width is approximately in the range
+      of "60.0" (Angstroms).  It will not detect the boundaries of
+      solid objects, nor will it detect thicker membranes
+      (such as gram-positive bacterial cell walls).
+
+Note: The computation time will be roughly proportional to the "-planar-best"
+      argument which ranges from 0 to 1.
+      (If the resulting membranes stored in the "membrane_tv.rec" file
+      are missing or are incomplete, then increase this number and try again.)
 
 ### Example 2
 ```
 # Detect all dark blobs between 200 and 280 Angstroms in width:
+
+*(WARNING: This protocol has not been tested since 2018-10!)*
 
 filter_mrc -w 19.2 \
   -in tomogram.rec \

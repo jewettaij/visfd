@@ -2395,7 +2395,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
   if (pReportProgress)
     *pReportProgress
-      << "     -- done                                                --\n\n";
+      << " -- ...done                                                --\n\n";
 
 
   if (pReportProgress)
@@ -6134,6 +6134,8 @@ private:
       for (Integer iz=0; iz<image_size[2]; iz++) {
         for (Integer iy=0; iy<image_size[1]; iy++) {
           for (Integer ix=0; ix<image_size[0]; ix++) {
+            if (aaafMaskSource && (aaafMaskSource[iz][iy][ix] == 0))
+              continue;
             n_all++;
             //if (aaafSaliency[iz][iy][ix] > saliency_threshold)
             if (aaafSaliency[iz][iy][ix] != 0.0)

@@ -202,6 +202,7 @@ class Settings {
 
   string out_normals_fname;
   float planar_hessian_score_threshold;
+  bool  planar_hessian_score_threshold_is_a_fraction;
   float planar_tv_score_threshold;
   float planar_tv_sigma;
   int   planar_tv_exponent = 4;

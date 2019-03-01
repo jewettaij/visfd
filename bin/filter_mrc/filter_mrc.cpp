@@ -1273,20 +1273,58 @@ HandleRidgeDetectorPlanar(Settings settings,
 
 
 
+  { // Use thresholding to reduce the number of voxels that we have to consider
+    
+    float hessian_score_threshold = settings.planar_hessian_score_threshold;
+    if (settings.planar_hessian_score_threshold_is_a_fraction) {
+      float hessian_score_fraction = settings.planar_hessian_score_threshold;
+      size_t n_voxels = 0;
+      for (int iz=0; iz < image_size[2]; iz++) {
+        for (int iy=0; iy < image_size[1]; iy++) {
+          for (int ix=0; ix < image_size[0]; ix++) {
+            if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0))
+              continue;
+            n_voxels++;
+          }
+        }
+      }
+      cerr << " -- sorting ALL voxels by ridge saliency --\n" << endl;
+      vector<float> saliencies(n_voxels);
+      size_t i = 0;
+      for (int iz=0; iz < image_size[2]; iz++) {
+        for (int iy=0; iy < image_size[1]; iy++) {
+          for (int ix=0; ix < image_size[0]; ix++) {
+            if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0))
+              continue;
+            saliencies[i] = tomo_out.aaafI[iz][iy][ix];
+            i++;
+          }
+        }
+      }
+      sort(saliencies.rbegin(),
+           saliencies.rend());
+      i = floor(n_voxels * hessian_score_fraction);
+      hessian_score_threshold = saliencies[i];
+    }
 
-  if (settings.planar_tv_sigma > 0.0) {
-    assert(settings.filter_truncate_ratio > 0);
-
-    // Use thresholding to reduce the number of voxels that we have to consider
-    // Later, voxels with 0 saliency will be ignored.
+    // Now that we know what the threshold is (for not discarding)
+    // discard voxels whose saliencies fall below this number.
+    // (Do this by setting their saliency to 0.
+    //  This will cause them to be ignored in later stages of the calculation.)
     for (int iz=0; iz < image_size[2]; iz++) {
       for (int iy=0; iy < image_size[1]; iy++) {
         for (int ix=0; ix < image_size[0]; ix++) {
-          if (tomo_out.aaafI[iz][iy][ix] < settings.planar_hessian_score_threshold)
+          if (tomo_out.aaafI[iz][iy][ix] < hessian_score_threshold)
             tomo_out.aaafI[iz][iy][ix] = 0.0;
         }
       }
     }
+  } // Use thresholding to reduce the number of voxels that we have to consider
+
+
+
+  if (settings.planar_tv_sigma > 0.0) {
+    assert(settings.filter_truncate_ratio > 0);
 
     TV3D<float, int, array<float,3>, float* >
       tv(settings.planar_tv_sigma,

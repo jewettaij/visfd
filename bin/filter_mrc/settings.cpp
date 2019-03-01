@@ -117,7 +117,8 @@ Settings::Settings() {
   watershed_threshold = std::numeric_limits<float>::infinity();
 
   out_normals_fname = "";
-  planar_hessian_score_threshold = 0.0;
+  planar_hessian_score_threshold = 0.0; //don't discard any voxels before TV
+  planar_hessian_score_threshold_is_a_fraction = false;
   planar_tv_score_threshold = 0.0;
   planar_tv_sigma = 0.0;
   planar_tv_exponent = 4;
@@ -1892,11 +1893,38 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == ""))
           throw invalid_argument("");
         planar_hessian_score_threshold = stof(vArgs[i+1]);
+        planar_hessian_score_threshold_is_a_fraction = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a number, the threshold\n"
                        "       for deciding whether to compute the surface normal there.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-planar-best") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        planar_hessian_score_threshold = stof(vArgs[i+1]);
+        planar_hessian_score_threshold_is_a_fraction = true;
+        if (! ((0.0 <= planar_hessian_score_threshold) &&
+               (planar_hessian_score_threshold <= 1.0)))
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number between 0 and 1:  The fraction of the\n"
+                       "       number of voxels you wish to keep (not discard) after ridge detection\n"
+                       "       (giving preference to the most \"ridge-like\" voxels).\n"
+                       "       The \"ridgyness\" (saliency) of other voxels will be set to 0\n"
+                       "\n"
+                       "       If there are additional steps in the computation (such as tensor voting\n"
+                       "       planar templates or ant-colony-optimization), then\n"
+                       "       The computational cost of these subsequent steps will be proportional\n"
+                       "       to this number.  It must lie in the range from 0 to 1.  (Default: 1)\n");
       }
       num_arguments_deleted = 2;
     }
