@@ -1700,8 +1700,13 @@ BlobDog(int const image_size[3], //!< source image size
 
     if (pReportProgress)
       *pReportProgress
-        << "--- Searching for local minima & maxima with width[" << ir-1 << "] = "
-        << blob_sigma[ir-1]*2.0*sqrt(3) << " ---\n";
+        << "--- Searching for local minima & maxima with sigma["<<ir-1<<"] = "
+        << blob_sigma[ir-1] << " ---\n";
+
+       //<< "--- Searching for local minima & maxima with width["<<ir-1<<"] = "
+       //<< blob_sigma[ir-1]*2.0*sqrt(3) << " ---\n";
+
+
 
     // As we are looking for local minima and maxima we need to
     // keep track of the best scores so far
@@ -3706,7 +3711,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Scalar threshold_saliency=-std::numeric_limits<Scalar>::infinity(), //!< don't consider voxels with saliencies below this value
                  Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
                  bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
-                 bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)
                  VectorContainer const *const *const *aaaafVector=NULL,
                  Scalar threshold_vector_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and vector are ignored (=-1.001 disables)
                  Scalar threshold_vector_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible vectors are ignored (=-1.001 disables)
@@ -3724,6 +3728,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                  VectorContainer ***aaaafVectorStandardized=NULL, //!< optional: place to store "standardized" vector directions
                  #endif
+                 bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)  WARNING: As of 2019-2-28, this function has not yet been tested with the non-default value (false)
                  ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
 

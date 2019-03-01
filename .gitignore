@@ -39,14 +39,15 @@ pval_mrc
 shunit2/
 
 # Ignore the files that were generated during continuous integration testing
-tests/test_image*.rec
-tests/test_image*.bnpts
-tests/test_image*.ply
-tests/test_image*.obj
-tests/test_image*.txt
+tests/test_*.rec
+tests/test_*.bnpts
+tests/test_*.ply
+tests/test_*.obj
+tests/test_*.txt
 
 # ...but DON'T ignore the original source images (which are needed by the tests)
 !tests/test_image_membrane.rec
+!tests/test_blob_detection.rec
 
 
 

@@ -21,6 +21,9 @@ Multiprocessor support is implemented using
 [OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
 
 
+#### WARNING: This project is changing.  Optimizations and features are being added rapidly.  Some features don't work well yet.  (-andrew 2019-2-28)
+
+
 ## programs included with this repository:
 
 After compilation, all programs will be located in the "*bin/*" subdirectory.  Here is a brief description of some of them:
@@ -36,7 +39,7 @@ It was intended to be used for
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 filament (curve) detection (*available soon*),
 and 
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
 [watershed segmentation](https://imagej.net/Classic_Watershed)
 with non-max suppression.
 A list of detected objects can be sorted, clustered, and saved to a text file.
@@ -51,7 +54,7 @@ fluctuations,
 [LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and 
-[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf)
 filters.)*
 
 Documentation for this program is located
@@ -109,9 +112,14 @@ Documentation for this program is located
 [here](./doc/doc_pval_mrc.md).
 
 
-## Development Status: *alpha*
+## Development Status: *pre-alpha*
 Program names, command line arguments, file names, and function names
 (in the API) may all change in the future.
+Automated testing was added,
+however as of 2019-2-27, some commits still (temporarilly) break everything.
+(...because I'm too lazy to use branch & merge.
+ This usually gets fixed within 24 hours.
+ If the build is failing, choose a previous commit.)
 
 
 ## Compilation

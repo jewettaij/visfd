@@ -13,14 +13,15 @@ brightness inversions,
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf),
+[3D tensor voting]([example](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_blob.html)),
 and brightness-fluctuation
 filters.
 Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
 filters are used whenever possible.
 
 **filter_mrc** can also be used for 3D
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection), 
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection) 
+([example](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_blob.html)),
 local minima-finding, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed),
 and the detection and segmentation of **1D curves** and **2D surfaces**
@@ -55,11 +56,11 @@ filter_mrc -w 19.2 \
 
 ### Example 2
 ```
-# Detect all dark blobs between 180 and 260 Angstroms in width:
+# Detect all dark blobs between 200 and 280 Angstroms in width:
 
 filter_mrc -w 19.2 \
   -in tomogram.rec \
-  -blob tomogram_blobs 180.0 260.0 1.01 \
+  -blob tomogram_blobs 200.0 280.0 1.01 \
   -mask tomogram_mask_water=0_periplasm=1_cytoplasm=2.mrc \
   -mask-select 2 -mask-out 0.0
 

@@ -1358,7 +1358,6 @@ HandleRidgeDetectorPlanar(Settings settings,
                      settings.connect_threshold_saliency,
                      static_cast<float>(0.0), //this value is ignored, but it specifies the type of array we are using (eg float)
                      true, //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
-                     true, //(clusters begin at regions of high saliency)
                      aaaafDirection,
                      settings.connect_threshold_vector_saliency,
                      settings.connect_threshold_vector_neighbor,
@@ -1376,6 +1375,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                      aaaafDirection,
                      #endif
+                     true, //(clusters begin at regions of high saliency)
                      &cerr);  //!< print progress to the user
 
   } // if (settings.cluster_connected_voxels)

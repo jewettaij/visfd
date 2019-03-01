@@ -103,7 +103,7 @@ Settings::Settings() {
   sphere_decals_shell_thickness_min = 1.0;
   score_lower_bound = -std::numeric_limits<float>::infinity();
   score_upper_bound = std::numeric_limits<float>::infinity();
-  score_bounds_are_ratios = true;
+  score_bounds_are_ratios = false;
   sphere_diameters_lower_bound = -std::numeric_limits<float>::infinity();
   sphere_diameters_upper_bound = std::numeric_limits<float>::infinity();
   blob_width_multiplier = 1.0;
