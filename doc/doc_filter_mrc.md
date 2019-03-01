@@ -69,7 +69,7 @@ Note: The computation time will be roughly proportional to the "-planar-best"
 ```
 # Detect all dark blobs between 200 and 280 Angstroms in width:
 
-*(WARNING: This protocol has not been tested since 2018-10!)*
+###### (WARNING: This protocol has not been tested since 2018-10!) ######
 
 filter_mrc -w 19.2 \
   -in tomogram.rec \
