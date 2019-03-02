@@ -843,7 +843,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_upper_bound = stof(vArgs[i+1]);
-        score_lower_bound = std::numeric_limits<float>::infinity();
+        score_lower_bound = -std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -861,7 +861,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_lower_bound = stof(vArgs[i+1]);
-        score_upper_bound = -std::numeric_limits<float>::infinity();
+        score_upper_bound = std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -879,7 +879,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_upper_bound = stof(vArgs[i+1]);
-        score_lower_bound = std::numeric_limits<float>::infinity();
+        score_lower_bound = -std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -898,7 +898,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_lower_bound = stof(vArgs[i+1]);
-        score_upper_bound = -std::numeric_limits<float>::infinity();
+        score_upper_bound = std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -2352,7 +2352,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
   if (filter_type == BLOB) {
     if ((blob_minima_file_name != "") &&
-        (score_lower_bound == std::numeric_limits<float>::infinity()))
+        (score_lower_bound == -std::numeric_limits<float>::infinity()))
     {
       // If the user is not interested in local maxima, then we only
       // need to create one file (for the minima, as opposed to a separate
@@ -2367,7 +2367,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       blob_minima_file_name = blob_file_name_base;
     }
     if ((blob_maxima_file_name != "") &&
-        (score_upper_bound == -std::numeric_limits<float>::infinity()))
+        (score_upper_bound == std::numeric_limits<float>::infinity()))
     {
       // If the user is not interested in local minima, then we only
       // need to create one file (for the maxima, as opposed to a separate

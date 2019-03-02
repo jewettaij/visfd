@@ -18,6 +18,9 @@ test_blob_detection() {
 
     assertTrue "blob detection failed.  File test_blobs.minima.txt was not created" "[ -s test_blobs.minima.txt ]"
 
+    bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detection_dog_0_500.rec -discard-blobs test_blobs.minima.txt test_blobs_minima_sep_0.9.txt -blob-separation 0.9 -minima-threshold -90
+
+    
     THRESH=-55
     
    rm -rf test_image_fluct.rec
