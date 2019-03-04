@@ -754,37 +754,63 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-blob-d"))
     {
       try {
-        if ((i+4 >= vArgs.size()) ||
+        if ((i+5 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
             (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
-            (vArgs[i+4] == "") || (vArgs[i+4][0] == '-'))
+            (vArgs[i+4] == "") || (vArgs[i+4][0] == '-') ||
+            (vArgs[i+5] == "") || (vArgs[i+5][0] == '-'))
           throw invalid_argument("");
 
-        string blob_file_name_base = vArgs[i+1];
+        string blob_file_name_base = vArgs[i+2];
         //if (EndsWith(blob_file_name_base, ".txt"))
         //  blob_file_name_base =
         //    blob_file_name_base.substr(0,
         //                               blob_file_name_base.length()-4);
 
-        blob_minima_file_name = blob_file_name_base + string(".minima.txt");
-        blob_maxima_file_name = blob_file_name_base + string(".maxima.txt");
+        if ((vArgs[i+1] == "minima") || (vArgs[i+1] == "min")) {
+          blob_minima_file_name = blob_file_name_base;
+          blob_maxima_file_name = "";  // disable searching for maxima
+          score_upper_bound = 0.0;     // disable searching for maxima
+        }
+        else if ((vArgs[i+1] == "maxima") || (vArgs[i+1] == "max")) {
+          blob_maxima_file_name = blob_file_name_base;
+          blob_minima_file_name = "";   // disable searching for minima
+          score_lower_bound = 0.0;      // disable searching for maxima
+        }
+        else if (vArgs[i+1] == "all") {
+          blob_minima_file_name = blob_file_name_base + string(".minima.txt");
+          blob_maxima_file_name = blob_file_name_base + string(".maxima.txt");
+          if (score_lower_bound == 0.0)
+            // if searching for minima was disabled, then enable it
+            score_lower_bound = -std::numeric_limits<float>::infinity();
+          if (score_upper_bound == 0.0)
+            // if searching for maxima was disabled, then enable it
+            score_upper_bound = std::numeric_limits<float>::infinity();
+        }
+        else {
+          throw InputErr("Error: The 1st parameter to the \"" + vArgs[i] + "\" argument must be one of:\n"
+                         "            minima, maxima, (or) all\n"
+                         "\n"
+                         "       (It indicates whether you are looking for\n"
+                         "        dark blobs, white blobs, or both.)\n");
+        }
 
-        float blob_width_min = stof(vArgs[i+2]);
-        float blob_width_max = stof(vArgs[i+3]);
+        float blob_width_min = stof(vArgs[i+3]);
+        float blob_width_max = stof(vArgs[i+4]);
         if ((blob_width_min <= 0.0) ||
             (blob_width_max <= 0.0) ||
             (blob_width_min >= blob_width_max))
           throw invalid_argument("");
 
         // The old version of the code allows user to set "N" directly
-        //int N = stof(vArgs[i+4]);
+        //int N = stof(vArgs[i+5]);
         //if (N < 3)
         //  throw InputErr("The 4th parameter to the \"" + vArgs[i] + "\" argument must be >= 3.");
         //float growth_ratio = pow(blob_width_max / blob_width_min, 1.0/(N-1));
 
         // In the new version of the code, the user specifies "growth_ratio"
-        float growth_ratio = stof(vArgs[i+4]);
+        float growth_ratio = stof(vArgs[i+5]);
         if (growth_ratio <= 1.0)
           throw invalid_argument("");
         int N = 1+ceil(log(blob_width_max/blob_width_min) / log(growth_ratio));
@@ -832,7 +858,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a file name, and 3 positive numbers:\n"
                        "      file_name.txt  blob_width_min  blob_width_max  N\n");
       }
-      num_arguments_deleted = 5;
+      num_arguments_deleted = 6;
     } //if (vArgs[i] == "-blob")
 
 
@@ -843,7 +869,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_upper_bound = stof(vArgs[i+1]);
-        score_lower_bound = -std::numeric_limits<float>::infinity();
+        //score_lower_bound = -std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -861,7 +887,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_lower_bound = stof(vArgs[i+1]);
-        score_upper_bound = std::numeric_limits<float>::infinity();
+        //score_upper_bound = std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
@@ -879,7 +905,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_upper_bound = stof(vArgs[i+1]);
-        score_lower_bound = -std::numeric_limits<float>::infinity();
+        //score_lower_bound = -std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -898,7 +924,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         score_lower_bound = stof(vArgs[i+1]);
-        score_upper_bound = std::numeric_limits<float>::infinity();
+        //score_upper_bound = std::numeric_limits<float>::infinity();
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
@@ -2350,38 +2376,42 @@ Settings::ParseArgs(vector<string>& vArgs)
   } //if ((filter_type == DOG) || (filter_type == DOGG))
 
 
-  if (filter_type == BLOB) {
-    if ((blob_minima_file_name != "") &&
-        (score_lower_bound == -std::numeric_limits<float>::infinity()))
-    {
-      // If the user is not interested in local maxima, then we only
-      // need to create one file (for the minima, as opposed to a separate
-      // file for both minima and maxima).  In that case, remove the
-      // ".minima.txt" which was earlier automatically added to the end
-      // of that file's name.
-      string blob_file_name_base = blob_minima_file_name;
-      if (EndsWith(blob_file_name_base, ".minima.txt"))
-        blob_file_name_base =
-          blob_file_name_base.substr(0,
-                                     blob_file_name_base.length()-11);
-      blob_minima_file_name = blob_file_name_base;
-    }
-    if ((blob_maxima_file_name != "") &&
-        (score_upper_bound == std::numeric_limits<float>::infinity()))
-    {
-      // If the user is not interested in local minima, then we only
-      // need to create one file (for the maxima, as opposed to a separate
-      // file for both minima and maxima).  In that case, remove the
-      // ".maxima.txt" which was earlier automatically added to the end
-      // of that file's name.
-      string blob_file_name_base = blob_maxima_file_name;
-      if (EndsWith(blob_file_name_base, ".maxima.txt"))
-        blob_file_name_base =
-          blob_file_name_base.substr(0,
-                                     blob_file_name_base.length()-11);
-      blob_maxima_file_name = blob_file_name_base;
-    }
-  } //if (filter_type == BLOB)
+
+  // REMOVE THIS CRUFT.
+  //   (THIS CODE IS NO LONGER NECESSARY AFTER 2019-3-03)
+  //if (filter_type == BLOB) {
+  //  if ((blob_minima_file_name != "") &&
+  //      (score_lower_bound == -std::numeric_limits<float>::infinity()))
+  //  {
+  //    // If the user is not interested in local maxima, then we only
+  //    // need to create one file (for the minima, as opposed to a separate
+  //    // file for both minima and maxima).  In that case, remove the
+  //    // ".minima.txt" which was earlier automatically added to the end
+  //    // of that file's name.
+  //    string blob_file_name_base = blob_minima_file_name;
+  //    if (EndsWith(blob_file_name_base, ".minima.txt"))
+  //      blob_file_name_base =
+  //        blob_file_name_base.substr(0,
+  //                                   blob_file_name_base.length()-11);
+  //    blob_minima_file_name = blob_file_name_base;
+  //  }
+  //  if ((blob_maxima_file_name != "") &&
+  //      (score_upper_bound == std::numeric_limits<float>::infinity()))
+  //  {
+  //    // If the user is not interested in local minima, then we only
+  //    // need to create one file (for the maxima, as opposed to a separate
+  //    // file for both minima and maxima).  In that case, remove the
+  //    // ".maxima.txt" which was earlier automatically added to the end
+  //    // of that file's name.
+  //    string blob_file_name_base = blob_maxima_file_name;
+  //    if (EndsWith(blob_file_name_base, ".maxima.txt"))
+  //      blob_file_name_base =
+  //        blob_file_name_base.substr(0,
+  //                                   blob_file_name_base.length()-11);
+  //    blob_maxima_file_name = blob_file_name_base;
+  //  }
+  //} //if (filter_type == BLOB)
+
 
 
   if (filter_type == RIDGE_PLANAR) {

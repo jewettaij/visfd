@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-!!!!!!!!!! AS OF 2019-2-27, this is not ready yet !!!!!!!!!!
 
 test_blob_detection() {
   cd tests/
@@ -14,16 +13,20 @@ test_blob_detection() {
 
     assertTrue "-cl argument failed.  File test_blob_detection_dog_0_500_cl_-1.3_1.3.rec was not created" "[ -s test_blob_detection_dog_0_500_cl_-1.3_1.3.rec ]"
 
-    ../bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detection_dog_0_500.rec -blob test_blobs 160.0 280.0 1.01
+    ../bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detection_dog_0_500.rec -blob minima test_blobs.txt 160.0 280.0 1.01
 
     assertTrue "blob detection failed.  File test_blobs.minima.txt was not created" "[ -s test_blobs.minima.txt ]"
 
-    bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detection_dog_0_500.rec -discard-blobs test_blobs.minima.txt test_blobs_minima_sep_0.9.txt -blob-separation 0.9 -minima-threshold -90
+    ../bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detection.rec -discard-blobs test_blobs.txt test_blobs_minima_sep_0.9.txt -blob-separation 0.9 -minima-threshold -80
 
+    assertTrue "non-max suppression failed.  File test_blobs_minima_sep_0.9.txt was not created" "[ -s test_blobs_minima_sep_0.9.txt ]"
+
+    ../bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detection.rec -out test_blob_detection_results.rec -spheres test_blobs_minima_sep_0.9.txt -sphere-shell-ratio 1 -sphere-background-scale 0.1 -sphere-radii 20.0 
     
-    THRESH=-55
+    assertTrue "visualization failed.  File test_blob_detection_results.rec was not created" "[ -s test_blob_detection_results.rec ]"
     
-   rm -rf test_image_fluct.rec
+    rm -rf test_blob_detection_dog_0_500.rec test_blob_detection_dog_0_500_cl_-1.3_1.3.rec test_blobs*.txt test_blob_detection_results.rec
+
   cd ../
 }
 
