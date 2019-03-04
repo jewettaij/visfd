@@ -53,25 +53,54 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
 filter_mrc -in tomogram.rec \
   -out membranes_tv.rec \
-  -planar 60.0 -planar-best 0.08 \
+  -planar 60.0 -planar-best 0.06 \
   -planar-tv 5.0 -planar-tv-angle-exponent 4
 ```
 
-Note: The computation time will be roughly proportional to the "-planar-best"
-      argument which ranges from 0 to 1.
-      (If the resulting membranes stored in the "membrane_tv.rec" file
-      are missing or are incomplete, then increase this number and try again.)
+Note: The computation time will be roughly proportional to the image size
+      and the "-planar-best" argument (which ranges from 0 to 1).
+      Try this on a small image first. (See example 3 below)
 
 ### Example 2
 
+Detect all dark blobs ("minima") between 200 and 280 Angstroms in width.
+This corresponds (approximately) to objects which are the size of ribosomes.
+
+
+```
+filter_mrc -in tomogram.rec \
+  -blob minima tomogram_blobs.txt 200.0 280.0 1.01
+
+# Now discard the faint, noisy, or overlapping blobs.
+
+filter_mrc -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
+  -minima-threshold -70 \
+  -blob-separation 0.8
+
+# Finally, display the remaining blobs we want to keep:
+
+filter_mrc -in tomogram.rec \
+  -out tomogram_ribosomes.rec \
+  -spheres tomogram_ribosomes.txt
+```
+
+Note: All of these parameters make reasonable defaults for ribosome detection
+      except the "*-minima-thresold*" parameter ("-70" in the example).
+      It must be chosen carefully because it will vary from image to image.
+      (Strategies for choosing this parameter are discussed below.)
+
+
+
+### Example 3
+
 Find the **largest membrane** in an image,
-and **generate a closed surface**.
+and **generate a closed surface** for that membrane.
 (This example requires
  [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon) and
  [*meshlab*](http://www.meshlab.net).)
-
-*(WARNING: Experimental feature.
-  These arguments could change in the future. -andrew 2019-3-04)*
+**WARNING: Experimental.**
+*(This might not work, and these arguments could change in the future.
+  -andrew 2019-3-04)*
 
 ```
 filter_mrc -in tomogram.rec \
@@ -81,41 +110,16 @@ filter_mrc -in tomogram.rec \
   -connect 1.0e+09 -cts 0.707 -ctn 0.707 -cvn 0.707 -cvs 0.707 \
   -select-cluster 1 -planar-normals-file largest_membrane_pointcloud.ply
 
-PoissonRecon --in largest_membrane.ply --out largest_membrane.ply --depth 8
+PoissonRecon --in largest_membrane_pointcloud.ply \
+  --out largest_membrane.ply --depth 8
 ```
 
 Note: This will generate a triangle-mesh file ("*largest_membrane.ply*")
       which can be imported into *meshlab* for smoothing and refinement.
-      If clustering was done correctly, and the edges of the membrane are
-      not too noisy, the resulting surface should be a closed surface.
-
-Note: All of these parameters make reasonably good defaults for membrane
+      All of these parameters make reasonably good defaults for membrane
       detection except the "*-connect*" parameter ("1.0e+09" in the example).
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
-
-### Example 3
-```
-# Detect all dark blobs ("minima") between 200 and 280 Angstroms in width:
-
-filter_mrc -w 19.2 \
-  -in tomogram.rec \
-  -blob minima tomogram_blobs.txt 200.0 280.0 1.01
-
-# Now discard the faint, noisy, or overlapping blobs:
-
-filter_mrc -w 19.2 \
-  -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
-  -minima-threshold -50 \
-  -blob-separation 0.8
-
-# Finally, display the remaining blobs we want to keep:
-
-filter_mrc -w 19.2 \
-  -in tomogram.rec \
-  -out tomogram_ribosomes.rec \
-  -spheres tomogram_ribosomes.txt
-```
 
 
 
@@ -136,6 +140,7 @@ using the "-out" argument:
 ```
    -out DESTINATION_FILE.mrc
 ```
+
 
 ### Voxel Width
 
@@ -335,6 +340,9 @@ faster by a factor which is roughly proportional to this number.
 The *fraction* parameter should lie in the range from 0 to 1.
 (Using *0.1* is a conservative choice, but you can often get away 
  with using lower values.)
+
+If the resulting membranes stored in the "membrane_tv.rec" file
+are missing or are incomplete, then increase this number and try again.
 
 ### -connect  *threshold*
 
