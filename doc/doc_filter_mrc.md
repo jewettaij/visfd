@@ -434,11 +434,13 @@ or omit them entirely since the default value of 0.707 works well in most cases
 (-andrew 2019-3-04).
 
 
-### -select-cluster  *which_cluster*
+### -select-cluster  *cluster-ID*
 ### -planar-orientations-file  *file_name*
 
 Once clustering is working, you can select one of the clusters using
-the "**-select-cluster** argument.
+the "**-select-cluster**" argument.
+(Cluster-IDs are assigned in reverse order according to their size, 
+ beginning with the largest cluster, which has ID $1$.)
 You can create a file which contains a list of voxels locations
 (for the voxels belonging to that cluster),
 as well as their planar orientations
