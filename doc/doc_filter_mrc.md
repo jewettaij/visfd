@@ -72,7 +72,7 @@ Note: The computation time will be roughly proportional to the "-planar-best"
 ```
 # Detect all dark blobs ("minima") between 200 and 280 Angstroms in width:
 
-#### (WARNING: This protocol uses masking, which does not yet work as of 3/02) ####
+#### (WARNING: This protocol uses *-mask*, which does not yet work as of 3/03) ####
 
 filter_mrc -w 19.2 \
   -in tomogram.rec \
