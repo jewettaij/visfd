@@ -49,19 +49,13 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
 ### Example 1
 ```
-# Detect membranes using tensor voting (target thickness ≈ 65.0 Angstroms)
+# Detect membranes using tensor voting (target thickness ≈ 60.0 Angstroms)
 
-filter_mrc -w 19.2 \
-  -in tomogram.rec \
-  -out membrane_tv.rec \
+filter_mrc -in tomogram.rec \
+  -out membranes_tv.rec \
   -planar 60.0 -planar-best 0.08 \
   -planar-tv 5.0 -planar-tv-angle-exponent 4
 ```
-
-Note: This will detect membranes whose width is approximately in the range
-      of "60.0" (Angstroms).  It will not detect the boundaries of
-      solid objects, nor will it detect thicker membranes
-      (such as gram-positive bacterial cell walls).
 
 Note: The computation time will be roughly proportional to the "-planar-best"
       argument which ranges from 0 to 1.
@@ -69,6 +63,38 @@ Note: The computation time will be roughly proportional to the "-planar-best"
       are missing or are incomplete, then increase this number and try again.)
 
 ### Example 2
+
+Find the **largest membrane** in an image,
+and **generate a closed surface**.
+(This example requires
+ [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon) and
+ [*meshlab*](http://www.meshlab.net).)
+
+*(WARNING: Experimental feature.
+  These arguments could change in the future. -andrew 2019-3-04)*
+
+```
+filter_mrc -in tomogram.rec \
+  -out membranes_tv_clusters.rec \
+  -planar 60.0 -planar-best 0.08 \
+  -planar-tv 5.0 -planar-tv-angle-exponent 4 \
+  -connect 1.0e+09 -cts 0.707 -ctn 0.707 -cvn 0.707 -cvs 0.707 \
+  -select-cluster 1 -planar-normals-file largest_membrane_pointcloud.ply
+
+PoissonRecon --in largest_membrane.ply --out largest_membrane.ply --depth 8
+```
+
+Note: This will generate a triangle-mesh file ("*largest_membrane.ply*")
+      which can be imported into *meshlab* for smoothing and refinement.
+      If clustering was done correctly, and the edges of the membrane are
+      not too noisy, the resulting surface should be a closed surface.
+
+Note: All of these parameters make reasonably good defaults for membrane
+      detection except the "*-connect*" parameter ("1.0e+09" in the example).
+      It must be chosen carefully because it will vary from image to image.
+      (Strategies for choosing this parameter are discussed below.)
+
+### Example 3
 ```
 # Detect all dark blobs ("minima") between 200 and 280 Angstroms in width:
 
@@ -197,6 +223,12 @@ The "**-planar**" and "**-planar-tv**" filters are used to detect thin, membrane
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 and 
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf), respectively.
+Voxels belonging to different membranes can be grouped into different clusters
+using the "**-connect**" argument.
+Voxels belonging to the same membrane can be analyzed and their orientations
+can be saved to a file in order to repair holes and perform further analysis
+using the "**-planar-orientations-file**" argument.
+
 
 
 
@@ -304,6 +336,114 @@ The *fraction* parameter should lie in the range from 0 to 1.
 (Using *0.1* is a conservative choice, but you can often get away 
  with using lower values.)
 
+### -connect  *threshold*
+
+After membrane detection is performed, 
+voxels from different membranes can be grouped into different clusters
+using the "**-connect**" argument.
+Nearby ridge-like (ie membrane-like) voxels of similar orientation
+can be grouped into connected islands.
+If the *threshold* parameter is chosen carefully, then these
+different islands will hopefully correspond to different objects
+(eg. membranes) in the original image.
+The "*threshold*" parameter determines how "*membrane-like*"
+a voxel must be in order for it to be classsified as a membrane.
+It will vary from image to image it must be chosen carefully.
+
+#### Strategies for determining the -connect *threshold* parameter
+
+      To do choose the *threshold* parameter, 
+      run membrane-detection (for example using "-planar" and "-planar-tv")
+      once in advance without the "-connect" argument
+      (as we did in the membrane-detection example).
+      Open the file created during that step
+      (eg. "membranes_tv.rec") in IMOD.
+      Find a place in the image where the saliency (brightnees)
+      of the membrane you are interested in is weak.
+      Click on voxels located near the weakest point (a.k.a. "junction point",
+      or "saddle point") between two different bright blobs
+      corresponding to the *same* surface you are interested in.
+      These two islands will not be joined unless the *-connect* argument
+      is less than the weakest link connecting these two islands.
+      (and even then, they might not be joined 
+       if the voxel orientations are dissimilar.)
+      Select "Edit"->"Point"->"Value" menu option in IMOD to
+      see the "saliency" (brightness) of that voxel.
+      Do this several times in different places near the junction
+      write down the largest "saliency" number.
+      Then reduce this number by 20% (ie. multiply it by 0.8).
+      This makes a good first guess for the "*-connect*" parameter.
+
+      After using the "*-connect*" argument you can can 
+      open the REC/MRC file we created
+      (eg "*membranes_tv_clusters.rec*")
+      in IMOD, and click on different voxels (using "Edit"->"Point"->"Value")
+      to see whether the voxels were clustered correctly into the same object.
+      The voxel brightness values in that image should be integers
+      indicating which cluster they belong to
+      (reverse-sorted by cluster size, starting at 1).
+
+      If some clusters are too big, you can either increase the *threshold*
+      value, *or* you can alter increase angular sensitivity by increasing 
+      the *-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9.
+      (See below.)
+
+      Because it might take several tries, and membrane detection is slow,
+      it is a bad idea to try this on a full-sized tomogram image.
+      Instead try this on one or more small cropped versions of the image
+      near the junction points of interest.
+      (You can crop images either by using IMOD, 
+       or by using the "crop_mrc" program distributed with *visfd*.)
+
+      Make sure clustering was successful *before* attempting to
+      close holes in the surface using *PoissonRecon*.
+
+
+*(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments 
+  currently have no effect unless the "-planar" argument was also supplied.
+  -andrew 2019-3-04)*
+
+### -cts *threshold*
+### -ctn *threshold*
+### -cvs *threshold*
+### -cvn *threshold*
+
+The *-cts*, *-ctn*, *-cvs*, *-cvn* arguments determine how similar the 
+orientations of each voxel must be in order for a pair of neighboring voxels
+to be merged into the same cluster (ie. the same membrane or same filament).
+Threshold values in the range from 0 to 1 are supported.
+A *-threshold* value of 0.707 ≈ cos(45°) and corresonds to a
+45 degree difference between orientations of neighboring voxels.
+In that case, neighboring voxels pointing in directions which 
+differ by more than 45°
+will be assigned to different clusters (membranes).
+This is the default behavior.  (-andrew 2019-3-04)
+
+Most of the time, *-cts*, *-ctn*, *-cvs*, *-cvn* arguments can be omitted.
+The difference in meaning between these 4 arguments will be ellaborated on
+in the future.  For now it is safe to set them all equal to the same value,
+or omit them entirely since the default value of 0.707 works well in most cases
+(-andrew 2019-3-04).
+
+
+### -select-cluster  *which_cluster*
+### -planar-orientations-file  *file_name*
+
+Once clustering is working, you can select one of the clusters using
+the "**-select-cluster** argument.
+You can create a file which contains a list of voxels locations
+(for the voxels belonging to that cluster),
+as well as their planar orientations
+using the "**-planar-orientations-file**".
+The resulting file will be in .PLY format.
+This oriented point-cloud file can be used for further processing
+(for example for hole-repair using the "PoissonRecon" program).
+
+Note: Voxel coordinates in the point-cloud file are expressed
+in physical units (ie Angstroms), not voxels,
+Consequently they are not integers (unless the "-w 1" argument was used).
+
+
 
 ### **-find-minima**, "**-find-maxima**"
 
@@ -386,7 +526,6 @@ The "**-sphere-radius** argument allows you to assign a radius to each minima
 if a pair of minima (or maxima) lie within the sum of their
 radii times ratio (*2\*radius\*ratio*), 
 then the poorer scoring minima will be discarded.
-
 
 
 

@@ -2041,7 +2041,8 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if (vArgs[i] == "-connect-saliency")
+    else if ((vArgs[i] == "-connect") ||
+             (vArgs[i] == "-connect-saliency"))
     {
       cluster_connected_voxels = true;
       try {
@@ -2057,7 +2058,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-connect-vector-saliency")
+    else if ((vArgs[i] == "-connect-vector-saliency") ||
+             (vArgs[i] == "-cvs"))
     {
       cluster_connected_voxels = true;
       try {
@@ -2073,7 +2075,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-connect-vector-neighbor")
+    else if ((vArgs[i] == "-connect-vector-neighbor") ||
+             (vArgs[i] == "-cvn"))
     {
       cluster_connected_voxels = true;
       try {
@@ -2089,7 +2092,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-connect-tensor-saliency")
+    else if ((vArgs[i] == "-connect-tensor-saliency") ||
+             (vArgs[i] == "-cts"))
     {
       cluster_connected_voxels = true;
       try {
@@ -2105,7 +2109,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-connect-tensor-neighbor")
+    else if ((vArgs[i] == "-connect-tensor-neighbor") ||
+             (vArgs[i] == "-ctn"))
     {
       cluster_connected_voxels = true;
       try {
@@ -2421,6 +2426,14 @@ Settings::ParseArgs(vector<string>& vArgs)
     planar_tv_sigma *= sigma;
   }
 
+  if ((connect_threshold_saliency != std::numeric_limits<float>::infinity()) &&
+      (filter_type != RIDGE_PLANAR))
+  {
+    throw InputErr("Error: The \"-connect\" argument is currently only supported when used\n"
+                   "       simultaneously with the \"-planar\" (and \"planar-tv\") arguments.\n"
+                   "           (This may change in the future.  -andrew 2019-3-04)\n"
+                   "       You can use the \"-watershed\" argument instead.  (See documentation.)\n");
+  }
 } // Settings::ParseArgs()
 
 
