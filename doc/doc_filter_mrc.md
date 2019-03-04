@@ -72,8 +72,6 @@ Note: The computation time will be roughly proportional to the "-planar-best"
 ```
 # Detect all dark blobs ("minima") between 200 and 280 Angstroms in width:
 
-#### (WARNING: This example uses *-mask*, which does not yet work as of 3/03) ####
-
 filter_mrc -w 19.2 \
   -in tomogram.rec \
   -blob minima tomogram_blobs.txt 200.0 280.0 1.01
