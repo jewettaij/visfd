@@ -407,26 +407,40 @@ will generated and saved in a file, using the method described in:
 Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 
 The "**-blob**", "**-blob-r**" and "**-blob-s**" filters are followed 
-by 4 arguments (whose meaning depends on the filter selected):
+by 5 arguments (whose meaning depends on the filter selected):
 ```
-  -blob    file_name  d_min  d_max  gratio
-  -blob-s  file_name  r_min  r_max  gratio
-  -blob-r  file_name  σ_min  σ_max  gratio
+  -blob   type  file_name  d_min  d_max  gratio
+  -blob-s type  file_name  r_min  r_max  gratio
+  -blob-r type  file_name  σ_min  σ_max  gratio
 ```
-If "**-blob**" is selected, then it should be followed by the range of diameters
-of the objects you wish to detect (**d_min** and **d_max**).  (Simlarly, 
+The "**type**" argument must be either "*minima*", "*maxima*", or "*all*".
+*(It's meaning is explained in detail below.
+  For nearly all CryoEM images, it is safe to use "minima".)*
+
+The "**file_name**" argument is the name of a text file which will store
+a list of detected blobs.  The format of this file is explained below.
+
+If "**-blob**" is selected, then the **d_min** and **d_max** parameters
+(3rd and 4th parameters), specify a range of diameters
+of the objects that you wish to detect.
+(Simlarly, 
 "--blob-r" allows the user to specify blob sizes in terms of their radii.)
-A LoG filter will be applied to the image using different Gaussians
-whose widths (σ) vary between "**σ_min**", and "**σ_max**"
-(which are equal to d_min/(2√3) and d_max/(2√3) respectively).
-(If you prefer, you can use the "*-blob-s*" argument to directly specify the
- range of Gaussian widths you wish to use"*σ_min*", and "*σ_max*".)
-Either way, each Gaussian will be wider than the previous Gaussian by a
-fraction (no larger than) "**gratio**", a number which should be > 1.
-(**1.01** is a safe choice,
+Either way, a LoG filter will be applied to the image using a series of
+different Gaussians whose widths (σ) vary between "**σ_min**", and "**σ_max**".
+In this series, each successive Gaussian width (σ) will be larger than the
+previous one by a factor of (no larger than) "**gratio**",
+a number which should be > 1.
+(**1.01** is a safe choice for **gratio**,
  but you can speed up the calculation by increasing this parameter.
  Values as high as 1.1 are not uncommon.)
-"**file_name**" is the name of a file which will store the
+(Note that: *σ_min*, and *σ_max* are equal to *d_min/(2√3)* and *d_max/(2√3)*,
+ or *r_min/√3* and *r_max/√3*, respectively.
+ If you prefer, you can use the "*-blob-s*" argument to directly specify the
+ range of Gaussian widths you wish to use"*σ_min*", and "*σ_max*".)
+After applying the LoG filter, if a voxel in the image is a (scale-adjusted)
+local maxima (or minima) in *x,y,z,* and *σ*,
+*then* its location and size will be recorded in a file.
+"**file_name**" is the name of a file which will store these
 locations of all the blobs detected in the image
 as well as their sizes and scores (see below).
 These detected blobs are either local minima or maxima in
@@ -447,14 +461,28 @@ xM yM zM diameterM scoreM
 "**M**" is the number of blobs (maxima or minima) which were detected,
 On each line of that file,
 **x,y,z** are the coordinates for the blob's center,
-**size** is the size of the blob,
-(characterized either using either σ, radius, or diameter, as explained below),
+**diameter** is the diameter of the blob (which equals (2√3)σ),
 and **score** is the intensity of that voxel after
-a LoG filter of that size was applied to it.
-The list is ordered from high score to low score
-(for maxima, or low score to high score for minima).
+a (scale-adjusted) LoG filter of that size was applied to it.
+For *minima* type blobs, the list is ordered
+from low score (most negative) to high score score
+For *maxima* type blobs, the list is ordered from high score to low score.
 These blobs can be visualized using the "**-spheres**" argument (see below).
 
+#### Blob types
+
+The first argument indicates the **type** blob that the user wants to detect.
+(The **type** is the 1st argument following the "-blob" arument.)
+It must be one of the following choices:
+
+|   type   | meaning |
+| -------- | ------- |
+| *minima* | detect dark blobs on a bright background |
+| *maxima* | detect bright blobs on a darker background |
+|  *all*   | detect both dark and bright blobs |
+
+Note: If **type** is set to *all*, then two different files will be generated
+whose names will end in ".minima.txt" and ".maxima.txt", respectively.
 
 
 #### Automatic disposal of blobs (non-max suppression)
