@@ -167,9 +167,9 @@ Settings::Settings() {
   #endif //#ifndef DISABLE_BOOTSTRAPPING
 
   #ifndef DISABLE_TEMPLATE_MATCHING
-  template_background_radius[0] -1.0;         //impossible value
-  template_background_radius[1] -1.0;         //impossible value
-  template_background_radius[2] -1.0;         //impossible value
+  template_background_radius[0] = -1.0;         //impossible value
+  template_background_radius[1] = -1.0;         //impossible value
+  template_background_radius[2] = -1.0;         //impossible value
   template_background_exponent = 2.0;         //default value
   //template_compare_exponent = 2.0;            //default value
   #endif //#ifndef DISABLE_TEMPLATE_MATCHING
@@ -2348,7 +2348,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         width_b[2] /= sqrt(2.0);
       } //if ((m_exp == 2.0) && (n_exp == 2.0))
       else
-        filter_type == DOGG;
+        filter_type = DOGG;
     } //if (exponents_set_by_user) {
   } //if ((filter_type == DOG) || (filter_type == DOGG))
 
@@ -2376,7 +2376,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[2] /= sqrt(2.0);// instead of exp(-(r/w)^2)
       } //if ((m_exp == 2.0) && (n_exp == 2.0))
       else
-        filter_type == TEMPLATE_GGAUSS;
+        filter_type = TEMPLATE_GGAUSS;
     } //if (exponents_set_by_user) {
   } //if ((filter_type == DOG) || (filter_type == DOGG))
 

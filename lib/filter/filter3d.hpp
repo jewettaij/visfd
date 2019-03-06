@@ -431,7 +431,7 @@ public:
 
           if (aaafMask) {
             Scalar mask_val = aaafMask[iz_jz][iy_jy][ix_jx];
-            if (mask_val = 0.0)
+            if (mask_val == 0.0)
               continue;
             filter_val *= mask_val;
           }
@@ -1131,13 +1131,15 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
   for (int d=0; d < 3; d++)
     aFilter[d] = GenFilterGauss1D(sigma[d], truncate_halfwidth[d]);
 
-  return ApplySeparable3D(image_size, 
-                          aaafSource,
-                          aaafDest,
-                          aaafMask,
-                          aFilter,
-                          normalize,
-                          pReportProgress);
+  Scalar A;
+  A = ApplySeparable3D(image_size, 
+                       aaafSource,
+                       aaafDest,
+                       aaafMask,
+                       aFilter,
+                       normalize,
+                       pReportProgress);
+  return A;
 
 } //ApplyGauss3D(sigma, truncate_halfwidth, ...)
 
@@ -1190,14 +1192,14 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
   int afTruncateHalfwidth[3] = {truncate_halfwidth,
                                 truncate_halfwidth,
                                 truncate_halfwidth};
-  ApplyGauss3D(image_size,
-               aaafSource,
-               aaafDest,
-               aaafMask,
-               afSigma,
-               afTruncateHalfwidth,
-               normalize,
-               pReportProgress);
+  return ApplyGauss3D(image_size,
+                      aaafSource,
+                      aaafDest,
+                      aaafMask,
+                      afSigma,
+                      afTruncateHalfwidth,
+                      normalize,
+                      pReportProgress);
 }
 
 
@@ -6326,12 +6328,12 @@ private:
           //   : \
           // ->:  \<- theta
           //   :   \
-          //   :    \ 
+          //   :    \
           //   :     \
           //   :      \
-          //   :       \  
+          //   :       \
           //   ^        \
-          //   |         \ 
+          //   |         \
           // n |          \
           //   |        .-' r
           //   |,,..--''
@@ -6500,12 +6502,12 @@ private:
           //   : \
           // ->:  \<- theta
           //   :   \
-          //   :    \ 
+          //   :    \
           //   :     \
           //   :      \
-          //   :       \  
+          //   :       \
           //   ^        \
-          //   |         \ 
+          //   |         \
           // n |          \
           //   |        .-' r
           //   |,,..--''

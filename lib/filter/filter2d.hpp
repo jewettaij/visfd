@@ -172,7 +172,7 @@ public:
 
             if (aafMask) {
               Scalar mask_val = aafMask[iy_jy][ix_jx];
-              if (mask_val = 0.0)
+              if (mask_val == 0.0)
                 continue;
               filter_val *= mask_val;
             }

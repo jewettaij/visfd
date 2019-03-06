@@ -104,7 +104,7 @@ Number Threshold2(Number intensity,
 ///
 /// @code
 ///
-///     /|\                                                   
+///     /|\
 /// outB |_____                                       _______\ input
 ///      |     `-._                               _.-'       / intensity
 ///      |         `-._                       _,-'

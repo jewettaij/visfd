@@ -127,14 +127,19 @@ however as of 2019-2-27, some commits still (temporarilly) break everything.
 ## Linux:
 
     cd src
-    source setup_gcc.sh
+    source setup_clang.sh
     make
 
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
 
+
+Note: As of 2019-3-06, we have had *much* better results using the
+      **CLANG** compiler compared to GCC on linux.
+
+
 ## Windows:
 
-   It is recommended that you install the BASH shell environment on your computer, along with *gcc* and *make*.  (If you decide to use a different compiler, modify the "setup_gcc.sh" file accordingly.)  There are several ways to do that.
+   It is recommended that you install the BASH shell environment on your computer, along with *clang* and *make*.  (If you decide to use a different compiler, modify the "setup_clang.sh" file accordingly.)  There are several ways to do that.
 
    Perhaps the easiest way is to install [virtualbox](https://www.virtualbox.org) in windows together with a linux distribution with a lightweight desktop, such as [xubuntu](https://xubuntu.org).  Alternatively, if you are using Windows 10 or later, you can try installing the "Windows Subsystem for Linux (WSL)", as explained
 [here](https://solarianprogrammer.com/2017/04/15/install-wsl-windows-subsystem-for-linux/)
@@ -148,22 +153,22 @@ Otherwise, if you are using an older version of windows, try installing
 ## Apple Mac:
 
     cd src
-    source setup_gcc_serial.sh
+    source setup_clang_serial.sh
     make
 
 NOTE: This will compile the (slow) serial version.
 To take advantage of multicore processors, you will have to
-[install support for OpenMP](https://stackoverflow.com/questions/29057437/compile-openmp-programs-with-gcc-compiler-on-os-x-yosemite)
+[install support for OpenMP](https://stackoverflow.com/questions/29057437/compile-openmp-programs-with-clang-compiler-on-os-x-yosemite)
 
 *The following proceedure has not been tested:*
 
 Apparently, one way to do this is to install homebrew, and then use:
 
-    brew install gcc
+    brew install clang
 
 Homebrew typically installs a version of g++ with an alternate name, such as
 "g++-8" (for example).
-You can either edit the "setup_gcc_serial.sh"
+You can either edit the "setup_clang_serial.sh"
 file and replace "g++" with "g++-8" beforehand,
 ***...or*** 
 add the following line:
@@ -174,12 +179,12 @@ add the following line:
 Then use:
 
     cd src
-    source setup_gcc.sh
+    source setup_clang.sh
     make
 
 Alternatively, if you prefer to avoid homebrew, it is possible to
 [use OpenMP with the clang compiler.](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/)
-(You will need to modify the "setup_gcc_serial.sh" file accordingly.
+(You will need to modify the "setup_clang_serial.sh" file accordingly.
  One day, perhaps I will learn how to make this less painful.)
 
 

@@ -12,7 +12,7 @@ matrix:
       #install:
       #  - sudo apt-get install -qq cppcheck
       script:
-        - source for_debugging_and_profiling/setup_gcc_linux_dbg.sh
+        - source alterate_compiler_settings/for_debugging_and_profiling/setup_gcc_linux_dbg.sh
         - make clean
         - make
         - cd tests
@@ -30,7 +30,7 @@ matrix:
         # Install "shunit2"
         - git clone https://github.com/kward/shunit2 shunit2
       script:
-        - source for_debugging_and_profiling/setup_gcc_linux_dbg.sh
+        - source setup_clang.sh
         - make clean
         - make
         - bash tests/test_fluctuation_filter.sh
