@@ -360,51 +360,51 @@ It will vary from image to image it must be chosen carefully.
 
 #### Strategies for determining the -connect *threshold* parameter
 
-      To do choose the *threshold* parameter, 
-      run membrane-detection (for example using "-planar" and "-planar-tv")
-      once in advance without the "-connect" argument
-      (as we did in the membrane-detection example).
-      Open the file created during that step
-      (eg. "membranes_tv.rec") in IMOD.
-      Find a place in the image where the saliency (brightnees)
-      of the membrane you are interested in is weak.
-      Click on voxels located near the weakest point (a.k.a. "junction point",
-      or "saddle point") between two different bright blobs
-      corresponding to the *same* surface you are interested in.
-      These two islands will not be joined unless the *-connect* argument
-      is less than the weakest link connecting these two islands.
-      (and even then, they might not be joined 
-       if the voxel orientations are dissimilar.)
-      Select "Edit"->"Point"->"Value" menu option in IMOD to
-      see the "saliency" (brightness) of that voxel.
-      Do this several times in different places near the junction
-      write down the largest "saliency" number.
-      Then reduce this number by 20% (ie. multiply it by 0.8).
-      This makes a good first guess for the "*-connect*" parameter.
+To do that, choose the *threshold* parameter, 
+run membrane-detection (for example using "-planar" and "-planar-tv")
+once in advance without the "-connect" argument
+(as we did in the membrane-detection example).
+Open the file created during that step
+(eg. "membranes_tv.rec") in IMOD.
+Find a place in the image where the saliency (brightnees)
+of the membrane you are interested in is weak.
+Click on voxels located near the weakest point (a.k.a. "junction point",
+or "saddle point") between two different bright blobs
+corresponding to the *same* surface you are interested in.
+These two islands will not be joined unless the *-connect* argument
+is less than the weakest link connecting these two islands.
+(and even then, they might not be joined 
+ if the voxel orientations are dissimilar.)
+Select "Edit"->"Point"->"Value" menu option in IMOD to
+see the "saliency" (brightness) of that voxel.
+Do this several times in different places near the junction
+write down the largest "saliency" number.
+Then reduce this number by 20% (ie. multiply it by 0.8).
+This makes a good first guess for the "*-connect*" parameter.
 
-      After using the "*-connect*" argument you can can 
-      open the REC/MRC file we created
-      (eg "*membranes_tv_clusters.rec*")
-      in IMOD, and click on different voxels (using "Edit"->"Point"->"Value")
-      to see whether the voxels were clustered correctly into the same object.
-      The voxel brightness values in that image should be integers
-      indicating which cluster they belong to
-      (reverse-sorted by cluster size, starting at 1).
+After using the "*-connect*" argument you can can 
+open the REC/MRC file we created
+(eg "*membranes_tv_clusters.rec*")
+in IMOD, and click on different voxels (using "Edit"->"Point"->"Value")
+to see whether the voxels were clustered correctly into the same object.
+The voxel brightness values in that image should be integers
+indicating which cluster they belong to
+(reverse-sorted by cluster size, starting at 1).
 
-      If some clusters are too big, you can either increase the *threshold*
-      value, *or* you can alter increase angular sensitivity by increasing 
-      the *-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9.
-      (See below.)
+If some clusters are too big, you can either increase the *threshold*
+value, *or* you can alter increase angular sensitivity by increasing 
+the *-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9.
+(See below.)
 
-      Because it might take several tries, and membrane detection is slow,
-      it is a bad idea to try this on a full-sized tomogram image.
-      Instead try this on one or more small cropped versions of the image
-      near the junction points of interest.
-      (You can crop images either by using IMOD, 
-       or by using the "crop_mrc" program distributed with *visfd*.)
+Because it might take several tries, and membrane detection is slow,
+it is a bad idea to try this on a full-sized tomogram image.
+Instead try this on one or more small cropped versions of the image
+near the junction points of interest.
+(You can crop images either by using IMOD, 
+ or by using the "crop_mrc" program distributed with *visfd*.)
 
-      Make sure clustering was successful *before* attempting to
-      close holes in the surface using *PoissonRecon*.
+Make sure clustering was successful *before* attempting to
+close holes in the surface using *PoissonRecon*.
 
 
 *(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments 

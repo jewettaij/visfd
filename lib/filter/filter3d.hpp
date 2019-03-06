@@ -2967,6 +2967,8 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
             &aiExtrema,
             &aaaiExtrema);
 
+  delete [] neighbors;
+
 } // _FindLocalExtrema3D()
 
 
@@ -3947,6 +3949,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   int voxel_discarded_due_to_polarity_iz = -1; // an impossible value
   #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
  
+  //*pReportProgress << "=================== GOT HERE ======================" <<endl;  // DELETEME
 
 
   // Loop over all the voxels on the periphery
@@ -3972,6 +3975,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     int iy = std::get<2>(p)[1]; //   "      "
     int iz = std::get<2>(p)[2]; //   "      "
 
+    //*pReportProgress << "=========== (ix,iy,iz) = ("<<ix<<","<<iy<<","<<iz<<") ==========" <<endl;  // DELETEME
+    
     // Should we ignore this voxel?
 
     if (i_score > threshold_saliency * SIGN_FACTOR) {
@@ -4042,6 +4047,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         Scalar fs = FrobeniusNormSym3(saliency_hessian);
         Scalar ft = FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]);
 
+        //*pReportProgress << "=========== tp,fs,ft = ("<<tp<<","<<fs<<","<<ft<<") ==========" <<endl;  // DELETEME
+
         if (tp < threshold_tensor_saliency * fs * ft) {
           discard_this_voxel = true;
         }
@@ -4068,6 +4075,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
       if (aaaafVector) {
         bool vect_threshold_exceeded = false;
+
         if (consider_dot_product_sign) {
           if (DotProduct3(s_eivects[0], //principal (first) eivenvector
                           aaaafVector[iz][iy][ix])
@@ -4111,7 +4119,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     aaaiDest[iz][iy][ix] = i_which_basin;
     // (Note: This will prevent the voxel from being visited again.)
 
-    
 
     if (pReportProgress) {
       // Every time the amount of progress increases by 1%, inform the user:
@@ -4718,6 +4725,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     //       integers above 1e+06 (I forget the exact number.)
   }
   #endif // #ifndef NDEBUG
+
+  delete [] neighbors;
 
 } // ClusterConnected()
 
