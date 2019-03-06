@@ -18,7 +18,7 @@ matrix:
         - cd tests
         - ../bin/filter_mrc/filter_mrc -i test_image_membrane.rec -mask-rect 1 14 2 14 2 14 -out test_image_fluct.rec -fluct 60
         #- cppcheck --quiet --error-exitcode=1   #(Am I invoking cppcheck correctly?)
-        - ../bin/filter_mrc/filter_mrc -w 19.2 -w 19.2 -i test_image_membrane.rec -out test_image_membrane_planar_55_tv_4_4_clust_1e+09_0.707_0.707_0.707_0.707.rec -planar 55 -planar-tv 4 -planar-tv-angle-exponent 4 -connect-vector-saliency 0.707 -connect-vector-neighbor 0.707 -connect-tensor-saliency 0.707 -connect-tensor-neighbor 0.707 -connect-saliency 1e+09 -planar-normals-file test_image_membrane_planar_55_tv_4_4_clust_1e+09_0.707_0.707_0.707_0.707.ply -select-cluster 1
+        - ../bin/filter_mrc/filter_mrc -w 19.2 -w 19.2 -i test_image_membrane.rec -out test_image_membrane_planar_55_tv_4_4_clust_1e+09_0.707_0.707_0.707_0.707.rec -planar 55 -planar-tv 4 -planar-tv-angle-exponent 4 -connect-vector-saliency 0.707 -connect-vector-neighbor 0.707 -connect-tensor-saliency 0.707 -connect-tensor-neighbor 0.707 -connect 1e+09 -planar-normals-file test_image_membrane_planar_55_tv_4_4_clust_1e+09_0.707_0.707_0.707_0.707.ply -select-cluster 1
         #- cppcheck --quiet --error-exitcode=1   #(Am I invoking cppcheck correctly?)
         - cd ../
 
