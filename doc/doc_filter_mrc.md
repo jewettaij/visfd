@@ -118,18 +118,6 @@ Note: This will generate a triangle-mesh file ("*largest_membrane.ply*")
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
 
-**WARNING: EXPERIMENTAL.**
-THIS EXAMPLE CURRENTLY ONLY WORKS WELL IF THE CODE WAS COMPILED USING
-```   
-    source for_debugging_and_profiling/setup_gcc_linux_dbg.sh
-    make clean
-    make
-```
-
-(Unfortunately compiling it this way slows down the code by over 10x.
- Trying to solve this error.  -andrew 2019-3-06)*
-
-
 
 
 ## Arguments:
