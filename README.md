@@ -134,7 +134,7 @@ however as of 2019-2-27, some commits still (temporarilly) break everything.
 
 ## Windows:
 
-   It is recommended that you install the BASH shell environment on your computer, along with *gcc* and *make*.  (If you decide to use a different compiler, modify the "setup_gcc_linux.sh" file accordingly.)  There are several ways to do that.
+   It is recommended that you install the BASH shell environment on your computer, along with *gcc* and *make*.  (If you decide to use a different compiler, modify the "setup_gcc.sh" file accordingly.)  There are several ways to do that.
 
    Perhaps the easiest way is to install [virtualbox](https://www.virtualbox.org) in windows together with a linux distribution with a lightweight desktop, such as [xubuntu](https://xubuntu.org).  Alternatively, if you are using Windows 10 or later, you can try installing the "Windows Subsystem for Linux (WSL)", as explained
 [here](https://solarianprogrammer.com/2017/04/15/install-wsl-windows-subsystem-for-linux/)
