@@ -4,9 +4,7 @@ export ANSI_C="gcc"
 export ANSI_CPP="g++"
 export L_COMP="ar rs"
 
-export LFLAGS=""
-# (Note: Static linking is recommended, but I could not get it to
-#        work on the mac version of the gcc compiler (as of 2008))
+export LFLAGS="-static"          
 
 # Note: I get strange behavior ("Heisenbug") if I use optimizations (-O3)
 # COMMENTING OUT:

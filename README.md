@@ -127,7 +127,7 @@ however as of 2019-2-27, some commits still (temporarilly) break everything.
 ## Linux:
 
     cd src
-    source setup_gcc_linux.sh
+    source setup_gcc.sh
     make
 
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
@@ -148,7 +148,7 @@ Otherwise, if you are using an older version of windows, try installing
 ## Apple Mac:
 
     cd src
-    source setup_gcc_mac_serial.sh
+    source setup_gcc_serial.sh
     make
 
 NOTE: This will compile the (slow) serial version.
@@ -163,7 +163,7 @@ Apparently, one way to do this is to install homebrew, and then use:
 
 Homebrew typically installs a version of g++ with an alternate name, such as
 "g++-8" (for example).
-You can either edit the "setup_gcc_mac_serial.sh"
+You can either edit the "setup_gcc_serial.sh"
 file and replace "g++" with "g++-8" beforehand,
 ***...or*** 
 add the following line:
@@ -174,12 +174,12 @@ add the following line:
 Then use:
 
     cd src
-    source setup_gcc_mac.sh
+    source setup_gcc.sh
     make
 
 Alternatively, if you prefer to avoid homebrew, it is possible to
 [use OpenMP with the clang compiler.](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/)
-(You will need to modify the "setup_gcc_mac_serial.sh" file accordingly.
+(You will need to modify the "setup_gcc_serial.sh" file accordingly.
  One day, perhaps I will learn how to make this less painful.)
 
 
