@@ -12,7 +12,7 @@ matrix:
       #install:
       #  - sudo apt-get install -qq cppcheck
       script:
-        - source alterate_compiler_settings/for_debugging_and_profiling/setup_gcc_linux_dbg.sh
+        - source alternate_compiler_settings/for_debugging_and_profiling/setup_gcc_dbg.sh
         - make clean
         - make
         - cd tests
@@ -20,10 +20,15 @@ matrix:
         #- cppcheck --quiet --error-exitcode=1   #(Am I invoking cppcheck correctly?)
         - ../bin/filter_mrc/filter_mrc -w 19.2 -w 19.2 -i test_image_membrane.rec -out test_image_membrane_planar_55_tv_4_4_clust_1e+09_0.707_0.707_0.707_0.707.rec -planar 55 -planar-tv 4 -planar-tv-angle-exponent 4 -connect-vector-saliency 0.707 -connect-vector-neighbor 0.707 -connect-tensor-saliency 0.707 -connect-tensor-neighbor 0.707 -connect 1e+09 -planar-normals-file test_image_membrane_planar_55_tv_4_4_clust_1e+09_0.707_0.707_0.707_0.707.ply -select-cluster 1
         #- cppcheck --quiet --error-exitcode=1   #(Am I invoking cppcheck correctly?)
+
+        - rm -f test_image_fluct.rec test_image_membrane_planar_55*
         - cd ../
 
     - language: bash
+      compiler: clang
       dist: xenial
+      before_install:
+        - export LD_LIBRARY_PATH=/usr/local/clang/lib:$LD_LIBRARY_PATH
       #install:
       #  - sudo apt-get install -qq cppcheck
       before_script:

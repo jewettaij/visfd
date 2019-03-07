@@ -4,7 +4,7 @@ export ANSI_C="gcc"
 export ANSI_CPP="g++"
 export L_COMP="ar rs"
 
-export LFLAGS="-static"          
+export LFLAGS=""  #-static
 
 # Note: I get strange behavior ("Heisenbug") if I use optimizations (-O3)
 #       The problem occurs in the "ClusterConnected()" function
