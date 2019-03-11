@@ -275,11 +275,6 @@ public:
     //for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
     //  for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
     //    aafH[iy][ix] = source.aafH[iy][ix];
-    // -- Use memcpy() instead: --
-    //memcpy(afH,
-    //       source.afH,
-    //       (array_size[0] * array_size[1])
-    //       *sizeof(Scalar));
     // -- Use std:copy() instead: --
     std::copy(source.afH,
               source.afH + (array_size[0] * array_size[1]),

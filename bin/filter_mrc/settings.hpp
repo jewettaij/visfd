@@ -197,6 +197,8 @@ class Settings {
   float connect_threshold_tensor_saliency;
   float connect_threshold_tensor_neighbor;
   size_t select_cluster;
+  string must_link_filename;
+  vector<vector<array<int, 3> > > must_link_constraints;
 
   // ---- parameters used by the ridge detector used for detecting surfaces ----
 

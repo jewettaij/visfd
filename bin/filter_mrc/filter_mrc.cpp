@@ -487,15 +487,16 @@ HandleVisualizeBlobs(Settings settings,
 
   assert(crds.size() == diameters.size());
   assert(crds.size() == scores.size());
+  size_t n_blobs = diameters.size();
 
   // Sometimes the user wants to display the decal with a particular brightness
   // We store that brightness inside the "scores[]" array
   if (! settings.sphere_decals_foreground_use_score)
-    for (size_t i=0; i < diameters.size(); i++)
+    for (size_t i=0; i < n_blobs; i++)
       scores[i] = settings.sphere_decals_foreground;
 
-  vector<float> shell_thicknesses(diameters.size());
-  for (size_t i=0; i < diameters.size(); i++) {
+  vector<float> shell_thicknesses(n_blobs);
+  for (size_t i=0; i < n_blobs; i++) {
     float diameter = diameters[i];
     float shell_thickness = settings.sphere_decals_shell_thickness;
     if (settings.sphere_decals_shell_thickness_is_ratio) {
@@ -1035,9 +1036,21 @@ HandleWatershed(Settings settings,
   vector<array<int, 3> > extrema_crds;
   vector<float> extrema_scores;
 
-   Watershed3D(tomo_in.header.nvoxels,
+  // Create a temporary array to store the basin membership for each voxel.
+  // Because the number or clusters could (conceivably) exceed 10^6, we
+  // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
+  ptrdiff_t *aiBasinId = NULL;
+  ptrdiff_t ***aaaiBasinId = NULL;
+  Alloc3D(tomo_in.header.nvoxels,
+          &aiBasinId,
+          &aaaiBasinId);
+  // (Later on we will copy the contents of aaaiBasinId into tomo_out.aaafI
+  //  which will be written to a file later.  This way the end-user can
+  //  view the results.)
+
+  Watershed3D(tomo_in.header.nvoxels,
               tomo_in.aaafI,
-              tomo_out.aaafI,
+              aaaiBasinId,
               mask.aaafI,
               settings.watershed_threshold,
               settings.watershed_use_minima,
@@ -1047,6 +1060,15 @@ HandleWatershed(Settings settings,
               &extrema_crds,
               &extrema_scores,
               &cerr);
+
+  for (int iz = 0; iz < image_size[2]; ++iz)
+    for (int iy = 0; iy < image_size[1]; ++iy)
+      for (int ix = 0; ix < image_size[0]; ++ix)
+        tomo_out.aaafI[iz][iy][ix] = aaaiBasinId[iz][iy][ix];
+
+  Dealloc3D(tomo_in.header.nvoxels,
+            &aiBasinId,
+            &aaaiBasinId);
 
   // Did the user supply a mask?
   // Watershed3D() intentionally does not modify voxels which lie 
@@ -1074,6 +1096,34 @@ HandleRidgeDetectorPlanar(Settings settings,
                           float voxel_width[3])
 {
   cerr << "filter_type = planar ridge detector\n";
+
+  vector<vector<array<int, 3> > > *pMustLinkConstraints = NULL;
+
+  if (settings.must_link_filename != "") {
+    ProcessLinkConstraints(settings.must_link_filename,
+                           settings.must_link_constraints,
+                           voxel_width);
+    if (settings.must_link_constraints.size() > 0)
+      pMustLinkConstraints = &settings.must_link_constraints;
+    //if (settings.must_link_constraints.size() > 0) {
+    //  cerr << "  Link constraints: \n";
+    //  for (size_t i = 0; i < must_link_constraints.size(); i++) {
+    //    cerr << "    set " << i+1 << ": ";
+    //    for (auto pLocation = must_link_constraints[i].begin();
+    //         pLocation != must_link_constraints[i].end();
+    //         pLocation++) {
+    //      cerr << "(";
+    //      for (int d = 0; d < 3; d++) {
+    //        cerr << (*pLocation)[d];
+    //        if (d+1 == 3)
+    //          cerr << ",";
+    //      }
+    //      cerr << ") ";
+    //    }
+    //    cerr << "\n";
+    //  }
+    //}
+  }
 
   int image_size[3];
   for (int d = 0; d < 3; d++)
@@ -1389,21 +1439,34 @@ HandleRidgeDetectorPlanar(Settings settings,
     vector<array<int, 3> > cluster_centers;
     vector<float> cluster_sizes;
     vector<float> cluster_saliencies;
+
+    // Create a temporary array to store the cluster membership for each voxel.
+    // Because the number or clusters could (conceivably) exceed 10^6, we
+    // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
+    ptrdiff_t *aiClusterId = NULL;
+    ptrdiff_t ***aaaiClusterId = NULL;
+    Alloc3D(tomo_in.header.nvoxels,
+            &aiClusterId,
+            &aaaiClusterId);
+    // (Later on we will copy the contents of aaaiClusterId into tomo_out.aaafI
+    //  which will be written to a file later.  This way the end-user can
+    //  view the results.)
+
     ClusterConnected(tomo_in.header.nvoxels, //image size
-                     tomo_in.aaafI,  //<-saliency
-                     tomo_out.aaafI, //<-which cluster does each voxel belong to?  (results will be stored here)
+                     tomo_in.aaafI, //<-saliency
+                     aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
                      mask.aaafI,
                      settings.connect_threshold_saliency,
-                     static_cast<float>(0.0), //this value is ignored, but it specifies the type of array we are using (eg float)
-                     true, //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
+                     static_cast<ptrdiff_t>(0), //this value is ignored, but it specifies the type of array we are using
+                     true,  //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
                      aaaafDirection,
                      settings.connect_threshold_vector_saliency,
                      settings.connect_threshold_vector_neighbor,
-                     false, //(eigenvector signs are arbitrary so ignore them)
+                     false, //eigenvector signs are arbitrary so ignore them
                      tmp_tensor.aaaafI,
                      settings.connect_threshold_tensor_saliency,
                      settings.connect_threshold_tensor_neighbor,
-                     true, // the tensor should be positive definite near the target
+                     true,  //the tensor should be positive definite near the target
                      1,
                      &cluster_centers,
                      &cluster_sizes,
@@ -1413,8 +1476,19 @@ HandleRidgeDetectorPlanar(Settings settings,
                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                      aaaafDirection,
                      #endif
+                     pMustLinkConstraints,
                      true, //(clusters begin at regions of high saliency)
                      &cerr);  //!< print progress to the user
+
+    // Now, copy the contents of aaaClusterId into tomo_out.aaafI
+    for (int iz = 0; iz < image_size[2]; ++iz)
+      for (int iy = 0; iy < image_size[1]; ++iy)
+        for (int ix = 0; ix < image_size[0]; ++ix)
+          tomo_out.aaafI[iz][iy][ix] = aaaiClusterId[iz][iy][ix];
+
+    Dealloc3D(tomo_in.header.nvoxels,
+              &aiClusterId,
+              &aaaiClusterId);
 
   } // if (settings.cluster_connected_voxels)
 

@@ -151,7 +151,10 @@ Otherwise, if you are using an older version of windows, try installing
 
 ## Apple Mac:
 
-*WARNING: The following proceedure has not been tested:*
+*WARNING: The following proceedure has not been tested.
+ If you have a mac, please test this and let me know if it worked
+ (or if something else worked).
+ -andrew 2019-3-08*
 
 First follow the instructions
 [here](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/)

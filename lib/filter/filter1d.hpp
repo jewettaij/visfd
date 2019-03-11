@@ -358,10 +358,6 @@ public:
     Resize(source.halfwidth); // allocates and initializes afH
     //for(Integer i=-halfwidth; i<=halfwidth; i++)
     //  afH[i] = source.afH[i];
-    // -- Use memcpy() instead: --
-    //memcpy(afH,
-    //       source.afH,
-    //       array_size * sizeof(Scalar));
     // -- Use std:copy() instead: --
     std::copy(source.afH, source.afH + array_size, afH);
   }

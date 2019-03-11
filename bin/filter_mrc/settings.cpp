@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <set>
+#include <array>
 using namespace std;
 
 #ifndef DISABLE_OPENMP
@@ -131,6 +133,8 @@ Settings::Settings() {
   connect_threshold_vector_neighbor = M_SQRT1_2; //45 degree change maximum
   connect_threshold_tensor_saliency = M_SQRT1_2;
   connect_threshold_tensor_neighbor = M_SQRT1_2;
+  must_link_filename = "";
+  must_link_constraints.clear();
   select_cluster = 0;
 
   use_intensity_map = false;
@@ -2140,6 +2144,23 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a nonnegative integer\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+    else if (vArgs[i] == "-must-link")
+    {
+      cluster_connected_voxels = true;
+      try
+      {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        string must_link_filename = vArgs[i+1];
+      } // try {
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
     }

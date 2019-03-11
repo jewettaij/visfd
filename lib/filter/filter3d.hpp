@@ -210,11 +210,6 @@ public:
     //  for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
     //    for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
     //      aaafH[iz][iy][ix] = source.aaafH[iz][iy][ix];
-    // -- Use memcpy() instead: --
-    //memcpy(afH,
-    //       source.afH,
-    //       array_size[0] * array_size[1] * array_size[2],
-    //       *sizeof(Scalar));
     // -- Use std:copy() instead: --
     std::copy(source.afH,
               source.afH + (array_size[0] * array_size[1] * array_size[2]),
@@ -2523,7 +2518,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 ///
 /// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
-template<class Scalar, class IntegerIndex, class Integer>
+template<class Scalar, class IntegerIndex, class Label>
 static void
 _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
                Scalar const *const *const *aaafSource, //!< image array aaafSource[iz][iy][ix]
@@ -2532,13 +2527,13 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
                vector<IntegerIndex> *pv_maxima_indices, //!< a list of integers uniquely identifying the location of each maxima
                vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafSource[iz][iy][ix] values here (if not NULL)
                vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafSource[iz][iy][ix] values here (if not NULL)
-               vector<Integer> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
-               vector<Integer> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
+               vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
+               vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
                Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  // Ignore minima which are not sufficiently low
                Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
                int connectivity=3,                      //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
                bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-               Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
+               Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
                ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   assert(aaafSource);
@@ -2550,8 +2545,8 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
   vector<IntegerIndex> maxima_indices; //store maxima indices here
   vector<Scalar>  minima_scores;  //store the brightness of the minima here
   vector<Scalar>  maxima_scores;  //store the brightness of the maxima here
-  vector<Integer> minima_nvoxels; //store number of voxels in each minima here
-  vector<Integer> maxima_nvoxels; //store number of voxels in each maxima here
+  vector<IntegerIndex> minima_nvoxels; //store number of voxels in each minima here
+  vector<IntegerIndex> maxima_nvoxels; //store number of voxels in each maxima here
   if (pv_minima_indices == NULL)
     pv_minima_indices = &minima_indices;
   if (pv_maxima_indices == NULL)
@@ -2946,13 +2941,13 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
     }
   }
 
-  if (aaafDest) {
+  if (aaaiDest) {
     for (int iz = 0; iz < image_size[2]; iz++) {
       for (int iy = 0; iy < image_size[1]; iy++) {
         for (int ix = 0; ix < image_size[0]; ix++) {
           if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
             continue; // don't modify voxels outside the mask
-          aaafDest[iz][iy][ix] = aaaiExtrema[iz][iy][ix];
+          aaaiDest[iz][iy][ix] = aaaiExtrema[iz][iy][ix];
           // Until now, minima in the image are represented by negative integers
           // and maxima are represented by positive integers.
           if (((! find_minima) || (! find_maxima)) &&
@@ -2988,19 +2983,19 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
 ///
 /// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
-template<class Scalar, class IntegerIndex, class Integer>
+template<class Scalar, class IntegerIndex, class Label>
 static void
 _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
                Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
                Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
                vector<IntegerIndex> &extrema_indices, //!< a list of integers uniquely identifying the location of each minima or maxima
                vector<Scalar> &extrema_scores, //!< corresponding voxel brightness at that location
-               vector<Integer> &extrema_nvoxels, //!< how many voxels belong to each minima or maxima?
+               vector<IntegerIndex> &extrema_nvoxels, //!< how many voxels belong to each minima or maxima?
                bool seek_minima=true,    //!< search for minima or maxima?
                Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
                int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
                bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-               Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
+               Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
                ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
@@ -3009,7 +3004,7 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
   // We need to re-cast "NULL" as a pointer with the correct type.
   // One way to do that is to define these new versions of NULL:
   vector<IntegerIndex> *NULL_vI = NULL;  
-  vector<Integer> *NULL_vi = NULL;  
+  vector<IntegerIndex> *NULL_vi = NULL;  
   vector<Scalar> *NULL_vf = NULL;  
   if (seek_minima) {
     _FindExtrema3D(image_size,
@@ -3025,7 +3020,7 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
                    -std::numeric_limits<Scalar>::infinity(),
                    connectivity,
                    allow_borders,
-                   aaafDest,
+                   aaaiDest,
                    pReportProgress);
   }
   else {
@@ -3044,7 +3039,7 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
                    threshold,
                    connectivity,
                    allow_borders,
-                   aaafDest,
+                   aaaiDest,
                    pReportProgress);
   }
   
@@ -3071,7 +3066,7 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
 ///          are not as trustworthy since some of the 26 neighboring voxels
 ///          will not be available for comparison.
 
-template<class Scalar, class Coordinate, class Integer>
+template<class Scalar, class Coordinate, class IntegerIndex, class Label>
 void
 FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
               Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
@@ -3080,13 +3075,13 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
               vector<array<Coordinate, 3> > *pv_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
               vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
               vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
-              vector<Integer> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
-              vector<Integer> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
+              vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
+              vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
               Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
               Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
               bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-              Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
+              Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
               ostream *pReportProgress=NULL   //!< optional: print progress to the user?
                    )
 {
@@ -3123,7 +3118,7 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
                  maxima_threshold,
                  connectivity,
                  allow_borders,
-                 aaafDest,
+                 aaaiDest,
                  pReportProgress);
 
   // Now convert the indices back to x,y,z coordinates
@@ -3172,19 +3167,19 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
 ///         That version is faster than invoking this function twice.)
 ///         See the description of that version for details.
 
-template<class Scalar, class Coordinate, class Integer>
+template<class Scalar, class Coordinate, class IntegerIndex, class Label>
 void
 FindExtrema3D(int const image_size[3],            //!< size of input image array
               Scalar const *const *const *aaafI,   //!< input image array
               Scalar const *const *const *aaafMask, //!< if not NULL then zero entries indicate which voxels to ignore
               vector<array<Coordinate, 3> > &extrema_crds, //!< store the location of each extrema
               vector<Scalar> &extrema_scores, //!< store the brightness of each extrema
-              vector<Integer> &extrema_nvoxels, //!< store number of voxels in each extrema (usually 1)
+              vector<IntegerIndex> &extrema_nvoxels, //!< store number of voxels in each extrema (usually 1)
               bool seek_minima=true,    //!< search for minima or maxima?
               Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
               bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-              Scalar ***aaafDest=NULL,  //!< optional: create an image showing where the extrema are?
+              Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
               ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
@@ -3194,7 +3189,7 @@ FindExtrema3D(int const image_size[3],            //!< size of input image array
   // One way to do that is to define these new versions of NULL:
   vector<array<Coordinate, 3> > *NULL_vai3 = NULL;  
   vector<Scalar> *NULL_vf = NULL;  
-  vector<Integer> *NULL_vi = NULL;  
+  vector<IntegerIndex> *NULL_vi = NULL;  
 
   if (seek_minima) {
     FindExtrema3D(image_size,
@@ -3210,7 +3205,7 @@ FindExtrema3D(int const image_size[3],            //!< size of input image array
                   -std::numeric_limits<Scalar>::infinity(),
                   connectivity,
                   allow_borders,
-                  aaafDest,
+                  aaaiDest,
                   pReportProgress);
   }
   else {
@@ -3229,7 +3224,7 @@ FindExtrema3D(int const image_size[3],            //!< size of input image array
                   threshold,
                   connectivity,
                   allow_borders,
-                  aaafDest,
+                  aaaiDest,
                   pReportProgress);
   }
 } // FindExtrema3D()
@@ -3241,7 +3236,7 @@ FindExtrema3D(int const image_size[3],            //!< size of input image array
 
 
 /// @brief  Perform the Meyer's flood-fill algorithm to segment a 3D image.
-///         After this function has completed, every voxel in aaafDest[][][]
+///         After this function has completed, every voxel in aaaiDest[][][]
 ///         will be assigned an integer which is one of 4 types:
 ///      1) an integer between 1 and N_BASINS (the number of local minima in
 ///         the image, indicating the basin to which the voxel belongs)
@@ -3253,7 +3248,7 @@ FindExtrema3D(int const image_size[3],            //!< size of input image array
 ///      4) left unmodified (if aaafMask!=NULL and aaafMask[iz][iy][ix]==0)
 /// @note  If the "halt_threshold" argument is not supplied by the caller,
 ///         then std::numeric_limits::infinity is used by default.
-/// @note  If aaafMask!=NULL then voxels in aaafDest are not modified if
+/// @note  If aaafMask!=NULL then voxels in aaaiDest are not modified if
 ///        their corresponding entry in aaafMask equals 0.
 
 template<class Scalar, class Label, class Coordinate>
@@ -3345,7 +3340,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
                 halt_threshold,
                 connectivity,
                 true,
-                static_cast<Scalar***>(NULL),
+                static_cast<Label***>(NULL),
                 pReportProgress);
 
   ptrdiff_t WATERSHED_BOUNDARY = 0; //an impossible value
@@ -3507,6 +3502,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     //#endif //#ifndef NDEBUG
 
 
+
     // ---------- Meyer (and Beucher's?) inter-pixel flood algorith: ---------
     // Find all the local minima (or maxima) in the image.
     // Each one of these minima (or maxima) is the center (seed) of a "basin"
@@ -3623,6 +3619,125 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
 
 
 
+/// @brief  This function was intended to be used as a way to allow end-users
+///         to select certain voxels for consideration.
+///         However, because it is difficult to click on exactly the
+///         feature you are looking for (which is normally how the
+///         "nearby_location" coordinates are obtained),
+///         we often need to search for nearby
+///         voxels that have the feature we want.
+///
+///         This function finds the voxel in the image whose indices
+///         are closest to the "nearby_location" argument.
+///         Only voxels whose corresponding entry in the aaaiVoxels[][][] array
+///         belong to "select_these_voxel_types"
+///         (AND whose corresponding entry in aaafMask[][][] is not zero)
+///         will be considered (unless "invert_selection" is true).
+/// @return The function has no return value, however the coordinates of the
+///         nearest voxel will be stored in the "nearest_location" argument.
+/// @note   Zero-indexing is used.  In other words image indices (ie, entries
+///         in the location arguments) are assumed to begin at 0 not 1.
+/// @note   In this variant of the function, the "nearby_location" and
+///         "location" arguments are both of type C++-style std::array
+///         instead of C-style pointers.
+
+template<class Scalar, class Label, class Coordinate>
+static void
+FindNearestVoxel(int const image_size[3],                   //!< #voxels in xyz
+                 const array<Coordinate, 3> &nearby_location, //<! find the voxel in aaaiVoxels closest to this
+                 array<Coordinate, 3> &nearest_location, //<! and store the location of that voxel here.
+                 Label const *const *const *aaaiVoxels, //<! some property associated with each voxel
+                 Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
+                 set<Label> select_these_voxel_types, //<! voxels must have one of these properties
+                 bool invert_selection=false //<! (...or NOT one of these properties)
+                 )
+{
+  Coordinate r_min_sq = -1; //special (uninitialized) impossible value
+  
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          continue;
+        array<Coordinate, 3> rv;
+        rv[0] = nearby_location[0] - ix;
+        rv[1] = nearby_location[1] - iy;
+        rv[2] = nearby_location[2] - iz;
+        Coordinate r_sq = SquaredNorm3(rv); // length of rv squared
+        bool selected = (select_these_voxel_types.find(aaaiVoxels[iz][iy][ix])
+                         != select_these_voxel_types.end());
+        if (invert_selection)
+          selected = !selected;
+        if (! selected)
+          continue;
+        if ((r_min_sq != -1) || (r_sq < r_min_sq)) {
+          r_min_sq = r_sq;
+          nearest_location[0] = ix;
+          nearest_location[1] = iy;
+          nearest_location[2] = ix;
+        }
+      }
+    }
+  }
+} //FindNearestVoxel()
+
+
+
+
+/// @brief  This function was intended to be used as a way to allow end-users
+///         to select certain voxels for consideration.
+///         However, because it is difficult to click on exactly the
+///         feature you are looking for (which is normally how the
+///         "nearby_location" coordinates are obtained),
+///         we often need to search for nearby
+///         voxels that have the feature we want.
+///
+///         This function finds the voxel in the image whose indices
+///         are closest to the "nearby_location" argument.
+///         Only voxels whose corresponding entry in the aaaiVoxels[][][] array
+///         belong to "select_these_voxel_types"
+///         (AND whose corresponding entry in aaafMask[][][] is not zero)
+///         will be considered (unless "invert_selection" is true).
+/// @return The function has no return value, however the coordinates of the
+///         nearest voxel will be stored in the "nearest_location" argument.
+/// @note   Zero-indexing is used.  In other words image indices (ie, entries
+///         in the location arguments) are assumed to begin at 0 not 1.
+/// @note   In this variant of the function, the "nearby_location" and
+///         "location" arguments are both C-style pointers,
+///         instead of C++-style std::array.
+
+template<class Scalar, class Label, class Coordinate>
+void
+FindNearestVoxel(int const image_size[3],             //!< #voxels in xyz
+                 const Coordinate nearby_location[3], //<! find voxel in aaaiVoxels closest to this
+                 Coordinate nearest_location[3], //<! find voxel in aaaiVoxels closest to this
+                 Label const *const *const *aaaiVoxels, //<! some property associated with each voxel
+                 Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
+                 set<Label> select_these_voxel_types, //<! voxels must have this property
+                 bool invert_selection=true //invert selection (skip over them)
+                 )
+{
+  assert(nearby_location);
+  assert(nearest_location);
+
+  array<Coordinate, 3> aNearbyLocation;
+  array<Coordinate, 3> aNearestLocation;
+
+  for (int d = 0; d < 3; d++)
+    aNearbyLocation[d] = nearby_location[d];
+
+  FindNearestVoxel(image_size,
+                   aNearbyLocation,
+                   aNearestLocation,
+                   aaaiVoxels,
+                   aaafMask,
+                   select_these_voxel_types,
+                   invert_selection);
+
+  for (int d = 0; d < 3; d++)
+    nearest_location[d] = aNearestLocation[d];
+}
+
 
 
 /// @brief   The following enumerated constants are used as arguments
@@ -3732,6 +3847,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                  VectorContainer ***aaaafVectorStandardized=NULL, //!< optional: place to store "standardized" vector directions
                  #endif
+                 const vector<vector<array<Coordinate, 3> > > *pMustLinkConstraints=NULL,  //!< Optional: a list of sets of voxel locations.  This insures that voxels in each set will belong to the same cluster.
                  bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)  WARNING: As of 2019-2-28, this function has not yet been tested with the non-default value (false)
                  ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
@@ -3816,7 +3932,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                 threshold_saliency,
                 connectivity,
                 true,  // maxima are allowed to be located on the image border
-                static_cast<Scalar***>(NULL),
+                static_cast<Label***>(NULL),
                 pReportProgress);
 
   ptrdiff_t UNDEFINED = extrema_locations.size() + 1; //an impossible value
@@ -3951,9 +4067,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   int voxel_discarded_due_to_polarity_iz = -1; // an impossible value
   #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
  
-  //*pReportProgress << "=================== GOT HERE ======================" <<endl;  // DELETEME
-
-
   // Loop over all the voxels on the periphery
   // of the voxels with lower intensity (brightness).
   // This is a priority-queue of voxels which lie adjacent to 
@@ -3977,8 +4090,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     int iy = std::get<2>(p)[1]; //   "      "
     int iz = std::get<2>(p)[2]; //   "      "
 
-    //*pReportProgress << "=========== (ix,iy,iz) = ("<<ix<<","<<iy<<","<<iz<<") ==========" <<endl;  // DELETEME
-    
     // Should we ignore this voxel?
 
     if (i_score > threshold_saliency * SIGN_FACTOR) {
@@ -4048,8 +4159,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                                      aaaafSymmetricTensor[iz][iy][ix]);
         Scalar fs = FrobeniusNormSym3(saliency_hessian);
         Scalar ft = FrobeniusNormSym3(aaaafSymmetricTensor[iz][iy][ix]);
-
-        //*pReportProgress << "=========== tp,fs,ft = ("<<tp<<","<<fs<<","<<ft<<") ==========" <<endl;  // DELETEME
 
         if (tp < threshold_tensor_saliency * fs * ft) {
           discard_this_voxel = true;
@@ -4247,15 +4356,23 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               <
               0.0)
           {
-            // Voxels within the same basin should always have directions which
-            // are compatible with each other.  (IE the dot product between
-            // them should not be negative.)  If this is not the case, 
-            // then invert the sign of the newcommers.
+            // Voxels added as the basin is growing should always have
+            // directions which are compatible with each other.
+            // (IE the dot product between them should not be negative.)
+            // (Why?  See "Discussion" below)
+            // If this is not the case, then invert the sign of the newcommers.
             // (Note: The voxels within different basins are made compatible
             //        by flipping the sign of their entry in "basin2polarity[]")
             aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][0] *= -1.0;
             aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][1] *= -1.0;
             aaaafVectorStandardized[iz_jz][iy_jy][ix_jx][2] *= -1.0;
+            // Discussion:
+            // It is possible to assume this because the topology of the
+            // basins that we are growing at this point cannot have loops.
+            // This is because each neighboring voxel we add in this step
+            // is of type UNDEFINED.  Later we may encounter loops when we
+            // run into neighboring voxels which have already beem processed.
+            // We will worry about Möbius loops then.
           }
         } // if (aaaafVectorStandardized && (! consider_dot_product_sign))
         #endif
@@ -4289,6 +4406,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         #endif
 
         if (cluster_i == cluster_j) {
+          #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
           if (! polarity_match) {
             voxels_discarded_due_to_polarity = true;
             voxel_discarded_due_to_polarity_ix = ix_jx;
@@ -4304,6 +4422,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             // cut the loop at the voxels with the most tenuous connections.
             continue;
           }
+          #endif
         }
         else //if (cluster_i != cluster_j)
         {
@@ -4313,6 +4432,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           // to absorb the other cluster, and delete the other cluster.
           ptrdiff_t merged_cluster_id  = MIN(cluster_i, cluster_j);
           ptrdiff_t deleted_cluster_id = MAX(cluster_i, cluster_j);
+          assert(cluster_i != cluster_j);
+
           // copy the basins from the deleted cluster into the merged cluster
           for (auto p = cluster2basins[deleted_cluster_id].begin();
                p != cluster2basins[deleted_cluster_id].end();
@@ -4350,6 +4471,147 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       for (int ix=0; ix<image_size[0]; ix++)
         assert(aaaiDest[iz][iy][ix] != QUEUED);
   #endif //#ifndef NDEBUG
+
+
+
+  if (pMustLinkConstraints)
+  {
+
+    // loop over the different groups of voxels
+    //    (we will force each voxel in a group to belong to the same cluster)
+
+    for (size_t i_group = 0; i_group < pMustLinkConstraints->size(); i_group++)
+    {
+
+      // some variables we will need
+
+      ptrdiff_t FIRST_ITER = -1; // an impossible value used below
+
+      //r_i_init = coordinates of most recent voxel selected by the user
+      array<Coordinate,3> r_i_init={-1,-1,-1};
+      //r_i = coordinates of the voxel in aaaiDest[][][] nearest to r_i_init
+      array<Coordinate,3> r_i;
+      //basin_i = the ID number for the basin to which voxel r_i belongs
+      ptrdiff_t basin_i = FIRST_ITER;
+
+      //r_j_init, r_j, basin_j correspond to the PREVIOUSLY processed voxel
+      ptrdiff_t basin_j = FIRST_ITER;
+      array<Coordinate,3> r_j_init={-1,-1,-1}; //an impossible value
+      array<Coordinate,3> r_j={-1,-1,-1};      //an impossible value
+
+
+      // Loop over the voxels in each group 
+      // and force them to belong to the same cluster
+
+      for (auto pLocation = (*pMustLinkConstraints)[i_group].begin();
+           pLocation != (*pMustLinkConstraints)[i_group].end();
+           pLocation++)
+      {
+        r_i_init = *pLocation;
+        if (*pReportProgress) {
+          *pReportProgress << "  finding voxel nearest to (";
+          for (int d = 0; d < 3; d++) {
+            *pReportProgress << r_j_init[d];
+            if (d+1 == 3) *pReportProgress << ",";
+          }
+          *pReportProgress << ")\n";
+        }
+
+        set<Label> ignore_these_voxel_types;
+        ignore_these_voxel_types.insert(UNDEFINED);
+
+        FindNearestVoxel(image_size,
+                         r_i_init, //find voxel in aaaiDest closest to this
+                         r_i, //store the location here
+                         aaaiDest, //inverse lookup voxel location->basinID
+                         aaafMask,
+                         ignore_these_voxel_types, // skip over these voxels
+                         true); //invert selection (skip over them)
+
+        basin_i = aaaiDest[r_i[2]][r_i[1]][r_i[0]];
+
+        assert((basin_i != UNDEFINED) && (basin_i != QUEUED));
+
+        if ((basin_j != FIRST_ITER) && (basin_i != basin_j))
+        {
+          // Then basin_i should be linked with basin_j 
+          // by merging the clusters to which they belong.
+
+          ptrdiff_t cluster_i = basin2cluster[basin_i];
+          ptrdiff_t cluster_j = basin2cluster[basin_j];
+
+          if (cluster_i != cluster_j)
+          {
+            ptrdiff_t merged_cluster_id  = MIN(cluster_i, cluster_j);
+            ptrdiff_t deleted_cluster_id = MAX(cluster_i, cluster_j);
+
+            #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+            // Try to infer whether or not the voxels located at r_i and r_j
+            // are pointing in a compatible direction.
+            // If not, set "polarity_match" to false.
+            // Later we will flip polarity of the voxels in one of the 
+            // joined clusters in order to make sure the resulting cluster.
+            // Note:
+            // Since r_i and r_j could be separated by a great distance
+            // the surface direction (or curve direction) is likely to be
+            // not pointing in the same direction, or even within 90 degrees
+            // of that direction. It makes no sense to check if they are
+            // pointing in the same direction.  Instead, we try to infer
+            // if they are pointing in a "compatible" direction.
+            bool polarity_match = true;
+            array<Scalar, 3> r_ij, n_i, n_j, ni_cross_nj;
+            for (int d = 0; d < 3; d++) {
+              n_i[d] = aaaafVectorStandardized[r_i[2]][r_i[1]][r_i[0]][d];
+              n_j[d] = aaaafVectorStandardized[r_j[2]][r_j[1]][r_j[0]][d];
+              r_ij[d] = r_i[d] = r_j[d];
+            }
+            Coordinate ni_dot_rij = DotProduct3(n_i, r_ij);
+            Coordinate nj_dot_rij = DotProduct3(n_j, r_ij);
+            if ((ni_dot_rij != 0) && (nj_dot_rij != 0)) {
+              if (ni_dot_rij * nj_dot_rij > 0)
+                polarity_match = false;
+            }
+            else {
+              polarity_match = (DotProduct3(n_i, n_j) > 0);
+            }
+            #endif
+
+            // copy the basins from the deleted cluster into the merged cluster
+            for (auto p = cluster2basins[deleted_cluster_id].begin();
+                 p != cluster2basins[deleted_cluster_id].end();
+                 p++)
+            {
+              ptrdiff_t basin_id = *p;
+              cluster2basins[merged_cluster_id].insert(basin_id);
+              basin2cluster[basin_id] = merged_cluster_id;
+
+              #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+              if (aaaafVector && aaaafVectorStandardized &&
+                  (! consider_dot_product_sign))
+              {
+                if (! polarity_match)
+                  basin2polarity[basin_id] *= -1.0;
+              }
+              #endif
+            }
+
+            // -- delete all the basins from the deleted cluster --
+            cluster2basins[deleted_cluster_id].clear();
+
+          } //if (cluster_i != cluster_j) {
+
+
+        } //if ((basin_j != FIRST_ITER) && (basin_i != basin_j))
+
+        basin_j = basin_i;
+        r_j_init = r_i_init;
+        r_j = r_i;
+
+      } //for (auto pLocation = (*pMustLinkConstraints)[i].begin(); ...)
+      
+    } //for (size_t i = 0; i < pMustLinkConstraints->size(); i++)
+    
+  } // if (pMustLinkConstraints)
 
 
   // Optional: We don't need "cluster2basins" any more.  Free up its memory.
@@ -4390,8 +4652,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   {
     // Now, finally incorporate the data we stored in basin2polarity[] into
     // aaaafVectorStandardized.
-    // (We didn't do this earlier because entire basins flip polarity often
-    //  so we wait until we've.
+    // (We didn't do this earlier because entire basins flip polarity often)
     for (int iz=0; iz<image_size[2]; iz++) {
       for (int iy=0; iy<image_size[1]; iy++) {
         for (int ix=0; ix<image_size[0]; ix++) {
@@ -4464,7 +4725,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
   vector<long double> cluster_sizes(n_clusters, 0.0);
 
-  // I use floating point numbers because "sizes" need not be integers.
+  // I use floating point numbers because "cluster_sizes" need not be integers.
   // (Note: "vector<Label>" or "vector<Scalar>" won't work here since, in
   //        typical usage, both Label and Scalar are of type "float".
   //        Typical MRC/REC files have 10^9 voxels, and adding 10^9 32-bit
@@ -4666,8 +4927,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
 
 
-
-  // Now, deal with the clusters which the caller wants the "undefined"
+  // Now, deal with voxels which are "undefined"
   // voxels to have a high instead of a low value.
   if (undefined_label_is_max)
     label_undefined = n_clusters+1;
