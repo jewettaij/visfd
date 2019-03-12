@@ -20,27 +20,25 @@ ReadMulticolumnFile(istream &f,  //<! the file to be read
                     )
 {
   vvDest.clear();
+  string strLine;
   size_t i_line = 1;
-  while (f) {
-    string strLine;
-    getline(f, strLine);
-    if (strLine.size() == 0)
-      continue;
+  while (getline(f, strLine))
+  {
     stringstream ssLine(strLine);
     vector<Entry> row;
     Entry x;
-    while (ssLine) {
-      try {
-        ssLine >> x;
-      } // try {
-      catch ( ... ) {
-        stringstream err_msg;
-        err_msg << "Error: File read error (invalid entry?) on line: "
-                << i_line << "\n";
-        throw InputErr(err_msg.str().c_str());
+    try {
+      while (ssLine >> x) {
+        row.push_back(x);
       }
-      row.push_back(x);
+    } // try {
+    catch ( ... ) {
+      stringstream err_msg;
+      err_msg << "Error: File read error (invalid entry?) on line: "
+              << i_line << "\n";
+      throw InputErr(err_msg.str().c_str());
     }
+    vvDest.push_back(row);
     i_line++;
   }
 } // ReadMulticolumnFile()
@@ -84,8 +82,8 @@ template<class Scalar, class Coordinate>
 static void
 ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! words on each line of a file
                             vector<vector<Scalar> > &vvCoords, //<! convert these words to a matrix of numbers
-                            Coordinate *voxel_width //<! scale factors.  Divide coordinates by these numbers
-                            )
+                            Coordinate *voxel_width, //<! scale factors.  Divide coordinates by these numbers
+                            int num_columns = 3)
 {
   assert(voxel_width);
 
@@ -98,25 +96,30 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! wo
   for (size_t i = 0; i < vvWords.size(); i++)
   {
     if ((vvWords[i].size() > 0) && (vvWords[i][0] == "Pixel")) {
-      vvWords.erase(vvWords.begin());
+      vvWords[i].erase(vvWords[i].begin());
       is_output_from_imod = true;
     }
     vector<Scalar> coords_xyz;
 
-    for (int d=0; d < vvWords[i].size(); d++) {
+    if (vvWords[i].size() == 0) {
+      vvCoords.push_back(vector<Scalar>(0));
+      continue;
+    }
+
+    for (int d=0; d < num_columns; d++) {
       // Get rid if weird characters enclosing or separating the words
-      // such as '[', ']', or ','
-      if ((vvWords[i][d].size() >= 0) && (vvWords[i][d][0] == '[')) {
-        // Delete the '[' character from the beginning of the string.
-        // (IMOD surrounds the coordinates with '[' and ']' characters.)
+      // such as '(', ')', or ','
+      if ((vvWords[i][d].size() >= 0) && (vvWords[i][d][0] == '(')) {
+        // Delete the '(' character from the beginning of the string.
+        // (IMOD surrounds the coordinates with '(' and ')' characters.)
         vvWords[i][d] = vvWords[i][d].substr(1, string::npos);
         is_output_from_imod = true;
       }
       int n_chars;
       n_chars = vvWords[i][d].size();
-      if ((vvWords[i][d].size()>=0) && (vvWords[i][d][n_chars-1]==']')) {
-        // Delete the ']' character from the end of the string.
-        // (IMOD surrounds the coordinates with '[' and ']' characters.)
+      if ((vvWords[i][d].size()>=0) && (vvWords[i][d][n_chars-1]==')')) {
+        // Delete the ')' character from the end of the string.
+        // (IMOD surrounds the coordinates with '(' and ')' characters.)
         vvWords[i][d] = vvWords[i][d].substr(0, n_chars-1);
         is_output_from_imod = true;
       }
@@ -138,7 +141,7 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! wo
       // The way we interpret the number depends on whether or not
       // we suspect the number was printed by IMOD, which uses
       // a somewhat unconventional coordinate system
-      Scalar x;
+      Scalar x = stod(vvWords[i][d]);
       if (is_output_from_imod)
         x = floor(x) - 1.0;
       else
@@ -148,10 +151,11 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! wo
 
     } //for (int d=0; d < vvWords[i].size(); d++)
 
-    assert(coords_xyz.size() == vvWords.size());
     vvCoords.push_back(coords_xyz);
 
   } //for (size_t i = 0; i < vvWords.size(); i++)
+
+  assert(vvCoords.size() == vvWords.size());
 
 } // ConvertStringsToCoordinates()
 

@@ -1100,29 +1100,14 @@ HandleRidgeDetectorPlanar(Settings settings,
   vector<vector<array<int, 3> > > *pMustLinkConstraints = NULL;
 
   if (settings.must_link_filename != "") {
+    // Prepare the list of coordinates in the settings.must_link_constraints
+    // array beforehand so that it will be ready by the time we have to
+    // invoke ClusterConnected().
     ProcessLinkConstraints(settings.must_link_filename,
                            settings.must_link_constraints,
                            voxel_width);
     if (settings.must_link_constraints.size() > 0)
       pMustLinkConstraints = &settings.must_link_constraints;
-    //if (settings.must_link_constraints.size() > 0) {
-    //  cerr << "  Link constraints: \n";
-    //  for (size_t i = 0; i < must_link_constraints.size(); i++) {
-    //    cerr << "    set " << i+1 << ": ";
-    //    for (auto pLocation = must_link_constraints[i].begin();
-    //         pLocation != must_link_constraints[i].end();
-    //         pLocation++) {
-    //      cerr << "(";
-    //      for (int d = 0; d < 3; d++) {
-    //        cerr << (*pLocation)[d];
-    //        if (d+1 == 3)
-    //          cerr << ",";
-    //      }
-    //      cerr << ") ";
-    //    }
-    //    cerr << "\n";
-    //  }
-    //}
   }
 
   int image_size[3];

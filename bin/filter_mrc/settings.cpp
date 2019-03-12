@@ -2148,6 +2148,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+
     else if (vArgs[i] == "-must-link")
     {
       cluster_connected_voxels = true;
@@ -2156,7 +2157,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        string must_link_filename = vArgs[i+1];
+        must_link_filename = vArgs[i+1];
       } // try {
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 

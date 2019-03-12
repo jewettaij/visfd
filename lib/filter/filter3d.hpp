@@ -3652,29 +3652,32 @@ FindNearestVoxel(int const image_size[3],                   //!< #voxels in xyz
                  bool invert_selection=false //<! (...or NOT one of these properties)
                  )
 {
+  nearest_location[0] = -1; // an impossible initial value
+  nearest_location[1] = -1; // an impossible initial value
+  nearest_location[2] = -1; // an impossible initial value
   Coordinate r_min_sq = -1; //special (uninitialized) impossible value
-  
+  // Note: I'm too lazy to write this a faster, smarter way.  It's fast enough.
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
         if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
           continue;
-        array<Coordinate, 3> rv;
+        array<double, 3> rv;
         rv[0] = nearby_location[0] - ix;
         rv[1] = nearby_location[1] - iy;
         rv[2] = nearby_location[2] - iz;
-        Coordinate r_sq = SquaredNorm3(rv); // length of rv squared
+        double r_sq = SquaredNorm3(rv); // length of rv squared
         bool selected = (select_these_voxel_types.find(aaaiVoxels[iz][iy][ix])
                          != select_these_voxel_types.end());
         if (invert_selection)
           selected = !selected;
         if (! selected)
           continue;
-        if ((r_min_sq != -1) || (r_sq < r_min_sq)) {
+        if ((r_min_sq == -1) || (r_sq < r_min_sq)) {
           r_min_sq = r_sq;
           nearest_location[0] = ix;
           nearest_location[1] = iy;
-          nearest_location[2] = ix;
+          nearest_location[2] = iz;
         }
       }
     }
@@ -4528,6 +4531,10 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                          ignore_these_voxel_types, // skip over these voxels
                          true); //invert selection (skip over them)
 
+        if ((r_i[0] == -1) && (r_i[1] == -1) && (r_i[2] == -1))
+          throw InputErr("Error: No voxels clustered. Empty image. Your cluster criteria are too strict.\n"
+                         "       (Attempting the find the nearest voxel from an empty set.)\n");
+
         basin_i = aaaiDest[r_i[2]][r_i[1]][r_i[0]];
 
         assert((basin_i != UNDEFINED) && (basin_i != QUEUED));
@@ -4563,10 +4570,10 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             for (int d = 0; d < 3; d++) {
               n_i[d] = aaaafVectorStandardized[r_i[2]][r_i[1]][r_i[0]][d];
               n_j[d] = aaaafVectorStandardized[r_j[2]][r_j[1]][r_j[0]][d];
-              r_ij[d] = r_i[d] = r_j[d];
+              r_ij[d] = r_i[d] - r_j[d];
             }
-            Coordinate ni_dot_rij = DotProduct3(n_i, r_ij);
-            Coordinate nj_dot_rij = DotProduct3(n_j, r_ij);
+            Scalar ni_dot_rij = DotProduct3(n_i, r_ij);
+            Scalar nj_dot_rij = DotProduct3(n_j, r_ij);
             if ((ni_dot_rij != 0) && (nj_dot_rij != 0)) {
               if (ni_dot_rij * nj_dot_rij > 0)
                 polarity_match = false;
