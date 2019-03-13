@@ -106,14 +106,17 @@ filter_mrc -in tomogram.rec \
   -planar-tv 5.0 -planar-tv-angle-exponent 4 \
   -connect 1.0e+09 -cts 0.707 -ctn 0.707 -cvn 0.707 -cvs 0.707 \
   -select-cluster 1 -planar-normals-file largest_membrane_pointcloud.ply
-
+```
+Note: This will generate an oriented point cloud file
+("largest_membrane_pointcloud.ply") which can be imported into meshlab
+for further processing.  Alternatively, you can try using "PoissonRecon" to
+(attempt to) close the holes in the surface:
+```
 PoissonRecon --in largest_membrane_pointcloud.ply \
   --out largest_membrane.ply --depth 8
 ```
 
-Note: This will generate a triangle-mesh file ("*largest_membrane.ply*")
-      which can be imported into *meshlab* for smoothing and refinement.
-      All of these parameters make reasonably good defaults for membrane
+Note: All of these parameters make reasonably good defaults for membrane
       detection except the "*-connect*" parameter ("1.0e+09" in the example).
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
@@ -127,15 +130,15 @@ Note: This will generate a triangle-mesh file ("*largest_membrane.ply*")
 The user must specify the name of the tomogram they wish to process using the
 "-in" argument:
 ```
-   -in SOURCE_FILE.mrc
+   -in SOURCE_FILE.rec
 ```
-(Note: files may also end in ".rec")
+(Note: Files may also end in ".mrc")
 
 Users must specify the name of the new tomogram
 (created by applying the filter to the original tomogram)
 using the "-out" argument:
 ```
-   -out DESTINATION_FILE.mrc
+   -out DESTINATION_FILE.rec
 ```
 
 
@@ -819,7 +822,7 @@ The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
 and then calculates the Laplacian of the result.
 Features in the image of various sizes can be emphasized
 using this kind of filter, and the result can be saved as a new image using
-"**-out** filename.mrc".
+"**-out** filename.rec".
 The "**-log**", "**-log-aniso**", "**-log-r**", and "**-log-d**"
 arguments described here are typically only chosen when the user already 
 knows the approximate size of the features they want to emphasize
@@ -1386,7 +1389,7 @@ slowly fading from 1 to 0 (near a curve-shaped boundary, for example).
 
 
 ```
-   -mask  file.mrc
+   -mask  file.rec
 ```
 The argument following the
 "-mask" argument should be the name of a tomogram file (MRC format) of the

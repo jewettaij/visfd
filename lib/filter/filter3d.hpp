@@ -4565,7 +4565,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             // of that direction. It makes no sense to check if they are
             // pointing in the same direction.  Instead, we try to infer
             // if they are pointing in a "compatible" direction.
-            bool polarity_match = true;
+            bool polarity_match;
             array<Scalar, 3> r_ij, n_i, n_j, ni_cross_nj;
             for (int d = 0; d < 3; d++) {
               n_i[d] = aaaafVectorStandardized[r_i[2]][r_i[1]][r_i[0]][d];
@@ -4574,12 +4574,21 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             }
             Scalar ni_dot_rij = DotProduct3(n_i, r_ij);
             Scalar nj_dot_rij = DotProduct3(n_j, r_ij);
-            if ((ni_dot_rij != 0) && (nj_dot_rij != 0)) {
-              if (ni_dot_rij * nj_dot_rij > 0)
-                polarity_match = false;
+            // If each plane is at an angle less than 45 degrees from r_ij
+            // then consider the two planes to be facing the same direction
+            // and part of the same portion of the curve.
+            Scalar theta0 = M_PI/4;  // (45 degrees)
+            if ((abs(ni_dot_rij) < sin(theta0)) &&
+                (abs(nj_dot_rij) < sin(theta0)))
+            {
+              polarity_match = (DotProduct3(n_i, n_j) > 0);
             }
             else {
-              polarity_match = (DotProduct3(n_i, n_j) > 0);
+              // otherwise, the two planes are probably facing the opposite
+              // direction.  In that case, use the following criteria:
+              polarity_match = true;
+              if (ni_dot_rij * nj_dot_rij > 0)
+                polarity_match = false;
             }
             #endif
 
