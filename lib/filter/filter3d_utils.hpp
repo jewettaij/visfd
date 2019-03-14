@@ -23,10 +23,10 @@ using namespace selfadjoint_eigen3;
 ///         the boundaries of the image.  THERE IS NO BOUNDS CHECKING.
 template<class Scalar>
 void
-CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
-                               int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
-                               Scalar (*hessian)[3]  //!<store resulting 3x3 matrixhere
-                               )
+CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source image
+                             int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                             Scalar (*hessian)[3]  //!<store resulting 3x3 matrixhere
+                             )
 {
   assert(aaafSource);
   assert(hessian);
@@ -58,7 +58,7 @@ CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< sour
                           aaafSource[iz+1][iy][ix-1] - 
                           aaafSource[iz-1][iy][ix+1]);
   hessian[0][2] = hessian[2][0];
-} //CalcHessianFiniteDifferences3D()
+} //CalcHessianFiniteDifferences()
 
 
 
@@ -73,11 +73,11 @@ CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< sour
 
 template<class Scalar>
 void
-CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
-                               int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
-                               Scalar (*hessian)[3],  //!< store resulting 3x3 matrixhere
-                               const int image_size[3] //!< number of voxels in xyz directions (for bounds checking)
-                               )
+CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source image
+                             int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                             Scalar (*hessian)[3],  //!< store resulting 3x3 matrixhere
+                             const int image_size[3] //!< number of voxels in xyz directions (for bounds checking)
+                             )
 {
   assert(aaafSource);
   assert(hessian);
@@ -107,9 +107,9 @@ CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< sour
       _iz--;
   }
 
-  CalcHessianFiniteDifferences3D(aaafSource,
-                                 _ix, _iy, _iz,
-                                 hessian);
+  CalcHessianFiniteDifferences(aaafSource,
+                               _ix, _iy, _iz,
+                               hessian);
 }
 
 
@@ -125,11 +125,11 @@ CalcHessianFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< sour
 
 template<class Scalar>
 void
-CalcGradientFiniteDifferences3D(Scalar const *const *const *aaafSource, //!< source image
-                                int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
-                                Scalar *gradient,  //!< store resulting 3x3 matrixhere
-                                const int image_size[3] //!< number of voxels in xyz directions (for bounds checking)
-                                )
+CalcGradientFiniteDifferences(Scalar const *const *const *aaafSource, //!< source image
+                              int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
+                              Scalar *gradient,  //!< store resulting 3x3 matrixhere
+                              const int image_size[3] //!< number of voxels in xyz directions (for bounds checking)
+                              )
 {
   assert(aaafSource);
   assert(gradient);

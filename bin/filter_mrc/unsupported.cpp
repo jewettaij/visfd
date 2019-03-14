@@ -207,12 +207,12 @@ HandleTemplateGGauss(Settings settings,
   Filter3D<float, int>
     w = GenFilterGenGauss3D(settings.template_background_radius,
                             settings.n_exp,
-                            //template_profile.halfwidth);
+                            //template_profile.halfwidth,
                             settings.filter_truncate_ratio,
                             settings.filter_truncate_threshold,
                             static_cast<float*>(NULL),
                             static_cast<ostream*>(NULL));
-  // GenFilterGenGauss3D creates normalized gaussians with integral 1.
+  // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
   // So, we can undo this normalization by dividing all the w_i weights
@@ -261,14 +261,14 @@ HandleTemplateGGauss(Settings settings,
   if (settings.n_exp == 2.0) {
 
     // then do it the fast way with seperable (ordinary) Gaussian filters
-    ApplyGauss3D(tomo_in.header.nvoxels,
-                 tomo_in.aaafI,
-                 P.aaafI,    // <-- save result here
-                 mask.aaafI,
-                 template_background_sigma,
-                 settings.filter_truncate_ratio,
-                 settings.filter_truncate_threshold,
-                 true);
+    ApplyGauss(tomo_in.header.nvoxels,
+               tomo_in.aaafI,
+               P.aaafI,    // <-- save result here
+               mask.aaafI,
+               template_background_sigma,
+               settings.filter_truncate_ratio,
+               settings.filter_truncate_threshold,
+               true);
   }
   else {
     w.Apply(tomo_in.header.nvoxels,
@@ -483,12 +483,12 @@ HandleTemplateGauss(Settings settings,
   Filter3D<float, int>
     w = GenFilterGenGauss3D(settings.template_background_radius,
                             static_cast<float>(2.0), //settings.template_background_exponent,
-                            //template_profile.halfwidth);
+                            //template_profile.halfwidth,
                             settings.filter_truncate_ratio,
                             settings.filter_truncate_threshold,
                             static_cast<float*>(NULL),
                             static_cast<ostream*>(NULL));
-  // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
+  // GenFilterGenGauss() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
   // So, we can undo this normalization by dividing all the w_i weights
@@ -553,15 +553,15 @@ HandleTemplateGauss(Settings settings,
                                     /
                                     sqrt(3.0));
 
-  ApplyGauss3D(tomo_in.header.nvoxels,
-               tomo_in.aaafI,
-               P.aaafI,   // <-- save result here
-               mask.aaafI,
-               template_background_sigma, //width of Gaussian
-               settings.filter_truncate_ratio,
-               settings.filter_truncate_threshold,
-               true,
-               &cerr);
+  ApplyGauss(tomo_in.header.nvoxels,
+             tomo_in.aaafI,
+             P.aaafI,   // <-- save result here
+             mask.aaafI,
+             template_background_sigma, //width of Gaussian
+             settings.filter_truncate_ratio,
+             settings.filter_truncate_threshold,
+             true,
+             &cerr);
 
   // Subtract the average value from the image intensity, and store in P:
   for(int iz=0; iz<tomo_in.header.nvoxels[2]; iz++)
@@ -606,7 +606,7 @@ HandleTemplateGauss(Settings settings,
   //                mask.aaafI,
   //                false,
   //                &cerr);
-  // Instead, use "ApplyGauss3D()", a fast version which only works for
+  // Instead, use "ApplyGauss()", a fast version which only works for
   // Gaussians.  First we have to calculate the width of that Gaussian...
   float radius_Q_times_w[3];
   float sigma_Q_times_w[3];
@@ -620,16 +620,16 @@ HandleTemplateGauss(Settings settings,
                   1.0 / SQR(settings.template_background_radius[d])));
     sigma_Q_times_w[d] = radius_Q_times_w[d] / sqrt(3.0);
   }
-  // We can use the faster "ApplyGauss3D()" to perform the convolution
-  ApplyGauss3D(P.header.nvoxels, // = tomo_in.header.nvoxels,
-               P.aaafI,
-               P_dot_Q.aaafI,        // <-- save result here
-               mask.aaafI,
-               sigma_Q_times_w,
-               settings.filter_truncate_ratio,
-               settings.filter_truncate_threshold,
-               false, // Don't normalize. Gaussian will have peak height=1
-               &cerr);
+  // We can use the faster "ApplyGauss()" to perform the convolution
+  ApplyGauss(P.header.nvoxels, // = tomo_in.header.nvoxels,
+             P.aaafI,
+             P_dot_Q.aaafI,        // <-- save result here
+             mask.aaafI,
+             sigma_Q_times_w,
+             settings.filter_truncate_ratio,
+             settings.filter_truncate_threshold,
+             false, // Don't normalize. Gaussian will have peak height=1
+             &cerr);
   // The function above convolves the image, P, with a Gaussian whose
   // central peak has a height of 1.  What we want to do instead is convolve
   // it with a Gaussian whose central peak has a height equal to the height
@@ -661,16 +661,16 @@ HandleTemplateGauss(Settings settings,
   // We have convolved P with q_times_w (before subtracting <q_> = "qave")
   // and stored it in P_dot_Q.  Now convolve P with qave*w and subtract
   // it from the result we obtained for P_dot_Q.
-  // Again, we can use the faster "ApplyGauss3D()" to perform the convolution:
-  ApplyGauss3D(P.header.nvoxels, // = tomo_in.header.nvoxels,
-               P.aaafI,
-               tomo_in.aaafI,        // <-- save result here
-               mask.aaafI,
-               template_background_sigma,
-               settings.filter_truncate_ratio,
-               settings.filter_truncate_threshold,
-               false,  // Don't normalize. Gaussian will have peak height=1
-               &cerr);
+  // Again, we can use the faster "ApplyGauss()" to perform the convolution:
+  ApplyGauss(P.header.nvoxels, // = tomo_in.header.nvoxels,
+             P.aaafI,
+             tomo_in.aaafI,        // <-- save result here
+             mask.aaafI,
+             template_background_sigma,
+             settings.filter_truncate_ratio,
+             settings.filter_truncate_threshold,
+             false,  // Don't normalize. Gaussian will have peak height=1
+             &cerr);
 
   for(int iz=0; iz<P_dot_Q.header.nvoxels[2]; iz++)
     for(int iy=0; iy<P_dot_Q.header.nvoxels[1]; iy++)
@@ -712,18 +712,18 @@ HandleTemplateGauss(Settings settings,
   //        mask.aaafI,
   //        false,
   //        &cerr);
-  // Instead, we can use "ApplyGauss3D()" to perform the convolution quickly
+  // Instead, we can use "ApplyGauss()" to perform the convolution quickly
 
-  ApplyGauss3D(P.header.nvoxels, // = tomo_in.header.nvoxels,
-               P.aaafI,
-               //P_dot_P.aaafI,
-               P_dot_P_aaafI,        // <-- save result here
-               mask.aaafI,
-               template_background_sigma,  //width of "w" Gaussian
-               settings.filter_truncate_ratio,
-               settings.filter_truncate_threshold,
-               false,  // don't normalize. The "w" weights have a peak of 1
-               &cerr);
+  ApplyGauss(P.header.nvoxels, // = tomo_in.header.nvoxels,
+             P.aaafI,
+             //P_dot_P.aaafI,
+             P_dot_P_aaafI,        // <-- save result here
+             mask.aaafI,
+             template_background_sigma,  //width of "w" Gaussian
+             settings.filter_truncate_ratio,
+             settings.filter_truncate_threshold,
+             false,  // don't normalize. The "w" weights have a peak of 1
+             &cerr);
 
   // Now calculate "c", and "rmse" (sqrt(variance))
   // We can calculate this from the P_dot_Q and P_dot_P arrays we have now.
@@ -928,8 +928,8 @@ HandleBootstrapDogg(Settings settings,
     }
 
     ////Dealloc3D(tomo_in.header.nvoxels,
-    ////        &aiCount,
-    ////        &aaaiCount);
+    ////          &aiCount,
+    ////          &aaaiCount);
 
   } //if (settings.bs_ntests > 0)
 

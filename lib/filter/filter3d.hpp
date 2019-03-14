@@ -18,7 +18,7 @@
 using namespace std;
 #include <err_report.hpp> // defines the "InputErr" exception type
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
-#include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable3D())
+#include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable())
 #include <filter3d_utils.hpp> // defines "AverageArr()" and similar functions
 #include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
 #include <lin3_utils.hpp> // defines DotProduct3(),CrossProduct(),quaternions...
@@ -676,45 +676,51 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 
 
 
-/// @brief ApplySeparable3D applies a separable filter on a 3D array
-///        (aaafSource).  This important function is invoked by ApplyGauss3D(), 
-///        which itself is invoked by almost every function in this library.
+///@brief ApplySeparable() applies a separable filter on a 3D array: aaafSource.
 ///        It assumes separate Filter1D objects have already been created 
 ///        which will blur the image successively in each direction (x,y,z).
-///        The caller can specify an optional mask image (aaafMask), which
-///        allows us to exclude certain voxels from consideration.
+///        The caller can specify an optional mask image (aaafMask), 
+///        which allows us to exclude certain voxels from consideration.
+///        This important function is invoked by ApplyGauss(), which
+///        itself is invoked by almost every function in this library.
+///        (However this function can be used for other non-Gaussian filters.)
 ///
-/// @return  This function returns the effective height of the central peak of
+/// @note: This is a low level function.  Most users should ignore it.
+///
+/// @return  The resulting blurred image is stored in the aaafDest[][][] array.
+///          This function returns the effective height of the central peak of
 ///          the 3D filter.  (This is just the product of the central peaks of
 ///          each of the 1D filters.)  For normalized Gaussian shaped filters,
 ///          this peak height can be used to calculate the effective width
 ///          of the Gaussian to the caller (in case that information is useful).
-///          The resulting blurred image is stored in the aaafDest[][][] array.
 ///
 /// @note  One unusual feature of this function is its ability to efficiently
 ///        normalize the resulting filtered image in the presence of a mask (as
 ///        well as near the image boundaries). Consequently, the image does not
 ///        necessarily fade to black near the boundaries of the image (or the
-///        mask) but instead assumes the shade of the remaining nearby voxels.
-///        This will slow down the filter (by a factor of about 1.83).
-///
-/// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
+///        mask) but instead fades to the shade of the remaining nearby voxels.
+///        This feature is enabled whenever the "normalize" argument is "true",
+///        however this will slow the calculation. (If the aaafMask array is not
+///        NULL, then it will slow the calculation by a factor of up to 1.83)
 
 
-//  Note:  (Alternatively, this normalization could be handled by applying
-//         the filter (blur) to both the mask image and the original image
-//         and then dividing the two blurred images by each other. But the
-//         implementation here is a little bit faster than that (~17% faster).)
+
+// (Private comment:)
+//     (Alternatively, this normalization could be handled by applying
+//      the filter (blur) to both the mask image and the original image
+//      and then dividing the two blurred images by each other.  But the
+//      implementation here is a little bit faster than that: ~17% faster.)
+
 
 template<class Scalar>
-static Scalar
-ApplySeparable3D(int const image_size[3],              //!<number of voxels in x,y,z directions
-                 Scalar const *const *const *aaafSource, //!<image to which we want to apply the filter
-                 Scalar ***aaafDest,                   //!<store the filtered image here
-                 Scalar const *const *const *aaafMask, //!<if not NULL, ignore voxels if aaafMask[iz][iy][ix]!=0
-                 Filter1D<Scalar, int> aFilter[3],     //!<preallocated 1D filters
-                 bool normalize = true, //!< normalize the result near the boundaries?
-                 ostream *pReportProgress = NULL) //!< print out progress to the user?
+Scalar
+ApplySeparable(int const image_size[3],              //!<number of voxels in x,y,z directions
+               Scalar const *const *const *aaafSource, //!<image to which we want to apply the filter
+               Scalar ***aaafDest,                   //!<store the filtered image here
+               Scalar const *const *const *aaafMask, //!<if not NULL, ignore voxels if aaafMask[iz][iy][ix]!=0
+               Filter1D<Scalar, int> aFilter[3],     //!<preallocated 1D filters
+               bool normalize = true, //!< normalize the result near the boundaries?
+               ostream *pReportProgress = NULL) //!< print out progress to the user?
 {
   assert(aaafSource);
   assert(aaafDest);
@@ -1068,7 +1074,7 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
 
   return A_coeff;
 
-} //ApplySeparable3D(aFilter)
+} //ApplySeparable(aFilter)
 
 
 
@@ -1108,15 +1114,15 @@ ApplySeparable3D(int const image_size[3],              //!<number of voxels in x
 
 template<class Scalar>
 static Scalar
-ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
-             Scalar const *const *const *aaafSource,   //!< source image (3D array)
-             Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-             Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-             Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
-             int const truncate_halfwidth[3], //!< the filter window width
-             bool normalize = true,           //!< normalize the average?
-             ostream *pReportProgress = NULL  //!< print progress to the user?
-             )
+ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
+           Scalar const *const *const *aaafSource,   //!< source image (3D array)
+           Scalar ***aaafDest,     //!< filtered (blurred) image stored here
+           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+           Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
+           int const truncate_halfwidth[3], //!< the filter window width
+           bool normalize = true,           //!< normalize the average?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
   assert(aaafSource);
   assert(aaafDest);
@@ -1127,16 +1133,16 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
     aFilter[d] = GenFilterGauss1D(sigma[d], truncate_halfwidth[d]);
 
   Scalar A;
-  A = ApplySeparable3D(image_size, 
-                       aaafSource,
-                       aaafDest,
-                       aaafMask,
-                       aFilter,
-                       normalize,
-                       pReportProgress);
+  A = ApplySeparable(image_size, 
+                     aaafSource,
+                     aaafDest,
+                     aaafMask,
+                     aFilter,
+                     normalize,
+                     pReportProgress);
   return A;
 
-} //ApplyGauss3D(sigma, truncate_halfwidth, ...)
+} //ApplyGauss(sigma, truncate_halfwidth, ...)
 
 
 
@@ -1172,29 +1178,29 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 /// @returns the "A" coefficient (determined by normalization)
 template<class Scalar>
 static Scalar
-ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
-             Scalar const *const *const *aaafSource,   //!< source image (3D array)
-             Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-             Scalar const *const *const *aaafMask, //!< ignore voxels if aaafMask[i][j][k]==0
-             Scalar sigma,                   //!< Gaussian sigma parameter σ
-             int     truncate_halfwidth,      //!< the filter window width
+ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
+           Scalar const *const *const *aaafSource,   //!< source image (3D array)
+           Scalar ***aaafDest,     //!< filtered (blurred) image stored here
+           Scalar const *const *const *aaafMask, //!< ignore voxels if aaafMask[i][j][k]==0
+           Scalar sigma,                   //!< Gaussian sigma parameter σ
+           int     truncate_halfwidth,      //!< the filter window width
 
-             bool normalize = true,           //!< normalize the average?
-             ostream *pReportProgress = NULL  //!< print progress to the user?
-             )
+           bool normalize = true,           //!< normalize the average?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
   Scalar afSigma[3] = {sigma, sigma, sigma};
   int afTruncateHalfwidth[3] = {truncate_halfwidth,
                                 truncate_halfwidth,
                                 truncate_halfwidth};
-  return ApplyGauss3D(image_size,
-                      aaafSource,
-                      aaafDest,
-                      aaafMask,
-                      afSigma,
-                      afTruncateHalfwidth,
-                      normalize,
-                      pReportProgress);
+  return ApplyGauss(image_size,
+                    aaafSource,
+                    aaafDest,
+                    aaafMask,
+                    afSigma,
+                    afTruncateHalfwidth,
+                    normalize,
+                    pReportProgress);
 }
 
 
@@ -1236,15 +1242,15 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 template<class Scalar>
 Scalar
-ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
-             Scalar const *const *const *aaafSource,   //!< source image (3D array)
-             Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-             Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-             Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
-             Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
-             bool normalize = true,           //!< normalize the average?
-             ostream *pReportProgress = NULL  //!< print progress to the user?
-             )
+ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
+           Scalar const *const *const *aaafSource,   //!< source image (3D array)
+           Scalar ***aaafDest,     //!< filtered (blurred) image stored here
+           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+           Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
+           Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
+           bool normalize = true,           //!< normalize the average?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
   Scalar A;
   int truncate_halfwidth[3];
@@ -1252,22 +1258,23 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
     for (int d=0; d < 3; d++)
       truncate_halfwidth[d] = floor(sigma[d] * truncate_ratio);
 
-  A = ApplyGauss3D(image_size, 
-                   aaafSource,
-                   aaafDest,
-                   aaafMask,
-                   sigma,
-                   truncate_halfwidth,
-                   normalize,
-                   pReportProgress);
+  A = ApplyGauss(image_size, 
+                 aaafSource,
+                 aaafDest,
+                 aaafMask,
+                 sigma,
+                 truncate_halfwidth,
+                 normalize,
+                 pReportProgress);
   return A;
-} // ApplyGauss3D(..., truncate_ratio, ...)
+} // ApplyGauss(..., truncate_ratio, ...)
 
 
 
 
 /// @brief Apply a spherically-symmetric Gaussian filter (blur) to a 3D image.
-///   This is the most useful, popular variant of the ApplyGauss3D() function.
+///
+/// @note This is the most useful, popular variant of the ApplyGauss() function.
 ///
 /// @code h(x,y,z)=A*exp(-0.5*((x^2+y^2+z^2)/σ^2) @endcode
 /// The constant "A" is determined by normalization.
@@ -1301,25 +1308,25 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 template<class Scalar>
 Scalar
-ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
-             Scalar const *const *const *aaafSource,   //!< source image (3D array)
-             Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-             Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-             Scalar sigma,                 //!< Gaussian sigma parameter σ
-             Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
-             bool normalize = true,           //!< normalize the average?
-             ostream *pReportProgress = NULL  //!< print progress to the user?
-             )
+ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
+           Scalar const *const *const *aaafSource,   //!< source image (3D array)
+           Scalar ***aaafDest,     //!< filtered (blurred) image stored here
+           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+           Scalar sigma,                 //!< Gaussian sigma parameter σ
+           Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
+           bool normalize = true,           //!< normalize the average?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
   Scalar afSigma[3] = {sigma, sigma, sigma};
-  ApplyGauss3D(image_size,
-               aaafSource,
-               aaafDest,
-               aaafMask,
-               afSigma,
-               truncate_ratio,
-               normalize,
-               pReportProgress);
+  ApplyGauss(image_size,
+             aaafSource,
+             aaafDest,
+             aaafMask,
+             afSigma,
+             truncate_ratio,
+             normalize,
+             pReportProgress);
 }
 
 
@@ -1341,17 +1348,17 @@ ApplyGauss3D(int const image_size[3], //!< image size in x,y,z directions
 
 template<class Scalar>
 void
-ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
-           Scalar const *const *const *aaafSource,   //!< source image (3D array)
-           Scalar ***aaafDest,     //!< filtered image stored here
-           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-           Scalar const sigma_a[3], //!< (a_x, a_y, a_z) in the formula above
-           Scalar const sigma_b[3], //!< (b_x, b_y, b_z) in the formula above
-           int const truncate_halfwidth[3],//!<(half the filter window width along x,y,z)
-           Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-           Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
-           )
+ApplyDog(int const image_size[3], //!< image size in x,y,z directions
+         Scalar const *const *const *aaafSource,   //!< source image (3D array)
+         Scalar ***aaafDest,     //!< filtered image stored here
+         Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+         Scalar const sigma_a[3], //!< (a_x, a_y, a_z) in the formula above
+         Scalar const sigma_b[3], //!< (b_x, b_y, b_z) in the formula above
+         int const truncate_halfwidth[3],//!<(half the filter window width along x,y,z)
+         Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+         Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+         ostream *pReportProgress = NULL  //!< print progress to the user?
+         )
 {
   Scalar ***aaafTemp; //temporary array to store partially processed tomogram
   Scalar *afTemp;     //temporary array to store partially processed tomogram
@@ -1369,24 +1376,24 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
   Scalar A, B;        // let the user know what A B coefficients were used
 
   // Convolve the original source with the 1st Gaussian
-  A = ApplyGauss3D(image_size,
-                   aaafSource,
-                   aaafDest,   // <-- save result here
-                   aaafMask,
-                   sigma_a,
-                   truncate_halfwidth,
-                   true,
-                   pReportProgress);
+  A = ApplyGauss(image_size,
+                 aaafSource,
+                 aaafDest,   // <-- save result here
+                 aaafMask,
+                 sigma_a,
+                 truncate_halfwidth,
+                 true,
+                 pReportProgress);
 
   // Convolve the original source with the 2nd Gaussian
-  B = ApplyGauss3D(image_size,
-                   aaafSource,
-                   aaafTemp,   // <-- save result here
-                   aaafMask,
-                   sigma_b,
-                   truncate_halfwidth,
-                   true,
-                   pReportProgress);
+  B = ApplyGauss(image_size,
+                 aaafSource,
+                 aaafTemp,   // <-- save result here
+                 aaafMask,
+                 sigma_b,
+                 truncate_halfwidth,
+                 true,
+                 pReportProgress);
 
   // Subtract the second convolved signal from the first
   for (int iz = 0; iz < image_size[2]; iz++)
@@ -1405,7 +1412,7 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
   if (pB)
     *pB = B;
 
-} // ApplyDog3D()
+} // ApplyDog()
 
 
 
@@ -1433,17 +1440,17 @@ ApplyDog3D(int const image_size[3], //!< image size in x,y,z directions
 
 template<class Scalar>
 void
-ApplyLog3D(int const image_size[3], //!< source image size
-           Scalar const *const *const *aaafSource,   //!< source image (3D array)
-           Scalar ***aaafDest,     //!< filtered image stored here
-           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-           Scalar const sigma[3],  //!< Gaussian width in x,y,z drections
-           Scalar delta_sigma_over_sigma=0.02, //δ, difference in Gauss widths (approximation to LoG)
-           Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-           Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-           Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
-           )
+ApplyLog(int const image_size[3], //!< source image size
+         Scalar const *const *const *aaafSource,   //!< source image (3D array)
+         Scalar ***aaafDest,     //!< filtered image stored here
+         Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+         Scalar const sigma[3],  //!< Gaussian width in x,y,z drections
+         Scalar delta_sigma_over_sigma=0.02, //δ, difference in Gauss widths (approximation to LoG)
+         Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+         Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+         Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+         ostream *pReportProgress = NULL  //!< print progress to the user?
+         )
 {
   // "-log" approximates to the "Laplacian of a Gaussian" ("DoG") filter
   // with the difference of two Gaussians ("DoG") filter.
@@ -1468,16 +1475,16 @@ ApplyLog3D(int const image_size[3], //!< source image size
                                   std::max(sigma_a[d],
                                            sigma_b[d]));
 
-  ApplyDog3D(image_size,
-             aaafSource,
-             aaafDest,
-             aaafMask,
-             sigma_a,
-             sigma_b,
-             truncate_halfwidth,
-             pA,
-             pB,
-             pReportProgress);
+  ApplyDog(image_size,
+           aaafSource,
+           aaafDest,
+           aaafMask,
+           sigma_a,
+           sigma_b,
+           truncate_halfwidth,
+           pA,
+           pB,
+           pReportProgress);
 
   // Do we care about the overall magnitude of the result?
   //In order to approximate the magnitude of the
@@ -1514,7 +1521,7 @@ ApplyLog3D(int const image_size[3], //!< source image size
   //           (Don't worry about this for now.  Let the calller deal with this)
   //            
 
-} // ApplyLog3D()
+} // ApplyLog()
 
 
 
@@ -1540,29 +1547,29 @@ ApplyLog3D(int const image_size[3], //!< source image size
 
 template<class Scalar>
 void
-ApplyLog3D(int const image_size[3], //!< source image size
-           Scalar const *const *const *aaafSource, //!< source image
-           Scalar ***aaafDest,     //!< save results here
-           Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-           Scalar sigma,  //!< Gaussian width in x,y,z drections
-           Scalar delta_sigma_over_sigma=0.02, //!< δ, difference in Gauss widths (approximation to LoG)
-           Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-           Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-           Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
-           )
+ApplyLog(int const image_size[3], //!< source image size
+         Scalar const *const *const *aaafSource, //!< source image
+         Scalar ***aaafDest,     //!< save results here
+         Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+         Scalar sigma,  //!< Gaussian width in x,y,z drections
+         Scalar delta_sigma_over_sigma=0.02, //!< δ, difference in Gauss widths (approximation to LoG)
+         Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+         Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
+         Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
+         ostream *pReportProgress = NULL  //!< print progress to the user?
+         )
 {
   Scalar sigma_xyz[3] = {sigma, sigma, sigma};
-  ApplyLog3D(image_size,
-             aaafSource,
-             aaafDest,
-             aaafMask,
-             sigma_xyz,
-             delta_sigma_over_sigma,
-             truncate_ratio,
-             pA,
-             pB,
-             pReportProgress);
+  ApplyLog(image_size,
+           aaafSource,
+           aaafDest,
+           aaafMask,
+           sigma_xyz,
+           delta_sigma_over_sigma,
+           truncate_ratio,
+           pA,
+           pB,
+           pReportProgress);
 }
 
 
@@ -1676,13 +1683,13 @@ BlobDog(int const image_size[3], //!< source image size
 
     //Apply the LoG filter (approximated with a DoG filter)
     //      ...using the most recent blob width:
-    ApplyLog3D(image_size,
-               aaafSource,
-               aaaafI[j2i[1]], //<-store the most recent filtered image
-               aaafMask,
-               blob_sigma[ir],
-               delta_sigma_over_sigma,
-               truncate_ratio);
+    ApplyLog(image_size,
+             aaafSource,
+             aaaafI[j2i[1]], //<-store the most recent filtered image
+             aaafMask,
+             blob_sigma[ir],
+             delta_sigma_over_sigma,
+             truncate_ratio);
 
     // We must have filtered at least 3 images using different blob widths
     if (ir < 2)
@@ -1928,7 +1935,7 @@ BlobDog(int const image_size[3], //!< source image size
     delete [] aafI;
   }
 
-} //BlobDog3D()
+} //BlobDog()
 
 
 
@@ -2520,21 +2527,21 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
 template<class Scalar, class IntegerIndex, class Label>
 static void
-_FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
-               Scalar const *const *const *aaafSource, //!< image array aaafSource[iz][iy][ix]
-               Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
-               vector<IntegerIndex> *pv_minima_indices, //!< a list of integers uniquely identifying the location of each minima
-               vector<IntegerIndex> *pv_maxima_indices, //!< a list of integers uniquely identifying the location of each maxima
-               vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafSource[iz][iy][ix] values here (if not NULL)
-               vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafSource[iz][iy][ix] values here (if not NULL)
-               vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
-               vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
-               Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  // Ignore minima which are not sufficiently low
-               Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
-               int connectivity=3,                      //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-               bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-               Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-               ostream *pReportProgress=NULL)  //!< print progress to the user?
+_FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
+             Scalar const *const *const *aaafSource, //!< image array aaafSource[iz][iy][ix]
+             Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+             vector<IntegerIndex> *pv_minima_indices, //!< a list of integers uniquely identifying the location of each minima
+             vector<IntegerIndex> *pv_maxima_indices, //!< a list of integers uniquely identifying the location of each maxima
+             vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafSource[iz][iy][ix] values here (if not NULL)
+             vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafSource[iz][iy][ix] values here (if not NULL)
+             vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
+             vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
+             Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  // Ignore minima which are not sufficiently low
+             Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
+             int connectivity=3,                      //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+             bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+             Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
+             ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   assert(aaafSource);
 
@@ -2966,7 +2973,7 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
 
   delete [] neighbors;
 
-} // _FindLocalExtrema3D()
+} // _FindLocalExtrema()
 
 
 
@@ -2985,18 +2992,18 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
 
 template<class Scalar, class IntegerIndex, class Label>
 static void
-_FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
-               Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
-               Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
-               vector<IntegerIndex> &extrema_indices, //!< a list of integers uniquely identifying the location of each minima or maxima
-               vector<Scalar> &extrema_scores, //!< corresponding voxel brightness at that location
-               vector<IntegerIndex> &extrema_nvoxels, //!< how many voxels belong to each minima or maxima?
-               bool seek_minima=true,    //!< search for minima or maxima?
-               Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
-               int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-               bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-               Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-               ostream *pReportProgress=NULL)  //!< print progress to the user?
+_FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
+             Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
+             Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+             vector<IntegerIndex> &extrema_indices, //!< a list of integers uniquely identifying the location of each minima or maxima
+             vector<Scalar> &extrema_scores, //!< corresponding voxel brightness at that location
+             vector<IntegerIndex> &extrema_nvoxels, //!< how many voxels belong to each minima or maxima?
+             bool seek_minima=true,    //!< search for minima or maxima?
+             Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
+             int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+             bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+             Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
+             ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
   // C++ will not allow us to supply NULL to a function that expects a pointer 
@@ -3007,43 +3014,43 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
   vector<IntegerIndex> *NULL_vi = NULL;  
   vector<Scalar> *NULL_vf = NULL;  
   if (seek_minima) {
-    _FindExtrema3D(image_size,
-                   aaafI,
-                   aaafMask,
-                   &extrema_indices, // store maxima locations here
-                   NULL_vI, // <-- don't search for maxima
-                   &extrema_scores, // store minima values here
-                   NULL_vf, // <-- don't search for maxima
-                   &extrema_nvoxels, // store number of voxels in each minima
-                   NULL_vi, // <-- don't search for maxima
-                   threshold,
-                   -std::numeric_limits<Scalar>::infinity(),
-                   connectivity,
-                   allow_borders,
-                   aaaiDest,
-                   pReportProgress);
+    _FindExtrema(image_size,
+                 aaafI,
+                 aaafMask,
+                 &extrema_indices, // store maxima locations here
+                 NULL_vI, // <-- don't search for maxima
+                 &extrema_scores, // store minima values here
+                 NULL_vf, // <-- don't search for maxima
+                 &extrema_nvoxels, // store number of voxels in each minima
+                 NULL_vi, // <-- don't search for maxima
+                 threshold,
+                 -std::numeric_limits<Scalar>::infinity(),
+                 connectivity,
+                 allow_borders,
+                 aaaiDest,
+                 pReportProgress);
   }
   else {
     if (threshold == std::numeric_limits<Scalar>::infinity())
       threshold = -std::numeric_limits<Scalar>::infinity();
-    _FindExtrema3D(image_size,
-                   aaafI,
-                   aaafMask,
-                   NULL_vI, // <-- don't search for minima_crds,
-                   &extrema_indices, // store maxima locations here
-                   NULL_vf, // <-- don't search for minima_scores,
-                   &extrema_scores, // store maxima values here
-                   NULL_vi, // <-- don't search for minima
-                   &extrema_nvoxels, // store number of voxels in each maxima
-                   std::numeric_limits<Scalar>::infinity(),
-                   threshold,
-                   connectivity,
-                   allow_borders,
-                   aaaiDest,
-                   pReportProgress);
+    _FindExtrema(image_size,
+                 aaafI,
+                 aaafMask,
+                 NULL_vI, // <-- don't search for minima_crds,
+                 &extrema_indices, // store maxima locations here
+                 NULL_vf, // <-- don't search for minima_scores,
+                 &extrema_scores, // store maxima values here
+                 NULL_vi, // <-- don't search for minima
+                 &extrema_nvoxels, // store number of voxels in each maxima
+                 std::numeric_limits<Scalar>::infinity(),
+                 threshold,
+                 connectivity,
+                 allow_borders,
+                 aaaiDest,
+                 pReportProgress);
   }
   
-} //_FindExtrema3D()
+} //_FindExtrema()
 
 
 
@@ -3068,21 +3075,21 @@ _FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z
 
 template<class Scalar, class Coordinate, class IntegerIndex, class Label>
 void
-FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z directions
-              Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
-              Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
-              vector<array<Coordinate, 3> > *pv_minima_crds, //!< store minima locations (ix,iy,iz) here (if not NULL)
-              vector<array<Coordinate, 3> > *pv_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
-              vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
-              vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
-              vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
-              vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
-              Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
-              Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
-              int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-              bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-              Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-              ostream *pReportProgress=NULL   //!< optional: print progress to the user?
+FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
+            Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
+            Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+            vector<array<Coordinate, 3> > *pv_minima_crds, //!< store minima locations (ix,iy,iz) here (if not NULL)
+            vector<array<Coordinate, 3> > *pv_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
+            vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
+            vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
+            vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
+            vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
+            Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
+            Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
+            int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+            bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+            Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
+            ostream *pReportProgress=NULL   //!< optional: print progress to the user?
                    )
 {
   bool find_minima = (pv_minima_crds != NULL);
@@ -3105,21 +3112,21 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
       pv_maxima_scores = &maxima_scores;
   }
 
-  _FindExtrema3D(image_size,
-                 aaafI,
-                 aaafMask,
-                 pv_minima_indices,
-                 pv_maxima_indices,
-                 pv_minima_scores,
-                 pv_maxima_scores,
-                 pv_minima_nvoxels,
-                 pv_maxima_nvoxels,
-                 minima_threshold,
-                 maxima_threshold,
-                 connectivity,
-                 allow_borders,
-                 aaaiDest,
-                 pReportProgress);
+  _FindExtrema(image_size,
+               aaafI,
+               aaafMask,
+               pv_minima_indices,
+               pv_maxima_indices,
+               pv_minima_scores,
+               pv_maxima_scores,
+               pv_minima_nvoxels,
+               pv_maxima_nvoxels,
+               minima_threshold,
+               maxima_threshold,
+               connectivity,
+               allow_borders,
+               aaaiDest,
+               pReportProgress);
 
   // Now convert the indices back to x,y,z coordinates
   if (pv_minima_crds) {
@@ -3156,7 +3163,7 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
       (*pv_maxima_crds)[n][2] = iz;
     }
   }
-} //FindExtrema3D()
+} //FindExtrema()
 
 
 
@@ -3169,18 +3176,18 @@ FindExtrema3D(int const image_size[3],          //!< size of the image in x,y,z 
 
 template<class Scalar, class Coordinate, class IntegerIndex, class Label>
 void
-FindExtrema3D(int const image_size[3],            //!< size of input image array
-              Scalar const *const *const *aaafI,   //!< input image array
-              Scalar const *const *const *aaafMask, //!< if not NULL then zero entries indicate which voxels to ignore
-              vector<array<Coordinate, 3> > &extrema_crds, //!< store the location of each extrema
-              vector<Scalar> &extrema_scores, //!< store the brightness of each extrema
-              vector<IntegerIndex> &extrema_nvoxels, //!< store number of voxels in each extrema (usually 1)
-              bool seek_minima=true,    //!< search for minima or maxima?
-              Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
-              int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-              bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-              Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-              ostream *pReportProgress=NULL)  //!< print progress to the user?
+FindExtrema(int const image_size[3],            //!< size of input image array
+            Scalar const *const *const *aaafI,   //!< input image array
+            Scalar const *const *const *aaafMask, //!< if not NULL then zero entries indicate which voxels to ignore
+            vector<array<Coordinate, 3> > &extrema_crds, //!< store the location of each extrema
+            vector<Scalar> &extrema_scores, //!< store the brightness of each extrema
+            vector<IntegerIndex> &extrema_nvoxels, //!< store number of voxels in each extrema (usually 1)
+            bool seek_minima=true,    //!< search for minima or maxima?
+            Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
+            int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
+            bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
+            Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
+            ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   // NOTE:
   // C++ will not allow us to supply NULL to a function that expects a pointer 
@@ -3192,42 +3199,42 @@ FindExtrema3D(int const image_size[3],            //!< size of input image array
   vector<IntegerIndex> *NULL_vi = NULL;  
 
   if (seek_minima) {
-    FindExtrema3D(image_size,
-                  aaafI,
-                  aaafMask,
-                  &extrema_crds,    // store minima locations here
-                  NULL_vai3,        // <-- don't search for maxima
-                  &extrema_scores,  // store minima values here
-                  NULL_vf,          // <-- don't search for maxima
-                  &extrema_nvoxels, // store number of voxels in each minima
-                  NULL_vi,          // <-- don't search for maxima
-                  threshold,
-                  -std::numeric_limits<Scalar>::infinity(),
-                  connectivity,
-                  allow_borders,
-                  aaaiDest,
-                  pReportProgress);
+    FindExtrema(image_size,
+                aaafI,
+                aaafMask,
+                &extrema_crds,    // store minima locations here
+                NULL_vai3,        // <-- don't search for maxima
+                &extrema_scores,  // store minima values here
+                NULL_vf,          // <-- don't search for maxima
+                &extrema_nvoxels, // store number of voxels in each minima
+                NULL_vi,          // <-- don't search for maxima
+                threshold,
+                -std::numeric_limits<Scalar>::infinity(),
+                connectivity,
+                allow_borders,
+                aaaiDest,
+                pReportProgress);
   }
   else {
     if (threshold == std::numeric_limits<Scalar>::infinity())
       threshold = -std::numeric_limits<Scalar>::infinity();
-    FindExtrema3D(image_size,
-                  aaafI,
-                  aaafMask,
-                  NULL_vai3,        // <-- don't search for minima
-                  &extrema_crds,    // store maxima locations here
-                  NULL_vf,          // <-- don't search for minima
-                  &extrema_scores,  // store maxima values here
-                  NULL_vi,          // <-- don't search for minima
-                  &extrema_nvoxels, // store number of voxels in each maxima
-                  std::numeric_limits<Scalar>::infinity(),
-                  threshold,
-                  connectivity,
-                  allow_borders,
-                  aaaiDest,
-                  pReportProgress);
+    FindExtrema(image_size,
+                aaafI,
+                aaafMask,
+                NULL_vai3,        // <-- don't search for minima
+                &extrema_crds,    // store maxima locations here
+                NULL_vf,          // <-- don't search for minima
+                &extrema_scores,  // store maxima values here
+                NULL_vi,          // <-- don't search for minima
+                &extrema_nvoxels, // store number of voxels in each maxima
+                std::numeric_limits<Scalar>::infinity(),
+                threshold,
+                connectivity,
+                allow_borders,
+                aaaiDest,
+                pReportProgress);
   }
-} // FindExtrema3D()
+} // FindExtrema()
 
 
 
@@ -3253,18 +3260,18 @@ FindExtrema3D(int const image_size[3],            //!< size of input image array
 
 template<class Scalar, class Label, class Coordinate>
 void
-Watershed3D(int const image_size[3],                 //!< #voxels in xyz
-            Scalar const *const *const *aaafSource,  //!< intensity of each voxel
-            Label ***aaaiDest,                       //!< watershed segmentation results go here
-            Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
-            Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
-            bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
-            int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
-            bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled?
-            Scalar boundary_label=0,       //!< if so, what intensity (ie. label) should boundary voxels be assigned to?
-            vector<array<Coordinate, 3> > *pv_extrema_locations=NULL, //!< optional: the location of each minima or maxima
-            vector<Scalar> *pv_extrema_scores=NULL, //!< optional: the voxel intensities (brightnesses) at these locations
-            ostream *pReportProgress=NULL)  //!< print progress to the user?
+Watershed(int const image_size[3],                 //!< #voxels in xyz
+          Scalar const *const *const *aaafSource,  //!< intensity of each voxel
+          Label ***aaaiDest,                       //!< watershed segmentation results go here
+          Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
+          Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
+          bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
+          int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
+          bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled?
+          Scalar boundary_label=0,       //!< if so, what intensity (ie. label) should boundary voxels be assigned to?
+          vector<array<Coordinate, 3> > *pv_extrema_locations=NULL, //!< optional: the location of each minima or maxima
+          vector<Scalar> *pv_extrema_scores=NULL, //!< optional: the voxel intensities (brightnesses) at these locations
+          ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
   assert(image_size);
   assert(aaafSource);
@@ -3330,18 +3337,18 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
   vector<size_t> *pv_extrema_nvoxels = &extrema_nvoxels;
 
   // Find all the local minima (or maxima?) in the image.
-  FindExtrema3D(image_size,
-                aaafSource,
-                aaafMask,
-                *pv_extrema_locations,
-                *pv_extrema_scores,
-                *pv_extrema_nvoxels,
-                start_from_minima, //<-- minima or maxima?
-                halt_threshold,
-                connectivity,
-                true,
-                static_cast<Label***>(NULL),
-                pReportProgress);
+  FindExtrema(image_size,
+              aaafSource,
+              aaafMask,
+              *pv_extrema_locations,
+              *pv_extrema_scores,
+              *pv_extrema_nvoxels,
+              start_from_minima, //<-- minima or maxima?
+              halt_threshold,
+              connectivity,
+              true,
+              static_cast<Label***>(NULL),
+              pReportProgress);
 
   ptrdiff_t WATERSHED_BOUNDARY = 0; //an impossible value
   ptrdiff_t UNDEFINED = pv_extrema_locations->size() + 1; //an impossible value
@@ -3398,7 +3405,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
     assert(score == aaafSource[iz][iy][ix]);
     score *= SIGN_FACTOR; //(enable search for either local minima OR maxima)
 
-    // Note:FindExtrema3D() should avoid minima above the halt_threshold,
+    // Note:FindExtrema() should avoid minima above the halt_threshold,
     //     or maxima below the halt_threshold. We check for that with an assert:
     assert(score <= halt_threshold * SIGN_FACTOR);
 
@@ -3614,7 +3621,7 @@ Watershed3D(int const image_size[3],                 //!< #voxels in xyz
             aaaiDest[iz][iy][ix] = boundary_label;
   }
 
-} //Watershed3D()
+} //Watershed()
 
 
 
@@ -3925,18 +3932,18 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
   // Find all the local minima (or maxima?) in the image.
 
-  FindExtrema3D(image_size,
-                aaafSaliency,
-                aaafMask,
-                extrema_locations,
-                extrema_scores,
-                extrema_nvoxels,
-                (! start_from_saliency_maxima), //<-- minima or maxima?
-                threshold_saliency,
-                connectivity,
-                true,  // maxima are allowed to be located on the image border
-                static_cast<Label***>(NULL),
-                pReportProgress);
+  FindExtrema(image_size,
+              aaafSaliency,
+              aaafMask,
+              extrema_locations,
+              extrema_scores,
+              extrema_nvoxels,
+              (! start_from_saliency_maxima), //<-- minima or maxima?
+              threshold_saliency,
+              connectivity,
+              true,  // maxima are allowed to be located on the image border
+              static_cast<Label***>(NULL),
+              pReportProgress);
 
   ptrdiff_t UNDEFINED = extrema_locations.size() + 1; //an impossible value
   ptrdiff_t QUEUED = extrema_locations.size() + 2; //an impossible value
@@ -3991,7 +3998,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     assert(score == aaafSaliency[iz][iy][ix]);
     score *= SIGN_FACTOR; //(enable search for either local minima OR maxima)
 
-    // Note:FindExtrema3D() should avoid minima above threshold_saliency,
+    // Note:FindExtrema() should avoid minima above threshold_saliency,
     //     or maxima below threshold_saliency. We check for that with an assert:
     assert(score <= threshold_saliency * SIGN_FACTOR);
 
@@ -4117,10 +4124,10 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
       Scalar saliency_hessian3x3[3][3];
 
-      CalcHessianFiniteDifferences3D(aaafSaliency, //!< source image
-                                     ix, iy, iz,
-                                     saliency_hessian3x3,
-                                     image_size);
+      CalcHessianFiniteDifferences(aaafSaliency, //!< source image
+                                   ix, iy, iz,
+                                   saliency_hessian3x3,
+                                   image_size);
 
       // Confusing sign compatibility issue:
       // We assume that the tensor passed
@@ -5045,7 +5052,7 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
   Filter3D<Scalar, int>
     w = GenFilterGenGauss3D(sigma,
                             template_background_exponent,
-                            //template_profile.halfwidth);
+                            //template_profile.halfwidth,
                             filter_truncate_ratio,
                             static_cast<Scalar*>(NULL),
                             static_cast<ostream*>(NULL));
@@ -5097,14 +5104,14 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
   if (template_background_exponent == 2.0) {
 
     // then do it the fast way with seperable (ordinary) Gaussian filters
-    ApplyGauss3D(image_size,
-                 aaafSource,
-                 aaafP,    // <-- save result here
-                 aaafMask,
-                 sigma,
-                 filter_truncate_ratio,
-                 normalize,
-                 pReportProgress);
+    ApplyGauss(image_size,
+               aaafSource,
+               aaafP,    // <-- save result here
+               aaafMask,
+               sigma,
+               filter_truncate_ratio,
+               normalize,
+               pReportProgress);
   }
   else {
     w.Apply(image_size,
@@ -5138,14 +5145,14 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
 
   if (template_background_exponent == 2.0) {
     // then do it the fast way with seperable (ordinary) Gaussian filters
-    ApplyGauss3D(image_size,
-                 aaafP,
-                 aaafP_dot_P,    // <-- save result here
-                 aaafMask,
-                 sigma,
-                 filter_truncate_ratio,
-                 normalize,
-                 pReportProgress);
+    ApplyGauss(image_size,
+               aaafP,
+               aaafP_dot_P,    // <-- save result here
+               aaafMask,
+               sigma,
+               filter_truncate_ratio,
+               normalize,
+               pReportProgress);
   }
   else {
     w.Apply(image_size,
@@ -5290,15 +5297,15 @@ LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in 
 
 template<class Scalar, class VectorContainer, class TensorContainer>
 void
-CalcHessian3D(int const image_size[3], //!< source image size
-              Scalar const *const *const *aaafSource, //!< source image
-              VectorContainer ***aaaafGradient,  //!< save results here (if not NULL)
-              TensorContainer ***aaaafHessian, //!< save results here (if not NULL)
-              Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-              Scalar sigma,  //!< Gaussian width in x,y,z drections
-              Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-              ostream *pReportProgress = NULL  //!< print progress to the user?
-              )
+CalcHessian(int const image_size[3], //!< source image size
+            Scalar const *const *const *aaafSource, //!< source image
+            VectorContainer ***aaaafGradient,  //!< save results here (if not NULL)
+            TensorContainer ***aaaafHessian, //!< save results here (if not NULL)
+            Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+            Scalar sigma,  //!< Gaussian width in x,y,z drections
+            Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+            ostream *pReportProgress = NULL  //!< print progress to the user?
+            )
 {
   assert(aaafSource);
   assert(aaaafHessian);
@@ -5331,14 +5338,14 @@ CalcHessian3D(int const image_size[3], //!< source image size
   if (pReportProgress)
     *pReportProgress << "\n";
 
-  ApplyGauss3D(image_size,
-               aaafSource,
-               aaafSmoothed,
-               aaafMask,
-               sigma,
-               truncate_halfwidth,
-               false,
-               pReportProgress);
+  ApplyGauss(image_size,
+             aaafSource,
+             aaafSmoothed,
+             aaafMask,
+             sigma,
+             truncate_halfwidth,
+             false,
+             pReportProgress);
 
   assert(image_size[0] >= 3);
   assert(image_size[1] >= 3);
@@ -5356,10 +5363,10 @@ CalcHessian3D(int const image_size[3], //!< source image size
         if (aaaafGradient) {
           Scalar gradient[3];
 
-          CalcGradientFiniteDifferences3D(aaafSmoothed,
-                                          ix, iy, iz,
-                                          gradient,
-                                          image_size);
+          CalcGradientFiniteDifferences(aaafSmoothed,
+                                        ix, iy, iz,
+                                        gradient,
+                                        image_size);
 
           // Optional: Insure that the resulting gradient is dimensionless:
           // (Lindeberg 1993 "On Scale Selection for Differential Operators")
@@ -5389,10 +5396,10 @@ CalcHessian3D(int const image_size[3], //!< source image size
         if (aaaafHessian) {
 
           Scalar hessian[3][3];
-          CalcHessianFiniteDifferences3D(aaafSmoothed,
-                                         ix, iy, iz,
-                                         hessian,
-                                         image_size);
+          CalcHessianFiniteDifferences(aaafSmoothed,
+                                       ix, iy, iz,
+                                       hessian,
+                                       image_size);
 
           #ifndef NDEBUG
           // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
@@ -5431,15 +5438,15 @@ CalcHessian3D(int const image_size[3], //!< source image size
             &afSmoothed,
             &aaafSmoothed);
 
-} //CalcHessian3D()
+} //CalcHessian()
 
 
 
 
 
 
-/// CalcMomentTensor3D()
-/// This may be algebraically equivalent to CalcHessian3D()
+/// CalcMomentTensor()
+/// This may be algebraically equivalent to CalcHessian()
 /// However this version of the function might be more robust for small ridges.
 /// (This is because I apply the derivative to the Gaussian filter
 ///  before applying the filter, ...instead of applying the Gaussian filter
@@ -5451,15 +5458,15 @@ CalcHessian3D(int const image_size[3], //!< source image size
 
 template<class Scalar, class FirstMomentContainer, class SecondMomentContainer>
 void
-CalcMomentTensor3D(int const image_size[3], //!< source image size
-                   Scalar const *const *const *aaafSource, //!< source image
-                   FirstMomentContainer ***aaaaf1stMoment,  //!< save results here (if not NULL)
-                   SecondMomentContainer ***aaaaf2ndMoment, //!< save results here (if not NULL)
-                   Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                   Scalar sigma,  //!< Gaussian width in x,y,z drections
-                   Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-                   ostream *pReportProgress = NULL  //!< print progress to the user?
-                   )
+CalcMomentTensor(int const image_size[3], //!< source image size
+                 Scalar const *const *const *aaafSource, //!< source image
+                 FirstMomentContainer ***aaaaf1stMoment,  //!< save results here (if not NULL)
+                 SecondMomentContainer ***aaaaf2ndMoment, //!< save results here (if not NULL)
+                 Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+                 Scalar sigma,  //!< Gaussian width in x,y,z drections
+                 Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
+                 ostream *pReportProgress = NULL  //!< print progress to the user?
+                 )
 {
   assert(image_size);
   assert(aaafSource);
@@ -5492,14 +5499,14 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
 
   if (aaafMask) {
     // Calculate the normalization we need by blurring the mask by the Gaussian
-    ApplyGauss3D(image_size,
-                 aaafMask,   // <-- use the mask as the source image
-                 aaafNorm,   // <-- save result here
-                 aaafMask,
-                 sigma, // width of Gaussian
-                 truncate_halfwidth,
-                 true,
-                 pReportProgress);
+    ApplyGauss(image_size,
+               aaafMask,   // <-- use the mask as the source image
+               aaafNorm,   // <-- save result here
+               aaafMask,
+               sigma, // width of Gaussian
+               truncate_halfwidth,
+               true,
+               pReportProgress);
   }
 
 
@@ -5536,37 +5543,37 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
     aFilter[0] = filter1;  // x^1
     aFilter[1] = filter0;  // y^0
     aFilter[2] = filter0;  // z^0
-    return ApplySeparable3D(image_size, 
-                            aaafSource,
-                            aaafIx,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask == NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafSource,
+                          aaafIx,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask == NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     // calculate the y moment (=x^0 * y^1 * z^0)
     aFilter[0] = filter0;  // x^0
     aFilter[1] = filter1;  // y^1
     aFilter[2] = filter0;  // z^0
-    return ApplySeparable3D(image_size, 
-                            aaafSource,
-                            aaafIy,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask == NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafSource,
+                          aaafIy,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask == NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     // calculate the x moment (=x^0 * y^0 * z^1)
     aFilter[0] = filter0;  // x^0
     aFilter[1] = filter0;  // y^0
     aFilter[2] = filter1;  // z^1
-    return ApplySeparable3D(image_size, 
-                            aaafSource,
-                            aaafIz,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask == NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafSource,
+                          aaafIz,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask == NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     if (aaafMask) {
       // If a mask was specified, then divide by the contribution from the mask
@@ -5633,14 +5640,14 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
             &afP,
             &aaafP);
 
-    ApplyGauss3D(image_size,
-                 aaafSource,
-                 aaafP,   // <-- save result here
-                 aaafMask,
-                 sigma, // width of Gaussian
-                 truncate_halfwidth,
-                 true,
-                 pReportProgress);
+    ApplyGauss(image_size,
+               aaafSource,
+               aaafP,   // <-- save result here
+               aaafMask,
+               sigma, // width of Gaussian
+               truncate_halfwidth,
+               true,
+               pReportProgress);
 
     // Subtract the average value from the image intensity, and store in P:
     for(int iz=0; iz<image_size[2]; iz++)
@@ -5694,73 +5701,73 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
     aFilter[0] = filter2;  // x^2
     aFilter[1] = filter0;  // y^0
     aFilter[2] = filter0;  // z^0
-    return ApplySeparable3D(image_size, 
-                            aaafP,
-                            aaafIxx,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask == NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafP,
+                          aaafIxx,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask == NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     // calculate the y*y moment of the innertia (=x^0 * y^2 * z^0)
     aFilter[0] = filter0;  // x^0
     aFilter[1] = filter2;  // y^2
     aFilter[2] = filter0;  // z^0
-    return ApplySeparable3D(image_size, 
-                            aaafP,
-                            aaafIyy,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask == NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafP,
+                          aaafIyy,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask == NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     // calculate the z*z moment of the innertia (=x^0 * y^0 * z^2)
     aFilter[0] = filter0;  // x^0
     aFilter[1] = filter0;  // y^0
     aFilter[2] = filter2;  // z^2
-    return ApplySeparable3D(image_size, 
-                            aaafP,
-                            aaafIzz,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask==NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafP,
+                          aaafIzz,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask==NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     // calculate the x*y moment of the innertia (=x^1 * y^1 * z^0)
     aFilter[0] = filter1;  // x^1
     aFilter[1] = filter1;  // y^1
     aFilter[2] = filter0;  // z^0
-    return ApplySeparable3D(image_size, 
-                            aaafP,
-                            aaafIxy,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask==NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafP,
+                          aaafIxy,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask==NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     // calculate the y*z moment of the innertia (=x^0 * y^1 * z^1)
     aFilter[0] = filter0;  // x^0
     aFilter[1] = filter1;  // y^1
     aFilter[2] = filter1;  // z^1
-    return ApplySeparable3D(image_size, 
-                            aaafP,
-                            aaafIyz,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask==NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafP,
+                          aaafIyz,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask==NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     // calculate the x*z moment of the innertia (=x^1 * y^0 * z^1)
     aFilter[0] = filter1;  // x^1
     aFilter[1] = filter0;  // y^0
     aFilter[2] = filter1;  // z^1
-    return ApplySeparable3D(image_size, 
-                            aaafP,
-                            aaafIxz,
-                            aaafMask,
-                            aFilter,
-                            (aaafMask==NULL), //don't normalize if theres a mask
-                            pReportProgress);
+    return ApplySeparable(image_size, 
+                          aaafP,
+                          aaafIxz,
+                          aaafMask,
+                          aFilter,
+                          (aaafMask==NULL), //don't normalize if theres a mask
+                          pReportProgress);
 
     if (aaafMask) {
       // If a mask was specified, then divide by the contribution from the mask
@@ -5824,9 +5831,9 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
     if (pReportProgress)
       *pReportProgress << "done ----" << endl;
 
-    Dealoc3D(image_size,
-             &afP,
-             &aaafP);
+    Dealloc3D(image_size,
+              &afP,
+              &aaafP);
 
     Dealloc3D(image_size,
               &afIxx,
@@ -5852,7 +5859,7 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
             &afNorm,
             &aaafNorm);
 
-} // CalcMomentTensor3D()
+} // CalcMomentTensor()
 
 
 
@@ -5872,13 +5879,13 @@ CalcMomentTensor3D(int const image_size[3], //!< source image size
 
 template<class Scalar, class TensorContainer>
 void
-DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
-                          TensorContainer const *const *const *aaaafSource, //!< input tensor
-                          TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
-                          Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                          EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS,
-                          ostream *pReportProgress = NULL  //!< print progress to the user?
-                          )
+DiagonalizeHessianImage(int const image_size[3], //!< source image size
+                        TensorContainer const *const *const *aaaafSource, //!< input tensor
+                        TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
+                        Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+                        EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS,
+                        ostream *pReportProgress = NULL  //!< print progress to the user?
+                        )
 {
   assert(aaaafSource);
   if (pReportProgress && aaaafSource)
@@ -5982,7 +5989,7 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
       } //for (int ix = 1; ix < image_size[0]-1; ix++) {
     } //for (int iy = 1; iy < image_size[1]-1; iy++) {
   } //for (int iz = 1; iz < image_size[2]-1; iz++) {
-} //DiagonalizeHessianImage3D()
+} //DiagonalizeHessianImage()
 
 
 
@@ -5991,7 +5998,7 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
 
 /// @brief  Read a volumetric 3D 6-channel image, where each voxel in the
 ///         image has the (non-redundant) components of a symmetrix 3x3 matrix
-///         which has been diagonalized using DiagonalizeHessianImage3D().
+///         which has been diagonalized using DiagonalizeHessianImage().
 ///         This function loops over all the voxels and performs the
 ///         inverse operation.
 /// @note   The "TensorContainer" object type is expected to behave like
@@ -5999,7 +6006,7 @@ DiagonalizeHessianImage3D(int const image_size[3], //!< source image size
 
 template<class Scalar, class TensorContainer>
 void
-UndiagonalizeHessianImage3D(int const image_size[3],  //!< source image size
+UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
                             TensorContainer const *const *const *aaaafSource, //!< input tensor
                             TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
                             Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
@@ -6026,7 +6033,7 @@ UndiagonalizeHessianImage3D(int const image_size[3],  //!< source image size
       } //for (int ix = 1; ix < image_size[0]-1; ix++) {
     } //for (int iy = 1; iy < image_size[1]-1; iy++) {
   } //for (int iz = 1; iz < image_size[2]-1; iz++) {
-} //UndiagonalizeHessianImage3D()
+} //UndiagonalizeHessianImage()
 
 
 
@@ -6356,12 +6363,12 @@ public:
 
       // Diagonalize the resulting tensor.
       // The resulting eigenvalues and eigenvectors can be analyzed by the caller.
-      DiagonalizeHessianImage3D(image_size,
-                                aaaafDest, //<--undiagonalized tensors (input)
-                                aaaafDest, //<--diagonalized tensors (output)
-                                aaafMaskDest,
-                                selfadjoint_eigen3::DECREASING_EIVALS,
-                                pReportProgress);
+      DiagonalizeHessianImage(image_size,
+                              aaaafDest, //<--undiagonalized tensors (input)
+                              aaaafDest, //<--diagonalized tensors (output)
+                              aaafMaskDest,
+                              selfadjoint_eigen3::DECREASING_EIVALS,
+                              pReportProgress);
 
       // DEBUG: assert that all eigenvalues are nonnegative
       for (Integer iz=0; iz<image_size[2]; iz++) {

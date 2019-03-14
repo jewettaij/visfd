@@ -233,15 +233,15 @@ GenFilterDogg3D(Scalar width_a[3],  //"a" parameter in formula
 
 template<class Scalar>
 Scalar
-ApplyGauss3D(int const image_size[3], 
-             Scalar const *const* const *aaafSource,
-             Scalar ***aaafDest,
-             Scalar const *const *const *aaafMask,
-             Scalar const sigma[3],
-             Scalar filter_truncate_ratio,
-             Scalar filter_truncate_threshold,
-             bool normalize = true,
-             ostream *pReportProgress = NULL)
+ApplyGauss(int const image_size[3], 
+           Scalar const *const* const *aaafSource,
+           Scalar ***aaafDest,
+           Scalar const *const *const *aaafMask,
+           Scalar const sigma[3],
+           Scalar filter_truncate_ratio,
+           Scalar filter_truncate_threshold,
+           bool normalize = true,
+           ostream *pReportProgress = NULL)
 {
 
   if (filter_truncate_ratio <= 0) {
@@ -250,16 +250,16 @@ ApplyGauss3D(int const image_size[3],
     //    -> filter_truncate_ratio^2 = -2*log(filter_truncate_threshold)
     filter_truncate_ratio = sqrt(-2*log(filter_truncate_threshold));
   }
-  return ApplyGauss3D(image_size, 
-                      aaafSource,
-                      aaafDest,
-                      aaafMask,
-                      sigma,
-                      filter_truncate_ratio,
-                      normalize,
-                      pReportProgress);
+  return ApplyGauss(image_size, 
+                    aaafSource,
+                    aaafDest,
+                    aaafMask,
+                    sigma,
+                    filter_truncate_ratio,
+                    normalize,
+                    pReportProgress);
 
-} // ApplyGauss3D(..., filter_truncate_ratio, filter_truncate_threshold, ...)
+} // ApplyGauss(..., filter_truncate_ratio, filter_truncate_threshold, ...)
 
 
 
@@ -275,17 +275,17 @@ ApplyGauss3D(int const image_size[3],
 
 template<class Scalar>
 void
-ApplyDog3D(int const image_size[3], //source image size
-           Scalar const *const *const *aaafSource,  //source image
-           Scalar ***aaafDest,     //save results here
-           Scalar const *const *const *aaafMask,  //ignore voxels where mask==0
-           Scalar sigma_a[3],
-           Scalar sigma_b[3],
-           Scalar filter_truncate_ratio,
-           Scalar filter_truncate_threshold,
-           Scalar *pA = NULL,
-           Scalar *pB = NULL,
-           ostream *pReportProgress = NULL)
+ApplyDog(int const image_size[3], //source image size
+         Scalar const *const *const *aaafSource,  //source image
+         Scalar ***aaafDest,     //save results here
+         Scalar const *const *const *aaafMask,  //ignore voxels where mask==0
+         Scalar sigma_a[3],
+         Scalar sigma_b[3],
+         Scalar filter_truncate_ratio,
+         Scalar filter_truncate_threshold,
+         Scalar *pA = NULL,
+         Scalar *pB = NULL,
+         ostream *pReportProgress = NULL)
 {
   Scalar ***aaafTemp; //temporary array to store partially processed tomogram
   Scalar *afTemp;     //temporary array to store partially processed tomogram
@@ -296,25 +296,25 @@ ApplyDog3D(int const image_size[3], //source image size
 
   Scalar A, B;        // let the user know what A B coefficients were used
 
-  A = ApplyGauss3D(image_size,
-                   aaafSource,
-                   aaafDest,         // <-- save result here
-                   aaafMask,
-                   sigma_a,
-                   filter_truncate_ratio,
-                   filter_truncate_threshold,
-                   true,
-                   pReportProgress);
+  A = ApplyGauss(image_size,
+                 aaafSource,
+                 aaafDest,         // <-- save result here
+                 aaafMask,
+                 sigma_a,
+                 filter_truncate_ratio,
+                 filter_truncate_threshold,
+                 true,
+                 pReportProgress);
 
-  B = ApplyGauss3D(image_size,
-                   aaafSource,
-                   aaafTemp,         // <-- save result here
-                   aaafMask,
-                   sigma_b,
-                   filter_truncate_ratio,
-                   filter_truncate_threshold,
-                   true,
-                   pReportProgress);
+  B = ApplyGauss(image_size,
+                 aaafSource,
+                 aaafTemp,         // <-- save result here
+                 aaafMask,
+                 sigma_b,
+                 filter_truncate_ratio,
+                 filter_truncate_threshold,
+                 true,
+                 pReportProgress);
 
   // Subtract the second convolved signal from the first
   for (int iz = 0; iz < image_size[2]; iz++)
@@ -333,7 +333,7 @@ ApplyDog3D(int const image_size[3], //source image size
   if (pB)
     *pB = B;
 
-} // ApplyDog3D(...,filter_truncate_ratio,filter_truncate_threshold,...)
+} // ApplyDog(...,filter_truncate_ratio,filter_truncate_threshold,...)
 
 
 
@@ -341,17 +341,17 @@ ApplyDog3D(int const image_size[3], //source image size
 
 template<class Scalar>
 void
-ApplyLog3D(int const image_size[3], //source image size
-           Scalar const *const *const *aaafSource,   //source image
-           Scalar ***aaafDest,     //save results here
-           Scalar const *const *const *aaafMask,     //ignore voxels where mask==0
-           Scalar const sigma[3],  //Gaussian width in x,y,z drections
-           Scalar delta_sigma_over_sigma, //difference in Gauss widths
-           Scalar filter_truncate_ratio,
-           Scalar filter_truncate_threshold,
-           Scalar *pA = NULL,
-           Scalar *pB = NULL,
-           ostream *pReportProgress = NULL)
+ApplyLog(int const image_size[3], //source image size
+         Scalar const *const *const *aaafSource,   //source image
+         Scalar ***aaafDest,     //save results here
+         Scalar const *const *const *aaafMask,     //ignore voxels where mask==0
+         Scalar const sigma[3],  //Gaussian width in x,y,z drections
+         Scalar delta_sigma_over_sigma, //difference in Gauss widths
+         Scalar filter_truncate_ratio,
+         Scalar filter_truncate_threshold,
+         Scalar *pA = NULL,
+         Scalar *pB = NULL,
+         ostream *pReportProgress = NULL)
 {
 
   if (filter_truncate_ratio < 0)
@@ -359,18 +359,18 @@ ApplyLog3D(int const image_size[3], //source image size
     //    -> filter_truncate_ratio^2 = -2*log(filter_truncate_threshold)
     filter_truncate_ratio = sqrt(-2*log(filter_truncate_threshold));
 
-  ApplyLog3D(image_size,
-             aaafSource,
-             aaafDest,
-             aaafMask,
-             sigma,
-             delta_sigma_over_sigma,
-             filter_truncate_ratio,
-             pA,
-             pB,
-             pReportProgress);
+  ApplyLog(image_size,
+           aaafSource,
+           aaafDest,
+           aaafMask,
+           sigma,
+           delta_sigma_over_sigma,
+           filter_truncate_ratio,
+           pA,
+           pB,
+           pReportProgress);
 
-} // ApplyLog3D(..,filter_truncate_ratio,filter_truncate_threshold,...)
+} // ApplyLog(..,filter_truncate_ratio,filter_truncate_threshold,...)
 
 
 

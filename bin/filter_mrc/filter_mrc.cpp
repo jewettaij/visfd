@@ -83,15 +83,15 @@ HandleGauss(Settings settings,
 
   float A; // let the user know what A coefficient was used
 
-  A = ApplyGauss3D(tomo_in.header.nvoxels,
-                   tomo_in.aaafI,
-                   tomo_out.aaafI,   // <-- save result here
-                   mask.aaafI,
-                   settings.width_a,
-                   settings.filter_truncate_ratio,
-                   settings.filter_truncate_threshold,
-                   true,
-                   &cerr);
+  A = ApplyGauss(tomo_in.header.nvoxels,
+                 tomo_in.aaafI,
+                 tomo_out.aaafI,   // <-- save result here
+                 mask.aaafI,
+                 settings.width_a,
+                 settings.filter_truncate_ratio,
+                 settings.filter_truncate_threshold,
+                 true,
+                 &cerr);
 
       
   cerr << " Filter Used:\n"
@@ -162,17 +162,17 @@ HandleDog(Settings settings,
 
   float A, B;
 
-  ApplyDog3D(tomo_in.header.nvoxels,
-             tomo_in.aaafI,
-             tomo_out.aaafI,
-             mask.aaafI,
-             settings.width_a,
-             settings.width_b,
-             settings.filter_truncate_ratio,
-             settings.filter_truncate_threshold,
-             &A,
-             &B,
-             &cerr);
+  ApplyDog(tomo_in.header.nvoxels,
+           tomo_in.aaafI,
+           tomo_out.aaafI,
+           mask.aaafI,
+           settings.width_a,
+           settings.width_b,
+           settings.filter_truncate_ratio,
+           settings.filter_truncate_threshold,
+           &A,
+           &B,
+           &cerr);
 
   cerr << " Filter Used:\n"
     " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
@@ -219,17 +219,17 @@ HandleDogScaleFree(Settings settings,
 
   float A, B;
 
-  ApplyLog3D(tomo_in.header.nvoxels,
-             tomo_in.aaafI,
-             tomo_out.aaafI,
-             mask.aaafI,
-             settings.dogsf_width,
-             settings.delta_sigma_over_sigma,
-             settings.filter_truncate_ratio,
-             settings.filter_truncate_threshold,
-             &A,
-             &B,
-             &cerr);
+  ApplyLog(tomo_in.header.nvoxels,
+           tomo_in.aaafI,
+           tomo_out.aaafI,
+           mask.aaafI,
+           settings.dogsf_width,
+           settings.delta_sigma_over_sigma,
+           settings.filter_truncate_ratio,
+           settings.filter_truncate_threshold,
+           &A,
+           &B,
+           &cerr);
 
 
   cerr << " Filter Used:\n"
@@ -893,21 +893,21 @@ HandleExtrema(Settings settings,
     pv_maxima_nvoxels = &maxima_nvoxels;
   }
 
-  FindExtrema3D(tomo_in.header.nvoxels,
-                tomo_in.aaafI,
-                mask.aaafI,
-                pv_minima_crds_voxels,
-                pv_maxima_crds_voxels,
-                pv_minima_scores,
-                pv_maxima_scores,
-                pv_minima_nvoxels,
-                pv_maxima_nvoxels,
-                minima_threshold,
-                maxima_threshold,
-                settings.neighbor_connectivity,
-                settings.extrema_on_boundary,
-                tomo_out.aaafI, //<--an image showing where the minima are?
-                &cerr);
+  FindExtrema(tomo_in.header.nvoxels,
+              tomo_in.aaafI,
+              mask.aaafI,
+              pv_minima_crds_voxels,
+              pv_maxima_crds_voxels,
+              pv_minima_scores,
+              pv_maxima_scores,
+              pv_minima_nvoxels,
+              pv_maxima_nvoxels,
+              minima_threshold,
+              maxima_threshold,
+              settings.neighbor_connectivity,
+              settings.extrema_on_boundary,
+              tomo_out.aaafI, //<--an image showing where the minima are?
+              &cerr);
 
   // non-max suppression
   // discards minima or maxima which lie too close together.
@@ -1048,18 +1048,18 @@ HandleWatershed(Settings settings,
   //  which will be written to a file later.  This way the end-user can
   //  view the results.)
 
-  Watershed3D(tomo_in.header.nvoxels,
-              tomo_in.aaafI,
-              aaaiBasinId,
-              mask.aaafI,
-              settings.watershed_threshold,
-              settings.watershed_use_minima,
-              settings.neighbor_connectivity,
-              settings.watershed_show_boundaries,
-              settings.watershed_boundary_label,
-              &extrema_crds,
-              &extrema_scores,
-              &cerr);
+  Watershed(tomo_in.header.nvoxels,
+            tomo_in.aaafI,
+            aaaiBasinId,
+            mask.aaafI,
+            settings.watershed_threshold,
+            settings.watershed_use_minima,
+            settings.neighbor_connectivity,
+            settings.watershed_show_boundaries,
+            settings.watershed_boundary_label,
+            &extrema_crds,
+            &extrema_scores,
+            &cerr);
 
   for (int iz = 0; iz < image_size[2]; ++iz)
     for (int iy = 0; iy < image_size[1]; ++iy)
@@ -1071,7 +1071,7 @@ HandleWatershed(Settings settings,
             &aaaiBasinId);
 
   // Did the user supply a mask?
-  // Watershed3D() intentionally does not modify voxels which lie 
+  // Watershed() intentionally does not modify voxels which lie 
   // outside the mask.  These voxels will have random undefined values 
   // unless we assign them manually.  We do this below.
   float UNDEFINED = -1;
@@ -1172,38 +1172,38 @@ HandleRidgeDetectorPlanar(Settings settings,
     int truncate_halfwidth = floor(settings.width_b[0] *
                                    settings.filter_truncate_ratio);
 
-    ApplyGauss3D(tomo_in.header.nvoxels,
-                 tomo_in.aaafI,
-                 tomo_background.aaafI,
-                 mask.aaafI,
-                 settings.width_b[0],
-                 truncate_halfwidth,
-                 true,
-                 &cerr);
+    ApplyGauss(tomo_in.header.nvoxels,
+               tomo_in.aaafI,
+               tomo_background.aaafI,
+               mask.aaafI,
+               settings.width_b[0],
+               truncate_halfwidth,
+               true,
+               &cerr);
 
     truncate_halfwidth = floor(settings.width_a[0] *
                                settings.filter_truncate_ratio);
 
-    ApplyGauss3D(tomo_in.header.nvoxels,
-                 tomo_in.aaafI,
-                 tomo_out.aaafI,
-                 mask.aaafI,
-                 settings.width_a[0],
-                 truncate_halfwidth,
-                 true,
-                 &cerr);
+    ApplyGauss(tomo_in.header.nvoxels,
+               tomo_in.aaafI,
+               tomo_out.aaafI,
+               mask.aaafI,
+               settings.width_a[0],
+               truncate_halfwidth,
+               true,
+               &cerr);
   }
 
   // Using this blurred image, calculate the 2nd derivative matrix everywhere:
 
-  CalcHessian3D(tomo_in.header.nvoxels,
-                tomo_in.aaafI,
-                aaaafGradient,
-                tmp_tensor.aaaafI,
-                mask.aaafI,
-                sigma,
-                settings.filter_truncate_ratio,
-                &cerr);
+  CalcHessian(tomo_in.header.nvoxels,
+              tomo_in.aaafI,
+              aaaafGradient,
+              tmp_tensor.aaaafI,
+              mask.aaafI,
+              sigma,
+              settings.filter_truncate_ratio,
+              &cerr);
 
 
   // We need to store the direction of the most important eigenvector

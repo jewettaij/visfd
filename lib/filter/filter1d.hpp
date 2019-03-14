@@ -392,7 +392,7 @@ public:
 
 
 template<class Scalar>
-// GenFilterGauss1D generates a 1-D filter and fills its array with values
+// GenFilterGauss1D() generates a 1-D filter and fills its array with values
 // corresponding to a normalized Gaussian evaluated at evenly spaced intervals.
 // The caller must specify the "σ" parameter (width of the Gaussian,
 // in units of pixels/voxels), in addition to the "halfwidth" parameter, which

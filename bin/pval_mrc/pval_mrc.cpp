@@ -302,14 +302,14 @@ int main(int argc, char **argv) {
       if ((! settings.precomputed_gaussian_blur) ||
           (settings.vfSigma.size() > 1)) {
 
-        ApplyGauss3D(tomo_in.header.nvoxels,
-                     tomo_in.aaafI,
-                     tomo_out.aaafI, //<-store resulting image here
-                     mask.aaafI,
-                     sigma,
-                     filter_truncate_halfwidth,
-                     true,
-                     &cerr);
+        ApplyGauss(tomo_in.header.nvoxels,
+                   tomo_in.aaafI,
+                   tomo_out.aaafI, //<-store resulting image here
+                   mask.aaafI,
+                   sigma,
+                   filter_truncate_halfwidth,
+                   true,
+                   &cerr);
 
         // Densities everywhere are assumed to be in physical units
         // (ie. of 1/Angstroms^3),  NOT   1/voxels^3

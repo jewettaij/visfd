@@ -467,11 +467,11 @@ HandleTemplateGGauss(Settings settings,
 ///          ellipsoid specified by "scramble_radius")
 template<class Scalar>
 void
-ScrambleImage3D(int image_size[3],
-                Scalar const *const *const *aaafSource,
-                  //(ellipsoidal) scramble radius in x,y,z directions:
-                int const scramble_radius[3], 
-                Scalar ***aaafDest)
+ScrambleImage(int image_size[3],
+              Scalar const *const *const *aaafSource,
+                // (ellipsoidal) scramble radius in x,y,z directions:
+              int const scramble_radius[3], 
+              Scalar ***aaafDest)
 {
   for (int iz=0; iz < image_size[2]; iz++) {
     for (int iy=0; iy < image_size[1]; iy++) {
@@ -491,7 +491,7 @@ ScrambleImage3D(int image_size[3],
       }
     }
   }
-} //ScrambleImage3D()
+} //ScrambleImage()
 
 
 /// @brief
