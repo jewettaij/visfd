@@ -63,9 +63,6 @@ void MrcSimple::Dealloc() {
   Dealloc3D(header.nvoxels,
             &afI,
             &aaafI);
-  header.origin[0] = -1;
-  header.origin[1] = -1;
-  header.origin[2] = -1;
 }
 
 
@@ -148,10 +145,6 @@ void MrcSimple::Read(istream& mrc_file,
   header.mvoxels[0] = header.nvoxels[0];
   header.mvoxels[1] = header.nvoxels[1];
   header.mvoxels[2] = header.nvoxels[2];
-  header.origin[0] = ceil(header.nvoxels[0]*0.5);  //default location of
-  header.origin[1] = ceil(header.nvoxels[1]*0.5);  //origin is at the
-  header.origin[2] = ceil(header.nvoxels[2]*0.5);  //center of the image
-
 
   // Read the image
   ReadArray(mrc_file, axis_order);

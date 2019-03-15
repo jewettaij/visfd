@@ -59,15 +59,21 @@ int main(int argc, char **argv) {
     nvoxels[1] = 1 + ymax-ymin;
     nvoxels[2] = 1 + zmax-zmin;
     cropped_tomo.Resize(nvoxels);
+    cropped_tomo.header.nvoxels[0] = nvoxels[0];
+    cropped_tomo.header.nvoxels[1] = nvoxels[1];
+    cropped_tomo.header.nvoxels[2] = nvoxels[2];
     //           and shift origin[0],origin[1],origin[2] accordingly
-    cropped_tomo.header.origin[0] -= (xmin-1)*voxel_size[0];
-    cropped_tomo.header.origin[1] -= (ymin-1)*voxel_size[1];
-    cropped_tomo.header.origin[2] -= (zmin-1)*voxel_size[2];
+    cropped_tomo.header.origin[0]= tomo.header.origin[0]+(xmin-1)*voxel_size[0];
+    cropped_tomo.header.origin[1]= tomo.header.origin[1]+(ymin-1)*voxel_size[1];
+    cropped_tomo.header.origin[2]= tomo.header.origin[2]+(zmin-1)*voxel_size[2];
+
     for (int iz = 0; iz <= zmax-zmin; iz++)
       for (int iy = 0; iy <= ymax-ymin; iy++)
 	for (int ix = 0; ix <= xmax-xmin; ix++)
 	  cropped_tomo.aaafI[iz][iy][ix] = 
 	    tomo.aaafI[iz+zmin][iy+ymin][ix+xmin];
+
+    cropped_tomo.FindMinMaxMean(); //update the min, max, mean header params
 
     // Write the file
     cerr << "writing cropped tomogram (in float mode)" << endl;
@@ -76,8 +82,8 @@ int main(int argc, char **argv) {
     cropped_tomo.Write(out_file_name); //(You can also use cout<<cropped_tomo;)
 
   } //try {
-  catch (string s) {
-    cerr << s << endl; // In case of file format error, print message and exit
+  catch (InputErr& e) {
+    cerr << "\n" << e.what() << endl;
     exit(1);
   }
 } // main()

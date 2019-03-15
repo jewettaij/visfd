@@ -134,7 +134,8 @@ public:
     for (int d=0; d < 3; d++) {
       header.nvoxels[d] = set_nvoxels[d];
       header.mvoxels[d] = set_nvoxels[d]; //default, can be overriden later
-      header.cellA[d]   = set_nvoxels[d]; //default, can be overriden later
+      //header.cellA[d]   = set_nvoxels[d]; //default, can be overriden later
+      //header.origin[d]  = 0.0;
     }
     Alloc();
   }
