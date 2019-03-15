@@ -9,6 +9,23 @@ using namespace std;
 #include "settings.hpp"
 
 
+static vector<string> &split(const string &s, char delim, vector<string> &elems){
+  stringstream ss(s);
+  string item;
+  while (getline(ss, item, delim)) {
+    elems.push_back(item);
+  }
+  return elems;
+}
+
+
+static vector<string> split(const string &s, char delim) {
+  vector<string> elems;
+  split(s, delim, elems);
+  return elems;
+}
+
+
 /// @brief   Read a multi-column text file and store the words on each line
 ///          in a vector of vectors.  This function can also be used to
 ///          read a file containing multiple columns of numbers, for example

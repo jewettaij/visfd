@@ -7,7 +7,7 @@ using namespace std;
 string g_program_name = "merge_mrc";
 
 
-vector<string> &split(const string &s, char delim, vector<string> &elems) {
+static vector<string> &split(const string &s, char delim, vector<string> &elems) {
   stringstream ss(s);
   string item;
   while (getline(ss, item, delim)) {
@@ -17,7 +17,7 @@ vector<string> &split(const string &s, char delim, vector<string> &elems) {
 }
 
 
-vector<string> split(const string &s, char delim) {
+static vector<string> split(const string &s, char delim) {
   vector<string> elems;
   split(s, delim, elems);
   return elems;
@@ -29,6 +29,7 @@ Settings::Settings() {
   in1_file_name = "";
   in2_file_name = "";
   in_rescale01 = false;
+  out_rescale01 = false;
   out_file_name = "";
   in1_use_thresholds = false;
   in1_threshold_01_a = 1.0;
@@ -40,7 +41,17 @@ Settings::Settings() {
   in2_threshold_01_b = 1.0;
   in2_threshold_10_a = 1.0;
   in2_threshold_10_b = 1.0;
+  out_use_thresholds = false;
+  out_threshold_01_a = 1.0;
+  out_threshold_01_b = 1.0;
+  out_threshold_10_a = 1.0;
+  out_threshold_10_b = 1.0;
   char operator_char = '+';
+  mask_file_name = "";
+  mask_select = 1;
+  use_mask_select = false;
+  mask_out = 0.0;
+  use_mask_out = true;
 }
 
 
@@ -72,17 +83,17 @@ Settings::ParseArgs(vector<string>& vArgs)
     if (vArgs[i] == "-rescale")
     {
       in_rescale01 = true;
+      out_rescale01 = true;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-norescale")
 
     if (vArgs[i] == "-norescale")
     {
       in_rescale01 = false;
+      out_rescale01 = false;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-norescale")
 
-    // As of 2015-5-04, I don't consider "masks".
-    // But I still parse the optional arguments which set them.
     else if (vArgs[i] == "-mask")
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -153,7 +164,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
   vector<string> in2_file_args = split(vArgs[3], ',');
 
-  out_file_name = vArgs[4];
+  vector<string> out_file_args = split(vArgs[4], ',');
 
 
   try {
@@ -197,6 +208,26 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
     if (in2_file_args.size() > 4)
       in2_threshold_10_b = stof(in2_file_args[4]);
+
+    out_file_name = out_file_args[0];
+    if (out_file_args.size() > 1) {
+      out_use_thresholds = true;
+      out_threshold_01_a = stof(out_file_args[1]);
+      out_threshold_01_b = out_threshold_01_a;
+      out_threshold_10_a = out_threshold_01_b;
+      out_threshold_10_b = out_threshold_10_a;
+    }
+    if (out_file_args.size() > 2) {
+      out_threshold_01_b = stof(out_file_args[2]);
+      out_threshold_10_a = out_threshold_01_b;
+      out_threshold_10_b = out_threshold_10_a;
+    }
+    if (out_file_args.size() > 3) {
+      out_threshold_10_a = stof(out_file_args[3]);
+      out_threshold_10_b = out_threshold_10_a;
+    }
+    if (out_file_args.size() > 4)
+      out_threshold_10_b = stof(out_file_args[4]);
   }
   catch (invalid_argument& exc) {
     throw InputErr("Error: The comma-separated threshold arguments following \n"

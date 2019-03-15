@@ -4,18 +4,6 @@ combine_mrc
 **combine_mrc** is a program for combining two volumetric images (i.e. tomograms, both of identical size) into one image/tomogram, using a combination of addition, multiplication, and thresholding operations.  These features can be used perform binary operations between two images which are similar to "**and**" and "**or**" operations.  ("**not**" operations are also possible.  See below.) As with the "filter_mrc" program, you can also use the "-mask" argument to restrict the operation to certain voxels from the image.
 *(A detailed description of the threshold and rescaling functions used in this step are provided at the end of the the "doc_filter_mrc.md" file.)*
 
-### -rescale
-
-If you use the **-rescale** argument, then
-image voxel intensities will be shifted and rescaled so that the
-minimum and maximum voxel intensities are 0 and 1.
-This will be done for both the input images and well as the output image.
-
-### Clipping the output range
-*Note:*  After adding or multiplying the voxel brightnesses, the brightness of each resulting voxel is automatically clipped between 0 and 1, *before* saving the result to a file.
-(In other words, the resulting brightnesses below 0 are replaced with 0, and the resulting brightnesses above 1 are replaced with 1.
-*Perhaps I will provide a more general way to rescale and clip the output brightnesses later...*)
-
 
 ### combine_mrc examples:
 
@@ -42,8 +30,17 @@ The following examples apply 1, 2 or 4 thresholds to the input tomograms before 
 ```
 (Note that 8-bit and 16-bit integer brightnesses are replaced with floating point numbers in the range from 0 to 1 beforehand, and the resulting tomogram is saved in 32bit float format.)
 
+### -rescale
 
-### Applying threshold filters to the input images:
+If you use the **-rescale** argument, then
+image voxel intensities will be shifted and rescaled so that the
+minimum and maximum voxel intensities are 0 and 1.
+This will be done for both the input images and well as the output image.
+*(Note: Unlike the thresholding operations described below,
+ this does not erase (clip) any voxel intensities.)*
+
+
+### Applying threshold filters to the (input and output) images:
 
 It is often convenient to rescale or clip the brightnesses of the voxels from either image (tomogram) *before* adding or multiplying them together.  This way, you can insure that most of the voxels in the image are either ***0*** or ***1*** beforehand.  (This way, multiplying and adding the resulting voxel brightnesses is equivalent to performing an "and" and "or" gate operations on these 0,1 values.)  The resulting image (tomgram) created by *combine_mrc* can be useful for segmentation (or masking).
 
@@ -57,10 +54,10 @@ and its output intensity is the following:
   output
   intensity
     /|\                              _________________
-0.52 |                           _.-'                 
+   1 |                           _.-'                 
      |                       _,-'                 
      |                   _,-'            
-0.48 |________________,-'                     ________\ input
+   0 |________________,-'                     ________\ input
                       ^             ^                 / intensity
                      0.48          0.52
                   (thresh_a)    (thresh_b)
@@ -90,6 +87,41 @@ For example:
 *(Again, a detailed description of the threshold and rescaling functions used in this step are provided at the end of the the "doc_filter_mrc.md" file.)*
 
 
+### NOT-gates
+  This can be used to invert the image intensities so that bright voxels
+  are replaced by 0, and dark voxels are replaced by 1.
+
+
+
+You can also apply thresholding to the *output image*, as demonstrated below.
+
+#### OR-gate example:
+
+For example, the following command will clip the output intensities
+between 0 and 1.
+```
+   combine_mrc file1.mrc,0.4999,0.5 + file2.mrc,0.4999,0.5 out_file.mrc,0,1
+```
+This operation is similar to an *OR-gate*.
+If either of the voxel intensities are above 0.5,
+then the resulting output voxel intensity will be 1.
+If both voxel intensities are below 0.4999, the resulting
+output voxel intensity will be 0.
+
+#### AND-gate example:
+```
+   combine_mrc file1.mrc,0.4999,0.5 "*" file2.mrc,0.4999,0.5 out_file.mrc,0,1
+```
+
+#### NAND-gate example:
+```
+   combine_mrc file1.mrc,0.4999,0.5 "*" file2.mrc,0.4999,0.5 out_file.mrc,1,0
+```
+
+#### NOR-gate example:
+```
+   combine_mrc file1.mrc,0.4999,0.5 + file2.mrc,0.4999,0.5 out_file.mrc,1,0
+```
 
 Sometimes it is useful to select a ***narrow range of voxel intensities***.
 When 4 numbers follow an input file name, the brightness of all the voxels from that tomogram in that file will be run through a **double-threshold** filter.
@@ -136,9 +168,3 @@ This will invert the intensity of each voxel compared to the previous example:
 *In addition to "**and**" and "**or**" operations, you can also perform "not" operations.  You can perform the "**not**" operation on each **input** by reversing the order of the thresholds following a file name.  The example above ("file1.mrc,0.6,0.4) demonstrates how to do that.*
 
 
-*Incidentally, "**not**" operations can also be performed on the **output** image by saving it to a file, and later using the "filter_mrc" program
-to perform a threshold operation using the "-thresh2" argument
-with the first threshold number greater than the second.  For example:*
-```
-   filter_mrc -thresh2 0.51 0.49 -in file.mrc -out not_file.mrc
-```

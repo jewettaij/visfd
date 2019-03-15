@@ -1930,9 +1930,6 @@ int main(int argc, char **argv) {
             if (mask.aaafI[iz][iy][ix] == 0.0)
               tomo_out.aaafI[iz][iy][ix] = settings.mask_out;
 
-    tomo_out.FindMinMaxMean();
-
-
     // --- Rescale so that the lowest, highest voxels have density 0 and 1? ---
 
     if (settings.rescale01_out)
@@ -1940,11 +1937,7 @@ int main(int argc, char **argv) {
                          settings.out_threshold_01_a,
                          settings.out_threshold_01_b);
 
-
-
-
-
-
+    tomo_out.FindMinMaxMean();
 
 
     // ------ Write the file ------

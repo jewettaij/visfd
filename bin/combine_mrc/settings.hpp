@@ -14,6 +14,7 @@ class Settings {
   string in1_file_name;
   string in2_file_name;
   bool in_rescale01;
+  bool out_rescale01;
   string out_file_name;
   char operator_char = '+';
   bool  in1_use_thresholds;
@@ -26,6 +27,11 @@ class Settings {
   float in2_threshold_01_b;
   float in2_threshold_10_a;
   float in2_threshold_10_b;
+  bool  out_use_thresholds;
+  float out_threshold_01_a;
+  float out_threshold_01_b;
+  float out_threshold_10_a;
+  float out_threshold_10_b;
 
   // As of 2015-5-04, I don't consider "masks".  Please ignore next 5 arguments:
   string mask_file_name;
