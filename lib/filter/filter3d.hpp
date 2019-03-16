@@ -707,7 +707,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 
 // (Private comment:)
 //     (Alternatively, this normalization could be handled by applying
-//      the filter (blur) to both the mask image and the original image
+//      the filter (blur) to both the mask, and the masked original image
 //      and then dividing the two blurred images by each other.  But the
 //      implementation here is a little bit faster than that: ~17% faster.)
 

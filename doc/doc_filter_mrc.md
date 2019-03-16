@@ -117,9 +117,12 @@ PoissonRecon --in largest_membrane_pointcloud.ply \
 ```
 
 Note: All of these parameters make reasonably good defaults for membrane
-      detection except the "*-connect*" parameter ("1.0e+09" in the example).
+      detection except the "**-connect**" parameter ("1.0e+09" in the example).
       It must be chosen carefully because it will vary from image to image.
-      (Strategies for choosing this parameter are discussed below.)
+      Strategies for choosing this parameter are discussed below.
+      If a suitable parameter can not be found, you can also use the
+      "**-must-link**" argument to manually force connections between
+      disconnected regions. (See below.)
 
 
 
@@ -344,6 +347,7 @@ The *fraction* parameter should lie in the range from 0 to 1.
 If the resulting membranes stored in the "membrane_tv.rec" file
 are missing or are incomplete, then increase this number and try again.
 
+
 ### -connect  *threshold*
 
 After membrane detection is performed, 
@@ -354,9 +358,26 @@ can be grouped into connected islands.
 If the *threshold* parameter is chosen carefully, then these
 different islands will hopefully correspond to different objects
 (eg. membranes) in the original image.
-The "*threshold*" parameter determines how "*membrane-like*"
-a voxel must be in order for it to be classsified as a membrane.
-It will vary from image to image it must be chosen carefully.
+The *threshold* parameter will vary from image to image
+and must be chosen carefully.
+
+Generally, speaking the *threshold* parameter determines the minimum
+"*saliency*" that a voxel must have for it to be added to an object
+being segmented.
+For the specific case of *membrane detection*, the "*threshold*" parameter
+determines how *membrane-like* a voxel must be in order for it to be
+included with the the membrane.
+If this parameter is too large, 
+then individual objects (eg. membranes) in the image 
+will be split into multiple pieces.  
+If too small, then separate objects in the image will be joined together.
+
+*Note:* If you are unable to find thresholds which connect all of 
+the pieces together correctly, you can also use the "**-must-link**" argument.
+This will manually force different regions to be merged together.
+(See below.)
+
+
 
 #### Strategies for determining the -connect *threshold* parameter
 
@@ -404,7 +425,7 @@ near the junction points of interest.
  or by using the "crop_mrc" program distributed with *visfd*.)
 
 Make sure clustering was successful *before* attempting to
-close holes in the surface using *PoissonRecon*.
+close holes in the surface using programs like *meshlab* or *PoissonRecon*.
 
 
 *(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments 
@@ -433,9 +454,98 @@ in the future.  For now it is safe to set them all equal to the same value,
 or omit them entirely since the default value of 0.707 works well in most cases
 (-andrew 2019-3-04).
 
+### -must-link  *file_name.txt*
+
+If the "**-connect**" argument fails, you can manually force 
+different regions in the image to the same object
+by specifying a text file containing the locations of pairs of voxels
+that you wish to link together.  You must prepare this text file in advance.
+
+The coordinates of each voxel in a group are listed on a separate line in
+the file (which is in ASCII format).
+Blank lines are used to separate groups of voxels belonging to 
+different objects.  There are two different file formats supported.
+
+
+####  Example 1: *must-link* coordinates in units of voxels (from IMOD)
+
+You can define links for many different objects in the image
+in a single file by using blank-lines between different objects.
+The following example describes two *different* connected objects.
+(For example, two different membranes.)
+Each object contains a single "*must-link*" constraint
+between a pair of voxels we wish to connect.
+
+*If* the coordinates are enclosed in round-parenthesis ()
+and separated by spaces, (as shown below) 
+*then* it is assumed that these coordinates are in units of voxels,
+and should range from 1 to Nx, Ny, or Nz (which define the image size).
+Considering the following text file:
+```
+(16.5 77 73)
+(134 75 73)
+
+(141.083 83.0833 62)
+(123.833 133.333 64)
+```
+This example describes two *different* connected objects
+(separated by the blank line).
+For each of these objects, all of the voxels connected to the 
+first voxel (for example, near position 16.5, 77, 73)
+will be joined with all of the voxels connected to the second voxel
+(near position 134, 75, 73).
+
+*(Note: When using this format, coordinates are assumed to begin at 1, 
+       and are rounded down to the next lowest integer.
+       Coordinates do not have to lie exactly on the object you
+       are trying to segment.  Nearby voxels should also work well.)*
+
+**WARNING:** *Do not forget to put spaces between each integer (not commas).*
+
+#### Suggestion: *Use IMOD (3dmod)*
+
+The text above happens to be the text format printed by IMOD.
+If you view a tomogram using "*3dmod -S*", 
+left-click anywhere on the image and press the "**F**" key,
+the coordinates where you clicked will be printed to the
+*3dmod* window in this format.
+(the yellow "+" sign, if visible, denotes this location).
+You can click on two places in the image that you want to link together.
+Then copy the two lines printed by IMOD into your text file.
+You can use this text file with the "**-must-link**" argument.  
+
+For convenience, you can copy the entire line of text printed by IMOD
+into your text file.  (This includes the commas and the 
+extra text at the beginning and end of each line: 
+such as "Pixel" and "=...".  This text will be ignored.)
+
+**WARNING:** *Remember to put blank lines between voxels that you *don't*
+              want to join together.*
+
+####  Example 2: *must-link* coordinates in units of *physical distance*
+
+If no paranthesis are used, then it is assumed 
+that the coordinates are in physical distance units (eg Angstroms).
+```
+379.68 1923.71 1822.46
+3366.5 1873.09 1822.46
+
+3543.68 2075.58 1544.03
+3088.06 3341.18 1594.66
+```
+As with the previous example, 
+this example also describes two *different* connected objects.
+For each of these objects, all of the voxels connected to the 
+first voxel (for example, at position 379.68,1923.71,1822.46)
+will be joined with all of the voxels connected to the second voxel
+(at position 3366.5,1873.09,1822.46).
+
+*(Note: When using this format, voxel positions begin at 0, not 1.)*
+
+
 
 ### -select-cluster  *cluster-ID*
-### -planar-orientations-file  *file_name*
+### -planar-orientations-file  *file_name.ply*
 
 Once clustering is working, you can select one of the clusters using
 the "**-select-cluster**" argument.
