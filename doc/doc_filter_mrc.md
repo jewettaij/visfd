@@ -428,34 +428,6 @@ Make sure clustering was successful *before* attempting to
 close holes in the surface using programs like *meshlab* or *PoissonRecon*.
 
 
-*(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments 
-  currently have no effect unless the "-planar" argument was also supplied.
-  -andrew 2019-3-04)*
-
-### -cts *threshold*
-### -ctn *threshold*
-### -cvs *threshold*
-### -cvn *threshold*
-
-The *-cts*, *-ctn*, *-cvs*, *-cvn* arguments determine how similar the 
-orientations of each voxel must be in order for a pair of neighboring voxels
-to be merged into the same cluster (ie. the same membrane or same filament).
-Threshold values in the range from 0 to 1 are supported.
-A *-threshold* value of 0.707 ≈ cos(45°) and corresonds to a
-45 degree difference between orientations of neighboring voxels.
-In that case, neighboring voxels pointing in directions which 
-differ by more than 45°
-will be assigned to different clusters (membranes).
-This is the default behavior.  (-andrew 2019-3-04)
-
-Most of the time, *-cts*, *-ctn*, *-cvs*, *-cvn* arguments can be omitted.
-The difference in meaning between these 4 arguments will be ellaborated on
-in the future.  For now it is safe to set them all equal to the same value,
-or omit them entirely since the default value of 0.707 works well in most cases
-(-andrew 2019-3-04).
-
-
-
 ### -must-link  *file_name.txt*
 
 If the "**-connect**" argument fails, you can manually force 
@@ -512,7 +484,7 @@ If you view a tomogram using "*3dmod -S*",
 left-click anywhere on the image and press the "**F**" key,
 the coordinates where you clicked will be printed to the
 *3dmod* window in this format.
-(the yellow "+" sign, if visible, denotes this location).
+(The yellow "+" cursor, if visible, denotes this location.)
 You can click on two places in the image that you want to link together.
 Then copy the two lines printed by IMOD into your text file.
 You can use this text file with the "**-must-link**" argument.  
@@ -568,6 +540,37 @@ This oriented point-cloud file can be used for further processing
 Note: Voxel coordinates in the point-cloud file are expressed
 in physical units (ie Angstroms), not voxels,
 Consequently they are not integers (unless the "-w 1" argument was used).
+
+
+
+### -cts *threshold*
+### -ctn *threshold*
+### -cvs *threshold*
+### -cvn *threshold*
+
+The *-cts*, *-ctn*, *-cvs*, *-cvn* arguments determine how similar the 
+orientations of each voxel must be in order for a pair of neighboring voxels
+to be merged into the same cluster (ie. the same membrane or same filament).
+
+**Most of the time, *-cts*, *-ctn*, *-cvs*, *-cvn* arguments can be omitted,**
+since the default arguments (0.707) work well.
+
+Threshold values in the range from 0 to 1 are supported.
+A *-threshold* value of 0.707 ≈ cos(45°) and corresonds to a
+45 degree difference between orientations of neighboring voxels.
+In that case, neighboring voxels pointing in directions which 
+differ by more than 45°
+will be assigned to different clusters (membranes).
+This is the default behavior.  (-andrew 2019-3-04)
+
+The difference in meaning between these 4 arguments will be ellaborated on
+in the future.  For now it is safe to set them all equal to the same value,
+or omit them entirely since the default value of 0.707 works well in most cases
+(-andrew 2019-3-04).
+
+*(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments 
+  currently have no effect unless the "-planar" argument was also supplied.
+  -andrew 2019-3-04)*
 
 
 

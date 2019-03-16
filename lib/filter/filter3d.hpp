@@ -1079,7 +1079,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 
 
 
-/// @brief Apply a Gaussian filter (blur) to an image
+/// @brief Apply an ellipsoidal Gaussian filter (blur) to a 3D image
 /// @code h(x,y,z)=A*exp(-0.5*((x/σ_x)^2+(y/σ_y)^2+(z/σ_z)^2) @endcode
 /// In this version, the caller can specify all 3 components of σ (σ_x,σ_y,σ_z).
 /// The filter must eventually be truncated.  In this version the caller
@@ -1109,20 +1109,18 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 /// simply due to lying close to the edge of the image.
 ///
 /// @returns the "A" coefficient (determined by normalization)
-///
-/// @note: THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
 template<class Scalar>
-static Scalar
+Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
-           Scalar const *const *const *aaafSource,   //!< source image (3D array)
-           Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-           Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
-           int const truncate_halfwidth[3], //!< the filter window width
-           bool normalize = true,           //!< normalize the average?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
-           )
+            Scalar const *const *const *aaafSource,   //!< source image (3D array)
+            Scalar ***aaafDest,     //!< filtered (blurred) image stored here
+            Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+            Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
+            int const truncate_halfwidth[3], //!< the filter window width
+            bool normalize = true,           //!< normalize the average?
+            ostream *pReportProgress = NULL  //!< print progress to the user?
+            )
 {
   assert(aaafSource);
   assert(aaafDest);
@@ -1149,9 +1147,11 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 
 /// @brief Apply a Gaussian filter (blur) to an image
 /// @code h(x,y,z)=A*exp(-0.5*(x^2+y^2+z^2)/σ^2) @endcode
-/// The filter must eventually be truncated.  In this version the caller
-/// specifies the filter truncation window width (truncation_halfwidth)
-/// in units of voxels.
+/// The filter must eventually be truncated.  
+/// In this version, the Gaussian is isotropic
+/// (in other words, it has the same width in the x,y,z directions),
+/// and the caller specifies the filter truncation window width
+/// (truncation_halfwidth) directly in units of voxels.
 ///
 /// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
 /// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
@@ -1177,7 +1177,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 ///
 /// @returns the "A" coefficient (determined by normalization)
 template<class Scalar>
-static Scalar
+Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
            Scalar ***aaafDest,     //!< filtered (blurred) image stored here
@@ -2015,7 +2015,6 @@ BlobDogD(int const image_size[3], //!<source image size
 ///         various sizes, thicknesses, and locations, specified by the caller.
 ///         The resulting spheres can (optionally) be superimposed with the
 ///         existing image (if the aaafBackground image array is != NULL).
-///         This is done by rescaling the background image voxel brightnesses.
 
 template<class Scalar>
 void
