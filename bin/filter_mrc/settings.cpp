@@ -2329,78 +2329,81 @@ Settings::ParseArgs(vector<string>& vArgs)
   }
 
 
+  // REMOVE THIS CRUFT
   // ----------
-  if ((filter_type == GAUSS) || (filter_type == GGAUSS)) {
-    // If the exponent equals 2, then the function we are convolving
-    // with is an ordinary Gaussians.  Ordinary Gaussians are are separable
-    // and can be convolved successively in 1-D in the x,y,z directions.
-    // Hence we can save a great deal of time by doing this compared to
-    // using a more general filter function which would force us to perform
-    // the full 3-D convolution.
-    if (exponents_set_by_user) {
-      filter_type = GGAUSS;
-      if (m_exp == 2.0) {
-        filter_type = GAUSS; // <-- use fast seperable Gaussians
-        width_a[0] /= sqrt(2.0);  // compensate for using
-        width_a[1] /= sqrt(2.0);  //  exp(-0.5*(r/width_a)^2) instead of
-        width_a[2] /= sqrt(2.0);  //  exp(-(r/width_a)^2)
-      } //if (m_exp == 2.0)
-    } //if (exponents_set_by_user)
-  } //if ((filter_type == GAUSS) || (filter_type == GGAUSS))
+  //if ((filter_type == GAUSS) || (filter_type == GGAUSS)) {
+  //  // If the exponent equals 2, then the function we are convolving
+  //  // with is an ordinary Gaussians.  Ordinary Gaussians are are separable
+  //  // and can be convolved successively in 1-D in the x,y,z directions.
+  //  // Hence we can save a great deal of time by doing this compared to
+  //  // using a more general filter function which would force us to perform
+  //  // the full 3-D convolution.
+  //  if (exponents_set_by_user) {
+  //    filter_type = GGAUSS;
+  //    if (m_exp == 2.0) {
+  //      filter_type = GAUSS; // <-- use fast seperable Gaussians
+  //      width_a[0] /= sqrt(2.0);  // compensate for using
+  //      width_a[1] /= sqrt(2.0);  //  exp(-0.5*(r/width_a)^2) instead of
+  //      width_a[2] /= sqrt(2.0);  //  exp(-(r/width_a)^2)
+  //    } //if (m_exp == 2.0)
+  //  } //if (exponents_set_by_user)
+  //} //if ((filter_type == GAUSS) || (filter_type == GGAUSS))
 
 
+  // REMOVE THIS CRUFT
   // ----------
-  if ((filter_type == DOG) || (filter_type == DOGG)) {
-    // If the exponents equal 2, then the functions we are convolving
-    // with are ordinary Gaussians.  Ordinary Gaussians are are separable
-    // and can be convolved successively in 1-D in the x,y,z directions.
-    // Hence we can save a great deal of time by doing this compared to
-    // using a more general filter function which would force us to perform
-    // the full 3-D convolution.
-    if (exponents_set_by_user) {
-      filter_type = DOGG;
-      if ((m_exp == 2.0) && (n_exp == 2.0)) {
-        filter_type = DOG; // <-- use fast seperable Gaussians
+  //if ((filter_type == DOG) || (filter_type == DOGG)) {
+  //  // If the exponents equal 2, then the functions we are convolving
+  //  // with are ordinary Gaussians.  Ordinary Gaussians are are separable
+  //  // and can be convolved successively in 1-D in the x,y,z directions.
+  //  // Hence we can save a great deal of time by doing this compared to
+  //  // using a more general filter function which would force us to perform
+  //  // the full 3-D convolution.
+  //  if (exponents_set_by_user) {
+  //    filter_type = DOGG;
+  //    if ((m_exp == 2.0) && (n_exp == 2.0)) {
+  //      filter_type = DOG; // <-- use fast seperable Gaussians
+  //
+  //      width_a[0] /= sqrt(2.0);  // compensate for using
+  //      width_a[1] /= sqrt(2.0);  //  exp(-0.5*(r/width_a)^2) instead of
+  //      width_a[2] /= sqrt(2.0);  //  exp(-(r/width_a)^2)
+  //      width_b[0] /= sqrt(2.0);
+  //      width_b[1] /= sqrt(2.0);
+  //      width_b[2] /= sqrt(2.0);
+  //    } //if ((m_exp == 2.0) && (n_exp == 2.0))
+  //    else
+  //      filter_type = DOGG;
+  //  } //if (exponents_set_by_user) {
+  //} //if ((filter_type == DOG) || (filter_type == DOGG))
 
-        width_a[0] /= sqrt(2.0);  // compensate for using
-        width_a[1] /= sqrt(2.0);  //  exp(-0.5*(r/width_a)^2) instead of
-        width_a[2] /= sqrt(2.0);  //  exp(-(r/width_a)^2)
-        width_b[0] /= sqrt(2.0);
-        width_b[1] /= sqrt(2.0);
-        width_b[2] /= sqrt(2.0);
-      } //if ((m_exp == 2.0) && (n_exp == 2.0))
-      else
-        filter_type = DOGG;
-    } //if (exponents_set_by_user) {
-  } //if ((filter_type == DOG) || (filter_type == DOGG))
 
+  // REMOVE THIS CRUFT
+  //if ((filter_type == TEMPLATE_GAUSS) || (filter_type == TEMPLATE_GGAUSS)) {
+  //  // If the exponents equal 2, then the functions we are convolving
+  //  // with are ordinary Gaussians.  Ordinary Gaussians are are separable
+  //  // and can be convolved successively in 1-D in the x,y,z directions.
+  //  // Hence we can save a great deal of time by doing this compared to
+  //  // using a more general filter function which would force us to perform
+  //  // the full 3-D convolution.
+  //  if (exponents_set_by_user) {
+  //    filter_type = TEMPLATE_GGAUSS;
+  //    if ((m_exp == 2.0) && (n_exp == 2.0)) {
+  //      filter_type = TEMPLATE_GAUSS; // <-- use fast Gaussians instead of DOGG which is slow
 
-  if ((filter_type == TEMPLATE_GAUSS) || (filter_type == TEMPLATE_GGAUSS)) {
-    // If the exponents equal 2, then the functions we are convolving
-    // with are ordinary Gaussians.  Ordinary Gaussians are are separable
-    // and can be convolved successively in 1-D in the x,y,z directions.
-    // Hence we can save a great deal of time by doing this compared to
-    // using a more general filter function which would force us to perform
-    // the full 3-D convolution.
-    if (exponents_set_by_user) {
-      filter_type = TEMPLATE_GGAUSS;
-      if ((m_exp == 2.0) && (n_exp == 2.0)) {
-        filter_type = TEMPLATE_GAUSS; // <-- use fast Gaussians instead of DOGG which is slow
-
-        width_a[0] /= sqrt(2.0);  // compensate for using
-        width_a[1] /= sqrt(2.0);  //  exp(-0.5*(r/width_a)^2) instead of
-        width_a[2] /= sqrt(2.0);  //  exp(-(r/width_a)^2)
-        width_b[0] /= sqrt(2.0);
-        width_b[1] /= sqrt(2.0);
-        width_b[2] /= sqrt(2.0);
-        template_background_radius[0] /= sqrt(2.0);// compensate for using:
-        template_background_radius[1] /= sqrt(2.0);//  exp(-0.5*(r/w)^2)
-        template_background_radius[2] /= sqrt(2.0);// instead of exp(-(r/w)^2)
-      } //if ((m_exp == 2.0) && (n_exp == 2.0))
-      else
-        filter_type = TEMPLATE_GGAUSS;
-    } //if (exponents_set_by_user) {
-  } //if ((filter_type == DOG) || (filter_type == DOGG))
+  //      width_a[0] /= sqrt(2.0);  // compensate for using
+  //      width_a[1] /= sqrt(2.0);  //  exp(-0.5*(r/width_a)^2) instead of
+  //      width_a[2] /= sqrt(2.0);  //  exp(-(r/width_a)^2)
+  //      width_b[0] /= sqrt(2.0);
+  //      width_b[1] /= sqrt(2.0);
+  //      width_b[2] /= sqrt(2.0);
+  //      template_background_radius[0] /= sqrt(2.0);// compensate for using:
+  //      template_background_radius[1] /= sqrt(2.0);//  exp(-0.5*(r/w)^2)
+  //      template_background_radius[2] /= sqrt(2.0);// instead of exp(-(r/w)^2)
+  //    } //if ((m_exp == 2.0) && (n_exp == 2.0))
+  //    else
+  //      filter_type = TEMPLATE_GGAUSS;
+  //  } //if (exponents_set_by_user) {
+  //} //if ((filter_type == DOG) || (filter_type == DOGG))
 
 
 

@@ -559,7 +559,13 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
   for (int iz=-filter.halfwidth[2]; iz<=filter.halfwidth[2]; iz++) {
     for (int iy=-filter.halfwidth[1]; iy<=filter.halfwidth[1]; iy++) {
       for (int ix=-filter.halfwidth[0]; ix<=filter.halfwidth[0]; ix++) {
-        Scalar r = sqrt(SQR(ix/width[0])+SQR(iy/width[1])+SQR(iz/width[2]));
+        //Scalar x = ix/width[0];
+        //Scalar y = iy/width[1];
+        //Scalar z = iz/width[2];
+        Scalar x = ((! ((width[0] == 0.0) && (ix==0))) ? ix/width[0] : 0.0);
+        Scalar y = ((! ((width[1] == 0.0) && (iy==0))) ? iy/width[1] : 0.0);
+        Scalar z = ((! ((width[2] == 0.0) && (iz==0))) ? iz/width[2] : 0.0);
+        Scalar r = sqrt(x*x + y*y + z*z);
         Scalar h = ((r>0) ? exp(-pow(r, m_exp)) : 1.0);
         if (std::abs(h) < truncate_threshold)
           h = 0.0; //This eliminates corner entries which fall below threshold
@@ -571,6 +577,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
       }
     }
   }
+
   // normalize:
   for (int iz=-filter.halfwidth[2]; iz<=filter.halfwidth[2]; iz++) {
     for (int iy=-filter.halfwidth[1]; iy<=filter.halfwidth[1]; iy++) {
@@ -1113,14 +1120,14 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 template<class Scalar>
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
-            Scalar const *const *const *aaafSource,   //!< source image (3D array)
-            Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-            Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-            Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
-            int const truncate_halfwidth[3], //!< the filter window width
-            bool normalize = true,           //!< normalize the average?
-            ostream *pReportProgress = NULL  //!< print progress to the user?
-            )
+           Scalar const *const *const *aaafSource,   //!< source image (3D array)
+           Scalar ***aaafDest,     //!< filtered (blurred) image stored here
+           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+           Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
+           int const truncate_halfwidth[3], //!< the filter window width
+           bool normalize = true,           //!< normalize the average?
+           ostream *pReportProgress = NULL  //!< print progress to the user?
+           )
 {
   assert(aaafSource);
   assert(aaafDest);
