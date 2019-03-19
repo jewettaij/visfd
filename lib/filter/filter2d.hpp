@@ -150,6 +150,8 @@ public:
 
         if ((aafMask) && (aafMask[iy][ix] == 0.0)) {
           aafDest[iy][ix] = 0.0;
+          if (aafDenominator[iy][ix])
+            aafDenominator[iy][ix] = 0.0;
           continue;
         }
           

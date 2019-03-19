@@ -185,6 +185,8 @@ public:
 
           if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0)) {
             aaafDest[iz][iy][ix] = 0.0;
+            if (aaafDenominator[iz][iy][ix])
+              aaafDenominator[iz][iy][ix] = 0.0;
             continue;
           }
 
