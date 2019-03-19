@@ -253,6 +253,8 @@ public:
       I++;
       if (m >= array_size) {
         afDest[i] = 0.0;
+        if (afDenominator)
+          afDenominator[i] = 0.0;
         continue;
       }
 
