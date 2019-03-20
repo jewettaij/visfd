@@ -1546,6 +1546,28 @@ All other voxels will be ignored during filtering.
   during the process of filtering, all selected voxels will be weighted equally
   during filtering, and all others will be completely ignored.)*
 
+```
+   -mask-rect  xmin xmax ymin ymax zmin zmax
+```
+As an alternative to using the "**-mask**" argument to provide an image file
+(containing the mask), the user can alternatively use the "**-mask-rect**"
+argument to specify the coordinates of a rectangle.
+Voxels *outside* this rectangle will be *ignored*,
+and voxels *within* this rectangle will *not*.
+(This will produce the same behavior as providing an image containing
+ *1s* for voxels within the rectangle, and *0s" outside.)
+
+Note: As with most commands, distance parameters
+(*xmin, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*) 
+are in *physical units* (eg. Angstroms), *not* in voxels.
+You can supply the coordinates in voxels
+by using the "*-w 1*" argument.
+
+Note: If you are using IMOD to locate voxel coordinates,
+       keep in mind that IMOD uses
+      "1-indexing".  This means that it 
+      prints voxel coordinates starting at (1,1,1).
+      In this program, voxel coordinates begin at (0,0,0).
 
 
 

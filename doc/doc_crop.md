@@ -17,4 +17,9 @@ This will extract a rectangular region containing voxels
 290-450 (inclusive) in the X direction,
 80-300 in the Y direction, and
 38 to 137 in the Z direction.
-Note: Indices begin at 0 (not 1).
+
+Note: If you are using IMOD to locate voxel coordinates,
+       keep in mind that IMOD uses
+      "1-indexing".  This means that it 
+      prints voxel coordinates starting at (1,1,1).
+      In this program, voxel coordinates begin at (0,0,0).
