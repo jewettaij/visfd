@@ -1577,12 +1577,10 @@ If unspecified, this parameter is set to 0.02.
 ```
    -truncate Wx Wy Wz
 ```
-If you prefer to specify the size of the filter window manually, you can
-use the "-window-ratio" argument.
 This argument specifies the size of the 3-D filter box in x,y, directions
 (in units of the **a** and **b** distance parameters, or **σ** ("sigma")
  parameters which appear in the formulas above).
-This overrides the "-truncate-threshold threshold" argument.
+(This overrides the "-truncate-threshold threshold" argument, if also present.)
 
 *(Note: Incidentally, the product of these 3 numbers, Wx*Wy*Wz, is proportional to the running time of the filter.
 However when using the "-gauss" or "-gdog" filters with default exponent settings,

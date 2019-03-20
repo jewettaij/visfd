@@ -132,8 +132,8 @@ however as of 2019-2-27, some commits still (temporarilly) break everything.
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
 
 
-Note: As of 2019-3-06, we have had better results using the
-      **CLANG** compiler (as opposed to GCC) on linux.
+Note: As of 2019-3-06, we have had good results using the **CLANG** compiler.
+      ([Avoid using GCC](https://github.com/jewettaij/visfd/issues/2) for now.)
 
 
 ## Windows:
