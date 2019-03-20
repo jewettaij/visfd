@@ -31,8 +31,6 @@ Annotated images can be saved to a new .mrc/.rec file.
 
 All filters support "masking".
 
-***Note: The masking feature is broken. Issue opened. -andrew 2019-3-01***
-
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.
