@@ -56,7 +56,7 @@ filter_mrc -in tomogram.rec \
 ```
 
 Note: The computation time will be roughly proportional to the image size
-      and the "-planar-best" argument (which ranges from 0 to 1).
+      *as well as* the "-planar-best" argument (which ranges from 0 to 1).
       Try this on a small image first. (See example 3 below)
 
 ### Example 2
@@ -1505,9 +1505,9 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 slowly fading from 1 to 0 (near a curve-shaped boundary, for example).
 
 
-```
-   -mask  file.rec
-```
+
+### -mask  *file.rec*
+
 The argument following the
 "-mask" argument should be the name of a tomogram file (MRC format) of the
 same size as the input tomogram.
@@ -1521,9 +1521,9 @@ before filtering.
 *(Note:
  Certain filters like "-gauss", which have unit norm, will rescale the result of
  the filter by the sum of the mask values in the region considered.)*
-```
-   -mask-out  intensity_value
-```
+
+### -mask-out  *intensity_value*
+
 If the "-mask-out" argument is specified, then voxels outside the mask will
 be assigned to the intensity following this argument.  Otherwise they are
 assigned to 0 by default.  
@@ -1534,9 +1534,9 @@ If you are using "-rescale-min-max", then
 "-mask-out 1" assigns them to the brightest voxels in the image.)
 
 
-```
-   -mask-select  intensity_value
-```
+
+### -mask-select  *intensity_value*
+
 If the "-mask-select" argument is specified, then instead of considering all
 voxels with non-zero values from the "mask" image,
 only voxels whose mask intensity equals the number following
@@ -1546,9 +1546,9 @@ All other voxels will be ignored during filtering.
   during the process of filtering, all selected voxels will be weighted equally
   during filtering, and all others will be completely ignored.)*
 
-```
-   -mask-rect  xmin xmax ymin ymax zmin zmax
-```
+
+### -mask-rect  *xmin* *xmax* *ymin* *ymax* *zmin* *zmax*
+
 As an alternative to using the "**-mask**" argument to provide an image file
 (containing the mask), the user can alternatively use the "**-mask-rect**"
 argument to specify the coordinates of a rectangle.
@@ -1558,7 +1558,7 @@ and voxels *within* this rectangle will *not*.
  *1s* for voxels within the rectangle, and *0s" outside.)
 
 Note: As with most commands, distance parameters
-(*xmin, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*) 
+(*xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*) 
 are in *physical units* (eg. Angstroms), *not* in voxels.
 You can supply the coordinates in voxels
 by using the "*-w 1*" argument.

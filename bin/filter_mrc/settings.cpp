@@ -859,8 +859,11 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by a file name, and 3 positive numbers:\n"
-                       "      file_name.txt  blob_width_min  blob_width_max  N\n");
+                       " argument must be followed by a type (either\n"
+                       "       \"minima\", \"maxima\", or \"all\")\n"
+                       "       as well as a file name, followed by 3 positive numbers.\n"
+                       "For example:\n"
+                       "           minima file_name.txt 200.0 280.0 1.02\n");
       }
       num_arguments_deleted = 6;
     } //if (vArgs[i] == "-blob")
