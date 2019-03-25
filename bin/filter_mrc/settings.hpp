@@ -8,6 +8,14 @@
 #include<vector>
 #include<string>
 using namespace std;
+#include <filter3d.hpp>
+#include "filter3d_unsupported.hpp"
+
+
+extern string g_program_name;
+extern string g_version_string;
+extern string g_date_string;
+
 
 /// @brief  The "Settings" class contains a list of parameters specified by the
 ///         user which control the behavior of the "filter_mrc" program.
@@ -42,8 +50,9 @@ class Settings {
     WATERSHED,       // Watershed segmentation
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
-    MIN_DISTANCE,    //voxel intensity = distance to nearest object
+    DISTANCE_TO_POINTS, //voxel intensity = distance to nearest object
     SPHERE_DECALS,   //voxel intensity = 1 if within R from the nearest object
+    BLOB_RADIAL_INTENSITY // Report intensity-vs-radius for each blob
   } FilterType; 
   
   FilterType filter_type; // The user must select one of these filter types
@@ -160,7 +169,7 @@ class Settings {
   // (As of 2019-2-23, these filters can happen regardless
   //  of the eFilterType setting selected by the user.)
 
-  bool  use_intensity_map;
+  bool use_intensity_map;
   bool rescale01_in;
   bool rescale01_out;
   bool invert_output;
@@ -225,6 +234,10 @@ class Settings {
   float blob_width_multiplier;
   string blob_minima_file_name;
   string blob_maxima_file_name;
+  #ifndef DISABLE_INTENSITY_PROFILES
+  string blob_profiles_file_name_base;
+  BlobCenterCriteria blob_profiles_center_criteria;
+  #endif
 
   // ---- parameters for performing non-max suppression on detected blobs ----
 

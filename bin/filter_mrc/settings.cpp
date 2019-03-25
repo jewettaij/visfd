@@ -15,9 +15,6 @@ using namespace std;
 #include "settings.hpp"
 
 
-template<class RealNum>
-static inline RealNum MAX(RealNum x, RealNum y) { return ((x<y) ? y : x); }
-
 
 Settings::Settings() {
   // Default settings
@@ -177,6 +174,11 @@ Settings::Settings() {
   template_background_exponent = 2.0;         //default value
   //template_compare_exponent = 2.0;            //default value
   #endif //#ifndef DISABLE_TEMPLATE_MATCHING
+
+  #ifndef DISABLE_INTENSITY_PROFILES
+  blob_profiles_file_name_base = "";
+  blob_profiles_center_criteria = BlobCenterCriteria::CENTER;
+  #endif
 
 } //Settings::Settings()
 
@@ -975,8 +977,8 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-discard-blobs") or
-	     (vArgs[i] == "-blob-nonmax") or
+    else if ((vArgs[i] == "-discard-blobs") ||
+	     (vArgs[i] == "-blob-nonmax") ||
              (vArgs[i] == "-blobs-nonmax")) {
       try {
         if ((i+2 >= vArgs.size()) ||
@@ -1587,7 +1589,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       if (i+1 >= vArgs.size())
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by a file name.\n");
-      filter_type = MIN_DISTANCE;
+      filter_type = DISTANCE_TO_POINTS;
       in_coords_file_name = vArgs[i+1];
       num_arguments_deleted = 2;
     }
@@ -2192,6 +2194,43 @@ Settings::ParseArgs(vector<string>& vArgs)
       #endif //#ifdef DISABLE_OPENMP
       num_arguments_deleted = 2;
     }
+
+
+    else if ((vArgs[i] == "-blob-intensity-vs-radius") ||
+             (vArgs[i] == "-blob-radial-intensity"))
+    {
+      #ifndef DISABLE_INTENSITY_PROFILES
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
+            (vArgs[i+1] == vArgs[i+2]))
+          throw invalid_argument("");
+        in_coords_file_name = vArgs[i+1];
+        blob_profiles_file_name_base = vArgs[i+2];
+        if ((vArgs[i+3] == "min") || (vArgs[i+3] == "minima"))
+          blob_profiles_center_criteria = BlobCenterCriteria::MINIMA;
+        else if ((vArgs[i+3] == "max") || (vArgs[i+3] == "maxima"))
+          blob_profiles_center_criteria = BlobCenterCriteria::MAXIMA;
+        else if ((vArgs[i+3] == "cen") || (vArgs[i+3] == "center"))
+          blob_profiles_center_criteria = BlobCenterCriteria::CENTER;
+        else
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 3 additional arguments:\n"
+                       "       input_coords_file  output_file_base_name  center_type\n"
+                       "       where \"center_type\" is one of these 3 choices: \"min\",\"max\",\"center\"\n");
+      }
+      filter_type = BLOB_RADIAL_INTENSITY;
+      num_arguments_deleted = 4;
+      #else
+      throw InputErr("Error: The " + vArgs[i] + " argument is not supported by this\n"
+                     "       version of " + g_program_name + ".  Recompile the code to enable this feature.\n");
+      #endif //#ifndef DISABLE_INTENSITY_PROFILES
+    } // else if (vArgs[i] == "-blob-intensity-vs-radius")
 
 
     //else if (vArgs[i] == "-template-ggauss") {

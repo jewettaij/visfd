@@ -33,10 +33,10 @@ INCLUDES = \
 -I$(INTERNAL_LIB_PATH)/mrc_simple
 
 
-OBJECT_FILES = settings.o unsupported.o filter_mrc.o
+OBJECT_FILES = settings.o handlers.o handlers_unsupported.o filter_mrc.o
 
 
-OBJECT_SRC = settings.cpp unsupported.cpp filter_mrc.cpp
+OBJECT_SRC = settings.cpp handlers.cpp handlers_unsupported.cpp filter_mrc.cpp
 
 
 

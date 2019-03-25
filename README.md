@@ -168,23 +168,26 @@ Then compile visfd using
 
 If this doesn't work and you are desperate, you can try this instead:
 ```
-    source alterate_compiler_settings/for_gcc/setup_gcc_serial.sh
+    source alternate_compiler_settings/for_debugging_and_profiling/setup_gcc_dbg.sh
     make
 ```
-*Unfortunately the resulting program will run at least 10x slower.*
+*Unfortunately the resulting (already slow) program will run at least 20x slower.*
 
 
 ## Requirements:
 
-The optional "draw_filter_1D.py" script
-(included in the "bin/filter_mrc" directory)
-requires python, numpy, and matplotlib.
-(It is useful only if you actually want to see
- the shape of the convolution filter that is currently in use.
- Most users can ignore this.)
-The CLANG compiler is recommended.
-(GCC may also work, but as of 2019-3-06, using it can result in 
- [slow or buggy behavior](https://github.com/jewettaij/visfd/issues/2).)
+**8GB** or higher is required.
+(For membrane detection,
+ your RAM must exceed 11x the size of the tomogram that you are analyzing.)
+
+The CLANG compiler is strongly recommended.
+([The clustering feature does not yet work with GCC.](https://github.com/jewettaij/visfd/issues/2))
+
+Some programs
+(such as "histogram_mrc.py" and "draw_filter_1D.py")
+require python, along with the
+"numpy", "matplotlib", and "mrcfile" modules. 
+These python programs are optional.
 
 ## License
 

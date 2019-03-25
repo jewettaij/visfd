@@ -1954,8 +1954,14 @@ BlobDog(int const image_size[3], //!< source image size
 /// Algorithm described in:
 ///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 /// This version refers to blobs by their diameter (instead of "sigma").
+///
+/// @note  New feature: non-max suppression.
 /// This version can discard blobs which overlap with existing blobs.
 /// (This is sometimes called "non-max suppression".)
+/// This can keep the list of blobs to a manageable size.
+/// However it is advisable to ignore this feature and run the
+/// DiscardOverlappingBlobs() function later on the full list of blobs
+/// (assuming that it fits in memory).
 
 template<class Scalar>
 void
@@ -2029,35 +2035,47 @@ template<class Scalar>
 void
 VisualizeBlobs(int const image_size[3], //!< image size
                Scalar ***aaafDest,  //!< array where we should write new image
-               Scalar const *const *const *aaafMask,   //!< ignore voxels where mask==0
-               vector<array<Scalar,3> > &centers, //!< coordinates for the center of each sphere (blob)
-               vector<Scalar> &diameters,         //!< diameter of each spherical shell (in voxels)
-               vector<Scalar> &shell_thicknesses, //!< thickness of each spherical shell (in voxels)
-               vector<Scalar> &voxel_intensities_foreground, //!< assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
-               Scalar voxel_intensity_background = 0.0, //!< assign background voxels to this value
-               Scalar const *const *const *aaafBackground = NULL,   //!< superimpose background image?
-               Scalar voxel_intensity_background_rescale = 0.333, //!< superimpose with old image? This is the ratio of the fluctuations in voxel intensities of the newly created background image relative to the average foreground voxel intensity.
-               bool voxel_intensity_foreground_normalize = false, //!< divide brightnesses by number of voxels in spherical shell? (rarely useful)
-               ostream *pReportProgress = NULL //!<optional: report progress to the user?
+               Scalar const *const *const *aaafMask,   //!< Optional: ignore voxels where mask==0
+               const vector<array<Scalar,3> > &centers, //!< coordinates for the center of each sphere (blob)
+               const vector<Scalar> *pDiameters=NULL,         //!< Optional: diameter of each spherical shell (in voxels)
+               const vector<Scalar> *pShellThicknesses=NULL, //!< Optional: thickness of each spherical shell (in voxels)
+               const vector<Scalar> *pVoxelIntensitiesForeground=NULL, //!< Optional: assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
+               Scalar voxel_intensity_background = 0.0, //!< Optional: assign background voxels to this value
+               Scalar const *const *const *aaafBackground = NULL,   //!< Optional: superimpose background image?
+               Scalar voxel_intensity_background_rescale = 0.333, //!< Optional: superimpose with old image? This is the ratio of the fluctuations in voxel intensities of the newly created background image relative to the average foreground voxel intensity.
+               bool voxel_intensity_foreground_normalize = false, //!< Optional: divide brightnesses by number of voxels in spherical shell? (rarely useful)
+               ostream *pReportProgress = NULL //!<Optional: report progress to the user?
                )
 {
-
+  assert(image_size);
+  assert(aaafDest);
   // handle the edge cases first:
 
   if (centers.size() == 0)
     return;
-  if (voxel_intensities_foreground.size() == 0)
-    // if empty, then fill the vector with the default foreground voxel value
-    voxel_intensities_foreground.resize(centers.size(), 1.0);
-  if (diameters.size() == 0)
+
+  vector<Scalar> diameters;
+  vector<Scalar> shell_thicknesses;
+  vector<Scalar> voxel_intensities_foreground;
+  
+  if (pDiameters == NULL) {
     // if empty, then fill the vector with the default value
     diameters.resize(centers.size(), 0.0);
-  if (shell_thicknesses.size() == 0)
+    pDiameters = &diameters;
+  }
+  if (pShellThicknesses == NULL) {
     // if empty, then fill the vector with the default value
-    diameters.resize(centers.size(), 1.0);
-  assert(centers.size() == voxel_intensities_foreground.size());
-  assert(centers.size() == diameters.size());
-  assert(centers.size() == shell_thicknesses.size());
+    shell_thicknesses.resize(centers.size(), 1.0);
+    pShellThicknesses = &shell_thicknesses;
+  }
+  if (pVoxelIntensitiesForeground == NULL) {
+    // if empty, then fill the vector with the default foreground voxel value
+    voxel_intensities_foreground.resize(centers.size(), 1.0);
+    pVoxelIntensitiesForeground = &voxel_intensities_foreground;
+  }
+  assert(centers.size() == pDiameters->size());
+  assert(centers.size() == pShellThicknesses->size());
+  assert(centers.size() == pVoxelIntensitiesForeground->size());
 
   // rescale the brightnesses in the tomogram according to their average
   // value and standard deviation:
@@ -2074,10 +2092,10 @@ VisualizeBlobs(int const image_size[3], //!< image size
                                     aaafMask);
   }
   double score_ave = 0.0;
-  for (int i = 0; i < voxel_intensities_foreground.size(); i++)
-    score_ave += voxel_intensities_foreground[i];
-  if (voxel_intensities_foreground.size() > 0)
-    score_ave /= voxel_intensities_foreground.size();
+  for (int i = 0; i < (*pVoxelIntensitiesForeground).size(); i++)
+    score_ave += (*pVoxelIntensitiesForeground)[i];
+  if ((*pVoxelIntensitiesForeground).size() > 0)
+    score_ave /= (*pVoxelIntensitiesForeground).size();
   double voxel_intensity_foreground_ave = score_ave;
 
   // The spherical shells will have brightnesses chosen according to their
@@ -2127,15 +2145,17 @@ VisualizeBlobs(int const image_size[3], //!< image size
                  [static_cast<int>(centers[i][0])] == 0.0))
       continue;
 
-    int Rs = ceil(diameters[i]/2-0.5);
+    int Rs = ceil((*pDiameters)[i]/2-0.5);
     if (Rs < 0) Rs = 0;
-    Scalar Rssqr_max = SQR(diameters[i]/2);
+    Scalar Rssqr_max = SQR((*pDiameters)[i]/2);
     Scalar Rssqr_min = 0.0;
-    if ((shell_thicknesses[i] > 0.0) && (diameters[i]/2 - shell_thicknesses[i] > 0.0))
-      Rssqr_min = SQR(diameters[i]/2 - shell_thicknesses[i]);
+    if (((*pShellThicknesses)[i] > 0.0) &&
+        ((*pDiameters)[i]/2 - (*pShellThicknesses)[i] > 0.0))
+      Rssqr_min = SQR((*pDiameters)[i]/2 - (*pShellThicknesses)[i]);
 
     if (pReportProgress)
-      *pReportProgress << ", diameter=" << diameters[i] << ", th=" << shell_thicknesses[i]
+      *pReportProgress << ", diameter=" << (*pDiameters)[i]
+                       << ", th=" << (*pShellThicknesses)[i]
                        <<"\n";
 
     // Normalize the brightness of each sphere?
@@ -2179,7 +2199,7 @@ VisualizeBlobs(int const image_size[3], //!< image size
             aaafDest[static_cast<int>(centers[i][2])+jz]
                     [static_cast<int>(centers[i][1])+jy]
                     [static_cast<int>(centers[i][0])+jx] =
-                         voxel_intensities_foreground[i] * imultiplier;
+                         (*pVoxelIntensitiesForeground)[i] * imultiplier;
         }
       }
     }
@@ -2206,7 +2226,7 @@ invert_permutation(const vector<Integer>& p,
 /// @brief apply a permutation to a std::vector in-place
 template<class T, class Integer>
 void
-apply_permutation(vector<Integer>& p,
+apply_permutation(const vector<Integer>& p,
                   vector<T>& v)
 {
   assert(p.size() == v.size());
@@ -3901,7 +3921,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
     // How big is the search neighborhood around each minima?
     int r_neigh_sqd = connectivity;
     int r_neigh = floor(sqrt(r_neigh_sqd));
-    
+
     vector<array<int, 3> > vNeighbors;
     for (int jz = -r_neigh; jz <= r_neigh; jz++) {
       for (int jy = -r_neigh; jy <= r_neigh; jy++) {
@@ -3979,7 +3999,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                    array<Coordinate, 3>  // location of the voxel
                   >
                 > q;
-               
+
 
   if (pReportProgress)
     *pReportProgress <<

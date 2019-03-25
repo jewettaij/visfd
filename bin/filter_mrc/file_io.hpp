@@ -180,6 +180,106 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! wo
 
 
 
+/// @brief   Read a list of blob coordinates, diameters, and scores
+///          from a text file.
+
+template<class Scalar, class Coordinate>
+static void
+ReadBlobCoordsFile(string in_coords_file_name, //<! name of file we will read
+                   vector<array<Coordinate, 3> > *pCrds=NULL, //<! store the blob coordinates here (if !=NULL)
+                   vector<Scalar> *pDiameters=NULL, //<! store the blob diameters here (if !=NULL)
+                   vector<Scalar> *pScores=NULL, //<! store blob scores here (if !=NULL)
+                   Scalar distance_scale=1.0, //<! divide all distances and coordinates by this value
+                   Scalar diameter_override=-1.0, //<! use this diameter (useful if no 4th column is present)
+                   Scalar diameter_factor=1.0, //<! multiply all diameters by this number
+                   Scalar diameter_lower_bound=-std::numeric_limits<float>::infinity(), //<! discard blobs smaller than this
+                   Scalar diameter_upper_bound=std::numeric_limits<float>::infinity(), //<! discard blobs bigger than this
+                   Scalar score_default=0.0, //<! default "score" (if no 5th column is present)
+                   Scalar score_lower_bound=-std::numeric_limits<float>::infinity(), //<! discard blobs with scores below this
+                   Scalar score_upper_bound=std::numeric_limits<float>::infinity() //<! discard blobs with scores above this
+                   )
+{
+  fstream coords_file;
+  coords_file.open(in_coords_file_name.c_str(), ios::in);
+  if (! coords_file)
+    throw InputErr("Error: unable to open \""+
+                   in_coords_file_name +"\" for reading.\n");
+
+  bool custom_diameters = false;
+  while (coords_file) {
+    string strLine;
+    getline(coords_file, strLine);
+    if (strLine.size() == 0)
+      continue;
+    stringstream ssLine(strLine);
+    double x, y, z;
+    ssLine >> x;
+    ssLine >> y;
+    ssLine >> z;
+    double ix, iy, iz;
+    ix = floor((x / distance_scale) + 0.5);
+    iy = floor((y / distance_scale) + 0.5);
+    iz = floor((z / distance_scale) + 0.5);
+    array<Coordinate, 3> ixiyiz;
+    ixiyiz[0] = ix;
+    ixiyiz[1] = iy;
+    ixiyiz[2] = iz;
+
+    Scalar diameter = -1.0;
+    Scalar score = score_default;
+    if (ssLine) { // Does the file contain a 4th column? (the diameter)
+      Scalar _diameter;
+      ssLine >> _diameter;
+      // convert from physical distance to # of voxels:
+      _diameter /= distance_scale;
+      if (ssLine)
+        diameter = _diameter;
+      custom_diameters = true;
+      if ((! ((diameter_lower_bound <= diameter) &&
+             (diameter <= diameter_upper_bound)))
+          &&
+          (diameter_lower_bound <=
+           diameter_upper_bound))
+        // If the diameter lies outside of the desired range, ignore this blob
+        continue; 
+    }
+
+    if (diameter < 0) { //If file does not contain a 4th column, or if < 0
+      diameter = diameter_override;
+      if (diameter_override < 0)
+        diameter = 0.5;   // (sphere will be 1 voxel wide by default)
+    }
+
+    if (diameter_override >= 0) //override the diameter ?
+      diameter = diameter_override;
+    else
+      diameter *= diameter_factor;
+
+    if (ssLine) {
+      Scalar _score;
+      ssLine >> _score;
+      if (ssLine)
+        score = _score;
+    }
+
+    if (! ((score_lower_bound <= score) &&
+           (score <= score_upper_bound)))
+      // If the score is not sufficiently high (or low), skip this blob
+      continue; 
+
+    if (pCrds)
+      (*pCrds).push_back(ixiyiz);
+    if (pDiameters)
+      (*pDiameters).push_back(diameter);
+    if (pScores)
+      (*pScores).push_back(score);
+
+  } //while (coords_file) {...
+}
+
+
+
+
 template<class Scalar>
 static void
 WriteOrientedPointCloudPLY(string filename,

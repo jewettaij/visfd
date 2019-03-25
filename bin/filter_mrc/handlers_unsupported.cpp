@@ -2,12 +2,345 @@
 #include <filter2d.hpp>
 #include <filter3d.hpp>
 #include "filter3d_variants.hpp"
-#include "unsupported.hpp"
-
+#include "file_io.hpp"
+#include "handlers_unsupported.hpp"
 
 /// UNSUPPORTED CODE
 /// THIS FILE IMPLEMENTS FEATURES WHICH ARE NO LONGER MAINTAINED AND TESTED.
 /// THIS CODE WILL LIKELY BE DELETED IN THE FUTURE.
+
+
+
+
+#ifndef DISABLE_DOGGXY
+
+void
+HandleDoggXY(Settings settings,
+             MrcSimple &tomo_in,
+             MrcSimple &tomo_out,
+             MrcSimple &mask,
+             float voxel_width[3])
+{
+
+  cerr << "filter_type = Difference-of-Generalized-Gaussians in the XY plane\n";
+  // Generate a filter
+  //
+  //   h(x,y,z) = h_xy(x,y) * h_z(z)
+  //
+  //Take advantage of the fact that the filter we
+  //are using (ie. the function we are convolving with the source image),
+  //is the product of a function of X,Y, with a function of Z.
+  //This makes it a "seperable" filter:  We can perform the filters in the Z
+  //direction, followed by filtering the result in the X & Y directions.
+  //This reduces the computation by a factor of O(filter.halfwidth[2]))
+  //(A 1-D convolution followed by a 2-D convolution is much faster per 
+  // voxel than a full 3-D convolution.)
+
+  // First, generate the filter in the Z direction:
+
+  int filter_truncate_halfwidthZ = -1;
+  Filter1D<float, int> filterZ;
+  if (settings.filter_truncate_ratio > 0.0)
+    filter_truncate_halfwidthZ = floor(settings.width_a[2] *
+                                       settings.filter_truncate_ratio);
+  else
+    filter_truncate_halfwidthZ = floor(settings.width_a[2] *
+                                       sqrt(-2*log(settings.filter_truncate_threshold)));
+
+  filterZ = GenFilterGauss1D(settings.width_a[2],
+                             filter_truncate_halfwidthZ);
+
+  float C;       // let the user know what C coefficient was used
+  C = filterZ.afH[filter_truncate_halfwidthZ]; //(C=peak height located at the
+                                              //   middle of the array)
+
+  // Then generate the filter in the XY directions
+
+  Filter2D<float, int> filterXY;
+  float A, B;       // let the user know what A B coefficients were used
+
+  filterXY = GenFilterDogg2D(settings.width_a,//"a" parameter in formula
+                             settings.width_b,//"b" parameter in formula
+                             settings.m_exp,  //"m" parameter in formula
+                             settings.n_exp,  //"n" parameter in formula
+                             settings.filter_truncate_ratio,
+                             settings.filter_truncate_threshold,
+                             &A,
+                             &B);
+
+  // Precompute the effect of the filter in the Z direction.
+
+  // Create temporary 1-D arrays to perform the filter in the Z-direction:
+  float *afIZorig = new float [tomo_in.header.nvoxels[2]];
+  float *afIZnew  = new float [tomo_in.header.nvoxels[2]];
+  float *afMask         = NULL;
+  if (mask.aaafI)
+    afMask       = new float [tomo_in.header.nvoxels[2]];
+
+  // Then apply the filter in the Z direction
+  // (and store the filtered 3-D image in the original tomogram array)
+  for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++) {
+    for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++) {
+      for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++) {
+        afIZorig[iz] = tomo_in.aaafI[iz][iy][ix];
+        if (afMask)
+          afMask[iz] = mask.aaafI[iz][iy][ix];
+      }
+      filterZ.Apply(tomo_in.header.nvoxels[2],
+                    afIZorig,
+                    afIZnew,
+                    afMask,
+                    true);
+
+      //It would be wasteful to allocate a temporary array to store this
+      //Instead store the result of the convolution in the original array:
+      for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
+        tomo_in.aaafI[iz][iy][ix] = afIZnew[iz];
+    } //for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++) {
+  } // for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++) {
+  delete [] afIZorig;
+  delete [] afIZnew;
+  if (afMask)
+    delete [] afMask;
+
+  // Now apply the filter in the X and Y directions:
+  cerr << "  progress: processing plane#" << endl;
+  for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++) {
+    cerr << "  " << iz+1 << " / " << tomo_in.header.nvoxels[2] << "\n";
+    float **aafMaskXY = NULL;
+    if (mask.aaafI)
+      aafMaskXY = mask.aaafI[iz];
+    filterXY.Apply(tomo_in.header.nvoxels,
+                   tomo_in.aaafI[iz],
+                   tomo_out.aaafI[iz],
+                   aafMaskXY,
+                   false);
+  }
+
+  cerr << " Filter Used:\n"
+    //" h(x,y,z) = (h_a(x,y) - h_b(x,y)) * C * exp(-0.5*(z/s)^2)\n"
+    " h(x,y,z) = (h_a(x,y) - h_b(x,y)) * C * exp(-(z/s)^2)\n"
+    " h_a(x,y) = A*exp(-((x/a_x)^2 + (y/a_y)^2)^(m/2))\n"
+    " h_b(x,y) = B*exp(-((x/b_x)^2 + (y/b_y)^2)^(n/2))\n"
+    "  ... where  A = " << A << "\n"
+    "             B = " << B << "\n" 
+    "             C = " << C << "\n" 
+    "             m = " << settings.m_exp << "\n"
+    "             n = " << settings.n_exp << "\n" 
+    "   (a_x, a_y) = "
+       << "(" << settings.width_a[0]
+       << " " << settings.width_a[1] << ")\n"
+    "   (b_x, b_y) = "
+       << "(" << settings.width_b[0]
+       << " " << settings.width_b[1] << ")\n"
+    "            s = " << settings.width_a[2] << endl;
+  cerr << " You can plot a slice of this function\n"
+       << "     in the X direction using:\n"
+    " draw_filter_1D.py -dogg " << A*C << " " << B*C
+       << " " << settings.width_a[0] << " " << settings.width_b[0]
+       << " " << settings.m_exp << " " << settings.n_exp << endl;
+  cerr << " and in the Y direction using:\n"
+    " draw_filter_1D.py -dogg " << A*C << " " << B*C
+       << " " << settings.width_a[1] << " " << settings.width_b[1]
+       << " " << settings.m_exp << " " << settings.n_exp << endl;
+  cerr << " and in the Z direction using:\n"
+    " draw_filter_1D.py -gauss " << C   // * (A-B)   <--COMMENTING OUT (A-B)
+       << " " << settings.width_a[2] << endl;
+} //HandleDoggXY()
+
+
+
+
+
+
+#ifndef DISABLE_INTENSITY_PROFILES
+void
+HandleBlobRadialIntensity(Settings settings,
+                          MrcSimple &tomo_in,
+                          MrcSimple &tomo_out,
+                          MrcSimple &mask,
+                          float voxel_width[3])
+{
+  vector<array<float, 3> > sphere_centers; //!< coordinates for the center of each sphere (blob)
+  vector<float> diameters;         //!< diameter of each spherical shell (in voxels)
+
+  assert(settings.in_coords_file_name != "");
+  assert(settings.blob_profiles_file_name_base != "");
+
+  ReadBlobCoordsFile(settings.in_coords_file_name,
+                     &sphere_centers, // store blob coordinates here
+                     &diameters,
+                     static_cast<vector<float> *>(NULL),
+                     voxel_width[0],
+                     settings.sphere_decals_diameter,
+                     settings.sphere_decals_scale);
+
+  vector<vector<float> > intensity_profiles; //!< store the intensity profiles here
+
+  int image_size[3];
+  for (int d = 0; d < 3; d++)
+    image_size[d] = tomo_in.header.nvoxels[d];
+
+  BlobIntensityProfiles(image_size,
+                        tomo_in.aaafI,
+                        mask.aaafI,
+                        sphere_centers,
+                        diameters,
+                        settings.blob_profiles_center_criteria,
+                        intensity_profiles);
+
+  for (size_t i = 0; i < intensity_profiles.size(); i++) {
+    string intensity_vs_r_file_name = settings.blob_profiles_file_name_base;
+    fstream f;
+    f.open(intensity_vs_r_file_name.c_str(), ios::out);
+    if (! f)
+      throw InputErr("Error: unable to open \""+
+                     intensity_vs_r_file_name+"\" for writing.\n");
+    for (int ir = 0; ir < intensity_profiles[i].size(); ir++) {
+      f << ir*voxel_width[0] << " " << intensity_profiles[i][ir] << "\n";
+    }
+    f.close();
+  }
+
+} // HandleBlobIntensityProfiles()
+
+#endif //#ifndef DISABLE_INTENSITY_PROFILES
+
+
+
+
+
+#ifndef DISABLE_BOOTSTRAPPING
+
+void
+HandleBootstrapDogg(Settings settings,
+                    MrcSimple &tomo_in,
+                    MrcSimple &tomo_out,
+                    MrcSimple &mask);
+{
+  cerr << "filter_type = Difference-of-Generalized-Gaussians with BOOTSTRAPPING\n"
+       << "              (BOOTSTRAP_DOGG)\n";
+
+  Filter3D<float, int> filter;
+  float A, B;       // let the user know what A B coefficients were used
+
+  filter = GenFilterDogg3D(settings.width_a,//"a" parameter in formula
+                           settings.width_b,//"b" parameter in formula
+                           settings.m_exp,  //"m" parameter in formula
+                           settings.n_exp,  //"n" parameter in formula
+                           settings.filter_truncate_ratio,
+                           settings.filter_truncate_threshold,
+                           &A,
+                           &B,
+                           &cerr);
+
+  if (settings.bs_ntests > 0) {
+
+    // IN OLDER VERSIONS OF THE CODE, I WOULD ONLY CONSIDER VOXELS WHOSE
+    // FILTERED VALUE EXCEEDED SOME USER-SPECIFIED THRESHOLD.
+    // NOW, WE USE THE "MASK" INSTEAD.  IN OTHER WORDS, THE USER IS
+    // RESPONSIBLE FOR RUNNING A FILTER ON THE INPUT IMAGE (OR USING SOME
+    // OTHER METHOD) TO SELECT OUT THE VOXELS THEY WANT US TO CONSIDER.
+    // SAVE THESE VOXELS IN A DIFFERENT FILE, AND LOAD IT USING "-mask"
+    //
+    // (If the don't, this procedure will take a really, really long time.)
+    //
+    if (mask.aaafI == NULL) {
+      cerr << "WARNING: THIS FILTER IS VERY SLOW UNLESS YOU USE THE \"-mask\" ARGUMENT\n"
+           << "         TO SPECIFY THE VOXELS YOU WANT TO CONSIDER.\n"
+           << "         (BY DEFAULT, THIS PROGRAM USES ALL THE VOXELS).\n";
+      for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+        for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+          for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+            vvGoodVoxels.push_back(ixiyiz);
+            vCountFP.push_back(0);
+          }
+        }
+      }
+    }
+    else { 
+      for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+        for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+          for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+            if (mask.aaafI[ix][iy][iz] != 0.0) {
+              vvGoodVoxels.push_back(ixiyiz);
+              vCountFP.push_back(0);
+            }
+          }
+        }
+      }
+    }
+          
+    //Initialize the random number generator we will need later:
+    RANDOM_INIT(settings.bs_random_seed);
+        
+    for (int i_sim = 0; i_sim < settings.bs_ntests; i_sim++) {
+      cerr <<
+        "\n"
+        " ---------------------------------------------------\n"
+        "   False positives bootstrap simulation# " << isim+1
+           << " / " << settings.bs_ntests << "\n"
+           << endl;
+
+      ScrambleImage(tomo_in.header.nvoxels,
+                    tomo_in.aaafI,
+                    settings.bs_scramble_radius,
+                    aaafScrambled);
+
+      for (i_vox = 0; i_vox < vvGoodVoxels.size(); i_vox++) {
+        int ix = vGoodVoxels[i_vox][0];
+        int iy = vGoodVoxels[i_vox][1];
+        int iz = vGoodVoxels[i_vox][2];
+        float g =
+          filter.ApplyToVoxel(ix, iy, iz,
+                              tomo_in.header.nvoxels,
+                              //tomo_in.aaafI,
+                              aaafScrambled,
+                              mask.aaafI,
+                              false);
+
+        //if (g * settings.bs_threshold_sign >= //filter applied to scramble
+        //    tomo_out.aaafI[iz][iy][ix]) //>= applied to orig image
+        //  vCountFP[i_vox] += 1;
+
+        if (g * settings.bs_threshold_sign >=
+            settings.bs_threshold)
+          vCountFP[i_vox] += 1;
+
+      }
+    } // for (int i_sim = 0; i_sim < settings.bs_ntests; i_sim++)
+
+    // Now copy the measured probabilities into the output image:
+    for (i_vox = 0; i_vox < vvGoodVoxels.size(); i_vox++) {
+      int ix = vGoodVoxels[i_vox][0];
+      int iy = vGoodVoxels[i_vox][1];
+      int iz = vGoodVoxels[i_vox][2];
+      // The tomogram should store the 1 - (probability of a false positive)
+      // at this location.  In the code above, this probability
+      // has been calculated by counting the number of times that a
+      // (locally) scrambled image generated a signal as strong as the
+      // result of applying the same filter to the unscrambled image there.
+      tomo_out.aaafI[iz][iy][ix] =
+        (1.0
+         -
+         static_cast<float>(vCountFP[i_vox]) / settings.fp_nsims);
+    }
+
+    ////Dealloc3D(tomo_in.header.nvoxels,
+    ////          &aiCount,
+    ////          &aaaiCount);
+
+  } //if (settings.bs_ntests > 0)
+
+} //HandleBootstrapDogg()
+
+
+#endif //#ifndef DISABLE_BOOTSTRAPPING
+
+
+
+
+
 
 #ifndef DISABLE_TEMPLATE_MATCHING
 
@@ -692,7 +1025,6 @@ HandleTemplateGauss(Settings settings,
 
 
 
-
   cerr << "\n"
     " ------ Calculating <P_, P_> ... ------\n" << endl;
 
@@ -808,275 +1140,80 @@ HandleTemplateGauss(Settings settings,
 
 
 
-
-
-
-#ifndef DISABLE_BOOTSTRAPPING
-
 void
-HandleBootstrapDogg(Settings settings,
-                    MrcSimple &tomo_in,
-                    MrcSimple &tomo_out,
-                    MrcSimple &mask);
+HandleDistanceToPoints(Settings settings,
+                       MrcSimple &tomo_in,
+                       MrcSimple &tomo_out,
+                       MrcSimple &mask,
+                       float voxel_width[3])
 {
-  cerr << "filter_type = Difference-of-Generalized-Gaussians with BOOTSTRAPPING\n"
-       << "              (BOOTSTRAP_DOGG)\n";
-
-  Filter3D<float, int> filter;
-  float A, B;       // let the user know what A B coefficients were used
-
-  filter = GenFilterDogg3D(settings.width_a,//"a" parameter in formula
-                           settings.width_b,//"b" parameter in formula
-                           settings.m_exp,  //"m" parameter in formula
-                           settings.n_exp,  //"n" parameter in formula
-                           settings.filter_truncate_ratio,
-                           settings.filter_truncate_threshold,
-                           &A,
-                           &B,
-                           &cerr);
-
-  if (settings.bs_ntests > 0) {
-
-    // IN OLDER VERSIONS OF THE CODE, I WOULD ONLY CONSIDER VOXELS WHOSE
-    // FILTERED VALUE EXCEEDED SOME USER-SPECIFIED THRESHOLD.
-    // NOW, WE USE THE "MASK" INSTEAD.  IN OTHER WORDS, THE USER IS
-    // RESPONSIBLE FOR RUNNING A FILTER ON THE INPUT IMAGE (OR USING SOME
-    // OTHER METHOD) TO SELECT OUT THE VOXELS THEY WANT US TO CONSIDER.
-    // SAVE THESE VOXELS IN A DIFFERENT FILE, AND LOAD IT USING "-mask"
-    //
-    // (If the don't, this procedure will take a really, really long time.)
-    //
-    if (mask.aaafI == NULL) {
-      cerr << "WARNING: THIS FILTER IS VERY SLOW UNLESS YOU USE THE \"-mask\" ARGUMENT\n"
-           << "         TO SPECIFY THE VOXELS YOU WANT TO CONSIDER.\n"
-           << "         (BY DEFAULT, THIS PROGRAM USES ALL THE VOXELS).\n";
-      for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-        for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-          for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
-            vvGoodVoxels.push_back(ixiyiz);
-            vCountFP.push_back(0);
-          }
-        }
-      }
-    }
-    else { 
-      for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-        for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-          for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
-            if (mask.aaafI[ix][iy][iz] != 0.0) {
-              vvGoodVoxels.push_back(ixiyiz);
-              vCountFP.push_back(0);
-            }
-          }
-        }
-      }
-    }
-          
-    //Initialize the random number generator we will need later:
-    RANDOM_INIT(settings.bs_random_seed);
-        
-    for (int i_sim = 0; i_sim < settings.bs_ntests; i_sim++) {
-      cerr <<
-        "\n"
-        " ---------------------------------------------------\n"
-        "   False positives bootstrap simulation# " << isim+1
-           << " / " << settings.bs_ntests << "\n"
-           << endl;
-
-      ScrambleImage(tomo_in.header.nvoxels,
-                    tomo_in.aaafI,
-                    settings.bs_scramble_radius,
-                    aaafScrambled);
-
-      for (i_vox = 0; i_vox < vvGoodVoxels.size(); i_vox++) {
-        int ix = vGoodVoxels[i_vox][0];
-        int iy = vGoodVoxels[i_vox][1];
-        int iz = vGoodVoxels[i_vox][2];
-        float g =
-          filter.ApplyToVoxel(ix, iy, iz,
-                              tomo_in.header.nvoxels,
-                              //tomo_in.aaafI,
-                              aaafScrambled,
-                              mask.aaafI,
-                              false);
-
-        //if (g * settings.bs_threshold_sign >= //filter applied to scramble
-        //    tomo_out.aaafI[iz][iy][ix]) //>= applied to orig image
-        //  vCountFP[i_vox] += 1;
-
-        if (g * settings.bs_threshold_sign >=
-            settings.bs_threshold)
-          vCountFP[i_vox] += 1;
-
-      }
-    } // for (int i_sim = 0; i_sim < settings.bs_ntests; i_sim++)
-
-    // Now copy the measured probabilities into the output image:
-    for (i_vox = 0; i_vox < vvGoodVoxels.size(); i_vox++) {
-      int ix = vGoodVoxels[i_vox][0];
-      int iy = vGoodVoxels[i_vox][1];
-      int iz = vGoodVoxels[i_vox][2];
-      // The tomogram should store the 1 - (probability of a false positive)
-      // at this location.  In the code above, this probability
-      // has been calculated by counting the number of times that a
-      // (locally) scrambled image generated a signal as strong as the
-      // result of applying the same filter to the unscrambled image there.
-      tomo_out.aaafI[iz][iy][ix] =
-        (1.0
-         -
-         static_cast<float>(vCountFP[i_vox]) / settings.fp_nsims);
-    }
-
-    ////Dealloc3D(tomo_in.header.nvoxels,
-    ////          &aiCount,
-    ////          &aaaiCount);
-
-  } //if (settings.bs_ntests > 0)
-
-} //HandleBootstrapDogg()
-
-
-#endif //#ifndef DISABLE_BOOTSTRAPPING
-
-
-
-
-
-#ifndef DISABLE_DOGGXY
-
-void
-HandleDoggXY(Settings settings,
-             MrcSimple &tomo_in,
-             MrcSimple &tomo_out,
-             MrcSimple &mask,
-             float voxel_width[3])
-{
-
-  cerr << "filter_type = Difference-of-Generalized-Gaussians in the XY plane\n";
-  // Generate a filter
-  //
-  //   h(x,y,z) = h_xy(x,y) * h_z(z)
-  //
-  //Take advantage of the fact that the filter we
-  //are using (ie. the function we are convolving with the source image),
-  //is the product of a function of X,Y, with a function of Z.
-  //This makes it a "seperable" filter:  We can perform the filters in the Z
-  //direction, followed by filtering the result in the X & Y directions.
-  //This reduces the computation by a factor of O(filter.halfwidth[2]))
-  //(A 1-D convolution followed by a 2-D convolution is much faster per 
-  // voxel than a full 3-D convolution.)
-
-  // First, generate the filter in the Z direction:
-
-  int filter_truncate_halfwidthZ = -1;
-  Filter1D<float, int> filterZ;
-  if (settings.filter_truncate_ratio > 0.0)
-    filter_truncate_halfwidthZ = floor(settings.width_a[2] *
-                                       settings.filter_truncate_ratio);
-  else
-    filter_truncate_halfwidthZ = floor(settings.width_a[2] *
-                                       sqrt(-2*log(settings.filter_truncate_threshold)));
-
-  filterZ = GenFilterGauss1D(settings.width_a[2],
-                             filter_truncate_halfwidthZ);
-
-  float C;       // let the user know what C coefficient was used
-  C = filterZ.afH[filter_truncate_halfwidthZ]; //(C=peak height located at the
-                                              //   middle of the array)
-
-  // Then generate the filter in the XY directions
-
-  Filter2D<float, int> filterXY;
-  float A, B;       // let the user know what A B coefficients were used
-
-  filterXY = GenFilterDogg2D(settings.width_a,//"a" parameter in formula
-                             settings.width_b,//"b" parameter in formula
-                             settings.m_exp,  //"m" parameter in formula
-                             settings.n_exp,  //"n" parameter in formula
-                             settings.filter_truncate_ratio,
-                             settings.filter_truncate_threshold,
-                             &A,
-                             &B);
-
-  // Precompute the effect of the filter in the Z direction.
-
-  // Create temporary 1-D arrays to perform the filter in the Z-direction:
-  float *afIZorig = new float [tomo_in.header.nvoxels[2]];
-  float *afIZnew  = new float [tomo_in.header.nvoxels[2]];
-  float *afMask         = NULL;
-  if (mask.aaafI)
-    afMask       = new float [tomo_in.header.nvoxels[2]];
-
-  // Then apply the filter in the Z direction
-  // (and store the filtered 3-D image in the original tomogram array)
-  for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++) {
-    for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++) {
-      for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++) {
-        afIZorig[iz] = tomo_in.aaafI[iz][iy][ix];
-        if (afMask)
-          afMask[iz] = mask.aaafI[iz][iy][ix];
-      }
-      filterZ.Apply(tomo_in.header.nvoxels[2],
-                    afIZorig,
-                    afIZnew,
-                    afMask,
-                    true);
-
-      //It would be wasteful to allocate a temporary array to store this
-      //Instead store the result of the convolution in the original array:
-      for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++)
-        tomo_in.aaafI[iz][iy][ix] = afIZnew[iz];
-    } //for (int iy = 0; iy < tomo_in.header.nvoxels[1]; iy++) {
-  } // for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++) {
-  delete [] afIZorig;
-  delete [] afIZnew;
-  if (afMask)
-    delete [] afMask;
-
-  // Now apply the filter in the X and Y directions:
-  cerr << "  progress: processing plane#" << endl;
-  for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++) {
-    cerr << "  " << iz+1 << " / " << tomo_in.header.nvoxels[2] << "\n";
-    float **aafMaskXY = NULL;
-    if (mask.aaafI)
-      aafMaskXY = mask.aaafI[iz];
-    filterXY.Apply(tomo_in.header.nvoxels,
-                   tomo_in.aaafI[iz],
-                   tomo_out.aaafI[iz],
-                   aafMaskXY,
-                   false);
+  fstream coords_file;
+  coords_file.open(settings.in_coords_file_name.c_str(), ios::in);
+  if (! coords_file)
+    throw InputErr("Error: unable to open \""+
+                   settings.in_coords_file_name +"\" for reading.\n");
+  vector<array<int,3> > crds;
+  while (coords_file) {
+    double x, y, z;
+    coords_file >> x;
+    coords_file >> y;
+    coords_file >> z;
+    double ix, iy, iz;
+    ix = floor((x / voxel_width[0]) + 0.5);
+    iy = floor((y / voxel_width[1]) + 0.5);
+    iz = floor((z / voxel_width[2]) + 0.5);
+    array<int, 3> ixiyiz;
+    ixiyiz[0] = ix;
+    ixiyiz[1] = iy;
+    ixiyiz[2] = iz;
+    crds.push_back(ixiyiz);
   }
 
-  cerr << " Filter Used:\n"
-    //" h(x,y,z) = (h_a(x,y) - h_b(x,y)) * C * exp(-0.5*(z/s)^2)\n"
-    " h(x,y,z) = (h_a(x,y) - h_b(x,y)) * C * exp(-(z/s)^2)\n"
-    " h_a(x,y) = A*exp(-((x/a_x)^2 + (y/a_y)^2)^(m/2))\n"
-    " h_b(x,y) = B*exp(-((x/b_x)^2 + (y/b_y)^2)^(n/2))\n"
-    "  ... where  A = " << A << "\n"
-    "             B = " << B << "\n" 
-    "             C = " << C << "\n" 
-    "             m = " << settings.m_exp << "\n"
-    "             n = " << settings.n_exp << "\n" 
-    "   (a_x, a_y) = "
-       << "(" << settings.width_a[0]
-       << " " << settings.width_a[1] << ")\n"
-    "   (b_x, b_y) = "
-       << "(" << settings.width_b[0]
-       << " " << settings.width_b[1] << ")\n"
-    "            s = " << settings.width_a[2] << endl;
-  cerr << " You can plot a slice of this function\n"
-       << "     in the X direction using:\n"
-    " draw_filter_1D.py -dogg " << A*C << " " << B*C
-       << " " << settings.width_a[0] << " " << settings.width_b[0]
-       << " " << settings.m_exp << " " << settings.n_exp << endl;
-  cerr << " and in the Y direction using:\n"
-    " draw_filter_1D.py -dogg " << A*C << " " << B*C
-       << " " << settings.width_a[1] << " " << settings.width_b[1]
-       << " " << settings.m_exp << " " << settings.n_exp << endl;
-  cerr << " and in the Z direction using:\n"
-    " draw_filter_1D.py -gauss " << C   // * (A-B)   <--COMMENTING OUT (A-B)
-       << " " << settings.width_a[2] << endl;
-} //HandleDoggXY()
+  cerr << " ------ calculating distance to points in "
+       << settings.in_coords_file_name << " ------\n"
+       << endl;
+
+  // At some point I was trying to be as general as possible and allowed
+  // for the possibility that voxels need not be cubes (same width x,y,z)
+  // Now, I realize that allowing for this possibility would slow down some
+  // calculations considerably, so I just assume cube-shaped voxels:
+  float voxel_width_ = voxel_width[0];
+  assert((voxel_width[0] == voxel_width[1]) &&
+         (voxel_width[1] == voxel_width[2]));
+
+  for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
+    cerr << "processing Z-plane " << iz+1 << " / "
+         << tomo_out.header.nvoxels[2] << "\n";
+    for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
+      for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
+        int rminsq_int = SQR(tomo_out.header.nvoxels[0] +
+                             tomo_out.header.nvoxels[1] +
+                             tomo_out.header.nvoxels[2]);
+
+        if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
+          continue;
+
+        // Loop over all of the points and find the nearest one.
+        // Calculate the distance to that point, and store that in the tomogram.
+        // (Note: This is a terribly inefficient way to do this.
+        //        A paint-bucket-like-tool using expanding spheres would
+        //        be much faster and visit each voxel only once on average.)
+        for (vector<array<int,3> >::const_iterator pxyz=crds.begin();
+             pxyz != crds.end();
+             pxyz++) {
+          int rsqi=SQR(ix-(*pxyz)[0])+SQR(iy-(*pxyz)[1])+SQR(iz-(*pxyz)[2]);
+          if (rsqi < rminsq_int)
+            rminsq_int = rsqi;
+        }
+        float rmin = sqrt(rminsq_int * SQR(voxel_width_));
+        tomo_out.aaafI[iz][iy][ix] = rmin;
+      }
+    }
+  }
+} //HandleDistanceToPoints()
+
+
+
 
 
 #endif  //#ifndef DISABLE_DOGGXY
