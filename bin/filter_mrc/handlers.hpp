@@ -55,6 +55,7 @@ HandleDogScaleFree(Settings settings,
 
 void
 HandleBlobsNonmaxSuppression(Settings settings,
+                             MrcSimple &mask,
                              float voxel_width[3],
                              vector<array<float,3> >& crds,
                              vector<float>& diameters,

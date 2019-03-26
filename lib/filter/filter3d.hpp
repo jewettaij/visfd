@@ -2312,6 +2312,7 @@ Scalar CalcSphereVolOverlap(Scalar rij,//!<the distance between the spheres' cen
 
 
 
+
 /// @brief these options tell "DiscardOverlappingBlobs" how to give
 /// priority to different blobs based on their score (ie, minima or maxima?)
 typedef enum eSortBlobCriteria {
@@ -2538,6 +2539,40 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   if (pReportProgress)
     *pReportProgress << " done.                                 \n";
 } //DiscardOverlappingBlobs()
+
+
+
+
+
+
+
+/// @brief  Discard blobs whose centers lie outside the 
+///         "masked" region defined by aaafMask.
+template<class Scalar>
+void
+DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
+                   vector<Scalar>& blob_diameters,  //!< diameger of each blob
+                   vector<Scalar>& blob_scores, //!< priority of each blob
+                   Scalar const *const *const *aaafMask = NULL //!< if not NULL then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
+                   )
+{
+  for (size_t i = 0; i < blob_crds.size(); i++) {
+    int ix = floor(blob_crds[i][0] + 0.5);
+    int iy = floor(blob_crds[i][1] + 0.5);
+    int iz = floor(blob_crds[i][2] + 0.5);
+    if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0)) {
+      if (blob_diameters.size() > 0) {
+        assert(blob_diameters.size() == blob_crds.size());
+        blob_diameters.erase(blob_diameters.begin() + i);
+      }
+      if (blob_scores.size() > 0) {
+        assert(blob_scores.size() == blob_crds.size());
+        blob_scores.erase(blob_scores.begin() + i);
+      }
+      blob_crds.erase(blob_crds.begin() + i);
+    }
+  }
+} // DiscardMaskedBlobs()
 
 
 

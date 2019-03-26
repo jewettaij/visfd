@@ -256,6 +256,7 @@ HandleDogScaleFree(Settings settings,
 
 void
 HandleBlobsNonmaxSuppression(Settings settings,
+                             MrcSimple &mask,
                              float voxel_width[3],
                              vector<array<float,3> >& crds,
                              vector<float>& diameters,
@@ -287,6 +288,12 @@ HandleBlobsNonmaxSuppression(Settings settings,
                      settings.sphere_decals_foreground,
                      settings.score_lower_bound,
                      settings.score_upper_bound);
+
+  if ((crds.size() > 0) && (mask.aaafI != NULL))
+    DiscardMaskedBlobs(crds,
+                       diameters,
+                       scores,
+                       mask.aaafI);
 
   DiscardOverlappingBlobs(crds,
                           diameters, 
@@ -332,6 +339,7 @@ HandleVisualizeBlobs(Settings settings,
   vector<float> scores;
 
   HandleBlobsNonmaxSuppression(settings,
+                               mask,
                                voxel_width,
                                crds,
                                diameters,
@@ -772,6 +780,17 @@ HandleExtrema(Settings settings,
   vector<float> minima_diameters(minima_crds_voxels.size(), use_this_diameter);
   vector<float> maxima_diameters(maxima_crds_voxels.size(), use_this_diameter);
 
+  if ((minima_crds_voxels.size() > 0) && (mask.aaafI != NULL))
+    DiscardMaskedBlobs(minima_crds_voxels,
+                       minima_diameters,
+                       minima_scores,
+                       mask.aaafI);
+
+  if ((maxima_crds_voxels.size() > 0) && (mask.aaafI != NULL))
+    DiscardMaskedBlobs(maxima_crds_voxels,
+                       maxima_diameters,
+                       maxima_scores,
+                       mask.aaafI);
 
   if ((settings.nonmax_min_radial_separation_ratio > 0.0) ||
       (settings.nonmax_max_volume_overlap_large < 1.0) ||

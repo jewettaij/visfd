@@ -380,6 +380,7 @@ int main(int argc, char **argv) {
       vector<float> scores;
 
       HandleBlobsNonmaxSuppression(settings,
+                                   mask,
                                    voxel_width,
                                    crds,
                                    diameters,

@@ -63,7 +63,6 @@ Note: The computation time will be roughly proportional to the image size
 Detect all dark blobs ("minima") between 200 and 280 Angstroms in width.
 This corresponds (approximately) to objects which are the size of ribosomes.
 
-
 ```
 filter_mrc -in tomogram.rec \
   -blob minima tomogram_blobs.txt 200.0 280.0 1.01
@@ -72,7 +71,8 @@ filter_mrc -in tomogram.rec \
 
 filter_mrc -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
   -minima-threshold -70 \
-  -blob-separation 0.8
+  -blob-separation 0.8 \
+  -mask cytoplasmic_volume.mrc   # <- optional
 
 # Finally, display the remaining blobs we want to keep:
 
@@ -80,6 +80,15 @@ filter_mrc -in tomogram.rec \
   -out tomogram_ribosomes.rec \
   -spheres tomogram_ribosomes.txt
 ```
+
+Note: The "-mask cytoplasmic_volume.rec" argument in the second step
+      is optional.
+      In this example, the "cytoplasmic_volume.rec" file is an image file.
+      (This designates that voxels in that image which have brightness 0
+       should *not* be considered.  A user might use this argument to
+       specify which voxels lie outside the cell's cytoplasm.)
+      If you leave out the "-mask" argument, all voxels will be considered.
+
 
 Note: All of these parameters make reasonable defaults for ribosome detection
       except the "*-minima-thresold*" parameter ("-70" in the example).
@@ -748,6 +757,26 @@ It must be one of the following choices:
 
 Note: If **type** is set to *all*, then two different files will be generated
 whose names will end in ".minima.txt" and ".maxima.txt", respectively.
+
+
+#### Blob detection and masking
+
+It is recommended that you refrain from specifying a mask
+*during* the process of blob detection
+(for example, by using the "**-mask**" argument). 
+Doing so could cause blobs which are near the periphery of the mask
+to be ignored.
+Instead, it is recommended that you use the "**-mask**" argument
+*later on, after you have finished blob detection*
+together with the "**-discard-blobs**" argument.
+(This was shown in the example above.)
+
+Sometimes you might want to use the "**-mask**"
+argument during blob detection because it can
+accelerate the search for blobs
+(by ignoring voxels outside the mask).
+However don't do this if you care
+about blobs near the periphery.
 
 
 #### Automatic disposal of blobs (non-max suppression)
@@ -1556,18 +1585,29 @@ and voxels *within* this rectangle will *not*.
 (This will produce the same behavior as providing an image containing
  *1s* for voxels within the rectangle, and *0s" outside.)
 
-Note: As with most commands, distance parameters
-(*xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*) 
-are in *physical units* (eg. Angstroms), *not* in voxels.
-You can supply the coordinates in voxels
-by using the "*-w 1*" argument.
+*Note:*
+The *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
+positions are in units of *voxels*
+(**not** physical distance).
+If you want to specify the rectangle in physical coordinates
+(for example, in Angstroms), use the "**-mask-rect-dist**"
+argument instead.
 
 Note: If you are using IMOD to locate voxel coordinates,
        keep in mind that IMOD uses
       "1-indexing".  This means that it 
-      prints voxel coordinates starting at (1,1,1).
+      prints voxel coordinates starting at (1,1,1)
+      instead of (0,0,0)
       In this program, voxel coordinates begin at (0,0,0).
 
+### -mask-rect-dist  *xmin* *xmax* *ymin* *ymax* *zmin* *zmax*
+
+This is an alternate version of the "**-mask-rect**" argument
+which uses *physical units*.
+In other words, the *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
+arguments are in physical units (eg. Angstroms), *not* voxels.
+You can supply the coordinates in voxels
+by using the "*-w*" argument.
 
 
 ## Miscellaneous
