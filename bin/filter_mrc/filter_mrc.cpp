@@ -28,8 +28,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.16.1");
-string g_date_string("2018-3-19");
+string g_version_string("0.16.2");
+string g_date_string("2018-3-26");
 
 
 
@@ -172,7 +172,9 @@ int main(int argc, char **argv) {
                 mask.aaafI[iz][iy][ix] = 0.0;
       }
     }
+
     else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
+
       mask = tomo_in; //allocate an array for an image the same size as tomo_in
       if (! settings.mask_rectangle_in_voxels) {
         settings.mask_rectangle_xmin /= voxel_width[0];
@@ -198,7 +200,8 @@ int main(int argc, char **argv) {
           }
         }
       }
-    }
+
+    } //else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
 
     if (settings.rescale01_in)
       tomo_in.Rescale01(mask.aaafI,

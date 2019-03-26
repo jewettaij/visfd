@@ -1600,6 +1600,7 @@ Note: If you are using IMOD to locate voxel coordinates,
       instead of (0,0,0)
       In this program, voxel coordinates begin at (0,0,0).
 
+
 ### -mask-rect-dist  *xmin* *xmax* *ymin* *ymax* *zmin* *zmax*
 
 This is an alternate version of the "**-mask-rect**" argument
