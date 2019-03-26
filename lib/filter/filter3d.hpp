@@ -1578,10 +1578,16 @@ ApplyLog(int const image_size[3], //!< source image size
 
 /// @brief Find all scale-invariant blobs in the image as a function of sigma
 ///        regardless of overlap.  (Blobs with poor scores can be discarded)
-///        Discard blobs with poor scores or large overlap with other blobs.
+///        (Blobs with unremarkable scores can be discarded.)
 ///
 /// Algorithm described in:
 ///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
+///
+/// @note  This function will find BOTH minima and maxima.
+///        (corresponding to dark blobs on a light background
+///         and light blobs on a dark background, respectively).
+///        You must supply arguments to store BOTH the minima and maxima
+///        even if you are only interested in one of them (minima OR maxima).
 
 template<class Scalar>
 void
@@ -1942,18 +1948,17 @@ BlobDog(int const image_size[3], //!< source image size
 
 /// @brief Find all scale-invariant blobs in the image as a function of diameter
 ///        regardless of overlap.  (Blobs with poor scores can be discarded.)
+///        This version of the function refers to blobs by their diameters
+///        (which is much more convenient than keeping track of their "sigmas").
 ///
 /// Algorithm described in:
 ///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
-/// This version refers to blobs by their diameter (instead of "sigma").
 ///
-/// @note  New feature: non-max suppression.
-/// This version can discard blobs which overlap with existing blobs.
-/// (This is sometimes called "non-max suppression".)
-/// This can keep the list of blobs to a manageable size.
-/// However it is advisable to ignore this feature and run the
-/// DiscardOverlappingBlobs() function later on the full list of blobs
-/// (assuming that it fits in memory).
+/// @note  This function will find BOTH minima and maxima.
+///        (corresponding to dark blobs on a light background
+///         and light blobs on a dark background, respectively).
+///        You must supply arguments to store BOTH the minima and maxima
+///        even if you are only interested in one of them (minima OR maxima).
 
 template<class Scalar>
 void
