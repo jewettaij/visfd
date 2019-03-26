@@ -1522,14 +1522,6 @@ ApplyLog(int const image_size[3], //!< source image size
   if (pB)
     *pB *= t_over_delta_t;
 
-  // Optional: The laplacian is the 2nd derivative w respect to voxel location
-  //           Should we instead make it the 2nd derivative w respect to
-  //           physical distance?  (This makes it easier to compare
-  //           images taken at different resolutions.)
-  //           If so, multiply A, B, and aaafDest result by 1/voxel_width^2
-  //           (Don't worry about this for now.  Let the calller deal with this)
-  //            
-
 } // ApplyLog()
 
 
@@ -2429,11 +2421,9 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
     *pReportProgress
       << " -- ...done                                                --\n\n";
 
-
   if (pReportProgress)
     *pReportProgress
       << " Detecting collisions between blobs... \n";
-
 
 
   // Loop through all of the blobs and fill the occupancy table.  If a given
@@ -2481,8 +2471,17 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
                                                       blob_diameters[k]/2);
             Scalar ri = blob_diameters[i]/2;
             Scalar rk = blob_diameters[k]/2;
-            if (rik < (ri + rk) * min_radial_separation_ratio)
+            if (rik < (ri + rk) * min_radial_separation_ratio) {
               discard = true;
+              // REMOVE THIS CRUFT:
+              ////  for debugging:
+              //if (pReportProgress)
+              //  *pReportProgress << "discarding blob ("
+              //                   << ix << "," << iy << "," << iz
+              //                   << "): rik=" << rik
+              //                   << ", ri=" << ri
+              //                   << ", rk=" << rk << "\n";
+            }
             Scalar vi = (4*M_PI/3)*(ri*ri*ri);
             Scalar vk = (4*M_PI/3)*(rk*rk*rk);
             Scalar v_large = vi;
@@ -2491,9 +2490,18 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
               v_large = vk;
               v_small = vi;
             }
-            if ((vol_overlap / v_large > max_volume_overlap_large) ||
-                (vol_overlap / v_small > max_volume_overlap_small)) 
+            if ((vol_overlap / v_small > max_volume_overlap_small) ||
+                (vol_overlap / v_large > max_volume_overlap_large)) {
               discard = true;
+              // REMOVE THIS CRUFT:
+              ////  for debugging:
+              //if (pReportProgress)
+              //  *pReportProgress << "discarding blob ("
+              //                   << ix << "," << iy << "," << iz
+              //                   << "): vover=" << vol_overlap
+              //                   << ", vsmall=" << v_small
+              //                   << ", vlarge=" << v_large << "\n";
+            }
           }
         }
       }

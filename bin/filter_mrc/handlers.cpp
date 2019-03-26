@@ -772,6 +772,7 @@ HandleExtrema(Settings settings,
   vector<float> minima_diameters(minima_crds_voxels.size(), use_this_diameter);
   vector<float> maxima_diameters(maxima_crds_voxels.size(), use_this_diameter);
 
+
   if ((settings.nonmax_min_radial_separation_ratio > 0.0) ||
       (settings.nonmax_max_volume_overlap_large < 1.0) ||
       (settings.nonmax_max_volume_overlap_small < 1.0)) {

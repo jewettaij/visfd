@@ -478,6 +478,14 @@ BlobDogNM(int const image_size[3], //!<source image size
            aaaafI,
            aafI);
 
+  bool discard_overlapping_blobs =
+    ((sep_ratio_thresh > 0.0) ||
+     (nonmax_max_overlap_small < 1.0) ||
+     (nonmax_max_overlap_large < 1.0));   
+
+  if (! discard_overlapping_blobs)
+    return;
+
   if (pReportProgress)
     *pReportProgress << "----------- Removing overlapping blobs -----------\n" << endl;
 

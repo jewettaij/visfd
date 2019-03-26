@@ -186,8 +186,8 @@ The CLANG compiler is strongly recommended.
 Some programs
 (such as "histogram_mrc.py" and "draw_filter_1D.py")
 require python, along with the
-"numpy", "matplotlib", and "mrcfile" modules. 
-These python programs are optional.
+"numpy", "matplotlib", and "mrcfile" modules.
+(installable via "pip")
 
 ## License
 

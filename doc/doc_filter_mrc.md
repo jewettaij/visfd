@@ -30,7 +30,6 @@ A list of detected objects can be saved to a text file.
 Annotated images can be saved to a new .mrc/.rec file.
 
 All filters support "masking".
-
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.
@@ -526,7 +525,7 @@ will be joined with all of the voxels connected to the second voxel
 Once clustering is working, you can select one of the clusters using
 the "**-select-cluster**" argument.
 (Cluster-IDs are assigned in reverse order according to their size, 
- beginning with the largest cluster, which has ID $1$.)
+ beginning with the largest cluster, which has ID *1*.)
 You can create a file which contains a list of voxels locations
 (for the voxels belonging to that cluster),
 as well as their planar orientations
