@@ -2201,28 +2201,30 @@ Settings::ParseArgs(vector<string>& vArgs)
     {
       #ifndef DISABLE_INTENSITY_PROFILES
       try {
-        if ((i+2 >= vArgs.size()) ||
+        if ((i+3 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
             (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
-            (vArgs[i+1] == vArgs[i+2]))
+            (vArgs[i+2] == vArgs[i+3]))
           throw invalid_argument("");
-        in_coords_file_name = vArgs[i+1];
-        blob_profiles_file_name_base = vArgs[i+2];
-        if ((vArgs[i+3] == "min") || (vArgs[i+3] == "minima"))
+        if ((vArgs[i+1] == "min") || (vArgs[i+1] == "minima"))
           blob_profiles_center_criteria = BlobCenterCriteria::MINIMA;
-        else if ((vArgs[i+3] == "max") || (vArgs[i+3] == "maxima"))
+        else if ((vArgs[i+1] == "max") || (vArgs[i+1] == "maxima"))
           blob_profiles_center_criteria = BlobCenterCriteria::MAXIMA;
-        else if ((vArgs[i+3] == "cen") || (vArgs[i+3] == "center"))
+        else if ((vArgs[i+1] == "cen") || (vArgs[i+1] == "center"))
           blob_profiles_center_criteria = BlobCenterCriteria::CENTER;
         else
           throw invalid_argument("");
+        in_coords_file_name = vArgs[i+2];
+        blob_profiles_file_name_base = vArgs[i+3];
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by 3 additional arguments:\n"
-                       "       input_coords_file  output_file_base_name  center_type\n"
-                       "       where \"center_type\" is one of these 3 choices: \"min\",\"max\",\"center\"\n");
+                       " argument must be followed\n"
+                       "       by 3 additional arguments:\n"
+                       "       CENTER_TYPE  input_coords_file  output_file_base_name \n"
+                       "       where \"CENTER_TYPE\" is one of these 3 choices: \"min\",\"max\",\"center\",\n"
+                       "       and the other two arguments are file names.\n");
       }
       filter_type = BLOB_RADIAL_INTENSITY;
       num_arguments_deleted = 4;
@@ -2345,6 +2347,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   //                 "        by using the \"-gauss\",\"-gdog\",\"-dog\",\"-file\",... arguments)\n");
 
   // ----------
+
   if ((in_file_name.size() == 0) &&
       (filter_type != SPHERE_NONMAX_SUPPRESSION))
   {
@@ -2356,7 +2359,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       ((!
         ((filter_type == NONE) ||
          (filter_type == BLOB) ||
-         (filter_type == SPHERE_NONMAX_SUPPRESSION)))
+         (filter_type == SPHERE_NONMAX_SUPPRESSION) ||
+         (filter_type == BLOB_RADIAL_INTENSITY)))
        ||
        use_intensity_map ||
        invert_output))

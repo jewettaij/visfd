@@ -161,8 +161,9 @@ HandleBlobRadialIntensity(Settings settings,
                           MrcSimple &mask,
                           float voxel_width[3])
 {
-  vector<array<float, 3> > sphere_centers; //!< coordinates for the center of each sphere (blob)
-  vector<float> diameters;         //!< diameter of each spherical shell (in voxels)
+  vector<array<float, 3> > sphere_centers; // coordinates for the center of each sphere (blob)
+  vector<float> diameters;         // diameter of each sphere
+  vector<float> scores;            // the "score" (contrast) of each blob
 
   assert(settings.in_coords_file_name != "");
   assert(settings.blob_profiles_file_name_base != "");
@@ -170,7 +171,7 @@ HandleBlobRadialIntensity(Settings settings,
   ReadBlobCoordsFile(settings.in_coords_file_name,
                      &sphere_centers, // store blob coordinates here
                      &diameters,
-                     static_cast<vector<float> *>(NULL),
+                     &scores,
                      voxel_width[0],
                      settings.sphere_decals_diameter,
                      settings.sphere_decals_scale);
@@ -181,6 +182,15 @@ HandleBlobRadialIntensity(Settings settings,
   for (int d = 0; d < 3; d++)
     image_size[d] = tomo_in.header.nvoxels[d];
 
+  if ((sphere_centers.size() > 0) && (mask.aaafI != NULL))
+    DiscardMaskedBlobs(sphere_centers,
+                       diameters,
+                       scores,
+                       mask.aaafI);
+
+  cerr << "  creating intensity-vs-radius profiles for "
+       << sphere_centers.size() << " blobs.\n" << endl;
+
   BlobIntensityProfiles(image_size,
                         tomo_in.aaafI,
                         mask.aaafI,
@@ -190,12 +200,16 @@ HandleBlobRadialIntensity(Settings settings,
                         intensity_profiles);
 
   for (size_t i = 0; i < intensity_profiles.size(); i++) {
-    string intensity_vs_r_file_name = settings.blob_profiles_file_name_base;
+    stringstream intensity_vs_r_file_name_ss;
+    intensity_vs_r_file_name_ss
+      << settings.blob_profiles_file_name_base.c_str()
+      << "_" << i+1 << ".txt";
+    cerr << "  creating \"" << intensity_vs_r_file_name_ss.str() << "\"" << endl;
     fstream f;
-    f.open(intensity_vs_r_file_name.c_str(), ios::out);
+    f.open(intensity_vs_r_file_name_ss.str().c_str(), ios::out);
     if (! f)
       throw InputErr("Error: unable to open \""+
-                     intensity_vs_r_file_name+"\" for writing.\n");
+                     intensity_vs_r_file_name_ss.str()+"\" for writing.\n");
     for (int ir = 0; ir < intensity_profiles[i].size(); ir++) {
       f << ir*voxel_width[0] << " " << intensity_profiles[i][ir] << "\n";
     }

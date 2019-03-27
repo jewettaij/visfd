@@ -571,7 +571,7 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
         } //for (int jx = -Rsearch; jx <= Rsearch; jx++)
       } //for (int jy = -Rsearch; jy <= Rsearch; jy++)
     } //for (int jz = -Rsearch; jz <= Rsearch; jz++)
-    for (int ir = 0; ir < Rsearch; ir++) {
+    for (int ir = 0; ir <= Rsearch; ir++) {
       if (denominators[ir] == 0.0) {
         intensity_profiles[i].resize(ir);
         break;
