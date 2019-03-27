@@ -2562,8 +2562,6 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
     int ix = floor(blob_crds[i][0] + 0.5);
     int iy = floor(blob_crds[i][1] + 0.5);
     int iz = floor(blob_crds[i][2] + 0.5);
-    if ((ix == 76) && (iy == 11) && (iz == 280)) // FOR DEBUGGING. REMOVE EVENTUALLY
-      blob_scores[0] = 0.0;                      // FOR DEBUGGING. REMOVE EVENTUALLY
     if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0)) {
       if (blob_diameters.size() > 0) {
         assert(blob_diameters.size() == blob_crds.size());
