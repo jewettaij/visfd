@@ -214,6 +214,47 @@ HandleBlobRadialIntensity(Settings settings,
       f << ir*voxel_width[0] << " " << intensity_profiles[i][ir] << "\n";
     }
     f.close();
+
+    // CRUFT ALERT!!  REMOVE THIS CRUFT IN THE #ifdef BELOW:
+    // (This was something temporary for a side project we
+    //  we working on in 2019-3.)
+    #ifdef ENABLE_MEASURE_DISTANCE_TO_BOUNDARY
+    int image_size[3];
+    int sphere_centers_i[3];
+    for (int d=0; d<3; d++) {
+      image_size[d] = tomo_in.header.nvoxels[d];
+      //convert the blob location from floats to ints:
+      sphere_centers_i[d] = static_cast<int>(floor(sphere_centers[i][d]+0.5));
+    }
+    
+    float min_dist_sq = -1.0; // initially an impossible value
+    for (int iz = 0; iz < image_size[2]; iz++) {
+      for (int iy = 0; iy < image_size[1]; iy++) {
+        for (int ix = 0; ix < image_size[0]; ix++) {
+          if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0)) {
+            float dist_sq = (SQR(ix-sphere_centers_i[0]) +
+                             SQR(iy-sphere_centers_i[1]) +
+                             SQR(iz-sphere_centers_i[2]));
+            if ((min_dist_sq < 0.0) || (dist_sq < min_dist_sq))
+              min_dist_sq = dist_sq;
+          }
+        }
+      }
+    }
+    float distance_to_boundary = -1.0;
+    if (min_dist_sq >= 0.0)
+      distance_to_boundary = sqrt(min_dist_sq);
+    cout << sphere_centers[i][0]<<" "<<sphere_centers[i][1]<<" "<<sphere_centers[i][2]
+         << " " << diameters[i]
+         << " " << scores[i]
+         <<" "<<tomo_in.aaafI[ sphere_centers_i[2] ]
+                             [ sphere_centers_i[1] ]
+                             [ sphere_centers_i[0] ]
+         << " " << distance_to_boundary
+         << " " << distance_to_boundary - diameters[i]/2
+         << "\n";
+    #endif // REMOVE THIS CRUFT!
+
   }
 
 } // HandleBlobIntensityProfiles()

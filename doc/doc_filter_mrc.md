@@ -89,7 +89,6 @@ Note: The "-mask cytoplasmic_volume.rec" argument in the second step
        specify which voxels lie outside the cell's cytoplasm.)
       If you leave out the "-mask" argument, all voxels will be considered.
 
-
 Note: All of these parameters make reasonable defaults for ribosome detection
       except the "*-minima-thresold*" parameter ("-70" in the example).
       It must be chosen carefully because it will vary from image to image.
