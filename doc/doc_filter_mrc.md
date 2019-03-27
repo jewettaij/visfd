@@ -1493,6 +1493,27 @@ To prevent the small sphere from being discarded, you can use
 **-max-volume-overlap-small 1**.
 
 
+### -blob-intensity-vs-radius center_type blobs_file.txt base_name
+
+The "**-blob-intensity-vs-radius**" argument creates a list of txt
+files (one per blob) storing the brightness as a function of
+distance from the center of the blob.
+The distance is expressed in *physical* units
+(such as Angstroms, **not voxels**).
+The *first* argument **center_type** must be one of these choices:
+***center***, ***max***, ***min***.
+This indicates whether we should measure distance to the *center*
+of the blob, or the location of its intensity *maxima* or *minima*,
+respectively.
+The *second argument* is the file containing a list of blob
+locations and radii.
+It should be in the same format as the file created by the
+"**-blob**" argument  (See documentation above.)
+The *third argument* is the name we will attach to the beginning
+of each file that we create.  The program will create a series
+of files with names lie "base_name_1.txt", "base_name_2.txt", ...
+"base_name_N.txt", where *N* is the number of blobs in the
+"blobs_file.txt" file.
 
 
 

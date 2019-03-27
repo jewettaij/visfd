@@ -2211,7 +2211,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           blob_profiles_center_criteria = BlobCenterCriteria::MINIMA;
         else if ((vArgs[i+1] == "max") || (vArgs[i+1] == "maxima"))
           blob_profiles_center_criteria = BlobCenterCriteria::MAXIMA;
-        else if ((vArgs[i+1] == "cen") || (vArgs[i+1] == "center"))
+        else if ((vArgs[i+1] == "center") || (vArgs[i+1] == "cen"))
           blob_profiles_center_criteria = BlobCenterCriteria::CENTER;
         else
           throw invalid_argument("");
