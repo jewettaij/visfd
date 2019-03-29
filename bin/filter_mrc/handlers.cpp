@@ -271,11 +271,6 @@ HandleBlobsNonmaxSuppression(Settings settings,
          (voxel_width[1] == voxel_width[2]));
 
 
-  cerr << " ------ calculating distance and volume overlap in file: -------\n"
-       << " " << settings.in_coords_file_name << "\n"
-       << "\n";
-
-
   ReadBlobCoordsFile(settings.in_coords_file_name,
                      &crds,
                      &diameters,
@@ -289,12 +284,19 @@ HandleBlobsNonmaxSuppression(Settings settings,
                      settings.score_lower_bound,
                      settings.score_upper_bound);
 
-  if ((crds.size() > 0) && (mask.aaafI != NULL))
+  cerr << " --- discarding blobs in file \n"
+       << " \"" << settings.in_coords_file_name << "\" ---\n"
+       << "\n";
+
+  if ((crds.size() > 0) && (mask.aaafI != NULL)) {
+    cerr << "  discarding blobs outside the mask" << endl;
     DiscardMaskedBlobs(crds,
                        diameters,
                        scores,
                        mask.aaafI);
+  }
 
+  cerr << "  discarding overlapping blobs" << endl;
   DiscardOverlappingBlobs(crds,
                           diameters, 
                           scores,

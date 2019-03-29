@@ -200,6 +200,7 @@ HandleBlobRadialIntensity(Settings settings,
                         intensity_profiles);
 
   for (size_t i = 0; i < intensity_profiles.size(); i++) {
+
     stringstream intensity_vs_r_file_name_ss;
     intensity_vs_r_file_name_ss
       << settings.blob_profiles_file_name_base.c_str()
@@ -215,6 +216,9 @@ HandleBlobRadialIntensity(Settings settings,
     }
     f.close();
 
+
+
+
     // CRUFT ALERT!!  REMOVE THIS CRUFT IN THE #ifdef BELOW:
     // (This was something temporary for a side project we
     //  we working on in 2019-3.)
@@ -226,40 +230,106 @@ HandleBlobRadialIntensity(Settings settings,
       //convert the blob location from floats to ints:
       sphere_centers_i[d] = static_cast<int>(floor(sphere_centers[i][d]+0.5));
     }
-    
-    float min_dist_sq = -1.0; // initially an impossible value
+
+
+    float fluctuation_brightness = 0.0;
+    {
+      int Rsphere = ceil(diameters[i]/2); //radius of the sphere (surrounding the current blob)
+      int ixs = sphere_centers_i[0];
+      int iys = sphere_centers_i[1];
+      int izs = sphere_centers_i[2];
+      double sum;
+      size_t n_vox = 0;
+      for (int jz = -Rsphere; jz <= Rsphere; jz++) {
+        int izs_jz = izs + jz;
+        for (int jy = -Rsphere; jy <= Rsphere; jy++) {
+          int iys_jy = iys + jy;
+          for (int jx = -Rsphere; jx <= Rsphere; jx++) {
+            int ixs_jx = ixs + jx;
+            if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
+                   (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
+                   (0 <= izs_jz) && (izs_jz <= image_size[2])))
+              continue;
+            if (aaafMask && (aaafMask[izs_jz][iys_jy][ixs_jx] == 0.0))
+              continue;
+            sum += tomo_in.aaafI[izs_jz][iys_jy][ixs_jx];
+            n_vox++;
+          }
+        }
+      }
+      double ave = sum / n_vox;
+      double sum_sq = 0.0;
+      for (int jz = -Rsphere; jz <= Rsphere; jz++) {
+        int izs_jz = izs + jz;
+        for (int jy = -Rsphere; jy <= Rsphere; jy++) {
+          int iys_jy = iys + jy;
+          for (int jx = -Rsphere; jx <= Rsphere; jx++) {
+            int ixs_jx = ixs + jx;
+            if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
+                   (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
+                   (0 <= izs_jz) && (izs_jz <= image_size[2])))
+              continue;
+            if (aaafMask && (aaafMask[izs_jz][iys_jy][ixs_jx] == 0.0))
+              continue;
+            sum_sq += SQR(tomo_in.aaafI[izs_jz][iys_jy][ixs_jx] - ave);
+          }
+        }
+      }
+      if (n_vox > 0) {
+        double variance = sum_sq / n_vox;
+        fluctuation_brightness = sqrt(variance);
+      }
+    } // calculate "fluctuation_brightness"
+
+
+    int n_mask_values = 0;
+    if (mask.aaafI) {
+      mask.FindMinMax();
+      n_mask_values = static_cast<int>(floor(mask.header.dmax + 0.5));
+      if (n_mask_values > 100)
+        n_mask_values = 100
+    }
+    vector<float> min_dist_sq(n_mask_values, -1.0);    
     for (int iz = 0; iz < image_size[2]; iz++) {
       for (int iy = 0; iy < image_size[1]; iy++) {
         for (int ix = 0; ix < image_size[0]; ix++) {
-          if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0)) {
+          if (! mask.aaafI)
+            continue;
+          int mask_val = static_cast<int>(floor(mask.aaafI[iz][iy][ix] + 0.5));
+          if (mask_val < n_mask_values) {
             float dist_sq = (SQR(ix-sphere_centers_i[0]) +
                              SQR(iy-sphere_centers_i[1]) +
                              SQR(iz-sphere_centers_i[2]));
-            if ((min_dist_sq < 0.0) || (dist_sq < min_dist_sq))
-              min_dist_sq = dist_sq;
+            if ((min_dist_sq[mask_val] < 0.0) || (dist_sq < min_dist_sq[mask_val]))
+              min_dist_sq[mask_val] = dist_sq;
           }
         }
       }
     }
-    float distance_to_boundary = -1.0;
-    if (min_dist_sq >= 0.0)
-      distance_to_boundary = sqrt(min_dist_sq);
     cout << sphere_centers[i][0]<<" "<<sphere_centers[i][1]<<" "<<sphere_centers[i][2]
          << " " << diameters[i]
          << " " << scores[i]
-         <<" "<<tomo_in.aaafI[ sphere_centers_i[2] ]
-                             [ sphere_centers_i[1] ]
-                             [ sphere_centers_i[0] ]
-         << " " << distance_to_boundary
-         << " " << distance_to_boundary - diameters[i]/2
-         << "\n";
+         << " " << tomo_in.aaafI[ sphere_centers_i[2] ]
+                                [ sphere_centers_i[1] ]
+                                [ sphere_centers_i[0] ]
+         << " " << intensity_profiles[i][0]
+         << " " << fluctuation_brightness;
+      //<< " " << distance_to_boundary
+      //<< " " << distance_to_boundary - diameters[i]/2
+    for (int im = 0; im < n_mask_values; im++) {
+      cout << " " << sqrt(min_dist_sq[im]) - diameters[i]/2;
+    }
+    cout << "\n";
     #endif // REMOVE THIS CRUFT!
 
-  }
+
+
+  } //for (size_t i = 0; i < intensity_profiles.size(); i++)
 
 } // HandleBlobIntensityProfiles()
 
 #endif //#ifndef DISABLE_INTENSITY_PROFILES
+
 
 
 

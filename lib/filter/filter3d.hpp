@@ -2427,9 +2427,18 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
     *pReportProgress
       << " -- ...done                                                --\n\n";
 
+
+  if (pReportProgress)
+    *pReportProgress << " Allocating another blob list copy." << endl;
+
+  vector<array<Scalar,3> > blob_crds_cpy;
+  vector<Scalar> blob_diameters_cpy;
+  vector<Scalar> blob_scores_cpy;
+
+
   if (pReportProgress)
     *pReportProgress
-      << " Detecting collisions between blobs... \n";
+      << " Detecting collisions between "<<blob_crds.size()<<"blobs... \n";
 
 
   // Loop through all of the blobs and fill the occupancy table.  If a given
@@ -2437,8 +2446,8 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   // then we check to see how much they overlap before deciding whether to
   // discard the new blob.
 
-  size_t i = 0;
-  while (i < blob_crds.size()) {
+  for (size_t i = 0; i < blob_crds.size(); i++)
+  {
     size_t n_blobs = blob_crds.size();
     assert(n_blobs == blob_diameters.size());
     assert(n_blobs == blob_scores.size());
@@ -2513,9 +2522,13 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
       }
     }
     if (discard) {
-      blob_crds.erase(blob_crds.begin() + i);
-      blob_diameters.erase(blob_diameters.begin() + i);
-      blob_scores.erase(blob_scores.begin() + i);
+      //  commenting out:  using erase() is too slow for large blob lists
+      //  (with millions of entries)
+      //blob_crds.erase(blob_crds.begin() + i);
+      //blob_diameters.erase(blob_diameters.begin() + i);
+      //blob_scores.erase(blob_scores.begin() + i);
+      //  instead don't add an entry to the list copy
+      continue;
     }
     else {
       for(int Jz = -Reff; Jz <= Reff && (! discard); Jz++) {
@@ -2532,9 +2545,17 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
           }
         }
       }
-      i++;
+
+      blob_crds_cpy.push_back(blob_crds[i]);
+      blob_diameters_cpy.push_back(blob_diameters[i]);
+      blob_scores_cpy.push_back(blob_scores[i]);
     }
-  } //while (i < blob_crds.size())
+
+  } //for (size_t i = 0; i < blob_crds.size(); i++)
+
+  blob_crds = blob_crds_cpy;
+  blob_diameters = blob_diameters_cpy;
+  blob_scores = blob_scores_cpy;
 
   if (pReportProgress)
     *pReportProgress << " done.                                 \n";
@@ -2548,34 +2569,55 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
 /// @brief  Discard blobs whose centers lie outside the 
 ///         "masked" region defined by aaafMask.
+
 template<class Scalar>
 void
 DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                    vector<Scalar>& blob_diameters,  //!< diameger of each blob
                    vector<Scalar>& blob_scores, //!< priority of each blob
-                   Scalar const *const *const *aaafMask = NULL //!< if not NULL then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
-                   )
+                   Scalar const *const *const *aaafMask = NULL, //!< if not NULL then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
+                   ostream *pReportProgress=NULL)  //!< print progress to the user?
+
 {
-  size_t i = 0;
-  while (i < blob_crds.size())
+  if (pReportProgress)
+    *pReportProgress << " Allocating another blob list copy." << endl;
+
+  vector<array<Scalar,3> > blob_crds_cpy;
+  vector<Scalar> blob_diameters_cpy;
+  vector<Scalar> blob_scores_cpy;
+
+  if (pReportProgress && (aaafMask != NULL))
+    *pReportProgress
+      << " Checking which blobs lie within the mask (out of "
+      << blob_crds.size() << " blobs)." << endl;
+
+  size_t n_discarded = 0;
+  for (size_t i = 0; i < blob_crds.size(); i++)
   {
     int ix = floor(blob_crds[i][0] + 0.5);
     int iy = floor(blob_crds[i][1] + 0.5);
     int iz = floor(blob_crds[i][2] + 0.5);
     if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0)) {
-      if (blob_diameters.size() > 0) {
-        assert(blob_diameters.size() == blob_crds.size());
-        blob_diameters.erase(blob_diameters.begin() + i);
-      }
-      if (blob_scores.size() > 0) {
-        assert(blob_scores.size() == blob_crds.size());
-        blob_scores.erase(blob_scores.begin() + i);
-      }
-      blob_crds.erase(blob_crds.begin() + i);
+      n_discarded++;
+      continue;
     }
-    else
-      i++;
-  } //while (i < blob_crds.size())
+    else {
+      blob_crds_cpy.push_back(blob_crds[i]);
+      if (blob_diameters.size() > 0)
+        blob_diameters_cpy.push_back(blob_diameters[i]);
+      if (blob_scores.size() > 0)
+        blob_scores_cpy.push_back(blob_scores[i]);
+    } 
+  } //for (size_t i = 0; i < blob_crds.size(); i++)
+
+  if (pReportProgress && (aaafMask != NULL))
+    *pReportProgress
+      << " Discarded " << n_discarded
+      << " blobs lying outside the mask." << endl;
+
+  blob_crds = blob_crds_cpy;
+  blob_diameters = blob_diameters_cpy;
+  blob_scores = blob_scores_cpy;
 } // DiscardMaskedBlobs()
 
 
