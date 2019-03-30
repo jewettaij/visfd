@@ -1593,8 +1593,8 @@ All other voxels will be ignored during filtering.
 
 ***NOTE FOR IMOD USERS:***
 Some MRC files use signed bytes.
-This is a problem because for these files,
-IMOD reports all voxel brightnesses
+This is a problem because for these files
+because IMOD reports all voxel brightnesses
 in the range from 0-255 instead of -128-127.
 This means that if IMOD reports that a voxel
 has brightness of "1", (for example), 
