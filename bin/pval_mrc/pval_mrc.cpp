@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
       tomo_in.Read(settings.in_file_name, false);
       // (Note: You can also use "tomo_in.Read(cin);" or "cin >> tomo;")
       tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
+      WarnMRCSignedBytes(tomo_in, settings.in_file_name, cerr);
     }
     else {
       assert((settings.image_size[0] > 0) &&

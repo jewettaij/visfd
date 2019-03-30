@@ -46,6 +46,36 @@ void MrcHeader::Read(istream& mrc_file) {
   mode = *(reinterpret_cast<Int*>(header_data)+3);
 
 
+  if (mode == MrcHeader::MRC_MODE_BYTE) {
+    // Try to determine if 8-bit integers are signed or unsigned.
+    // Apparently, there are no general guidelines indicating whether 8-bit 
+    // integers are signed or unsigned in MRC files.  
+    // If either of these statements are true, bytes are signed.
+    //   1) check the filename to see if it ends in ".rec" instead of ".mrc"
+    //     http://www.cgl.ucsf.edu/pipermail/chimera-users/2010-June/005245.html
+    //   2) check for a bit in the "imodFlags" section
+    //      of the header.  (That's what we do here.)
+    //     http://bio3d.colorado.edu/imod/doc/mrc_format.txt
+    // Otherwise, the are (by default) assumbe to be unsigned.
+    //
+    //152 230  4   int     imodStamp   1146047817 indicates that file was created by IMOD or 
+    //                                 other software that uses bit flags in the following field
+    //156 234  4   int     imodFlags   Bit flags:
+    //                                 1 = bytes are stored as signed
+    //                                 2 = pixel spacing was set from size in extended header 
+    //                                 4 = origin is stored with sign inverted from definition
+    //                                     below
+    Int imodStamp = *(reinterpret_cast<Int*>(header_data)+38); //(byte 152-155)
+    if (imodStamp == 1146047817) { 
+      // Then the file was created by IMOD or other software using "bit flags"
+      // See: http://bio3d.colorado.edu/imod/doc/mrc_format.txt
+      Int imodFlags = *(reinterpret_cast<Int*>(header_data)+39);//(byte 156-159)
+      use_signed_bytes = (imodFlags & 1);
+    }
+  }
+
+
+
   // 5    NXSTART number of first column in map (Default = 0)
   // 6    NYSTART number of first row in map
   // 7    NZSTART number of first section in map
@@ -108,6 +138,30 @@ void MrcHeader::Read(istream& mrc_file) {
   dmean = *(reinterpret_cast<float*>(header_data)+21);
 
 
+  #ifdef ENABLE_IMOD_COMPATIBILITY
+  if (use_signed_bytes) {
+    // MRC files using signed integers (eg. "mode 0") are
+    // interpreted differently by IMOD than they are by other software.
+    // In IMOD, voxel brightness values are adjusted to be so that 
+    // they lie in the range from 0..255.
+    // However files that use SIGNED bytes store their
+    // voxel brightnesses in the range from -128..127.
+    // For these files, IMOD automatically adds 128 to each voxel
+    // brightness value to insure the result lies between 0..255.
+    // Note: Neither UCSF Chimera, nor CCP-EM do this.
+    //  (CCP-EM is the distributor of the "mrcfile" python module.)
+    // To be compatible with the IMOD ecosystem, we must add 128:
+    dmin += 128;
+    dmax += 128;
+    dmean += 128;
+    // Note: Later on when writing these files (in signed byte
+    //       format), remember to subtract this offset before writing.
+    // Note: Surprisingly, IMOD does not seem to add an offset to voxel
+    //       brightnesses from files using "mode 1" (signed int16 format).
+  }
+  #endif // #ifdef ENABLE_IMOD_COMPATIBILITY
+
+
   // 23    ISPG     space group number 0 or 1 (default=0)
   //mrc_file.read((char*)&(ispg), sizeof(Int));
   ispg = *(reinterpret_cast<Int*>(header_data)+22);
@@ -130,34 +184,6 @@ void MrcHeader::Read(istream& mrc_file) {
   origin[0] = *(reinterpret_cast<float*>(header_data)+49);
   origin[1] = *(reinterpret_cast<float*>(header_data)+50);
   origin[2] = *(reinterpret_cast<float*>(header_data)+51);
-
-  if (mode == MrcHeader::MRC_MODE_BYTE) {
-    // Try to determine if 8-bit integers are signed or unsigned.
-    // Apparently, there are no general guidelines indicating whether 8-bit 
-    // integers are signed or unsigned in MRC files.  
-    // If either of these statements are true, bytes are signed.
-    //   1) check the filename to see if it ends in ".rec" instead of ".mrc"
-    //     http://www.cgl.ucsf.edu/pipermail/chimera-users/2010-June/005245.html
-    //   2) check for a bit in the "imodFlags" section
-    //      of the header.  (That's what we do here.)
-    //     http://bio3d.colorado.edu/imod/doc/mrc_format.txt
-    // Otherwise, the are (by default) assumbe to be unsigned.
-    //
-    //152 230  4   int     imodStamp   1146047817 indicates that file was created by IMOD or 
-    //                                 other software that uses bit flags in the following field
-    //156 234  4   int     imodFlags   Bit flags:
-    //                                 1 = bytes are stored as signed
-    //                                 2 = pixel spacing was set from size in extended header 
-    //                                 4 = origin is stored with sign inverted from definition
-    //                                     below
-    Int imodStamp = *(reinterpret_cast<Int*>(header_data)+38); //(byte 152-155)
-    if (imodStamp == 1146047817) { 
-      // Then the file was created by IMOD or other software using "bit flags"
-      // See: http://bio3d.colorado.edu/imod/doc/mrc_format.txt
-      Int imodFlags = *(reinterpret_cast<Int*>(header_data)+39);//(byte 156-159)
-      use_signed_bytes = (imodFlags & 1);
-    }
-  }
 
 } //MrcHeader::Read(istream& mrc_file)
 

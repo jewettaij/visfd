@@ -1590,9 +1590,36 @@ voxels with non-zero values from the "mask" image,
 only voxels whose mask intensity equals the number following
 this argument will belong to the mask.
 All other voxels will be ignored during filtering.
-*(Note: This disables "soft" masking.  In other words,
-  during the process of filtering, all selected voxels will be weighted equally
-  during filtering, and all others will be completely ignored.)*
+
+***NOTE FOR IMOD USERS:***
+Some MRC files use signed bytes.
+This is a problem because for these files,
+IMOD reports all voxel brightnesses
+in the range from 0-255 instead of -128-127.
+This means that if IMOD reports that a voxel
+has brightness of "1", (for example), 
+the true brightness stored in the file might be -127.
+In that case using "-mask-select 1" will fail.
+No other software I know does this.
+You can tell if your MASK image file potentially has this problem
+by using IMOD's "header" program:
+```
+   header mask_file.rec
+```
+If the "Map mode" reported by "header" equals 0
+then I suggest that you should convert the file
+to a floating-point MRC format before using it with this software.
+One way to do this is to use the
+"convert_to_float" program (distributed with visfd):
+```
+   convert_to_float mask_file.rec new_file.rec
+```
+(If you prefer, you can also use IMOD's "newstack" program:
+ "newstack -input mask_file.rec -output new_file.rec -mode 2")
+Either way, this insures that the brightnesses in the "new_file.rec"
+will be interpreted the same way in IMOD and other programs.
+*Afterwards, if IMOD says that a particular voxel in this file
+("new_file.rec") has value "1", then you can safely use "-mask-select 1"*
 
 
 ### -mask-rect  *xmin* *xmax* *ymin* *ymax* *zmin* *zmax*

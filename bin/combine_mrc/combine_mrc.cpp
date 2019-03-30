@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     tomo1.Read(settings.in1_file_name,
 	       settings.in_rescale01 && !settings.in1_use_thresholds);
     tomo1.PrintStats(cerr);
+    WarnMRCSignedBytes(tomo1, settings.in1_file_name, cerr);
 
     cerr << "\n"
 	 << "Reading tomogram2 \""<<settings.in2_file_name<<"\"" << endl;
@@ -31,6 +32,7 @@ int main(int argc, char **argv) {
     tomo2.Read(settings.in2_file_name,
 	       settings.in_rescale01 && !settings.in2_use_thresholds);
     tomo2.PrintStats(cerr);
+    WarnMRCSignedBytes(tomo2, settings.in2_file_name, cerr);
 
     if ((tomo1.header.nvoxels[0] != tomo2.header.nvoxels[0]) ||
 	(tomo1.header.nvoxels[1] != tomo2.header.nvoxels[1]) ||

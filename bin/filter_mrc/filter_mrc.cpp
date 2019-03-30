@@ -22,14 +22,14 @@ using namespace std;
 #include <omp.h>       // (OpenMP-specific)
 #endif
 
+#include "file_io.hpp"
 #include "handlers.hpp"
 #include "handlers_unsupported.hpp"
 
 
-
 string g_program_name("filter_mrc");
-string g_version_string("0.16.2");
-string g_date_string("2018-3-26");
+string g_version_string("0.16.3");
+string g_date_string("2018-3-29");
 
 
 
@@ -67,7 +67,9 @@ int main(int argc, char **argv) {
       tomo_in.Read(settings.in_file_name, false);
       // (Note: You can also use "tomo_in.Read(cin);" or "cin >> tomo;")
       tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
+      WarnMRCSignedBytes(tomo_in, settings.in_file_name, cerr);
     }
+
 
     int image_size[3];
     for (int d = 0; d < 3; d++)
@@ -157,6 +159,7 @@ int main(int argc, char **argv) {
     if (settings.mask_file_name != "") {
       cerr << "Reading mask \""<<settings.mask_file_name<<"\"" << endl;
       mask.Read(settings.mask_file_name, false);
+      WarnMRCSignedBytes(mask, settings.mask_file_name, cerr);
       if ((mask.header.nvoxels[0] != image_size[0]) ||
           (mask.header.nvoxels[1] != image_size[1]) ||
           (mask.header.nvoxels[2] != image_size[2]))

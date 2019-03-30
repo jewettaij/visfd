@@ -61,7 +61,7 @@ public:
 
   /// @brief  Read an .MRC/.REC file
   void Read(string mrc_file_name,  //!<name of the file
-            bool rescale=true,     //!<Optional: rescale densities from 0 to 1?
+            bool rescale=false,     //!<Optional: rescale densities from 0 to 1?
             float ***aaafMask=NULL//!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
             );
 
@@ -70,7 +70,7 @@ public:
 
   /// @brief  Read an .MRC/.REC file
   void Read(istream& mrc_file,      //!< Read an .MRC/.REC file (input stream)
-            bool rescale=true,      //!<Optional: rescale densities from 0 to 1?
+            bool rescale=false,      //!<Optional: rescale densities from 0 to 1?
 	    float ***aaafMask=NULL  //!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
             );
   void Write(ostream& mrc_file); //Write an .MRC/.REC file (output stream)
@@ -208,6 +208,32 @@ ostream& operator << (ostream& mrc_file,
 }
 
 
+
+/// @brief  This simple function prints a warning message
+///         whenever the image uses signed bytes.
+///         (Since my users are frequently IMOD users,
+///          I find myself using this silly function frequently.)
+
+inline void
+WarnMRCSignedBytes(const MrcSimple &image,
+                   string file_name,
+                   ostream &report_warning)
+{
+  if (image.header.use_signed_bytes &&
+      image.header.mode == MrcHeader::MRC_MODE_BYTE) {
+    report_warning <<
+      "#####################################################################\n"
+      "WARNING: File \""<< file_name <<"\"\n"
+      "         uses signed bytes.\n"
+      "         Do not compare voxel brightnesses in this file with voxel\n"
+      "         brightnesses reported by IMOD or 3dmod.  (To avoid this message\n"
+      "         in the future, convert this file to an unambiguous format.\n"
+      "         You can do this using \"convert_to_float file1 file2\",\n"
+      "         or \"newstack -mode 2 -in file1 -ou file2\", for example.)\n"
+      "#####################################################################"
+                   << endl;
+  }
+}
 
 
 #endif //#ifndef _MRC_SIMPLE_HPP

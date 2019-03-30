@@ -175,7 +175,7 @@ void MrcSimple::Read(string in_file_name,
   if ((len_in_file_name > 4)
       && 
       (in_file_name.substr(len_in_file_name-4, len_in_file_name) == ".rec")) {
-    header.use_signed_bytes = false;
+    header.use_signed_bytes = false; //(note: this could be changed later by Read())
   }
   Read(mrc_file, rescale, aaafMask);
   mrc_file.close();
@@ -244,6 +244,26 @@ void MrcSimple::ReadArray(istream& mrc_file,
           {
             int8_t entry;
             mrc_file.read((char*)&entry, sizeof(char));
+
+            #ifdef ENABLE_IMOD_COMPATIBILITY
+            // MRC files using signed integers (eg. "mode 0") are
+            // interpreted differently by IMOD than they are by other software.
+            // In IMOD, voxel brightness values are adjusted to be so that 
+            // they lie in the range from 0..255.
+            // However files that use SIGNED bytes store their
+            // voxel brightnesses in the range from -128..127.
+            // For these files, IMOD automatically adds 128 to each voxel
+            // brightness value to insure the result lies between 0..255.
+            // Note: Neither UCSF Chimera, nor CCP-EM do this.
+            //  (CCP-EM is the distributor of the "mrcfile" python module.)
+            // To be compatible with the IMOD ecosystem, we must add 128:
+            entry += 128;
+            // Note: Later on when writing these files (in signed byte
+            //       format), remember to subtract this offset before writing.
+            // Note: Surprisingly, IMOD does not seem to add an offset to voxel
+            //       brightnesses from files using "mode 1" (signed int16 format).
+            #endif // #ifdef ENABLE_IMOD_COMPATIBILITY
+
             aaafI[iz][iy][ix] = static_cast<float>(entry);
           }
           else

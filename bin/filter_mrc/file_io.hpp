@@ -1,3 +1,6 @@
+#ifndef _FILE_IO_HPP
+#define _FILE_IO_HPP
+
 #include <cassert>
 #include <iostream>
 #include <fstream>
@@ -5,7 +8,7 @@
 #include <sstream>
 using namespace std;
 #include <err_report.hpp>
-
+#include <mrc_simple.hpp>
 #include "settings.hpp"
 
 
@@ -506,3 +509,7 @@ ProcessLinkConstraints(string must_link_filename,
   }
 
 } //ProcessLinkConstraints()
+
+
+
+#endif //#ifndef _FILE_IO_HPP

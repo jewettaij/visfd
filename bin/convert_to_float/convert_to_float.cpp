@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
     MrcSimple tomo;
     tomo.Read(in_file_name);//You can also use "tomo.Read(cin);" or "cin>>tomo;"
     tomo.PrintStats(cerr);  //Optional (display the tomogram size & format)
+    WarnMRCSignedBytes(tomo, in_file_name, cerr);
 
     // Write the file
     if (argc > 2) {

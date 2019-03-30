@@ -2438,7 +2438,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
   if (pReportProgress)
     *pReportProgress
-      << " Detecting collisions between "<<blob_crds.size()<<"blobs... \n";
+      << " Detecting collisions between "<<blob_crds.size()<<" blobs... \n";
 
 
   // Loop through all of the blobs and fill the occupancy table.  If a given

@@ -8,6 +8,7 @@
 #include<vector>
 #include<string>
 using namespace std;
+#include <mrc_simple.hpp>
 #include <filter3d.hpp>
 #include "filter3d_unsupported.hpp"
 

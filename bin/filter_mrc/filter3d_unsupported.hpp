@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <filter3d.hpp>
-#include <mrc_simple.hpp>
 #include <random_gen.h>
 #include "filter3d_unsupported.hpp"
 
