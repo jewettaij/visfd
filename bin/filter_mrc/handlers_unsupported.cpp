@@ -223,6 +223,7 @@ HandleBlobRadialIntensity(Settings settings,
     // (This was something temporary for a side project we
     //  we working on in 2019-3.)
     #ifdef ENABLE_MEASURE_DISTANCE_TO_BOUNDARY
+
     int image_size[3];
     int sphere_centers_i[3];
     for (int d=0; d<3; d++) {
@@ -250,7 +251,7 @@ HandleBlobRadialIntensity(Settings settings,
                    (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
                    (0 <= izs_jz) && (izs_jz <= image_size[2])))
               continue;
-            if (aaafMask && (aaafMask[izs_jz][iys_jy][ixs_jx] == 0.0))
+            if (mask.aaafI && (mask.aaafI[izs_jz][iys_jy][ixs_jx] == 0.0))
               continue;
             sum += tomo_in.aaafI[izs_jz][iys_jy][ixs_jx];
             n_vox++;
@@ -269,7 +270,7 @@ HandleBlobRadialIntensity(Settings settings,
                    (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
                    (0 <= izs_jz) && (izs_jz <= image_size[2])))
               continue;
-            if (aaafMask && (aaafMask[izs_jz][iys_jy][ixs_jx] == 0.0))
+            if (mask.aaafI && (mask.aaafI[izs_jz][iys_jy][ixs_jx] == 0.0))
               continue;
             sum_sq += SQR(tomo_in.aaafI[izs_jz][iys_jy][ixs_jx] - ave);
           }
@@ -284,10 +285,10 @@ HandleBlobRadialIntensity(Settings settings,
 
     int n_mask_values = 0;
     if (mask.aaafI) {
-      mask.FindMinMax();
+      mask.FindMinMaxMean();
       n_mask_values = static_cast<int>(floor(mask.header.dmax + 0.5));
       if (n_mask_values > 100)
-        n_mask_values = 100
+        n_mask_values = 100;
     }
     vector<float> min_dist_sq(n_mask_values, -1.0);    
     for (int iz = 0; iz < image_size[2]; iz++) {
@@ -320,7 +321,8 @@ HandleBlobRadialIntensity(Settings settings,
       cout << " " << sqrt(min_dist_sq[im]) - diameters[i]/2;
     }
     cout << "\n";
-    #endif // REMOVE THIS CRUFT!
+
+    #endif //#ifdef ENABLE_MEASURE_DISTANCE_TO_BOUNDARY <-- REMOVE THIS CRUFT!
 
 
 
