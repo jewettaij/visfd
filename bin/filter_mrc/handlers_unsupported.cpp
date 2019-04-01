@@ -286,11 +286,12 @@ HandleBlobRadialIntensity(Settings settings,
     int n_mask_values = 0;
     if (mask.aaafI) {
       mask.FindMinMaxMean();
-      n_mask_values = static_cast<int>(floor(mask.header.dmax + 0.5));
+      n_mask_values = static_cast<int>(floor(mask.header.dmax + 0.5)) + 1;
       if (n_mask_values > 100)
         n_mask_values = 100;
     }
-    vector<float> min_dist_sq(n_mask_values, -1.0);    
+    vector<float> min_dist_sq(n_mask_values,
+                              std::numeric_limits<float>::infinity());    
     for (int iz = 0; iz < image_size[2]; iz++) {
       for (int iy = 0; iy < image_size[1]; iy++) {
         for (int ix = 0; ix < image_size[0]; ix++) {

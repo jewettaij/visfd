@@ -2371,9 +2371,9 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
   if (pReportProgress)
     *pReportProgress
-      << " -- Attempting to allocate space for one more image.       --\n"
-      << " -- (If this crashes your computer, find a computer with   --\n"
-      << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
+      << "  -- Attempting to allocate space for one more image.       --\n"
+      << "  -- (If this crashes your computer, find a computer with   --\n"
+      << "  --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
   // Occupancy table
   //     (originally named "bool ***aaabOcc")
@@ -2424,12 +2424,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   }
 
   if (pReportProgress)
-    *pReportProgress
-      << " -- ...done                                                --\n\n";
-
-
-  if (pReportProgress)
-    *pReportProgress << " Allocating another blob list copy." << endl;
+    *pReportProgress << "  allocating another blob list copy." << endl;
 
   vector<array<Scalar,3> > blob_crds_cpy;
   vector<Scalar> blob_diameters_cpy;
@@ -2438,7 +2433,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
   if (pReportProgress)
     *pReportProgress
-      << " Detecting collisions between "<<blob_crds.size()<<" blobs... \n";
+      << "  detecting collisions between "<<blob_crds.size()<<" blobs... ";
 
 
   // Loop through all of the blobs and fill the occupancy table.  If a given
@@ -2558,7 +2553,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   blob_scores = blob_scores_cpy;
 
   if (pReportProgress)
-    *pReportProgress << " done.                                 \n";
+    *pReportProgress << "done.\n";
 } //DiscardOverlappingBlobs()
 
 
@@ -2580,7 +2575,7 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
 {
   if (pReportProgress)
-    *pReportProgress << " Allocating another blob list copy." << endl;
+    *pReportProgress << "  allocating another blob list copy." << endl;
 
   vector<array<Scalar,3> > blob_crds_cpy;
   vector<Scalar> blob_diameters_cpy;
@@ -2588,7 +2583,7 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
   if (pReportProgress && (aaafMask != NULL))
     *pReportProgress
-      << " Checking which blobs lie within the mask (out of "
+      << "  checking which blobs lie within the mask (out of "
       << blob_crds.size() << " blobs)." << endl;
 
   size_t n_discarded = 0;
@@ -2612,8 +2607,8 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
   if (pReportProgress && (aaafMask != NULL))
     *pReportProgress
-      << " Discarded " << n_discarded
-      << " blobs lying outside the mask." << endl;
+      << "  discarded " << n_discarded
+      << "  blobs lying outside the mask." << endl;
 
   blob_crds = blob_crds_cpy;
   blob_diameters = blob_diameters_cpy;

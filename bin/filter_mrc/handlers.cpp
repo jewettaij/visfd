@@ -308,6 +308,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
                           settings.nonmax_max_volume_overlap_small,
                           &cerr);
 
+  cerr << " " << crds.size() << " blobs remaining" << endl;
 
   if (settings.out_coords_file_name != "") {
     fstream out_coords_file;
