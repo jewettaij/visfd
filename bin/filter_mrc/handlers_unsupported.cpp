@@ -247,6 +247,8 @@ HandleBlobRadialIntensity(Settings settings,
           int iys_jy = iys + jy;
           for (int jx = -Rsphere; jx <= Rsphere; jx++) {
             int ixs_jx = ixs + jx;
+            if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
+              continue;
             if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
                    (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
                    (0 <= izs_jz) && (izs_jz <= image_size[2])))
@@ -266,6 +268,8 @@ HandleBlobRadialIntensity(Settings settings,
           int iys_jy = iys + jy;
           for (int jx = -Rsphere; jx <= Rsphere; jx++) {
             int ixs_jx = ixs + jx;
+            if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
+              continue;
             if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
                    (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
                    (0 <= izs_jz) && (izs_jz <= image_size[2])))

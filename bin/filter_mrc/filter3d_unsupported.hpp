@@ -511,6 +511,8 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
           int iys_jy = iys + jy;
           for (int jx = -Rsphere; jx <= Rsphere; jx++) {
             int ixs_jx = ixs + jx;
+            if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
+              continue;
             if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
                    (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
                    (0 <= izs_jz) && (izs_jz <= image_size[2])))
@@ -529,6 +531,7 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
               iy0 = iys_jy;
               iz0 = izs_jz;
               extrema_val = aaafSource[izs_jz][iys_jy][ixs_jx];
+              first_iter = false;
             }
           }
         }
@@ -541,8 +544,8 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
       
     intensity_profiles[i].resize(Rsearch+1);
 
-    vector<Scalar> numerators(Rsearch+1);
-    vector<Scalar> denominators(Rsearch+1);
+    vector<Scalar> numerators(Rsearch+1, 0.0);
+    vector<Scalar> denominators(Rsearch+1, 0.0);
 
     for (int jz = -Rsearch; jz <= Rsearch; jz++) {
       int iz0_jz = iz0 + jz;
@@ -550,6 +553,8 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
         int iy0_jy = iy0 + jy;
         for (int jx = -Rsearch; jx <= Rsearch; jx++) {
           int ix0_jx = ix0 + jx;
+          if ((jx*jx + jy*jy + jz*jz) > Rsearch*Rsearch)
+            continue;
           if (! ((0 <= ix0_jx) && (ix0_jx <= image_size[0]) &&
                  (0 <= iy0_jy) && (iy0_jy <= image_size[1]) &&
                  (0 <= iz0_jz) && (iz0_jz <= image_size[2])))
@@ -561,9 +566,10 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
           int Jx = jx + ix0 - ixs;
           int Jy = jy + iy0 - iys;
           int Jz = jz + iz0 - izs;
-          int jr = floor(sqrt(Jx*Jx + Jy*Jy + Jz*Jz) + 0.5);
-          if (jr > Rsearch)
+          int Jr = static_cast<int>(floor(sqrt(Jx*Jx + Jy*Jy + Jz*Jz) + 0.5));
+          if (Jr > Rsphere)
             continue; //// If not, ignore it.
+          int jr = static_cast<int>(floor(sqrt(jx*jx + jy*jy + jz*jz) + 0.5));
           // Consider all remaining voxels
           numerators[jr] += aaafSource[iz0_jz][iy0_jy][ix0_jx];
           denominators[jr] += 1.0;
