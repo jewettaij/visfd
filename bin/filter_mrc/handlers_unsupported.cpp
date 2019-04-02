@@ -239,7 +239,7 @@ HandleBlobRadialIntensity(Settings settings,
       int ixs = sphere_centers_i[0];
       int iys = sphere_centers_i[1];
       int izs = sphere_centers_i[2];
-      double sum;
+      double sum = 0.0;
       size_t n_vox = 0;
       for (int jz = -Rsphere; jz <= Rsphere; jz++) {
         int izs_jz = izs + jz;
