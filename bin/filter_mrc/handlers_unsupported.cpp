@@ -320,10 +320,15 @@ HandleBlobRadialIntensity(Settings settings,
                                 [ sphere_centers_i[0] ]
          << " " << intensity_profiles[i][0]
          << " " << fluctuation_brightness;
-      //<< " " << distance_to_boundary
-      //<< " " << distance_to_boundary - diameters[i]/2
+    // Now print the distance to various 
     for (int im = 0; im < n_mask_values; im++) {
-      cout << " " << sqrt(min_dist_sq[im]) - diameters[i]/2;
+      cout << " " << ((min_dist_sq[im]!=std::numeric_limits<float>::infinity())
+                      ?
+                      (sqrt(min_dist_sq[im]) - diameters[i]/2)*voxel_width[0]
+                      :
+                      std::numeric_limits<float>::infinity());
+      // note: sqrt(inf) should equal inf, but results are compiler dependent.
+      //       The ? operator used above should insure that sqrt(inf) = inf
     }
     cout << "\n";
 
