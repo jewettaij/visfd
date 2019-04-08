@@ -2449,8 +2449,8 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
     bool discard = false;
     Scalar reff_ = blob_diameters[i]/2; //blob radii in units of voxels
     Scalar Reff_ = reff_ / scale; //blob radii expressed in "low rez" units
-    int Reff = ceil(Reff_);         //round up
-    int Reffsq = ceil(Reff_*Reff_);
+    int Reff = ceil(Reff_) + 1; //round up (and add 1 for uncertainty in center)
+    int Reffsq = Reff*Reff;
     Scalar ix = blob_crds[i][0];      //coordinates of the center of the blob
     Scalar iy = blob_crds[i][1];
     Scalar iz = blob_crds[i][2];
