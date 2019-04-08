@@ -14,10 +14,22 @@ using namespace std;
 /// this program can read MRC/REC files using several other numeric formats 
 /// as well (including signed and unsigned 8-bit and 16-bit integers).
 ///
-/// @note As of 2015-4-20, file data is assumed to be in row-major format.
+/// --- PLEASE REPORT BUGS ---
+///
+/// @note As of 2019-4-08, support for MRC files which are not in row-major
+///       format has been implemented but has not been tested.
 ///       http://en.wikipedia.org/wiki/Row-major_order
-///       (IE The "mapC", "mapR", and "mapS" (mapCRS[]) header data is ignored.)
-/// @note As of 2015-4-20, this software does not attempt to detect 
+///       (IE This program has only been tested on MRC files whose "mapC",
+///        "mapR", and "mapS" (mapCRS[]) header data equals 1,2,3 respectively.)
+///        
+/// @note As of 2019-4-08, the interpretation of signed bytes (mode 0) MRC files
+///       is different in IMOD, compared to other software tools, including this
+///       software.  When reading files using signed bytes, IMOD adds 128 to
+///       all the entries (so that the resulting numbers are strictly positive).
+///       This does not occur when reading signed-byte files using this library.
+///       (This software may also fail to realize when signed bytes are in use.)
+///        
+/// @note As of 2019-4-08, this software does not attempt to detect 
 ///       or convert big-endian or little-endian numbers.
 ///       To be on the safe side, compile this software on hardware which is
 ///       compatible with the hardware which was used to write the MRC file.
@@ -29,7 +41,8 @@ using namespace std;
 /// http://ami.scripps.edu/software/mrctools/mrc_specification.php
 /// http://bio3d.colorado.edu/imod/betaDoc/libhelp/mrcfiles.html#TOP
 ///
-/// @note  MOST OF THIS CODE WAS PILLAGED FROM IMOD (David Mastronarde et al.)
+/// @note  Most of this code was pillaged from IMOD
+///        (by David Mastronarde and coworkers)
 
 
 class MrcSimple {
