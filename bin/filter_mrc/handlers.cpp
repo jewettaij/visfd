@@ -200,7 +200,7 @@ HandleDogScaleFree(Settings settings,
                    MrcSimple &mask,
                    float voxel_width[3])
 {
-  cerr << "filter_type = Fast Laplacian of Gaussians (LoG)\n"
+  cerr << "filter_type = (Fast) Laplacian of Gaussians (LoG)\n"
        << "  (This will be approximated as a Difference of Gaussians,\n"
        << "   as explained below.)\n";
   //cerr << "filter_type = Difference of Gaussians Scale Free (DOGSF)\n";
@@ -219,7 +219,6 @@ HandleDogScaleFree(Settings settings,
            &B,
            &cerr);
 
-
   cerr << " Filter Used:\n"
     " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
     " h_a(x,y,z) = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
@@ -227,23 +226,31 @@ HandleDogScaleFree(Settings settings,
     "  ... where      A = " << A << "\n"
     "                 B = " << B << "\n" 
     "   (a_x, a_y, a_z) = "
-       << "(" << settings.width_a[0]
-       << " " << settings.width_a[1]
-       << " " << settings.width_a[2] << ")\n"
+       << "(" << settings.dogsf_width[0]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.dogsf_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.dogsf_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
+       << ")\n"
     "   (b_x, b_y, b_z) = "
-       << "(" << settings.width_b[0]
-       << " " << settings.width_b[1]
-       << " " << settings.width_b[2] << ")\n";
+       << "(" << settings.dogsf_width[0]*(1+0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.dogsf_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.dogsf_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
+       << ")\n";
   cerr << " You can plot a slice of this function\n"
        << "     in the X direction using:\n"
     " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.width_a[0] << " " << settings.width_b[0] << endl;
+       << " " << settings.dogsf_width[0]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.dogsf_width[0]*(1+0.5*settings.delta_sigma_over_sigma)
+       << endl;
   cerr << " and in the Y direction using:\n"
     " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.width_a[1] << " " << settings.width_b[1] << endl;
+       << " " << settings.dogsf_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.dogsf_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
+       << endl;
   cerr << " and in the Z direction using:\n"
     " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.width_a[2] << " " << settings.width_b[2] << endl;
+       << " " << settings.dogsf_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.dogsf_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
+       << endl;
 
 } // HandleDogScaleFree()
 
@@ -1092,6 +1099,9 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   // Using this blurred image, calculate the 2nd derivative matrix everywhere:
 
+  cerr << "  Applying a Gaussian blur of width sigma="
+       << sigma*voxel_width[0] << endl;
+
   CalcHessian(tomo_in.header.nvoxels,
               tomo_in.aaafI,
               aaaafGradient,
@@ -1100,7 +1110,6 @@ HandleRidgeDetectorPlanar(Settings settings,
               sigma,
               settings.filter_truncate_ratio,
               &cerr);
-
 
   // We need to store the direction of the most important eigenvector
   // somewhere.  To save space, why not store it in the aaaafGradient
@@ -1133,12 +1142,6 @@ HandleRidgeDetectorPlanar(Settings settings,
                                eivals,
                                eivects,
                                eival_order);
-
-        // REMOVE THIS CRUFT ?
-        //float grad[3];
-        //grad[0] = aaaafGradient[iz][iy][ix][0];
-        //grad[1] = aaaafGradient[iz][iy][ix][1];
-        //grad[2] = aaaafGradient[iz][iy][ix][2];
 
         float score;
 

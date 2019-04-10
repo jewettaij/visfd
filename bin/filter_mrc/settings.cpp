@@ -48,12 +48,12 @@ Settings::Settings() {
   //
   // Default values of a_x, a_y, a_z, b_x, b_y, b_z, m, n are:
 
-  width_a[0] = 70.0;  // a_x =70.0 gaussian width in x direction(physical units)
-  width_a[1] = 70.0;  // a_y = 70.0  gaussian width in y direction
-  width_a[2] = 110.0; // a_z = 110.0  gaussian width in z direction
-  width_b[0] = 90.0;  // b_x = 90.0  2nd (outer) gaussian width in x direction
-  width_b[1] = 90.0;  // b_y = 905.0  gaussian width in y direction
-  width_b[2] = 130.0; // b_z = 130.0  gaussian width in z direction(<0 disables)
+  width_a[0] = -1.0;  // a_x = gaussian width in x direction(physical units)
+  width_a[1] = -1.0;  // a_y = gaussian width in y direction
+  width_a[2] = -1.0;  // a_z = gaussian width in z direction
+  width_b[0] = -1.0;  // b_x = 2nd (outer) gaussian width in x direction
+  width_b[1] = -1.0;  // b_y = gaussian width in y direction
+  width_b[2] = -1.0;  // b_z = gaussian width in z direction(<0 disables)
   m_exp = 2.0;       // exponent in generalized Gaussian formula (width a)
   n_exp = 2.0;       // exponent in generalized Gaussian formula (width b)
 
@@ -557,20 +557,13 @@ Settings::ParseArgs(vector<string>& vArgs)
         float blob_width_multiplier = 1.0;
         blob_width_multiplier = 1.0;
         if (vArgs[i] == "-log")
-          // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 2.0*sqrt(3.0);
-          //REMOVE THIS CRUFT
-          //blob_width_multiplier = 1.0/sqrt(3.0);
+          blob_width_multiplier = 1.0;
         if (vArgs[i] == "-log-r")
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 2.0;
-          //REMOVE THIS CRUFT
-          //blob_width_multiplier = 1.0/sqrt(3.0);
+          blob_width_multiplier = 1.0/sqrt(3.0);
         if (vArgs[i] == "-log-d")
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 1.0;
-          //REMOVE THIS CRUFT
-          //blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
+          blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
         dogsf_width[0] = stof(vArgs[i+1]) * blob_width_multiplier;
         dogsf_width[1] = dogsf_width[0];
         dogsf_width[2] = dogsf_width[0];

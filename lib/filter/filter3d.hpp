@@ -5464,6 +5464,9 @@ CalcHessian(int const image_size[3], //!< source image size
              false,
              pReportProgress);
 
+  if (pReportProgress)
+    *pReportProgress << "Calculating the image Hessian\n";
+
   assert(image_size[0] >= 3);
   assert(image_size[1] >= 3);
   assert(image_size[2] >= 3);
