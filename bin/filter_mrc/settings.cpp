@@ -2497,14 +2497,19 @@ Settings::ParseArgs(vector<string>& vArgs)
     planar_tv_sigma *= sigma;
   }
 
-  if ((connect_threshold_saliency != std::numeric_limits<float>::infinity()) &&
-      (filter_type != RIDGE_PLANAR))
+
+  if (cluster_connected_voxels && (filter_type != RIDGE_PLANAR))
   {
-    throw InputErr("Error: The \"-connect\" argument is currently only supported when used\n"
-                   "       simultaneously with the \"-planar\" (and \"planar-tv\") arguments.\n"
-                   "           (This may change in the future.  -andrew 2019-3-04)\n"
-                   "       You can use the \"-watershed\" argument instead.  (See documentation.)\n");
+    assert(connect_threshold_saliency!=std::numeric_limits<float>::infinity());
+    filter_type = CLUSTER_CONNECTED;
+
+    // REMOVE THIS CRUFT
+    //throw InputErr("Error: The \"-connect\" argument is currently only supported when used\n"
+    //               "       simultaneously with the \"-planar\" (and \"planar-tv\") arguments.\n"
+    //               "           (This may change in the future.  -andrew 2019-3-04)\n"
+    //               "       You can use the \"-watershed\" argument instead.  (See documentation.)\n");
   }
+
 } // Settings::ParseArgs()
 
 

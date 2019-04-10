@@ -49,6 +49,7 @@ class Settings {
     BLOB,            // blob detection
     RIDGE_PLANAR,    // a ridge detector for surfaces (ie a membrane detector)
     WATERSHED,       // Watershed segmentation
+    CLUSTER_CONNECTED,       // Similar to Watershed segmentation
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
     DISTANCE_TO_POINTS, //voxel intensity = distance to nearest object

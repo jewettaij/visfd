@@ -312,6 +312,15 @@ int main(int argc, char **argv) {
     }
 
 
+    else if (settings.filter_type == Settings::CLUSTER_CONNECTED) {
+
+      // cluster adjacent nearby voxels into disconnected "islands"
+      // (this is similar to watershed segmentation)
+      HandleClusterConnected(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
     else if (settings.filter_type == Settings::LOCAL_FLUCTUATIONS) {
 
       HandleLocalFluctuations(settings, tomo_in, tomo_out, mask, voxel_width);

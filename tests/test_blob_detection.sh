@@ -28,7 +28,8 @@ test_blob_detection() {
     # Create an image with each blob represented by a single voxel of
     # brightness 1 surrounded by other voxels of brightness 0
     ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -out test_blob_detect_results.rec -spheres test_blobs_sep_${SEP}_thresh_${THRESH}.txt -sphere-shell-ratio 0.1 -sphere-background 0 -sphere-foreground 1 -sphere-radii 0
-    # Note
+
+    # Note:
     # To superimpose the spheres onto the original image, get rid of these args:
     # -sphere-background 0 -sphere-foreground 1 -sphere-radii 0
     # ...and add this argument:

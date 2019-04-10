@@ -355,15 +355,38 @@ are missing or are incomplete, then increase this number and try again.
 
 ### -connect  *threshold*
 
-After membrane detection is performed, 
-voxels from different membranes can be grouped into different clusters
-using the "**-connect**" argument.
-Nearby ridge-like (ie membrane-like) voxels of similar orientation
-can be grouped into connected islands.
+The -connect argument is a simple voxel clustering tool 
+used to distinguish different bright objects in the same image.
+
+This is a two-step process.
+First, all the voxels whose brightness exceeds *threshold* are selected.
+Then, this subset of voxels is partitioned into different "islands".
+"Islands" are defined as sets of voxels which are connected to each other
+by touching adjacent voxels.
+(This is similar to the "bucket-fill" tool in a paint program.
+ The definition of "adjacency" can be controlled using the
+ "-neighbor-connectivity" argument, which is explained elsewhere.)
+
+Once membership of each island has been decided, 
+a new image is generated showing which
+voxels belong to each island.
+(This behavior is similar to the behavior of the "*-watershed*" argument when
+ used together with the "*-minima-threshold*" argument.)
+
+*If the "-connect" argument is used together with the "-planar" argument,*
+(which is typically used for membrane detection), then it means that additional,
+*more stringent* criteria will be used to distinguish nearby thin, curved
+membrane-like objects from eachother.
+In particular, surfaces are assumed to be moderately smooth.
+This means that adjacent voxels with radically different orientations 
+will never be grouped together (even if they are both bright).
+Only voxels of similar orientation will be grouped into connected surfaces.
+(The degree of similarity can be set by the user.)
+
 If the *threshold* parameter is chosen carefully, then these
 different islands will hopefully correspond to different objects
 (eg. membranes) in the original image.
-The *threshold* parameter will vary from image to image
+This *threshold* parameter will vary from image to image
 and must be chosen carefully.
 
 Generally, speaking the *threshold* parameter determines the minimum

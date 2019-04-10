@@ -962,6 +962,27 @@ HandleWatershed(Settings settings,
 
 
 
+void
+HandleClusterConnected(Settings settings,
+                       MrcSimple &tomo_in,
+                       MrcSimple &tomo_out,
+                       MrcSimple &mask,
+                       float voxel_width[3])
+{
+  settings.score_upper_bound = settings.connect_threshold_saliency;
+  settings.score_bounds_are_ratios = false;
+  HandleWatershed(settings,
+                  tomo_in,
+                  tomo_out,
+                  mask,
+                  voxel_width);
+} //HandleClusterConnected()
+
+
+
+
+
+
 
 void
 HandleRidgeDetectorPlanar(Settings settings,
