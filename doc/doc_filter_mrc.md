@@ -361,17 +361,18 @@ used to distinguish different bright objects in the same image.
 This is a two-step process.
 First, all the voxels whose brightness exceeds *threshold* are selected.
 Then, this subset of voxels is partitioned into different "islands".
-"Islands" are defined as sets of voxels which are connected to each other
-by touching adjacent voxels.
-(This is similar to the "bucket-fill" tool in a paint program.
+"Islands" are defined as sets of voxels which are all 
+physically adjacent to (touching) eachother.
+(The "bucket-fill" tool in a paint program behaves 
+ in a similar way to the way islands are chosen.
  The definition of "adjacency" can be controlled using the
  "-neighbor-connectivity" argument, which is explained elsewhere.)
 
 Once membership of each island has been decided, 
 a new image is generated showing which
 voxels belong to each island.
-(This behavior is similar to the behavior of the "*-watershed*" argument when
- used together with the "*-minima-threshold*" argument.)
+(Note: This behavior is identical to the behavior of the "*-watershed*"
+ argument when used together with the "*-minima-threshold*" argument.)
 
 *If the "-connect" argument is used together with the "-planar" argument,*
 (which is typically used for membrane detection), then it means that additional,
@@ -379,23 +380,18 @@ voxels belong to each island.
 membrane-like objects from eachother.
 In particular, surfaces are assumed to be moderately smooth.
 This means that adjacent voxels with radically different orientations 
-will never be grouped together (even if they are both bright).
-Only voxels of similar orientation will be grouped into connected surfaces.
+will never be grouped together.
+Only voxels with similar orientations will be grouped into connected surfaces.
 (The degree of similarity can be set by the user.)
-
+In this case, the "*threshold*" parameter determines how *membrane-like*
+a voxel must be in order for it to be included.
 If the *threshold* parameter is chosen carefully, then these
-different islands will hopefully correspond to different objects
-(eg. membranes) in the original image.
+different islands will hopefully correspond to different membranes 
+in the original image.
 This *threshold* parameter will vary from image to image
 and must be chosen carefully.
 
-Generally, speaking the *threshold* parameter determines the minimum
-"*saliency*" that a voxel must have for it to be added to an object
-being segmented.
-For the specific case of *membrane detection*, the "*threshold*" parameter
-determines how *membrane-like* a voxel must be in order for it to be
-included with the the membrane.
-If this parameter is too large, 
+If the *threshold* parameter is too large, 
 then individual objects (eg. membranes) in the image 
 will be split into multiple pieces.  
 If too small, then separate objects in the image will be joined together.
