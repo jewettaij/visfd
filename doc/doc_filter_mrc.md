@@ -405,7 +405,7 @@ This will manually force different regions to be merged together.
 
 #### Strategies for determining the -connect *threshold* parameter
 
-To do that, choose the *threshold* parameter, 
+To choose the *threshold* parameter, 
 run membrane-detection (for example using "-planar" and "-planar-tv")
 once in advance without the "-connect" argument
 (as we did in the membrane-detection example).
