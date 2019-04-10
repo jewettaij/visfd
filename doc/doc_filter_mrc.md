@@ -336,15 +336,17 @@ the "-planar" filter argument, and then visualizing the resulting file.
 In practice, it is often easier to use the **-planar-best** argument
 because no intermediate visualization step is required.
 
+
 ### -planar-best  *fraction*
 
-This will discard voxels whose saliency (after ridge detection)
+This will discard voxels whose saliency
+(ie "membrane-ness" after ridge detection)
 is not in the top *fraction* of voxels in the image
 (excluding masked voxels, if applicable).
-This will reduce the computation needed for any subsequent steps
-in the calculation 
+This will significantly reduce the computation needed 
+for any subsequent steps in the calculation 
 **(such as tensor voting)** 
-faster by a factor which is roughly proportional to this number.
+by a factor which is roughly proportional to this number.
 The *fraction* parameter should lie in the range from 0 to 1.
 (Using *0.1* is a conservative choice, but you can often get away 
  with using lower values.)
@@ -398,8 +400,8 @@ If too small, then separate objects in the image will be joined together.
 
 *Note:* If you are unable to find thresholds which connect all of 
 the pieces together correctly, you can also use the "**-must-link**" argument.
-This will manually force different regions to be merged together.
-(See below.)
+This will manually force different bright regions in the image
+to belong to the same cluster (a.k.a. "island".  See below.)
 
 
 
@@ -453,6 +455,8 @@ close holes in the surface using programs like *meshlab* or *PoissonRecon*.
 
 
 ### -must-link  *file_name.txt*
+
+*WARNING: This is an experimental feature as of 2019-4-09*
 
 If the "**-connect**" argument fails, you can manually force 
 different regions in the image to the same object
