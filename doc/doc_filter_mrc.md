@@ -388,9 +388,9 @@ a voxel must be in order for it to be included.
 If the *threshold* parameter is chosen carefully, then these
 different islands will hopefully correspond to different membranes 
 in the original image.
+
 This *threshold* parameter will vary from image to image
 and must be chosen carefully.
-
 If the *threshold* parameter is too large, 
 then individual objects (eg. membranes) in the image 
 will be split into multiple pieces.  
