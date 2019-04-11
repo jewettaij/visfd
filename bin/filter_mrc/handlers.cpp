@@ -1019,7 +1019,7 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   bool black_on_white = true;
   selfadjoint_eigen3::EigenOrderType eival_order =
-    selfadjoint_eigen3::DECREASING_EIVALS; //we want the first eigenvalue to be the largest (assumed to be positive)
+    selfadjoint_eigen3::DECREASING_ABS_EIVALS; //we want the first eigenvalue to be the largest (assumed to be positive)
 
   float sigma = settings.width_a[0];
 
@@ -1099,7 +1099,7 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   // Using this blurred image, calculate the 2nd derivative matrix everywhere:
 
-  cerr << "  Applying a Gaussian blur of width sigma="
+  cerr << "Applying a Gaussian blur of width sigma="
        << sigma*voxel_width[0] << endl;
 
   CalcHessian(tomo_in.header.nvoxels,
@@ -1111,6 +1111,19 @@ HandleRidgeDetectorPlanar(Settings settings,
               settings.filter_truncate_ratio,
               &cerr);
 
+  cerr << "Diagonalizing the Hessian" << endl;
+
+
+  // DELETE THIS DEBUGGING CRUFT
+  //for(int iz=0; iz < image_size[2]; iz++)
+  //  for(int iy=0; iy < image_size[1]; iy++)
+  //    for(int ix=0; ix < image_size[0]; ix++)
+  //      tomo_out.aaafI[iz][iy][ix] =
+  //        FrobeniusNormSqdSym3(tmp_tensor.aaaafI[iz][iy][ix]);
+  //return;
+  // DELETE THIS DEBUGGING CRUFT
+
+
   // We need to store the direction of the most important eigenvector
   // somewhere.  To save space, why not store it in the aaaafGradient
   // array?  (At this point, we are no longer using it).
@@ -1121,7 +1134,6 @@ HandleRidgeDetectorPlanar(Settings settings,
   // from "aaaafGradient" to "aaaafDirection".
   // The purpose of the name change is to make it easier to read the code later.
 
-
   // Optional: store the saliency (score) of each voxel in tomo_out.aaafI
   for(int iz=0; iz < image_size[2]; iz++)
     for(int iy=0; iy < image_size[1]; iy++)
@@ -1129,6 +1141,7 @@ HandleRidgeDetectorPlanar(Settings settings,
         tomo_out.aaafI[iz][iy][ix] = 0.0;
 
   for(int iz=0; iz < image_size[2]; iz++) {
+    #pragma omp parallel for collapse(2)
     for(int iy=0; iy < image_size[1]; iy++) {
       for(int ix=0; ix < image_size[0]; ix++) {
 
@@ -1147,7 +1160,7 @@ HandleRidgeDetectorPlanar(Settings settings,
 
         // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
         #ifndef NDEBUG
-        if ((ix == image_size[0] / 2) &&
+        if ((ix==image_size[0]/2) && //if ((ix==78) &&
             (iy == image_size[1] / 2) &&
             (iz == image_size[2] / 2))
         {

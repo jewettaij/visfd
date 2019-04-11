@@ -5523,7 +5523,7 @@ CalcHessian(int const image_size[3], //!< source image size
 
           #ifndef NDEBUG
           // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
-          if ((ix==image_size[0]/2) &&
+          if ((ix==image_size[0]/2) && //if ((ix==78) && 
               (iy==image_size[1]/2) &&
               (iz==image_size[2]/2))
           {

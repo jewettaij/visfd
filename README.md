@@ -31,7 +31,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 ## filter_mrc
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
-![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)  *<-- 2D slice through a segmented 3D tomogram:*
+![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)  *<-- 2D slice through a masked, segmented 3D tomogram:*
 
 **filter_mrc** is a stand-alone program which uses many of the
 features of the **visfd** library.

@@ -165,6 +165,6 @@ This will invert the intensity of each voxel compared to the previous example:
 ```
 
 ### "not" operations
-*In addition to "**and**" and "**or**" operations, you can also perform "not" operations.  You can perform the "**not**" operation on each **input** by reversing the order of the thresholds following a file name.  The example above ("file1.mrc,0.6,0.4) demonstrates how to do that.*
+*In addition to "**and**" and "**or**" operations, you can also perform "not" operations.  You can perform the "**not**" operation on each **input** by reversing the order of the thresholds following a file name.  The example above ("file1.mrc,0.52,0.48) demonstrates how to do that.*
 
 

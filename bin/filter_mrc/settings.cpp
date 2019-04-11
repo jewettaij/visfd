@@ -554,17 +554,17 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        float blob_width_multiplier = 1.0;
-        blob_width_multiplier = 1.0;
+        float blob_sigma_multiplier = 1.0;
+        blob_sigma_multiplier = 1.0;
         if (vArgs[i] == "-log")
-          blob_width_multiplier = 1.0;
+          blob_sigma_multiplier = 1.0;
         if (vArgs[i] == "-log-r")
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 1.0/sqrt(3.0);
+          blob_sigma_multiplier = 1.0/sqrt(3.0);
         if (vArgs[i] == "-log-d")
           // (for a solid uniform 3-D sphere)
-          blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
-        dogsf_width[0] = stof(vArgs[i+1]) * blob_width_multiplier;
+          blob_sigma_multiplier = 1.0/(2.0*sqrt(3.0));
+        dogsf_width[0] = stof(vArgs[i+1]) * blob_sigma_multiplier;
         dogsf_width[1] = dogsf_width[0];
         dogsf_width[2] = dogsf_width[0];
         m_exp = 2.0;

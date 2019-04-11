@@ -416,7 +416,7 @@ public:
 
 
 
-/// @brief  Calculate Tr(AB)
+/// @brief  Calculate Tr(A B^T)
 
 template <class Scalar>
 static inline Scalar TraceProduct3(const Scalar A[3][3],
@@ -428,7 +428,7 @@ static inline Scalar TraceProduct3(const Scalar A[3][3],
   return sum;
 }
 
-/// @brief  Calculate Tr(AB)
+/// @brief  Calculate Tr(A B^T)
 ///   where A and B are represented as 1-D arrays containing 6 entries, instead
 ///   of 3x3 arrays.  (See MapIndices_linear_to_3x3[] above for conversion.)
 
