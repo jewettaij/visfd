@@ -194,10 +194,10 @@ class Settings {
 
   // ---- parameters for watershed segmentation ----
 
-  bool watershed_use_minima;
   bool watershed_show_boundaries;
   float watershed_boundary_label;
   float watershed_threshold;
+  bool clusters_begin_at_maxima;
 
   // ---- parameters for the clustering of connected voxels into islands ----
 

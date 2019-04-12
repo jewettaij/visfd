@@ -935,7 +935,7 @@ HandleWatershed(Settings settings,
             aaaiBasinId,
             mask.aaafI,
             settings.watershed_threshold,
-            settings.watershed_use_minima,
+            (! settings.clusters_begin_at_maxima),
             settings.neighbor_connectivity,
             settings.watershed_show_boundaries,
             settings.watershed_boundary_label,
@@ -976,8 +976,11 @@ HandleClusterConnected(Settings settings,
                        MrcSimple &mask,
                        float voxel_width[3])
 {
-  settings.score_upper_bound = settings.connect_threshold_saliency;
-  settings.score_bounds_are_ratios = false;
+  // REMOVE THIS CRUFT
+  //settings.score_upper_bound = settings.connect_threshold_saliency;
+  //settings.score_bounds_are_ratios = false;
+
+  settings.watershed_threshold = settings.connect_threshold_saliency;
   HandleWatershed(settings,
                   tomo_in,
                   tomo_out,

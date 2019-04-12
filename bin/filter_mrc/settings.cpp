@@ -110,7 +110,7 @@ Settings::Settings() {
   nonmax_max_volume_overlap_small = 1.0;
   nonmax_max_volume_overlap_large = 1.0;
 
-  watershed_use_minima = true;
+  clusters_begin_at_maxima = false;
   watershed_boundary_label = 0.0;
   watershed_show_boundaries = true;
   watershed_threshold = std::numeric_limits<float>::infinity();
@@ -1796,7 +1796,7 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-watershed"))
     {
       filter_type = WATERSHED;
-      watershed_use_minima = true;
+      clusters_begin_at_maxima = false;
       if (! watershed_threshold_set_by_user)
         watershed_threshold = std::numeric_limits<float>::infinity();
       num_arguments_deleted = 1;
@@ -1806,7 +1806,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-watershed-maxima")
     {
       filter_type = WATERSHED;
-      watershed_use_minima = false;
+      clusters_begin_at_maxima = true;
       if (! watershed_threshold_set_by_user)
         watershed_threshold = std::numeric_limits<float>::infinity();
       num_arguments_deleted = 1;
@@ -2068,9 +2068,10 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if ((vArgs[i] == "-connect") ||
-             (vArgs[i] == "-connect-saliency"))
+             (vArgs[i] == "-connect-bright"))
     {
       cluster_connected_voxels = true;
+      clusters_begin_at_maxima = true;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
@@ -2083,6 +2084,25 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     }
+
+
+    else if (vArgs[i] == "-connect-dark")
+    {
+      cluster_connected_voxels = true;
+      clusters_begin_at_maxima = false;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        connect_threshold_saliency = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
 
     else if ((vArgs[i] == "-connect-vector-saliency") ||
              (vArgs[i] == "-cvs"))
