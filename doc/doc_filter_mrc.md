@@ -255,15 +255,15 @@ using the "**-surface-orientations-file**" argument.
 ### -surface  type  thickness
 
 When the "**-surface**" filter is selected, a
-[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+[3D planar ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 filter will be used.
 The "*type*" argument must be either "*minima*" or "*maxima*".
 If *type* = "*minima*", then this filter will detect thin membrane-like
 structures which are dark on a bright background.
 If *type* = "*maxima*", then this filter will detect membrane-like
 structures which are bright on a dark background.
-The *thickness* should be a number indicating
-the approximate target *thickness* for the membrane-like feature 
+The *thickness* parameter should be a number indicating
+the approximate target *thickness* for the thin membrane-like feature 
 you are interested in detecting.
 (in physical units, not voxels.  
  Membranes whose thickness within a factor of 2 of this target
