@@ -1867,6 +1867,23 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
+    else if (vArgs[i] == "-planar") {
+      throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] + 
+                     " argument has been renamed.\n"
+                     "       It is now called \"-surface\", and it requires an additional argument.\n"
+                     "       See documentation for details.\n");
+    }
+
+
+
+    else if (vArgs[i] == "-planar-tv") {
+      throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] + 
+                     " argument has been renamed.\n"
+                     "       It is now called \"-surface-tv\"\n");
+    }
+
+
+
     else if ((vArgs[i] == "-surface") ||
              (vArgs[i] == "-membrane"))
     {
@@ -1891,9 +1908,10 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by a number: the width\n"
-                       "       (σ) of the Gaussian used beforehand for smoothing (in physical units).\n"
-                       "       (This selects the scale or resolution of the filter.)\n");
+                       " argument must be followed by 2 arguments:  \"type\"  \"width\"\n"
+                       "       The \"type\" argument must be either \"minima\" or \"maxima\"\n"
+                       "       The \"width\" argument should be target thickness of the thin\n"
+                       "       surface-like object you are interest in detecting.\n");
       }
       num_arguments_deleted = 3;
     }
