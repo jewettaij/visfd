@@ -116,13 +116,14 @@ Settings::Settings() {
   watershed_threshold = std::numeric_limits<float>::infinity();
 
   out_normals_fname = "";
-  planar_hessian_score_threshold = 0.0; //don't discard any voxels before TV
-  planar_hessian_score_threshold_is_a_fraction = false;
-  planar_tv_score_threshold = 0.0;
-  planar_tv_sigma = 0.0;
-  planar_tv_exponent = 4;
-  planar_tv_num_iters = 0;
-  planar_tv_truncate_ratio = sqrt(2.0);
+  ridges_are_maxima = false;
+  surface_hessian_score_threshold = 0.0; //don't discard any voxels before TV
+  surface_hessian_score_threshold_is_a_fraction = false;
+  surface_tv_score_threshold = 0.0;
+  surface_tv_sigma = 0.0;
+  surface_tv_exponent = 4;
+  surface_tv_num_iters = 0;
+  surface_tv_truncate_ratio = sqrt(2.0);
 
   cluster_connected_voxels = false;
   connect_threshold_saliency = std::numeric_limits<float>::infinity();
@@ -1866,16 +1867,22 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-planar") ||
-             (vArgs[i] == "-plane") ||
+    else if ((vArgs[i] == "-surface") ||
              (vArgs[i] == "-membrane"))
     {
-      filter_type = RIDGE_PLANAR;
+      filter_type = RIDGE_SURFACE;
       try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-'))
           throw invalid_argument("");
-        width_a[0] = stof(vArgs[i+1]) / sqrt(3.0);
+        if ((vArgs[i+1] == "min") || (vArgs[i+1] == "minima"))
+          ridges_are_maxima = false;
+        else if ((vArgs[i+1] == "max") || (vArgs[i+1] == "maxima"))
+          ridges_are_maxima = true;
+        else
+          throw invalid_argument("");
+        width_a[0] = stof(vArgs[i+2]) / sqrt(3.0);
         width_a[1] = width_a[0];
         width_a[2] = width_a[0];
         width_b[0] = 0.0;
@@ -1888,15 +1895,14 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "       (σ) of the Gaussian used beforehand for smoothing (in physical units).\n"
                        "       (This selects the scale or resolution of the filter.)\n");
       }
-      num_arguments_deleted = 2;
+      num_arguments_deleted = 3;
     }
 
 
-    else if ((vArgs[i] == "-planar-background") ||
-             (vArgs[i] == "-plane-background") ||
+    else if ((vArgs[i] == "-surface-background") ||
              (vArgs[i] == "-membrane-background"))
     {
-      filter_type = RIDGE_PLANAR;
+      filter_type = RIDGE_SURFACE;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -1915,13 +1921,13 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-planar-threshold") {
+    else if (vArgs[i] == "-surface-threshold") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        planar_hessian_score_threshold = stof(vArgs[i+1]);
-        planar_hessian_score_threshold_is_a_fraction = false;
+        surface_hessian_score_threshold = stof(vArgs[i+1]);
+        surface_hessian_score_threshold_is_a_fraction = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1931,15 +1937,15 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-planar-best") {
+    else if (vArgs[i] == "-surface-best") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        planar_hessian_score_threshold = stof(vArgs[i+1]);
-        planar_hessian_score_threshold_is_a_fraction = true;
-        if (! ((0.0 <= planar_hessian_score_threshold) &&
-               (planar_hessian_score_threshold <= 1.0)))
+        surface_hessian_score_threshold = stof(vArgs[i+1]);
+        surface_hessian_score_threshold_is_a_fraction = true;
+        if (! ((0.0 <= surface_hessian_score_threshold) &&
+               (surface_hessian_score_threshold <= 1.0)))
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
@@ -1951,25 +1957,25 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "\n"
                        "       If there are additional steps in the computation (such as tensor voting\n"
                        "       planar templates or ant-colony-optimization), then\n"
-                       "       The computational cost of these subsequent steps will be proportional\n"
+                       "       the computational cost of these subsequent steps will be proportional\n"
                        "       to this number.  It must lie in the range from 0 to 1.  (Default: 1)\n");
       }
       num_arguments_deleted = 2;
     }
 
 
-    else if (vArgs[i] == "-planar-tv") {
-      if (filter_type != RIDGE_PLANAR)
-        throw InputErr("Error: the -planar-tv argument must appear in the argument list\n"
-                       "       after the -planar argument.  It does not make sense to use\n"
-                       "       -planar-tv refinement if you are not using the -planar filter.\n");
+    else if (vArgs[i] == "-surface-tv") {
+      if (filter_type != RIDGE_SURFACE)
+        throw InputErr("Error: the -surface-tv argument must appear in the argument list\n"
+                       "       after the -surface argument.  It does not make sense to use\n"
+                       "       -surface-tv refinement if you are not using the -surface filter.\n");
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        planar_tv_sigma = stof(vArgs[i+1]);
-        if (planar_tv_sigma < 1.0)
-          throw InputErr("Error: the -planar-tv argument must be >= 1.0\n");
+        surface_tv_sigma = stof(vArgs[i+1]);
+        if (surface_tv_sigma < 1.0)
+          throw InputErr("Error: the -surface-tv argument must be >= 1.0\n");
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1980,12 +1986,12 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-planar-tv-angle-exponent") {
+    else if (vArgs[i] == "-surface-tv-angle-exponent") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        planar_tv_exponent = stoi(vArgs[i+1]);
+        surface_tv_exponent = stoi(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1996,12 +2002,12 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-planar-tv-threshold") {
+    else if (vArgs[i] == "-surface-tv-threshold") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        planar_tv_score_threshold = stof(vArgs[i+1]);
+        surface_tv_score_threshold = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -2011,12 +2017,12 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-planar-tv-iter") {
+    else if (vArgs[i] == "-surface-tv-iter") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        planar_tv_num_iters = stof(vArgs[i+1]);
+        surface_tv_num_iters = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -2027,7 +2033,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-planar-normals-file") {
+    else if (vArgs[i] == "-surface-normals-file") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -2483,22 +2489,22 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-  if (filter_type == RIDGE_PLANAR) {
+  if (filter_type == RIDGE_SURFACE) {
     float sigma = width_a[0];
     // The parameter entered by the user is a ratio, not an absolute number.
-    // Now that we know what sigma is, multiply planar_tv_sigma by sigma.
-    planar_tv_sigma *= sigma;
+    // Now that we know what sigma is, multiply surface_tv_sigma by sigma.
+    surface_tv_sigma *= sigma;
   }
 
 
-  if (cluster_connected_voxels && (filter_type != RIDGE_PLANAR))
+  if (cluster_connected_voxels && (filter_type != RIDGE_SURFACE))
   {
     assert(connect_threshold_saliency!=std::numeric_limits<float>::infinity());
     filter_type = CLUSTER_CONNECTED;
 
     // REMOVE THIS CRUFT
     //throw InputErr("Error: The \"-connect\" argument is currently only supported when used\n"
-    //               "       simultaneously with the \"-planar\" (and \"planar-tv\") arguments.\n"
+    //               "       simultaneously with the \"-surface\" (and \"surface-tv\") arguments.\n"
     //               "           (This may change in the future.  -andrew 2019-3-04)\n"
     //               "       You can use the \"-watershed\" argument instead.  (See documentation.)\n");
   }

@@ -11,7 +11,7 @@ brightness inversions,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
-3D planar [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
+3D surface [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
 [3D tensor voting]([example](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_blob.html)),
 and brightness-fluctuation
@@ -46,16 +46,17 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
 ### Example 1
 ```
-# Detect membranes using tensor voting (target thickness ≈ 60.0 Angstroms)
+# Detect membranes in an EM image using tensor voting
+# (target thickness ≈ 60.0 Angstroms)
 
 filter_mrc -in tomogram.rec \
   -out membranes_tv.rec \
-  -planar 60.0 -planar-best 0.06 \
-  -planar-tv 5.0 -planar-tv-angle-exponent 4
+  -surface minima 60.0 -surface-best 0.06 \
+  -surface-tv 5.0 -surface-tv-angle-exponent 4
 ```
 
 Note: The computation time will be roughly proportional to the image size
-      *as well as* the "-planar-best" argument (which ranges from 0 to 1).
+      *as well as* the "-surface-best" argument (which ranges from 0 to 1).
       Try this on a small image first. (See example 3 below)
 
 ### Example 2
@@ -107,10 +108,10 @@ and **generate a closed surface** for that membrane.
 ```
 filter_mrc -in tomogram.rec \
   -out membranes_tv_clusters.rec \
-  -planar 60.0 -planar-best 0.08 \
-  -planar-tv 5.0 -planar-tv-angle-exponent 4 \
+  -surface minima 60.0 -surface-best 0.08 \
+  -surface-tv 5.0 -surface-tv-angle-exponent 4 \
   -connect 1.0e+09 -cts 0.707 -ctn 0.707 -cvn 0.707 -cvs 0.707 \
-  -select-cluster 1 -planar-normals-file largest_membrane_pointcloud.ply
+  -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
 Note: This will generate an oriented point cloud file
 ("largest_membrane_pointcloud.ply") which can be imported into meshlab
@@ -232,7 +233,7 @@ or minima and maxima which are too close together.
 The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow.  (For a fast and sloppy alternative, you can use the "**-log-d**" filter.)
 
 
-The "**-planar**" and "**-planar-tv**" filters are used to detect thin, membrane-like structures using
+The "**-surface**" and "**-surface-tv**" filters are used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 and 
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf), respectively.
@@ -240,7 +241,7 @@ Voxels belonging to different membranes can be grouped into different clusters
 using the "**-connect**" argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
-using the "**-planar-orientations-file**" argument.
+using the "**-surface-orientations-file**" argument.
 
 
 
@@ -251,15 +252,18 @@ using the "**-planar-orientations-file**" argument.
 
 ## Detecting membranes
 
-### -planar  thickness
+### -surface  type  thickness
 
-When the "**-planar**" filter is selected, a
+When the "**-surface**" filter is selected, a
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 filter will be used.
-By default, it detects thin membrane-like
-structures which are dark on a white background.
-The **-planar** argument must be followed by a number indicating
-the approximate *thickness* of the membrane-like feature 
+The "*type*" argument must be either "*minima*" or "*maxima*".
+If *type* = "*minima*", then this filter will detect thin membrane-like
+structures which are dark on a bright background.
+If *type* = "*maxima*", then this filter will detect membrane-like
+structures which are bright on a dark background.
+The *thickness* should be a number indicating
+the approximate target *thickness* for the membrane-like feature 
 you are interested in detecting.
 (in physical units, not voxels.  
  Membranes whose thickness within a factor of 2 of this target
@@ -274,7 +278,7 @@ in the two orthogonal directions.
 Because this filter depends on second derivatives,
 it is prone to detect a large number of spurious fluctuations in brightness
 (in addition to the membrane-like structures you are interested in).
-Tensor-voting (using the *-planar-tv* argument)
+Tensor-voting (using the *-surface-tv* argument)
 can be used to remove these spurious detected peaks
 and improve the signal-to-noise ratio.
 
@@ -289,8 +293,8 @@ See Lindeberg Int.J.Comput.Vis.(1998) for details.)*
 (enough to store at least 8 copies of the original image in 32bit-float mode).*
 
 
-### -planar-tv  σ_ratio
-The "**-planar-tv**" argument enables refinement of (*-planar*) results using
+### -surface-tv  σ_ratio
+The "**-surface-tv**" argument enables refinement of (*-surface*) results using
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf).
 It performs a kind of directional blurring which reinforces regions in the image
 where detected ridges in the image point in the same or similar directions.
@@ -304,9 +308,9 @@ ratio when detecting curves and surfaces.
 Tensor-voting refinement is not done by default 
 because it can be a very expensive computation.
 
-*(Note: -planar-tv is not an independent filter.
-        It enables refinement of existing results from the -planar filter.
-        This argument is ignored unless the -planar argument is also used.)*
+*(Note: -surface-tv is not an independent filter.
+        It enables refinement of existing results from the -surface filter.
+        This argument is ignored unless the -surface argument is also used.)*
 
 *(Techincal details: The width of the Gaussian used in the radial-decay
                      function used in tensor voting has a width of
@@ -315,29 +319,29 @@ because it can be a very expensive computation.
                      and it has a value of σ=thickness/√3)*
 
 
-### -planar-tv-angle-exponent  *n*
-The "**-planar-tv-angle-exponent**" parameter (*n*) 
+### -surface-tv-angle-exponent  *n*
+The "**-surface-tv-angle-exponent**" parameter (*n*) 
 controls the penalty applied to membrane-like regions which are pointing
 in incompatible directions.  It is 4 be default.
 
 
-### -planar-threshold  *threshold*
+### -surface-threshold  *threshold*
 
 This will discard voxels whose saliency (after ridge detection)
 falls below *threshold*.
 This will make subsequent steps in the calculation
 **(such as tensor voting)** faster.
 Users can choose this threshold by running **filter_mrc** using only
-the "-planar" filter argument, and then visualizing the resulting file.
+the "-surface" filter argument, and then visualizing the resulting file.
 *(In IMOD, you can click on the image and
  select the "Edit"->"Point"->"Value" menu option to
  see the saliency of voxels of interest.)*
 
-In practice, it is often easier to use the **-planar-best** argument
+In practice, it is often easier to use the **-surface-best** argument
 because no intermediate visualization step is required.
 
 
-### -planar-best  *fraction*
+### -surface-best  *fraction*
 
 This will discard voxels whose saliency
 (ie "membrane-ness" after ridge detection)
@@ -376,7 +380,7 @@ voxels belong to each island.
 (Note: This behavior is identical to the behavior of the "*-watershed*"
  argument when used together with the "*-minima-threshold*" argument.)
 
-*If the "-connect" argument is used together with the "-planar" argument,*
+*If the "-connect" argument is used together with the "-surface" argument,*
 (which is typically used for membrane detection), then it means that additional,
 *more stringent* criteria will be used to distinguish nearby thin, curved
 membrane-like objects from eachother.
@@ -408,7 +412,7 @@ to belong to the same cluster (a.k.a. "island".  See below.)
 #### Strategies for determining the -connect *threshold* parameter
 
 To choose the *threshold* parameter, 
-run membrane-detection (for example using "-planar" and "-planar-tv")
+run membrane-detection (for example using "-surface" and "-surface-tv")
 once in advance without the "-connect" argument
 (as we did in the membrane-detection example).
 Open the file created during that step
@@ -551,7 +555,7 @@ will be joined with all of the voxels connected to the second voxel
 
 
 ### -select-cluster  *cluster-ID*
-### -planar-orientations-file  *file_name.ply*
+### -surface-orientations-file  *file_name.ply*
 
 Once clustering is working, you can select one of the clusters using
 the "**-select-cluster**" argument.
@@ -559,8 +563,8 @@ the "**-select-cluster**" argument.
  beginning with the largest cluster, which has ID *1*.)
 You can create a file which contains a list of voxels locations
 (for the voxels belonging to that cluster),
-as well as their planar orientations
-using the "**-planar-orientations-file**".
+as well as their surface orientations
+using the "**-surface-orientations-file**".
 The resulting file will be in .PLY format.
 This oriented point-cloud file can be used for further processing
 (for example for hole-repair using the "PoissonRecon" program).
@@ -597,7 +601,7 @@ or omit them entirely since the default value of 0.707 works well in most cases
 (-andrew 2019-3-04).
 
 *(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments 
-  currently have no effect unless the "-planar" argument was also supplied.
+  currently have no effect unless the "-surface" argument was also supplied.
   -andrew 2019-3-04)*
 
 

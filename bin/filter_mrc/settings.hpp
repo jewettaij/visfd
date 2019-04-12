@@ -47,7 +47,7 @@ class Settings {
                      // Gaussian and the surrounding voxel brightnesses
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
     BLOB,            // blob detection
-    RIDGE_PLANAR,    // a ridge detector for surfaces (ie a membrane detector)
+    RIDGE_SURFACE,    // a ridge detector for surfaces (ie a membrane detector)
     WATERSHED,       // Watershed segmentation
     CLUSTER_CONNECTED,       // Similar to Watershed segmentation
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
@@ -214,13 +214,14 @@ class Settings {
   // ---- parameters used by the ridge detector used for detecting surfaces ----
 
   string out_normals_fname;
-  float planar_hessian_score_threshold;
-  bool  planar_hessian_score_threshold_is_a_fraction;
-  float planar_tv_score_threshold;
-  float planar_tv_sigma;
-  int   planar_tv_exponent = 4;
-  int   planar_tv_num_iters = 1;
-  float planar_tv_truncate_ratio;
+  bool  ridges_are_maxima;
+  float surface_hessian_score_threshold;
+  bool  surface_hessian_score_threshold_is_a_fraction;
+  float surface_tv_score_threshold;
+  float surface_tv_sigma;
+  int   surface_tv_exponent = 4;
+  int   surface_tv_num_iters = 1;
+  float surface_tv_truncate_ratio;
  
 
   // ---- parameters for scale free blob detection ----

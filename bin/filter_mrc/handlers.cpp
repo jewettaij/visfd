@@ -992,13 +992,13 @@ HandleClusterConnected(Settings settings,
 
 
 void
-HandleRidgeDetectorPlanar(Settings settings,
-                          MrcSimple &tomo_in,
-                          MrcSimple &tomo_out,
-                          MrcSimple &mask,
-                          float voxel_width[3])
+HandleRidgeDetector(Settings settings,
+                    MrcSimple &tomo_in,
+                    MrcSimple &tomo_out,
+                    MrcSimple &mask,
+                    float voxel_width[3])
 {
-  cerr << "filter_type = planar ridge detector\n";
+  cerr << "filter_type = surface ridge detector\n";
 
   vector<vector<array<int, 3> > > *pMustLinkConstraints = NULL;
 
@@ -1017,9 +1017,18 @@ HandleRidgeDetectorPlanar(Settings settings,
   for (int d = 0; d < 3; d++)
     image_size[d] = tomo_in.header.nvoxels[d];
 
-  bool black_on_white = true;
-  selfadjoint_eigen3::EigenOrderType eival_order =
-    selfadjoint_eigen3::DECREASING_ABS_EIVALS; //we want the first eigenvalue to be the largest (assumed to be positive)
+  selfadjoint_eigen3::EigenOrderType eival_order;
+  if (settings.ridges_are_maxima) {
+    eival_order = selfadjoint_eigen3::INCREASING_EIVALS;
+    //We want the first eigenvalue to be the smallest.
+    //Since, we assume it is negative, equivalently we want the first eigenvalue
+    //to be the the most negative eigenvalue (the largest in magnitude).
+  }
+  else {
+    eival_order = selfadjoint_eigen3::DECREASING_EIVALS;
+    //Otherwise, we want the first eigenvalue to be the largest.
+    //(In this case, it is assumed to be positive.)
+  }
 
   float sigma = settings.width_a[0];
 
@@ -1100,7 +1109,7 @@ HandleRidgeDetectorPlanar(Settings settings,
   // Using this blurred image, calculate the 2nd derivative matrix everywhere:
 
   cerr << "Applying a Gaussian blur of width sigma="
-       << sigma*voxel_width[0] << endl;
+       << sigma*voxel_width[0] << " voxels" << endl;
 
   CalcHessian(tomo_in.header.nvoxels,
               tomo_in.aaafI,
@@ -1222,9 +1231,9 @@ HandleRidgeDetectorPlanar(Settings settings,
 
   { // Use thresholding to reduce the number of voxels that we have to consider
     
-    float hessian_score_threshold = settings.planar_hessian_score_threshold;
-    if (settings.planar_hessian_score_threshold_is_a_fraction) {
-      float hessian_score_fraction = settings.planar_hessian_score_threshold;
+    float hessian_score_threshold = settings.surface_hessian_score_threshold;
+    if (settings.surface_hessian_score_threshold_is_a_fraction) {
+      float hessian_score_fraction = settings.surface_hessian_score_threshold;
       size_t n_voxels = 0;
       for (int iz=0; iz < image_size[2]; iz++) {
         for (int iy=0; iy < image_size[1]; iy++) {
@@ -1270,13 +1279,13 @@ HandleRidgeDetectorPlanar(Settings settings,
 
 
 
-  if (settings.planar_tv_sigma > 0.0) {
+  if (settings.surface_tv_sigma > 0.0) {
     assert(settings.filter_truncate_ratio > 0);
 
     TV3D<float, int, array<float,3>, float* >
-      tv(settings.planar_tv_sigma,
-         settings.planar_tv_exponent,
-         settings.planar_tv_truncate_ratio);
+      tv(settings.surface_tv_sigma,
+         settings.surface_tv_exponent,
+         settings.surface_tv_truncate_ratio);
 
     tv.TVDenseStick(tomo_in.header.nvoxels,
                     tomo_out.aaafI,
@@ -1285,7 +1294,7 @@ HandleRidgeDetectorPlanar(Settings settings,
                     mask.aaafI,
                     mask.aaafI,
                     false,  // (we want to detect surfaces not curves)
-                    //settings.planar_hessian_score_threshold,
+                    //settings.surface_hessian_score_threshold,
                     true,   // (do normalize near rectangular image bounaries)
                     false,  // (diagonalize each tensor afterwards?)
                     &cerr);
@@ -1307,7 +1316,7 @@ HandleRidgeDetectorPlanar(Settings settings,
         }
       }
     }
-  } // if (settings.planar_tv_sigma > 0.0)
+  } // if (settings.surface_tv_sigma > 0.0)
 
 
 
@@ -1444,7 +1453,7 @@ HandleRidgeDetectorPlanar(Settings settings,
             &(aafGradient),
             &(aaaafGradient));
 
-} //HandleRidgeDetectorPlanar()
+} //HandleRidgeDetector()
 
 
 

@@ -51,8 +51,9 @@ int main(int argc, char **argv) {
       //cerr << "rank=" << rank << endl;
       if (rank == 0) {
         nthr = omp_get_num_threads();
-        cerr << "   (Using " << nthr << " threads (cpu cores).  You can change this using the \"-np n\"\n"
-             << "    argument, or by setting the OMP_NUM_THREADS environment variable.)" << endl;
+        cerr << "  (Using up to "
+             << nthr << " threads (cpu cores). You can change this using the \"-np n\"\n"
+             << "   argument, or by setting the OMP_NUM_THREADS environment variable.)" << endl;
       }
     }
     #else
@@ -119,7 +120,7 @@ int main(int argc, char **argv) {
       throw InputErr(err_msg.str().c_str());
     }
 
-    settings.planar_tv_sigma /= voxel_width[0];
+    settings.surface_tv_sigma /= voxel_width[0];
     for (int d=0; d<3; d++) {
       settings.width_a[d] /= voxel_width[d];
       settings.width_b[d] /= voxel_width[d];
@@ -296,10 +297,10 @@ int main(int argc, char **argv) {
 
 
 
-    else if (settings.filter_type == Settings::RIDGE_PLANAR) {
+    else if (settings.filter_type == Settings::RIDGE_SURFACE) {
 
-      // find planar ridges (ie membranes or wide tubes)
-      HandleRidgeDetectorPlanar(settings, tomo_in, tomo_out, mask, voxel_width);
+      // find surface ridges (ie membranes or wide tubes)
+      HandleRidgeDetector(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 

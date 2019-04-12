@@ -3978,6 +3978,11 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)  WARNING: As of 2019-2-28, this function has not yet been tested with the non-default value (false)
                  ostream *pReportProgress=NULL)  //!< print progress to the user?
 {
+  selfadjoint_eigen3::EigenOrderType eival_order;
+  if (start_from_saliency_maxima)
+    eival_order = selfadjoint_eigen3::DECREASING_EIVALS; //<--first eigenvalue will be the largest eigenvalue
+  else
+    eival_order = selfadjoint_eigen3::INCREASING_EIVALS; //<--first eigenvalue will be the smallest (most negative) eigenvalue
 
   assert(image_size);
   assert(aaafSaliency);
@@ -4302,9 +4307,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
       // the eigenvector of the saliency_hessian that we care about is the
       // one with the largest eigenvalue (which is assumed to be positive).
-
-      selfadjoint_eigen3::EigenOrderType eival_order =
-        selfadjoint_eigen3::DECREASING_EIVALS; //<--first eigenvalue will be the largest
 
       ConvertFlatSym2Evects3(saliency_hessian,
                              s_eivals,
@@ -6003,7 +6005,7 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
                         TensorContainer const *const *const *aaaafSource, //!< input tensor
                         TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
                         Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                        EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS,
+                        EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS, //!< Order of the eigenvalues/eivenvectors.  The default value is typically useful if you are seeking bright objects on a dark background.  Use DECREASING_EIVALS when seeking dark objects on a bright bacground.
                         ostream *pReportProgress = NULL  //!< print progress to the user?
                         )
 {
