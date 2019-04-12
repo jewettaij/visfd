@@ -2068,7 +2068,8 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if ((vArgs[i] == "-connect") ||
-             (vArgs[i] == "-connect-bright"))
+             (vArgs[i] == "-connect-bright") ||
+             (vArgs[i] == "-connect-saliency"))
     {
       cluster_connected_voxels = true;
       clusters_begin_at_maxima = true;
