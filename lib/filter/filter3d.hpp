@@ -3019,11 +3019,16 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
       // Optional: The minima in the image are not in sorted order either. Fix?
       vector<IntegerIndex> perm_inv;
       invert_permutation(permutation, perm_inv);
-      for (int iz = 0; iz < image_size[2]; iz++)
-        for (int iy = 0; iy < image_size[1]; iy++)
-          for (int ix = 0; ix < image_size[0]; ix++)
+      for (int iz = 0; iz < image_size[2]; iz++) {
+        for (int iy = 0; iy < image_size[1]; iy++) {
+          for (int ix = 0; ix < image_size[0]; ix++) {
+            if (aaafMask && (aaafMask[iz][iy][ix] == 0))
+              continue;
             if (aaaiExtrema[iz][iy][ix] < 0)
               aaaiExtrema[iz][iy][ix]=-perm_inv[(-aaaiExtrema[iz][iy][ix])-1]-1;
+          }
+        }
+      }
       if (pReportProgress)
         *pReportProgress << "done --" << endl;
     }
@@ -3057,11 +3062,16 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
       // Optional: The maxima in the image are not in sorted order either. Fix?
       vector<IntegerIndex> perm_inv;
       invert_permutation(permutation, perm_inv);
-      for (int iz = 0; iz < image_size[2]; iz++)
-        for (int iy = 0; iy < image_size[1]; iy++)
-          for (int ix = 0; ix < image_size[0]; ix++)
+      for (int iz = 0; iz < image_size[2]; iz++) {
+        for (int iy = 0; iy < image_size[1]; iy++) {
+          for (int ix = 0; ix < image_size[0]; ix++) {
+            if (aaafMask && (aaafMask[iz][iy][ix] == 0))
+              continue;
             if (aaaiExtrema[iz][iy][ix] > 0)
               aaaiExtrema[iz][iy][ix] = perm_inv[aaaiExtrema[iz][iy][ix]-1]+1;
+          }
+        }
+      }
     }
   }
 
@@ -3468,8 +3478,9 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
               pReportProgress);
 
   ptrdiff_t WATERSHED_BOUNDARY = 0; //an impossible value
-  ptrdiff_t UNDEFINED = pv_extrema_locations->size() + 1; //an impossible value
-  ptrdiff_t QUEUED = pv_extrema_locations->size() + 2; //an impossible value
+  ptrdiff_t NBASINS = pv_extrema_locations->size(); //number of basins found
+  ptrdiff_t UNDEFINED = NBASINS + 1; //an impossible value
+  ptrdiff_t QUEUED = NBASINS + 2; //an impossible value
 
   //initialize aaaiDest[][][]
   for (int iz=0; iz<image_size[2]; iz++) {
@@ -3499,14 +3510,14 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
   if (pReportProgress)
     *pReportProgress <<
       " ---- Watershed segmentation algorithm ----\n"
-      "starting from " << pv_extrema_locations->size() << " different local "
+      "starting from " << NBASINS << " different local "
                      << (start_from_minima ? "minima" : "maxima") << endl;
 
   // Initialize the queue so that it only contains voxels which lie
   // at the location of a local minima (or maxima).
   // Also keep track of which minima (which "basin") they belong to.
 
-  for (size_t i=0; i < pv_extrema_locations->size(); i++) {
+  for (size_t i=0; i < NBASINS; i++) {
     // Create an entry in q for each of the local minima (or maxima)
 
     // Assign a different integer to each of these minima, starting at 1
@@ -3542,7 +3553,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
     assert(aaaiDest[iz][iy][ix] == UNDEFINED);
     aaaiDest[iz][iy][ix] = QUEUED;
 
-  } // for (size_t i=0; i < pv_extrema_locations->size(); i++)
+  } // for (size_t i=0; i < NBASINS; i++)
 
 
   // Count the number of voxels in the image we will need to consider.
@@ -3699,7 +3710,8 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
       else {
         if (aaaiDest[iz_jz][iy_jy][ix_jx] != aaaiDest[iz][iy][ix])
         {
-          assert(aaaiDest[iz][iy][ix] == i_which_basin + 1);
+          assert((aaaiDest[iz][iy][ix] == i_which_basin + 1) ||
+                 (aaaiDest[iz][iy][ix] == WATERSHED_BOUNDARY));
 
           if (show_boundaries)
           {
@@ -3737,6 +3749,11 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
           if (aaaiDest[iz][iy][ix] == WATERSHED_BOUNDARY)
             aaaiDest[iz][iy][ix] = boundary_label;
   }
+
+  if (pReportProgress)
+    *pReportProgress << "Number of basins found: "
+                     << NBASINS << endl;
+
 
 } //Watershed()
 

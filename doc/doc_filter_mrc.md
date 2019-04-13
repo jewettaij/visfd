@@ -82,13 +82,17 @@ filter_mrc -in tomogram.rec \
   -spheres tomogram_ribosomes.txt
 ```
 
-Note: The "-mask cytoplasmic_volume.rec" argument in the second step
+Note: The "*-mask cytoplasmic_volume.rec*" argument used in the second step
       is optional.
-      In this example, the "cytoplasmic_volume.rec" file is an image file.
-      (This designates that voxels in that image which have brightness 0
-       should *not* be considered.  A user might use this argument to
-       specify which voxels lie outside the cell's cytoplasm.)
-      If you leave out the "-mask" argument, all voxels will be considered.
+      I use it in this example because we are searching for ribosomes,
+      so we want to restrict our search to blobs which lie *inside* the cell.
+    If you omit the "*-mask file*" argument, then all voxels will be considered.
+      *("cytoplasmic_volume.rec" is an image file.
+        Voxels in that image which have brightness 0 are considered outside
+        the cytoplasmic volume and will not be considered.
+        You can alsy try using the "-mask" argument during the initial "-blob"
+        detection step.)*
+
 
 Note: All of these parameters make reasonable defaults for ribosome detection
       except the "*-minima-thresold*" parameter ("-70" in the example).
@@ -377,8 +381,8 @@ physically adjacent to (touching) eachother.
 Once membership of each island has been decided, 
 a new image is generated showing which
 voxels belong to each island.
-(Note: This behavior is identical to the behavior of the "*-watershed*"
- argument when used together with the "*-minima-threshold*" argument.)
+(Note: This behavior is identical to the behavior of the "*-watershed maxima*"
+ argument when used together with the "*-watershed-threshold*" argument.)
 
 *If the "-connect" argument is used together with the "-surface" argument,*
 (which is typically used for membrane detection), then it means that additional,
@@ -847,12 +851,23 @@ these blobs are worth keeping.
 
 ## Morphology
 
-### -watershed-minima
+### -watershed  type
 
 If the "**-watershed**" argument is selected, the image will be segmented
 using the
 [classic watershed](https://imagej.net/Classic_Watershed)
 algorithm.
+This algorithm divides the image into different "valleys" or "basins".
+The "*type*" argument must be either "*minima*" or "*maxima*".
+If *type* = "*minima*", then each "basin" begins at local brightness *minima*
+(ie. dark spots) within the image.  In that case, the surrounding voxels will
+be brighter than the central voxel.
+If *type* = "*maxima*",  then each "basin" begins at local brightness *maxima*
+(ie. bright spots) within the image.
+Each "basin" will be expanded outward until it reaches the boundary of another
+basin (a.k.a. "ridge")
+(Or until an optional brightness threshold is reached.
+ Such thresholds can be set using the "-watershed-threshold" argument.)
 Afterwards, each voxel in the image will be assigned to an integer 
 indicating the local-minima basin to which it belongs.
 By default voxels which lie at the "ridges" 
@@ -878,21 +893,27 @@ are considered by default.
 *Note:* Oversegmentation can be reduced by performing a Gaussian blur 
 on the image to remove small, insignificant local minima beforehand.
 (This algorithm is usually only applied to images that have been smoothed
-or filtered in advance.)
+or filtered in advance to prevent oversegmentaion.)
+
+*Note: If you save the resulting image in .MRC/.REC file format,
+you can use either the "print_mrc_stats" program, or the "header"
+program (distributed with IMOD) to find the brightest voxel in the image.
+This number equals the number of basins in the image.*
 
 
 ### -watershed-threshold  threshold
 
 If the "**-watershed-threshold**" argument is also supplied, then voxels
-whose intensity exceeds *threshold*, will be assigned to
+whose brightness passes the *threshold* value, will be assigned to
 the *number of basins (whose depth lies below this value) + 1*.
 (Since this is an impossible value,
- these will be the brightest voxels in the image.
- IE. They will have the highest intensity.)
+ these will be the brightest voxels in the image.)
 
-### -watershed-maxima
-
-This performs watershed segmentation starting from maxima instead of minima.
+*Note: If you save the resulting image in .MRC/.REC file format,
+you can use either the "print_mrc_stats" program, or the "header"
+program (distributed with IMOD) to find the brightest voxel in the image.
+Voxels in the resulting image whose brightness equals this number
+fall into this category.*
 
 
 ### -watershed-hide-boundaries

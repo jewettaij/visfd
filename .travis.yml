@@ -39,6 +39,7 @@ matrix:
         - make clean
         - make
         - bash tests/test_fluctuation_filter.sh
-        - bash tests/test_membrane_detection.sh
         - bash tests/test_blob_detection.sh
+        - bash tests/test_blob_watershed.sh
+        - bash tests/test_membrane_detection.sh
 

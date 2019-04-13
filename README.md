@@ -21,7 +21,7 @@ Multiprocessor support is implemented using
 [OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
 
 
-#### WARNING: This project is changing.  Optimizations and features are being added rapidly.  Some features don't work well yet.  (-andrew 2019-2-28)
+#### WARNING: This project is changing.  Optimizations and features are being added rapidly.  Command-line syntax and the API could change.  Some features don't work well yet.  (-andrew 2019-4-11)
 
 
 ## programs included with this repository:

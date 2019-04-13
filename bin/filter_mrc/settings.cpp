@@ -790,10 +790,10 @@ Settings::ParseArgs(vector<string>& vArgs)
         }
         else {
           throw InputErr("Error: The 1st parameter to the \"" + vArgs[i] + "\" argument must be one of:\n"
-                         "            minima, maxima, (or) all\n"
+                         "            \"minima\", \"maxima\", (or) \"all\"\n"
                          "\n"
-                         "       (It indicates whether you are looking for\n"
-                         "        dark blobs, white blobs, or both.)\n");
+                         "       (It indicates whether you are try to detect\n"
+                         "        dark blobs, bright blobs, or both.)\n");
         }
 
         float blob_width_min = stof(vArgs[i+3]);
@@ -1792,26 +1792,36 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-watershed-minima") ||
-             (vArgs[i] == "-watershed"))
+    else if (vArgs[i] == "-watershed")
     {
       filter_type = WATERSHED;
-      clusters_begin_at_maxima = false;
-      if (! watershed_threshold_set_by_user)
-        watershed_threshold = std::numeric_limits<float>::infinity();
-      num_arguments_deleted = 1;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        if ((vArgs[i+1] == "min") || (vArgs[i+1] == "minima")) {
+          clusters_begin_at_maxima = false;
+          if (! watershed_threshold_set_by_user)
+            watershed_threshold = std::numeric_limits<float>::infinity();
+        }
+        else if ((vArgs[i+1] == "max") || (vArgs[i+1] == "maxima")) {
+          clusters_begin_at_maxima = true;
+          if (! watershed_threshold_set_by_user)
+            watershed_threshold = -std::numeric_limits<float>::infinity();
+        }
+        else
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by an argument:  \"type\"  \"width\"\n"
+                       "       The \"type\" argument must be either \"minima\" or \"maxima\".\n"
+                       "       (It depends on whether you want to detect dark or bright objects.)\n");
+      }
+      num_arguments_deleted = 2;
     }
 
     
-    else if (vArgs[i] == "-watershed-maxima")
-    {
-      filter_type = WATERSHED;
-      clusters_begin_at_maxima = true;
-      if (! watershed_threshold_set_by_user)
-        watershed_threshold = std::numeric_limits<float>::infinity();
-      num_arguments_deleted = 1;
-    }
-
 
     else if (vArgs[i] == "-watershed-threshold")
     {
@@ -1910,6 +1920,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] + 
                        " argument must be followed by 2 arguments:  \"type\"  \"width\"\n"
                        "       The \"type\" argument must be either \"minima\" or \"maxima\"\n"
+                       "       (depending on whether you want to detect dark or bright objects)\n"
                        "       The \"width\" argument should be target thickness of the thin\n"
                        "       surface-like object you are interest in detecting.\n");
       }

@@ -279,23 +279,28 @@ void MrcHeader::Write(ostream& mrc_file) const {
 
 
 void MrcHeader::PrintStats(ostream& out) {
-  out << "tomogram number of voxels ("<< nvoxels[0] << ", " 
-                                      << nvoxels[1] << ", "
-                                      << nvoxels[2] << ")" 
-                                      << endl;
-  //out << "tomogram physical dimensions ("<< cellA[0] << "," << cellA[1] << "," << cellA[2] << ")" << endl;
-  out << "tomogram voxel size ("
-      << cellA[0]/nvoxels[0] << ", " 
-      << cellA[1]/nvoxels[1] << ", " 
-      << cellA[2]/nvoxels[2] << ")" << endl;
-  out << "tomogram table axis order (" << mapCRS[0] << ", " 
-                                       << mapCRS[1] << ", "
-                                       << mapCRS[2] << ")"
-                                       << endl;
-  out << "tomogram mode " << mode << endl;
-  out << "tomogram minimum, maximum density: " << dmin << " "
-                                               << dmax<<endl;
-  out << "tomogram origin ("<< origin[0] << ", " 
-                            << origin[1] << ", " 
-                            << origin[2] << ")" << endl;
+  out << "  mrc file stats:\n"
+      << "    number of voxels: "
+      << nvoxels[0] << " x " 
+      << nvoxels[1] << " x "
+      << nvoxels[2] << "" 
+      << endl;
+  //out << "  mrc file physical dimensions ("<< cellA[0] << "," << cellA[1] << "," << cellA[2] << ")" << endl;
+  out << "    voxel size in file header: "
+      << cellA[0]/nvoxels[0] << " x " 
+      << cellA[1]/nvoxels[1] << " xx " 
+      << cellA[2]/nvoxels[2] << "" << endl;
+  out << "    table axis order: "
+      << mapCRS[0] << " " 
+      << mapCRS[1] << " "
+      << mapCRS[2] << ""
+      << endl;
+  out << "    mode: " << mode << endl;
+  out << "    minimum brightness: "<< dmin << endl;
+  out << "    maximum brightness: "<< dmax << endl;
+  out << "    mean brightness: "<< dmean << endl;
+  out << "    origin: "
+      << origin[0] << " " 
+      << origin[1] << " " 
+      << origin[2] << "" << endl;
 }
