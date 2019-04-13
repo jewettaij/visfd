@@ -16,7 +16,7 @@ test_watershed() {
     assertTrue "Failure: -find-minima failed.  File \"${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt\" not created" "[ -s ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt ]"
     assertTrue "Failure: -find-minima failed to make an image.  File \"${IN_FNAME_BASE}_gauss_${SIGMA}_minima.rec\" not created" "[ -s ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt ]"
     # Count the number of dark minima in the image
-    N_MINIMA=`wc ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt | '{print $1}'`
+    N_MINIMA=`wc ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt | awk '{print $1}'`
     N_MINIMA_IMAGE=`../bin/print_mrc_stats/print_mrc_stats ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.rec | grep "minimum brightness" | awk '{print -$3}'`
     assertTrue "Failure: The number of minima reported by -find-minima is not consistent with the image that was created." "[ $N_MINIMA -eq $N_MINIMA_IMAGE ]"
 
