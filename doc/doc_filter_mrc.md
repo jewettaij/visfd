@@ -232,7 +232,7 @@ filter allows you to modify the properties of the filter in the X,Y,Z directions
 
 
 The
-["**-watershed**"](#-watershed type)
+["**-watershed**"](#-watershed-type)
 argument will generate a new image which has been
 segmented using the
 [classic watershed](https://imagej.net/Classic_Watershed)
@@ -406,7 +406,7 @@ If the resulting membranes stored in the "membrane_tv.rec" file
 are missing or are incomplete, then increase this number and try again.
 
 
-### -connect  *threshold*
+### -connect *threshold*
 
 The -connect argument is a simple voxel clustering tool 
 used to distinguish different bright objects in the same image.
@@ -894,7 +894,7 @@ these blobs are worth keeping.
 
 ## Morphology
 
-### -watershed  type
+### -watershed type
 
 If the "**-watershed**" argument is selected, the image will be segmented
 using the
