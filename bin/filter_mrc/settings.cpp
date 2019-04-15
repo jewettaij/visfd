@@ -694,10 +694,10 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-blob-separation") ||
+    else if ((vArgs[i] == "-radial-separation") ||
+             (vArgs[i] == "-blob-separation") ||
              (vArgs[i] == "-blob-r-separation") ||
              (vArgs[i] == "-blobr-separation") ||
-             (vArgs[i] == "-radial-separation") ||
 	     (vArgs[i] == "-spheres-nonmax-separation-radius"))
     {
       try {
@@ -715,7 +715,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-blob-separation")
+    } //if (vArgs[i] == "-radial-separation")
 
 
 
@@ -989,7 +989,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       filter_type = SPHERE_NONMAX_SUPPRESSION;
       num_arguments_deleted = 3;
-    } // if (vArgs[i] == "-spheres-nonmax")
+    } // if (vArgs[i] == "-discard-blobs")
 
 
 

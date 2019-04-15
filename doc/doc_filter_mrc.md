@@ -72,7 +72,7 @@ filter_mrc -in tomogram.rec \
 
 filter_mrc -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
   -minima-threshold -70 \
-  -blob-separation 0.8 \
+  -radial-separation 0.8 \
   -mask cytoplasmic_volume.mrc   # <- optional
 
 # Finally, display the remaining blobs we want to keep:
@@ -82,20 +82,18 @@ filter_mrc -in tomogram.rec \
   -spheres tomogram_ribosomes.txt
 ```
 
-Note: The "*-mask cytoplasmic_volume.rec*" argument used in the second step
+Note: The
+      ["*-mask cytoplasmic_volume.rec*"](#-mask-file.rec)
+      argument used in the second step
       is optional.
       I use it in this example because we are searching for ribosomes,
       so we want to restrict our search to blobs which lie *inside* the cell.
-    If you omit the "*-mask file*" argument, then all voxels will be considered.
-      *("cytoplasmic_volume.rec" is an image file.
-        Voxels in that image which have brightness 0 are considered outside
-        the cytoplasmic volume and will not be considered.
-        You can alsy try using the "-mask" argument during the initial "-blob"
-        detection step.)*
 
 
 Note: All of these parameters make reasonable defaults for ribosome detection
-      except the "*-minima-thresold*" parameter ("-70" in the example).
+      except the
+      ["*-minima-thresold*"](#Automatic-disposal-of-poor-scoring-blobs)
+      parameter ("-70" in the example).
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
 
@@ -127,11 +125,14 @@ PoissonRecon --in largest_membrane_pointcloud.ply \
 ```
 
 Note: All of these parameters make reasonably good defaults for membrane
-      detection except the "**-connect**" parameter ("1.0e+09" in the example).
+      detection except the
+      ["**-connect**"](-connect-threshold)
+      parameter ("1.0e+09" in the example).
       It must be chosen carefully because it will vary from image to image.
       Strategies for choosing this parameter are discussed below.
       If a suitable parameter can not be found, you can also use the
-      "**-must-link**" argument to manually force connections between
+      ["**-must-link**"](#-must-link-file_name.txt)
+      argument to manually force connections between
       disconnected regions. (See below.)
 
 
@@ -227,7 +228,9 @@ filter uses a
 filter which can be used as a frequency band-pass filter (for high and/or low frequency removal).
 (The
 ["**-dog-aniso**"](#-dog)
-filter allows you to modify the properties of the filter in the X,Y,Z directions.  Filter sharpness can be customized using the "-exponents" argument.)
+filter allows you to modify the properties of the filter in the X,Y,Z directions.  Filter sharpness can be customized using the
+["-exponents"](#-dogg)
+argument.)
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
 
@@ -259,18 +262,20 @@ intensity minima and maxima respectively in the image.
 The user has the option to discard poor scoring minima or maxima,
 or minima and maxima which are too close together
 using
-[non-max suppression](#non-max-suppression).
-
+[non-max suppression](#Non-max-suppression:-automatic-disposal-of-minima-or-maxima).
 
 The
 ["**-blob**"](#Blob-detection)
 ,
 ["**-blob-d**"](#Blob-detection)
 ,
+["**-blob-r**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest),
 and
-["**-blob-r**"](#Blob-detection)
-filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow.  (For a fast and sloppy alternative, you can use the "**-log-d**" filter.)
-[Non-max suppression](#non-max-suppression)
+["**-blob-s**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
+filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow.  (For a fast and sloppy alternative, you can use the
+["**-log-d**"](#LoG-filters)
+filter.)
+[Non-max suppression](#Non-max-suppression:-automatic-disposal-of-blobs)
 is supported.
 
 
@@ -284,11 +289,13 @@ and
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf), respectively.
 Voxels belonging to different membranes can be grouped into different clusters
 using the
-("**-connect**")[-connect-threshold]
+["**-connect**"](-connect-threshold)
 argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
-using the "**-surface-orientations-file**" argument.
+using the
+["**-surface-orientations-file**"](#-surface-orientations-file-file_name.ply)
+argument.
 
 
 
@@ -366,13 +373,13 @@ because it can be a very expensive computation.
                      and it has a value of σ=thickness/√3)*
 
 
-### -surface-tv-angle-exponent  *n*
+### -surface-tv-angle-exponent n
 The "**-surface-tv-angle-exponent**" parameter (*n*) 
 controls the penalty applied to membrane-like regions which are pointing
 in incompatible directions.  It is 4 be default.
 
 
-### -surface-threshold  *threshold*
+### -surface-threshold threshold
 
 This will discard voxels whose saliency (after ridge detection)
 falls below *threshold*.
@@ -384,11 +391,12 @@ the "-surface" filter argument, and then visualizing the resulting file.
  select the "Edit"->"Point"->"Value" menu option to
  see the saliency of voxels of interest.)*
 
-In practice, it is often easier to use the **-surface-best** argument
-because no intermediate visualization step is required.
+In practice, it is often easier to use the
+[*-surface-best**](#-surface-best-fraction)
+argument, because no intermediate visualization step is required.
 
 
-### -surface-best  *fraction*
+### -surface-best fraction
 
 This will discard voxels whose saliency
 (ie "membrane-ness" after ridge detection)
@@ -406,7 +414,7 @@ If the resulting membranes stored in the "membrane_tv.rec" file
 are missing or are incomplete, then increase this number and try again.
 
 
-### -connect *threshold*
+### -connect threshold
 
 The -connect argument is a simple voxel clustering tool 
 used to distinguish different bright objects in the same image.
@@ -419,7 +427,8 @@ physically adjacent to (touching) eachother.
 (The "bucket-fill" tool in a paint program behaves 
  in a similar way to the way islands are chosen.
  The definition of "adjacency" can be controlled using the
- "-neighbor-connectivity" argument, which is explained elsewhere.)
+ [-neighbor-connectivity](#-neighbor-connectivity-nc)
+ argument.)
 
 Once membership of each island has been decided, 
 a new image is generated showing which
@@ -443,25 +452,36 @@ different islands will hopefully correspond to different membranes
 in the original image.
 
 This *threshold* parameter will vary from image to image
-and must be chosen carefully.
+and
+[must be chosen carefully](#Strategies-for-determining-the--connect-threshold-parameter).
 If the *threshold* parameter is too large, 
 then individual objects (eg. membranes) in the image 
 will be split into multiple pieces.  
 If too small, then separate objects in the image will be joined together.
 
 *Note:* If you are unable to find thresholds which connect all of 
-the pieces together correctly, you can also use the "**-must-link**" argument.
+the pieces together correctly, you can also use the
+["**-must-link**"](#-must-link-file_name.txt)
+argument.
 This will manually force different bright regions in the image
 to belong to the same cluster (a.k.a. "island".  See below.)
 
 
 
-#### Strategies for determining the -connect *threshold* parameter
+#### Strategies for determining the -connect threshold parameter
 
 To choose the *threshold* parameter, 
-run membrane-detection (for example using "-surface" and "-surface-tv")
-once in advance without the "-connect" argument
-(as we did in the membrane-detection example).
+run membrane-detection
+(for example using
+["-surface"](#Detecting-membranes)
+and
+["-surface-tv"](#-surface-tv-σ_ratio)
+)
+once in advance without the
+["-connect"](#-connect-threshold)
+argument
+(as we did in the membrane-detection
+[example](#Example-1)).
 Open the file created during that step
 (eg. "membranes_tv.rec") in IMOD.
 Find a place in the image where the saliency (brightnees)
@@ -505,7 +525,7 @@ Make sure clustering was successful *before* attempting to
 close holes in the surface using programs like *meshlab* or *PoissonRecon*.
 
 
-### -must-link  *file_name.txt*
+### -must-link file_name.txt
 
 *WARNING: This is an experimental feature as of 2019-4-09*
 
@@ -601,8 +621,8 @@ will be joined with all of the voxels connected to the second voxel
 
 
 
-### -select-cluster  *cluster-ID*
-### -surface-orientations-file  *file_name.ply*
+### -select-cluster cluster-ID
+### -surface-orientations-file file_name.ply
 
 Once clustering is working, you can select one of the clusters using
 the "**-select-cluster**" argument.
@@ -618,7 +638,9 @@ This oriented point-cloud file can be used for further processing
 
 Note: Voxel coordinates in the point-cloud file are expressed
 in physical units (ie Angstroms), not voxels,
-Consequently they are not integers (unless the "-w 1" argument was used).
+Consequently they are not integers (unless the
+["-w 1"](#Voxel-Width)
+argument was used).
 
 
 
@@ -687,13 +709,21 @@ it's "score" (which is the brightness of the voxel at that location).
 When a minima or maxima contains multiple voxels of identical brightness,
 the position of one of the voxels among them is chosen arbitrarily.
 
-You can use the "**-out filename.rec**" to create 
+You can use the
+["**-out filename.rec**"](#Input-and-Output-files)
+to create 
 an image showing which voxels belong to each minima or maxima.
 (In that image, the voxel brightness will be an integer indicating 
  the minima or maxima to which the voxel belongs, if any, starting at 1.  
  When both minima and maxima are
  displayed, the minima are represented by negative integers.)
 
+*Note:* By default, local minima and maxima which lie on the boundaries
+of the image (or on the boundary of the mask region), are considered.
+To ignore these extrema (ie, to consider only voxels which are surrounded
+by other voxels) use the "**-ignore-boundary-extrema-**" argument.
+
+##### -neighbor-connectivity nc
 
 *Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
 are considered by default.
@@ -701,12 +731,8 @@ are considered by default.
  3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
  This may increase the number of spurious local minima and maxima discovered.)
 
-*Note:* By default, local minima and maxima which lie on the boundaries
-of the image (or on the boundary of the mask region), are considered.
-To ignore these extrema (ie, to consider only voxels which are surrounded
-by other voxels) use the "**-ignore-boundary-extrema-**" argument.
 
-#### Non-max suppression
+#### Non-max suppression: automatic disposal of minima or maxima
 
 The "**-find-minima**" and "**-find-maxima**" arguments 
 are sometimes used together with the following arguments:
@@ -727,10 +753,10 @@ This can be done using a combination of these two arguments:
 ```
 and
 ```
-  -blobr-separation  ratio
+  -radial-separation  ratio
 ```
 The "**-sphere-radius** argument allows you to assign a radius to each minima
-(or maxima).  When used together with "**-blobr-separation**", it means that
+(or maxima).  When used together with "**-radial-separation**", it means that
 if a pair of minima (or maxima) lie within the sum of their
 radii times ratio (*2\*radius\*ratio*), 
 then the poorer scoring minima will be discarded.
@@ -743,7 +769,11 @@ then the poorer scoring minima will be discarded.
 
 ### -blob,  -blob-r,  -blob-s
 
-The "**-blob**", "**-blob-r**", and "**-blob-s**" arguments are used for
+The "**-blob**",
+["**-blob-r**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest),
+and 
+["**-blob-s**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
+arguments are used for
 [Scale-Free Blob-Detection](https://en.wikipedia.org/wiki/Blob_detection).
 When this is used, the program will apply a LoG filter to the image
 multiple times using a range of Gaussian widths (σ) (specified by the user)
@@ -753,12 +783,16 @@ A list of local minima and maxima in *X,Y,Z* space (and scale-space)
 will generated and saved in a file, using the method described in:
 Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 
-The "**-blob**", "**-blob-r**" and "**-blob-s**" filters are followed 
+The "**-blob**",
+["**-blob-r**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest),
+and
+["**-blob-s**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
+filters are followed 
 by 5 arguments (whose meaning depends on the filter selected):
 ```
   -blob   type  file_name  d_min  d_max  gratio
-  -blob-s type  file_name  r_min  r_max  gratio
-  -blob-r type  file_name  σ_min  σ_max  gratio
+  -blob-r type  file_name  r_min  r_max  gratio
+  -blob-s type  file_name  σ_min  σ_max  gratio
 ```
 The "**type**" argument must be either "*minima*", "*maxima*", or "*all*".
 *(It's meaning is explained in detail below.
@@ -771,7 +805,8 @@ If "**-blob**" is selected, then the **d_min** and **d_max** parameters
 (3rd and 4th parameters), specify a range of diameters
 of the objects that you wish to detect.
 (Simlarly, 
-"--blob-r" allows the user to specify blob sizes in terms of their radii.)
+["--blob-r"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
+allows the user to specify blob sizes in terms of their radii.)
 Either way, a LoG filter will be applied to the image using a series of
 different Gaussians whose widths (σ) vary between "**σ_min**", and "**σ_max**".
 In this series, each successive Gaussian width (σ) will be larger than the
@@ -782,7 +817,9 @@ a number which should be > 1.
  Values as high as 1.1 are not uncommon.)
 (Note that: *σ_min*, and *σ_max* are equal to *d_min/(2√3)* and *d_max/(2√3)*,
  or *r_min/√3* and *r_max/√3*, respectively.
- If you prefer, you can use the "*-blob-s*" argument to directly specify the
+ If you prefer, you can use the 
+ ["*-blob-s*"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
+ argument to directly specify the
  range of Gaussian widths you wish to use"*σ_min*", and "*σ_max*".)
 After applying the LoG filter, if a voxel in the image is a (scale-adjusted)
 local maxima (or minima) in *x,y,z,* and *σ*,
@@ -832,19 +869,24 @@ Note: If **type** is set to *all*, then two different files will be generated
 whose names will end in ".minima.txt" and ".maxima.txt", respectively.
 
 
+
 #### Blob detection and masking
 
 It is recommended that you refrain from specifying a mask
 *during* the process of blob detection
-(for example, by using the "**-mask**" argument). 
+(for example, by using the 
+["**-mask**"](#-mask-file.rec)
+argument). 
 Doing so could cause blobs which are near the periphery of the mask
 to be ignored.
-Instead, it is recommended that you use the "**-mask**" argument
-*later on, after you have finished blob detection*
-together with the "**-discard-blobs**" argument.
-(This was shown in the example above.)
+Instead, it is recommended that you use the
+["**-mask**"](#-mask-file.rec)
+argument
+*later on, after you have finished blob detection*.
+(This was shown in [example 2](#Example-2) above.)
 
-Sometimes you might want to use the "**-mask**"
+Sometimes you might want to use the 
+["**-mask**"](#-mask-file.rec)
 argument during blob detection because it can
 accelerate the search for blobs
 (by ignoring voxels outside the mask).
@@ -852,32 +894,43 @@ However don't do this if you care
 about blobs near the periphery.
 
 
-#### Automatic disposal of blobs (non-max suppression)
+#### Non-max suppression: automatic disposal of blobs
 
-***By default, all minima and maxima are reported during blob detection ***
-(no matter how insignificant).
-Unfortunately, the blob-detector will typically an enormous number of 
-blobs in a typical image.
-(Running a blob detector on some Electron-Cryotomography images can result
- in tens of millions of spurious blobs.)
-The *vast majority of these detected blobs* are either
+***By default, all minima and maxima are 
+reported during blob detection
+(no matter how insignificant).***
+Unfortunately, the blob-detector will typically 
+an enormous number of blobs in a typical image.
+(Running a blob detector on some Electron-Cryotomography
+ images can result in tens of millions of spurious blobs.)
+The *vast majority* of these detected blobs are either
 not relevant due to noise in the source image, or are overlapping.
-You can discard these blobs during the blob detection process
+You can discard these blobs *during* the blob detection process
 using the arguments below.
 However, because blob-detection is slow,
 it is recommended that you save all of these blobs to a file.
-Later on you can decide which of these blobs are meaningful
-by running "filter_mrc" again with the "**-spheres-nonmax**" argument.
-This will discard the meaningless blobs.
-Then you can run "filter_mrc" a third time using the "**-spheres**" 
+*Then* you can decide which of these blobs are meaningful
+by running non-max suppression later on (as shown below).
+Then you can run "filter_mrc" a third time using the
+["**-spheres**"](#-spheres-filename)
 argument to visualize the remaining blobs you did not throw away.
+(This is what we did in [example 2](#Example-2).)
 Sometimes several iterations of non-max suppression followed by visualization
-are needed before you get visually pleasing results.
+are needed before you achieve visually pleasing results.
 
-Details will be provided elsewhere below explaining how visualize these blobs
-(using the "**-spheres**" argument),
+Details are provided below explaining how visualize these blobs
+(using the 
+["**-spheres**"](#-spheres-filename)
+ argument),
 as well as how to discard low-quality and overlapping blobs
-(using the "**-spheres-nonmax**" argument).
+(using the 
+[-discard-blobs](#-discard-blobs),
+[-radial-separation](#Automatic-disposal-of-overlapping-blobs),
+[-max-volume-overlap](#Automatic-disposal-of-overlapping-blobs),
+and
+[-max-volume-overlap-small](#Automatic-disposal-of-overlapping-blobs)
+arguments).
+
 
 
 #### Recommendation:
@@ -887,9 +940,16 @@ but it only has to be performed once.
 Typically, users will perform blob detection with the default (permissive)
 score thresholds, so that they keep most of the minima and maxima.
 Then later, they will run **filter_mrc** with the
-"**-spheres**" and "**-minima-threshold**" (or "**-maxima-threshold")
+["**-spheres**"](#-spheres-filename)
+and 
+["**-minima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
+(or 
+["**-maxima-threshold"](#Automatic-disposal-of-poor-scoring-blobs)
+)
 arguments several times with different thresholds to decide which of
 these blobs are worth keeping.
+
+
 
 
 ## Morphology
@@ -910,14 +970,17 @@ If *type* = "*maxima*",  then each "basin" begins at local brightness *maxima*
 Each "basin" will be expanded outward until it reaches the boundary of another
 basin (a.k.a. "ridge")
 (Or until an optional brightness threshold is reached.
- Such thresholds can be set using the "-watershed-threshold" argument.)
+ Such thresholds can be set using the 
+["-watershed-threshold"](#-watershed-threshold-threshold)
+argument.)
 Afterwards, each voxel in the image will be assigned to an integer 
 indicating the local-minima basin to which it belongs.
 By default voxels which lie at the "ridges" 
 (ie., at the boundary of multiple different drainage basins),
 are assigned a value of 0.
 (You can prevent this using the
- "**-watershed-hide-boundaries**" argument.)
+["**-watershed-hide-boundaries**"](#-watershed-hide-boundaries)
+argument.)
 
 *Note:* These minima are sorted according to depth and begin at 1, not zero.
 (Hence voxels in the first minima's basin, ie, the global minima basin, will be
@@ -929,7 +992,9 @@ invoking the program on the same image using the "**-find-minima**" argument.
 
 *Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
 are considered by default.
-(You can use the **-neighbor-connectivity nc** argument to skip
+(You can use the 
+[**-neighbor-connectivity nc**](#-neighbor-connectivity-nc)
+ argument to skip
  3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
  This may increase the number of spurious basins discovered.)
 
@@ -944,7 +1009,7 @@ program (distributed with IMOD) to find the brightest voxel in the image.
 This number equals the number of basins in the image.*
 
 
-### -watershed-threshold  threshold
+### -watershed-threshold threshold
 
 If the "**-watershed-threshold**" argument is also supplied, then voxels
 whose brightness passes the *threshold* value, will be assigned to
@@ -967,7 +1032,7 @@ When this argument is selected, the basin to which a boundary voxel is assigned
 will be chosen (arbitrarily) from among the neighboring basins.
 
 
-### -watershed-boundary  label
+### -watershed-boundary label
 
 By default, voxels which lie on the border between two or more different basins
 will be assigned a value of 0.
@@ -1018,7 +1083,11 @@ In this case, the "s" parameter is specified in voxels, not physical distance.)
 if you use the default exponent of 2.
 *Changing the exponent will slow down the filter considerably.*
 
-The filter is truncated far away from the central peak at a point which is chosen automatically according the σ, σ_x, σ_y, σ_z parameters selected by the user.  However this can be customized using the "-truncate-threshold" and "-truncate" arguments if necessary (see below).
+The filter is truncated far away from the central peak at a point which is chosen automatically according the σ, σ_x, σ_y, σ_z parameters selected by the user.  However this can be customized using the
+["-truncate-threshold"](#Filter-Size)
+and
+["-truncate"](#Filter-Size)
+arguments if necessary (see below).
 
 ### -dog
 When the "**-dog**" or "**-dog-aniso**" filter is selected, a
@@ -1044,7 +1113,9 @@ When *-dog* is used,
 and
 *b_x = b_y = b_z = b*
 
-### -log,  -log-r, -log-d,  -log-aniso
+
+### LoG filters
+### -log, -log-r, -log-d, and -log-aniso
 
 
 When the "**-log**", "**-log-r**", and "**-log-d**", or "**-log-aniso**"
@@ -1057,7 +1128,7 @@ The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
 and then calculates the Laplacian of the result.
 Features in the image of various sizes can be emphasized
 using this kind of filter, and the result can be saved as a new image using
-"**-out** filename.rec".
+["**-out** filename.rec"](#Input-and-Output-files).
 The "**-log**", "**-log-aniso**", "**-log-r**", and "**-log-d**"
 arguments described here are typically only chosen when the user already 
 knows the approximate size of the features they want to emphasize
@@ -1086,9 +1157,11 @@ The new image which is generated will *tend* to have have bright and dark spots
 wherever bright and dark objects of the corresponding size can be found.
 This image can be searched for (local) minima and maxima
 by running this program again on the new image using the 
-"**-find-minima**", "**-find-maxima**" and "-blobr-separation" arguments.
+"**-find-minima**", "**-find-maxima**" and "-radial-separation" arguments.
 These locations can be saved to a file and then a new anotated image can be
-created using the "**-spheres**" argument.  This provides a fast, sloppy, 
+created using the 
+["**-spheres**"](#-spheres-filename)
+argument.  This provides a fast, sloppy, 
 and unselective way to search for features in an image.
 However scale-free 
 [**blob detection**](https://en.wikipedia.org/wiki/Blob_detection)
@@ -1276,14 +1349,15 @@ present in the image.  Typical usage:
 ```
 This will clip voxel intensities which are either 2.5 standard-deviations
 below or above the average intensity value, respectively
-**Note:** You can use the "**-mask**" argument to exclude certain voxels
+**Note:** You can use the 
+       ["**-mask**"](#-mask-file.rec) argument to exclude certain voxels
        from the clipping and thresholding operations.
        When using "**-mask**" together with "**-cl**", then
        these voxels will also be excluded from consideration when
        calculating the average and spread(σ) of voxel intensities.
 
 
-### -thresh  threshold
+### -thresh threshold
 
 If the "-thresh" argument is passed, it must be followed by a number
 ("thresh01").
@@ -1322,7 +1396,7 @@ results in:
 
 
 
-### -thresh-range  range_a  range_b
+### -thresh-range range_a range_b
     Select a range of voxels whose intensities fall within
     the range from *range_a* to *range_b*.
     Each voxel's new intensity will be a function of its former intensity.
@@ -1348,7 +1422,7 @@ results in:
 
 
 
-### -thresh2  thresh_a  thresh_b
+### -thresh2 thresh_a thresh_b
 
 If the "-thresh2" argument is passed, then it must be followed by 2 numbers.
 For example:
@@ -1385,7 +1459,7 @@ with a smooth ramp between *thresh_a* and *thresh_b*:
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
-### -thresh4  thresh01_a  thresh01_b  thresh10_a  thresh10_b
+### -thresh4 thresh01_a thresh01_b thresh10_a thresh10_b
 
 Sometimes it is useful to select a ***narrow range of voxel intensities***.
 *filter_mrc* allows you to do this using the **"-thresh4"** argument.
@@ -1444,6 +1518,7 @@ centered around *x0* with standard deviation σ.
 
 
 
+
 ## Annotation of detected objects in an image
 
 ## -spheres filename
@@ -1497,11 +1572,11 @@ and selecting the "Edit"->"Point"->"Value" menu option.)
 
 
 
-## -spheres-nonmax  
+## -discard-blobs
 ```
-   -spheres-nonmax  orig_blobs.txt  selected_blobs.txt
+   -discard-blobs  orig_blobs.txt  selected_blobs.txt
 ```
-When *filter_mrc* is run using the "**-spheres-nonmax**" argument,
+When *filter_mrc* is run using the "**-discard-blobs**" argument,
 no image processing is done on the source image.
 Instead, *filter_mrc* will read the list of blobs reported in a file
 (created by running *filter_mrc* with the *-blob* argument),
@@ -1509,13 +1584,29 @@ and discard blobs with poor scores, or blobs which overlap with other blobs.
 The new list of blobs can then be visualized later by running
 *filter_mrc* again using the "**-spheres**" argument.
 
-Note that the "**-spheres-nonmax**" argument by itself does nothing.
+Note that the "**-discard-blobs**" argument by itself does nothing.
 You must run it with other arguments telling it which blobs you want to discard.
-Typically you would run *filter_mrc* together with the "**-spheres-nonmax**",
+Typically you would run *filter_mrc* together with the "**-discard-blobs**",
 **-maxima-threshold** (OR **-minima-threshold**), AND the
 **-max-volume-overlap** arguments, simultaneously.  (See below for details.)
 
+
 #### Automatic disposal of poor scoring blobs
+
+Typically poor-scoring blobs are discarded either of these arguments:
+```
+   -minima-threshold  thresh_min
+```
+or
+```
+   -maxima-threshold  thresh_max
+```
+Here, "thresh_min" and "thresh_max" are the thresholds below which,
+and above which, the blob score must lie in order not to be discarded,
+respectively.
+Since the general magnitude of the blobs' scores
+are not known in advance,
+sometimes the following arguments are useful instead:
 ```
    -minima-ratio  ratio_min
    -maxima-ratio  ratio_max
@@ -1524,22 +1615,15 @@ The *-maxima-ratio* argument allows you to discard maxima whose score
 is less than *ratio_max* times the blob with the highest score,
 (where *ratio_max* is a number between 0 and 1.
  *-minima-ratio* behaves in a similar way.)
-Alternatively, if you prefer, you can specify the exact threshold used
-to discard local minima and maxima (instead of specifying ratios),
-using the following arguments:
-```
-   -minima-threshold  thresh_min
-   -maxima-threshold  thresh_max
-```
-...where "thresh_min" and "thresh_max" are the thresholds below which,
-and above which, the blob score must lie in order not to be discarded,
-respectively.
 *(Note: You can either use thresolds or ratios, but you cannot mix both.)*
 
 
-#### Automatic disposal of overlapping blobs (non-max suppression)
+
+#### Automatic disposal of overlapping blobs
+
 There are several arguments you can use to discard overlapping blobs
-which are typically invoked together with "**-spheres-nonmax**"
+which are typically invoked together with 
+["**-discard-blobs**"](#-discard-blobs)
 ```
    -max-volume-overlap  fraction
    -max-volume-overlap-small  fraction
@@ -1553,6 +1637,8 @@ If they overlap too much, the user can request that the
 one with a poorer score is discarded.
 Again, this does not happen by default.
 
+##### -max-volume-overlap fraction
+##### -max-volume-overlap-small fraction
 Disposal of overlapping blobs can be accomplished using the
 "**-max-volume-overlap fraction**" argument.
 If this argument is specified, then the poorer scoring blob is discarded only
@@ -1564,23 +1650,31 @@ Additionally, you can specify the maximum amount of overlap with the *smaller*
 of the two spheres using the "**-max-volume-overlap-small fraction**" argument.
 (See example below.)
 
+##### -radial-separation fraction
 Alternatively, you can use the
-"**-radial-sepration fraction**" argument
+"**-radial-separation fraction**" argument
 to discard blobs if the distance is less than **fraction**
 multiplied by the sum of their radii.
 The "**fraction**" parameter is a number between 0 and 1.
 (A larger number means less overlap is permitted.
  Setting *fraction=0.0* allows complete overlap and disables this argument.)
-*Note:* You can *either* discard blobs based on *overlapping volume*
-or *overlapping radii*, but not both.
+*Note:* You can *either* discard blobs based on
+[*overlapping volume*](#-max-volume-overlap-fraction)
+or
+[*overlapping radii*](#-radial-separation-fraction)
+but not both.
+
 
 ##### Example: Hierarchical blob detection
+
 Sometimes a small spherical blob may reside *within* a significantly larger 
 sphere. If the small sphere's volume is less than half of the larger sphere
 (for example), you may want to keep both spheres.
 To prevent the small sphere from being discarded, you can use
-**-max-volume-overlap 0.5** together with
-**-max-volume-overlap-small 1**.
+[**-max-volume-overlap 0.5**](#-max-volume-overlap-fraction)
+together with
+[**-max-volume-overlap-small 1**](#-max-volume-overlap-small-fraction)
+.
 
 
 ### -blob-intensity-vs-radius center_type blobs_file.txt base_name
@@ -1607,21 +1701,36 @@ of files with names lie "base_name_1.txt", "base_name_2.txt", ...
 
 
 
-#### Specifying the radius or Gaussian-sigma parameters for the objects of interest:
+#### Specifying the radius or Gaussian-sigma parameters for the objects of interest
 
-The "**-blob-r**", "**-blob-s**", (and "**-log-r**" "**-log**") arguments
-are variants of the "**-blob**" (and "**-log-d**") argument.
+The 
+["**-blob-r**"](#Blob-detection),
+["**-blob-s**"](#Blob-detection)
+(and 
+["**-log-r**"](#LoG-filters),
+["**-log**"](#LoG-filters))
+arguments
+are variants of the
+["**-blob**"](#Blob-detection)
+(and 
+["**-log-d**"](#LoG-filters)) argument.
 Their parameters are specified by the approximate radius(r≈σ√3)
 or Gaussian width (σ) of the objects
 that you wish to detect within the image (instead of the object's diameter).
 
 
 
-####  Visualizing blobs using the "**-spheres**" argument
+####  Visualizing blobs using the "*-spheres*" argument
 
-Again, after blob-detection AND nonmax-suppression *(discussed elsewhere)*,
-you can visualize the resulting blobs using the "**-spheres**"
-and "**-out**" arguments.
+Again, after 
+[blob-detection](#Blob-detection)
+AND 
+[non-max suppression](#Non-max-suppression:-automatic-disposal-of-blobs),
+you can visualize the resulting blobs using the
+["**-spheres**"](#-spheres-filename)
+and
+["**-out**"](#Input-and-Output-files)
+arguments.
 
 
 
@@ -1645,7 +1754,7 @@ slowly fading from 1 to 0 (near a curve-shaped boundary, for example).
 
 
 
-### -mask  *file.rec*
+### -mask file.rec
 
 The argument following the
 "-mask" argument should be the name of a tomogram file (MRC format) of the
@@ -1656,12 +1765,14 @@ and these remaining voxels will be multiplied by the mask's voxel value
 before filtering.
 (Usually every voxel in the mask tomogram is a number between 0 and 1.)
  This allows you to use soft masks with gradual boundaries.)
-(This can be overridden using the "-mask-select" argument.)
+(This can be overridden using the 
+["-mask-select"](#-mask-select-intensity_value)
+argument.)
 *(Note:
  Certain filters like "-gauss", which have unit norm, will rescale the result of
  the filter by the sum of the mask values in the region considered.)*
 
-### -mask-out  *intensity_value*
+### -mask-out intensity_value
 
 If the "-mask-out" argument is specified, then voxels outside the mask will
 be assigned to the intensity following this argument.  Otherwise they are
@@ -1674,7 +1785,7 @@ If you are using "-rescale-min-max", then
 
 
 
-### -mask-select  *intensity_value*
+### -mask-select intensity_value
 
 If the "-mask-select" argument is specified, then instead of considering all
 voxels with non-zero values from the "mask" image,
@@ -1713,7 +1824,7 @@ will be interpreted the same way in IMOD and other programs.
 ("new_file.rec") has value "1", then you can safely use "-mask-select 1"*
 
 
-### -mask-rect  *xmin* *xmax* *ymin* *ymax* *zmin* *zmax*
+### -mask-rect xmin xmax ymin ymax zmin zmax
 
 As an alternative to using the "**-mask**" argument to provide an image file
 (containing the mask), the user can alternatively use the "**-mask-rect**"
@@ -1819,7 +1930,9 @@ Example:
 The file should contain at least 3 numbers per line
 (the x,y,z coordinates of that point, one point per line).
 The x,y,z coordinates are assumed to be in physical units
-(ie Angstroms) not voxels, *unless* the "**-w 1**" argument was also used.
+(ie Angstroms) not voxels, *unless* the
+["**-w 1**"](#Voxel-Width)
+argument was also used.
 *(WARNING: As of 2019-1-11, the calculation is quite slow.
   I've been too lazy to bother optimizing this for speed.)*
 
@@ -1840,7 +1953,11 @@ The A and B coefficients will be automatically chosen
 so that each Gaussian is normalized.
 (The sum of h(x,y,z) over x,y,z is 0.
  The sum of the A and B terms over x,y,z is 1.)
-The filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "**-truncate-threshold**" and "**-truncate**" arguments if necessary (see below).
+The filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the
+["**-truncate-threshold**"](#Filter-Size)
+and
+["**-truncate**"](#Filter-Size)
+arguments if necessary (see below).
 ![A comparison of Difference-of-Generalized-Gaussians filter weights](./images/example_dogxy_w=2.516nm_a=13nm_b=20nm_m=2_n=2__vs__m=6_n=16.svg)
 ```
    filter_mrc -w 25.16 -dog 130 200 -exponents 2 2
@@ -1902,7 +2019,10 @@ the results of using different Gaussian-widths
 (the same way they are compared when using
 "**-blob**", "**-blobr**", and "**-blob**").
 
-In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the "-truncate-threshold" and "-truncate" arguments if necessary (see below).
+In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the
+["-truncate-threshold"](#Filter-Size) and
+["-truncate"](#Filter-Size)
+arguments if necessary (see below).
 
 *Note:* The Gaussian "σ" arguments (*σ*, *σ_x*, *σ_y*, and *σ_z*)
 and the *t* ("time") scaling parameter (traditionally used
