@@ -242,7 +242,7 @@ algorithm.
 The
 ["**-fluct**"](#-fluct-and--fluct-aniso)
 and
-["**-fluct-aniso**"](#-fluct,--fluct-aniso)
+["**-fluct-aniso**"](#-fluct-and--fluct-aniso)
 filters calculate the magnitude of
 the voxel intensity fluctuations relative to their local surroundings.
 They can be used to find locations in the image where the brightness
@@ -277,7 +277,7 @@ is supported.
 The
 ["**-surface**"](#Detecting-membranes)
 and
-["**-surface-tv**"](#-surface-tv)
+["**-surface-tv**"](#-surface-tv-σ_ratio)
 filters are used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 and 
@@ -1104,7 +1104,7 @@ confused with the discussion here.
 
 
 
-### -fluct  and  -fluct-aniso
+### -fluct and -fluct-aniso
 Usage:
 ```
   fluct  r
