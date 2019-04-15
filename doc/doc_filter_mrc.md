@@ -193,56 +193,99 @@ The user can select the type of filter they want to use
 using command line arguments.
 
 
-The "**-invert**" filter exchanges bright and dark voxels (while keeping the average voxel intensity and standard deviation the same).
+The
+["**-invert**"](#-invert)
+filter exchanges bright and dark voxels.
+The ["**-rescale**"](#-rescale-m-b)
+filter allows you to shift (offset) and rescale voxel brightnesses arbitrarily.
+The
+["**-thresh**"](#-thresh threshold),
+["**-thresh-range**](#-thresh-range-range_a-range_b)
+["**-thresh2**"](#-thresh2-thresh_a-thresh_b),
+["**-thresh4**"](#-thresh4-thresh01_a-thresh01_b-thresh10_a-thresh10_b), 
+and
+["**-clip**"](#-clip-a-b)
+filters are used to use clip voxel intensities and to select voxels
+whose intensities lie within in a range specified by the user.
 
 
-The "**-thresh**", "**-thresh2**", "**-thresh4**", and "**-clip**"
-filters are used to clip and rescale voxel intensities,
-or to select voxels whose intensities lie within in a certain range.
-
-
-The "**-gauss**" filter uses a simple (low-pass)
+The 
+["**-gauss**"](#-gauss-and--ggauss)
+filter applies a simple (low-pass)
 [Gaussian blur](https://en.wikipedia.org/wiki/Gaussian_blur)
-filter.
-(The "**-gauss-aniso**" filter allows you to apply different amounts of blurring to the X,Y, and Z directions.)
+filter to your image.
+(The
+["**-gauss-aniso**"](#-gauss-and--ggauss)
+filter allows you to apply different amounts of blurring to the X,Y, and Z directions.)
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
 
-The "**-dog**"" filter uses a
+The 
+["**-dog**""](#-dog)
+filter uses a
 [Difference-Of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
 filter which can be used as a frequency band-pass filter (for high and/or low frequency removal).
-(The "**-dog-aniso**" filter allows you to modify the properties of the filter in the X,Y,Z directions.  Filter sharpness can be customized using the "-exponents" argument.)
+(The
+["**-dog-aniso**"](#-dog)
+filter allows you to modify the properties of the filter in the X,Y,Z directions.  Filter sharpness can be customized using the "-exponents" argument.)
 [Generalized Gaussians](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1) are supported.
 
 
-The "**-watershed**" argument will generate a new image which has been
+The
+["**-watershed**"](#-watershed type)
+argument will generate a new image which has been
 segmented using the
 [classic watershed](https://imagej.net/Classic_Watershed)
 algorithm.
 
 
-The "**-fluct**" and "**-fluct-aniso**" filters calculate the magnitude of
+The
+["**-fluct**"](#-fluct,--fluct-aniso)
+and
+["**-fluct-aniso**"](#-fluct,--fluct-aniso)
+filters calculate the magnitude of
 the voxel intensity fluctuations relative to their local surroundings.
 They can be used to find locations in the image where the brightness
 remains relatively constant or fluctuates wildly.  It can also be useful
 for characterizing regions within the image that have poor contrast.
 
 
-The "**-find-minima**" and "**-find-maxima**" will find all of the local
+The
+["**-find-minima**"](#-find-minima,--find-maxima)
+and
+["**-find-maxima**"](#-find-minima,--find-maxima)
+arguments will find all of the local
 intensity minima and maxima respectively in the image.
 The user has the option to discard poor scoring minima or maxima,
-or minima and maxima which are too close together.
+or minima and maxima which are too close together
+using
+[non-max suppression](#non-max-suppression).
 
 
-The "**-blob**", "**-blobd**", and "**-blobr**" filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow.  (For a fast and sloppy alternative, you can use the "**-log-d**" filter.)
+The
+["**-blob**"](#Blob-detection)
+,
+["**-blob-d**"](#Blob-detection)
+,
+and
+["**-blob-r**"](#Blob-detection)
+filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow.  (For a fast and sloppy alternative, you can use the "**-log-d**" filter.)
+[Non-max suppression](#non-max-suppression)
+is supported.
 
 
-The "**-surface**" and "**-surface-tv**" filters are used to detect thin, membrane-like structures using
+The
+["**-surface**"](#Detecting-membranes)
+and
+["**-surface-tv**"](#-surface-tv-σ_ratio)
+filters are used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 and 
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf), respectively.
 Voxels belonging to different membranes can be grouped into different clusters
-using the "**-connect**" argument.
+using the
+("**-connect**")[-connect-threshold]
+argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
 using the "**-surface-orientations-file**" argument.
@@ -610,7 +653,7 @@ or omit them entirely since the default value of 0.707 works well in most cases
 
 
 
-### **-find-minima**, "**-find-maxima**"
+### -find-minima**, -find-maxima
 
 Usage:
 ```
