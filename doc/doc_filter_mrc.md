@@ -240,7 +240,7 @@ algorithm.
 
 
 The
-["**-fluct**"](#-fluct,--fluct-aniso)
+["**-fluct**"](#-fluct-and--fluct-aniso)
 and
 ["**-fluct-aniso**"](#-fluct,--fluct-aniso)
 filters calculate the magnitude of
@@ -251,9 +251,9 @@ for characterizing regions within the image that have poor contrast.
 
 
 The
-["**-find-minima**"](#-find-minima,--find-maxima)
+["**-find-minima**"](#-find-minima-and--find-maxima)
 and
-["**-find-maxima**"](#-find-minima,--find-maxima)
+["**-find-maxima**"](#-find-minima-and--find-maxima)
 arguments will find all of the local
 intensity minima and maxima respectively in the image.
 The user has the option to discard poor scoring minima or maxima,
@@ -277,7 +277,7 @@ is supported.
 The
 ["**-surface**"](#Detecting-membranes)
 and
-["**-surface-tv**"](#-surface-tv-σ_ratio)
+["**-surface-tv**"](#-surface-tv)
 filters are used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 and 
@@ -340,7 +340,7 @@ See Lindeberg Int.J.Comput.Vis.(1998) for details.)*
 (enough to store at least 8 copies of the original image in 32bit-float mode).*
 
 
-### -surface-tv  σ_ratio
+### -surface-tv σ_ratio
 The "**-surface-tv**" argument enables refinement of (*-surface*) results using
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf).
 It performs a kind of directional blurring which reinforces regions in the image
@@ -653,7 +653,7 @@ or omit them entirely since the default value of 0.707 works well in most cases
 
 
 
-### -find-minima**, -find-maxima
+### -find-minima and -find-maxima
 
 Usage:
 ```
@@ -1104,7 +1104,7 @@ confused with the discussion here.
 
 
 
-### -fluct,   -fluct-aniso
+### -fluct  and  -fluct-aniso
 Usage:
 ```
   fluct  r
