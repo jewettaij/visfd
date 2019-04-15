@@ -1435,7 +1435,7 @@ ApplyDog(int const image_size[3], //!< image size in x,y,z directions
 ///    and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
 ///      a_x = σ_x*(1-0.5*δ), a_y = σ_y*(1-0.5*δ), a_z = σ_z*(1-0.5*δ)
 ///      b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
-///    scale = (1.0 / δ^2)
+///    scale = (1.0 / σ^2)
 /// @endcode
 /// To approximate the LoG, the δ parameter should not be larger than 0.05.
 /// The constants "A" and "B" are determined by normalization.
@@ -1501,10 +1501,13 @@ ApplyLog(int const image_size[3], //!< source image size
   //...it is necessary to multiply our result so far by "t / delta_t"
   //
   //https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian
+  //  Also see:
+  //https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach
   //
   //...where "t" = (1/2) * log_width^2
   //         because filter_mrc includes factor of (1/2) in log_width
   //   and "delta_t" = t * delta_sigma_over_sigma^2
+  //               (where "delta_sigma_over_sigma" = δ in the equations above)
   //   (Note: The "(1/2)" is present in both "t" and "delta_t" so the ratio 
   //          between them is unaffected by its presence)
 

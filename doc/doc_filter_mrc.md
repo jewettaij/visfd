@@ -83,7 +83,7 @@ filter_mrc -in tomogram.rec \
 ```
 
 Note: The
-      ["*-mask cytoplasmic_volume.rec*"](#-mask-file.rec)
+      ["*-mask cytoplasmic_volume.rec*"](#-mask-MRC_FILE)
       argument used in the second step
       is optional.
       I use it in this example because we are searching for ribosomes,
@@ -126,12 +126,12 @@ PoissonRecon --in largest_membrane_pointcloud.ply \
 
 Note: All of these parameters make reasonably good defaults for membrane
       detection except the
-      ["**-connect**"](-connect-threshold)
+      ["**-connect**"](#-connect-threshold)
       parameter ("1.0e+09" in the example).
       It must be chosen carefully because it will vary from image to image.
       Strategies for choosing this parameter are discussed below.
       If a suitable parameter can not be found, you can also use the
-      ["**-must-link**"](#-must-link-file_name.txt)
+      ["**-must-link**"](#-must-link-FILE)
       argument to manually force connections between
       disconnected regions. (See below.)
 
@@ -200,8 +200,8 @@ filter exchanges bright and dark voxels.
 The ["**-rescale**"](#-rescale-m-b)
 filter allows you to shift (offset) and rescale voxel brightnesses arbitrarily.
 The
-["**-thresh**"](#-thresh threshold),
-["**-thresh-range**](#-thresh-range-range_a-range_b)
+["**-thresh**"](#-thresh-threshold),
+["**-thresh-range**"](#-thresh-range-range_a-range_b)
 ["**-thresh2**"](#-thresh2-thresh_a-thresh_b),
 ["**-thresh4**"](#-thresh4-thresh01_a-thresh01_b-thresh10_a-thresh10_b), 
 and
@@ -289,12 +289,12 @@ and
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf), respectively.
 Voxels belonging to different membranes can be grouped into different clusters
 using the
-["**-connect**"](-connect-threshold)
+["**-connect**"](#-connect-threshold)
 argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
 using the
-["**-surface-orientations-file**"](#-surface-orientations-file-file_name.ply)
+["**-surface-orientations-file**"](#-surface-orientations-PLY_FILE)
 argument.
 
 
@@ -433,10 +433,17 @@ physically adjacent to (touching) eachother.
 Once membership of each island has been decided, 
 a new image is generated showing which
 voxels belong to each island.
-(Note: This behavior is identical to the behavior of the "*-watershed maxima*"
- argument when used together with the "*-watershed-threshold*" argument.)
+(Note: This behavior is identical to the behavior of the
+ ["*-watershed maxima*"](#-watershed-type)
+ argument when used together with the 
+ ["*-watershed-threshold*"](#-watershed-threshold-threshold)
+ argument.)
 
-*If the "-connect" argument is used together with the "-surface" argument,*
+*If the 
+["-connect"](#-connect-threshold)
+argument is used together with the 
+["-surface"](#-Detecting-membranes)
+argument,*
 (which is typically used for membrane detection), then it means that additional,
 *more stringent* criteria will be used to distinguish nearby thin, curved
 membrane-like objects from eachother.
@@ -461,7 +468,7 @@ If too small, then separate objects in the image will be joined together.
 
 *Note:* If you are unable to find thresholds which connect all of 
 the pieces together correctly, you can also use the
-["**-must-link**"](#-must-link-file_name.txt)
+["**-must-link**"](#-must-link-FILE)
 argument.
 This will manually force different bright regions in the image
 to belong to the same cluster (a.k.a. "island".  See below.)
@@ -525,7 +532,7 @@ Make sure clustering was successful *before* attempting to
 close holes in the surface using programs like *meshlab* or *PoissonRecon*.
 
 
-### -must-link file_name.txt
+### -must-link FILE
 
 *WARNING: This is an experimental feature as of 2019-4-09*
 
@@ -622,7 +629,7 @@ will be joined with all of the voxels connected to the second voxel
 
 
 ### -select-cluster cluster-ID
-### -surface-orientations-file file_name.ply
+### -surface-orientations-file PLY_FILE
 
 Once clustering is working, you can select one of the clusters using
 the "**-select-cluster**" argument.
@@ -829,11 +836,6 @@ locations of all the blobs detected in the image
 as well as their sizes and scores (see below).
 These detected blobs are either local minima or maxima in
 X,Y,Z,[scale-space](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach).
-By default, two files will be created, named
-*file_name.minima.txt* (for storing local minima), and
-*file_name.minima.txt* (for storing local maxima).
-*(Note: If the "-minima-threshold" or "-maxima-threshold"
- argument is specified, then only one file is generated.)*
 Each file is a 5-column ascii text file with the following format:
 ```
 x1 y1 z1 diameter1 score1
@@ -875,18 +877,18 @@ whose names will end in ".minima.txt" and ".maxima.txt", respectively.
 It is recommended that you refrain from specifying a mask
 *during* the process of blob detection
 (for example, by using the 
-["**-mask**"](#-mask-file.rec)
+["**-mask**"](#-mask-MRC_FILE)
 argument). 
 Doing so could cause blobs which are near the periphery of the mask
 to be ignored.
 Instead, it is recommended that you use the
-["**-mask**"](#-mask-file.rec)
+["**-mask**"](#-mask-MRC_FILE)
 argument
 *later on, after you have finished blob detection*.
 (This was shown in [example 2](#Example-2) above.)
 
 Sometimes you might want to use the 
-["**-mask**"](#-mask-file.rec)
+["**-mask**"](#-mask-MRC_FILE)
 argument during blob detection because it can
 accelerate the search for blobs
 (by ignoring voxels outside the mask).
@@ -944,7 +946,7 @@ Then later, they will run **filter_mrc** with the
 and 
 ["**-minima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
 (or 
-["**-maxima-threshold"](#Automatic-disposal-of-poor-scoring-blobs)
+["**-maxima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
 )
 arguments several times with different thresholds to decide which of
 these blobs are worth keeping.
@@ -1167,13 +1169,12 @@ However scale-free
 [**blob detection**](https://en.wikipedia.org/wiki/Blob_detection)
 is a more robust (and computationally expensive) way to detect objects 
 of a given size within an image.
-"Blob detection" is discussed elsewhere in this document, and should not be
-confused with the discussion here.
 
 *(Implementation note: The LoG filter described here is approximated internally 
  using a DoG filter. You can control the accuracy of this approximation using
- the "-dog-delta δ" argument, which is 0.02 by default.  Using smaller values
- of δ can improve the approximation, but could lead to spurious artifacts.)*
+ the
+ ["-dog-delta δ"](#Implementation-of-LoG-filters-and-blob-detectors)
+ argument.)
 
 
 
@@ -1343,14 +1344,14 @@ The resulting voxels intensities will lie in the range from 0.48 to 0.52.
 The "**-cl**" argument is similar to the "**-clip**" argument, however it
 allows you to specify the minimimum and maximum intensity parameters
 in units of σ, where σ is the standard deviation of the brightness values
-present in the image.  Typical usage:
+present in the image.  (Excluding masked voxels.  See below.)  Typical usage:
 ```
 -cl  -2.5 2.5
 ```
 This will clip voxel intensities which are either 2.5 standard-deviations
 below or above the average intensity value, respectively
 **Note:** You can use the 
-       ["**-mask**"](#-mask-file.rec) argument to exclude certain voxels
+       ["**-mask**"](#-mask-MRC_FILE) argument to exclude certain voxels
        from the clipping and thresholding operations.
        When using "**-mask**" together with "**-cl**", then
        these voxels will also be excluded from consideration when
@@ -1753,12 +1754,11 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 slowly fading from 1 to 0 (near a curve-shaped boundary, for example).
 
 
-
-### -mask file.rec
+### -mask MRC_FILE
 
 The argument following the
-"-mask" argument should be the name of a tomogram file (MRC format) of the
-same size as the input tomogram.
+"-mask" argument should be the name of a 3D image file
+(in MRC/REC format) of the same size as the input image.
 During the filtering process, only voxels belonging to the tomogram
 with non-zero voxel values in the "mask" tomogram will be considered,
 and these remaining voxels will be multiplied by the mask's voxel value
@@ -1772,6 +1772,7 @@ argument.)
  Certain filters like "-gauss", which have unit norm, will rescale the result of
  the filter by the sum of the mask values in the region considered.)*
 
+
 ### -mask-out intensity_value
 
 If the "-mask-out" argument is specified, then voxels outside the mask will
@@ -1782,7 +1783,6 @@ are rescaled between 0 and 1 before and after filtering.
 This means that "-mask-out 0" assigns these voxels same brightness as the lowest brightness voxels in the image.
 If you are using "-rescale-min-max", then
 "-mask-out 1" assigns them to the brightest voxels in the image.)
-
 
 
 ### -mask-select intensity_value
@@ -1804,7 +1804,7 @@ the true brightness stored in the file might be -127.
 In that case using "-mask-select 1" will fail.
 No other software I know does this.
 You can tell if your MASK image file potentially has this problem
-by using IMOD's "header" program:
+by using IMOD's "header" program, for example:
 ```
    header mask_file.rec
 ```
@@ -1858,6 +1858,8 @@ In other words, the *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
 arguments are in physical units (eg. Angstroms), *not* voxels.
 You can supply the coordinates in voxels
 by using the "*-w*" argument.
+
+
 
 
 ## Miscellaneous
@@ -1982,12 +1984,13 @@ if you use the default exponent of 2.
 
 
 
-####  Implementation of LoG filters and blob-detectors:
+####  Implementation of LoG filters and blob-detectors
 
 To speed up the calculation,
-the Difference-of-Gaussian approximation to the Laplacian-of-Gaussian
+the Difference-of-Gaussian approximation to the 
+(*scale-normalized*) Laplacian-of-Gaussian
 filter us used.
-Specifically, the original image is convolved with a
+Specifically, this filter has been approximated
 [Difference-of-Gaussians (DoG)](https://en.wikipedia.org/wiki/Blob_detection#The_difference_of_Gaussians_approach)
 filter, *h(x,y,z)*
 ```
@@ -1996,11 +1999,13 @@ filter, *h(x,y,z)*
     and r_b = √((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
       a_x = σ_x*(1-0.5*δ), a_y = σ_y*(1-0.5*δ), a_z = σ_z*(1-0.5*δ)
       b_x = σ_x*(1+0.5*δ), b_y = σ_y*(1+0.5*δ), b_z = σ_z*(1+0.5*δ)
-    scale = (1.0 / δ^2)
+    scale = (1.0 / σ^2)
 ```
 The A and B parameters are determined automatically by normalization.
 The "*δ*" parameter is *0.02* by default.
-(This can be overridden using the "-dog-delta δ" argument.
+(This can be overridden using the 
+"-dog-delta δ"
+argument.
 A smaller "*δ*" value may improve the approximation,
 but may also result in a noisier filtered image.)
 As always, the width of the Gaussian (the *σ_x*, *σ_y*, *σ_z* arguments) should be specified in units of physical distance, not in voxels.
