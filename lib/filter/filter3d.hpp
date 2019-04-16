@@ -5487,7 +5487,7 @@ CalcHessian(int const image_size[3], //!< source image size
              pReportProgress);
 
   if (pReportProgress)
-    *pReportProgress << "Calculating the image Hessian\n";
+    *pReportProgress << "Calculating the Hessian associated with each voxel\n";
 
   assert(image_size[0] >= 3);
   assert(image_size[1] >= 3);
@@ -6032,7 +6032,7 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
   assert(aaaafSource);
   if (pReportProgress && aaaafSource)
     *pReportProgress << "\n"
-      "---- Diagonalizing the Hessian everywhere (within the mask) ----\n";
+      "---- Diagonalizing the Hessians everywhere (within the mask) ----\n";
 
   for (int iz = 1; iz < image_size[2]-1; iz++) {
     if (pReportProgress)
@@ -6159,7 +6159,7 @@ UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
 
   if (pReportProgress)
     *pReportProgress << "\n"
-      "---- Undiagonalizing the Hessian everywhere (within the mask)... "
+      "---- Undiagonalizing the Hessians everywhere (within the mask)... "
                      << flush;
 
   #pragma omp parallel for collapse(2)

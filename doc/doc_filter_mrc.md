@@ -294,7 +294,7 @@ argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
 using the
-["**-surface-orientations-file**"](#-surface-orientations-PLY_FILE)
+["**-surface-orientations-file**"](#-surface-orientations-file PLY_FILE)
 argument.
 
 
@@ -442,7 +442,7 @@ voxels belong to each island.
 *If the 
 ["-connect"](#-connect-threshold)
 argument is used together with the 
-["-surface"](#-Detecting-membranes)
+["-surface"](#Detecting-membranes)
 argument,*
 (which is typically used for membrane detection), then it means that additional,
 *more stringent* criteria will be used to distinguish nearby thin, curved
@@ -677,7 +677,8 @@ or omit them entirely since the default value of 0.707 works well in most cases
 (-andrew 2019-3-04).
 
 *(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments 
-  currently have no effect unless the "-surface" argument was also supplied.
+  currently have no effect unless the 
+  ["-surface"](#Detecting-membranes) argument was also supplied.
   -andrew 2019-3-04)*
 
 
@@ -1705,18 +1706,18 @@ of files with names lie "base_name_1.txt", "base_name_2.txt", ...
 #### Specifying the radius or Gaussian-sigma parameters for the objects of interest
 
 The 
-["**-blob-r**"](#Blob-detection),
-["**-blob-s**"](#Blob-detection)
+"**-blob-r**",
+"**-blob-s**"
 (and 
-["**-log-r**"](#LoG-filters),
-["**-log**"](#LoG-filters))
+"**-log-r**",
+"**-log**")
 arguments
 are variants of the
 ["**-blob**"](#Blob-detection)
 (and 
 ["**-log-d**"](#LoG-filters)) argument.
-Their parameters are specified by the approximate radius(r≈σ√3)
-or Gaussian width (σ) of the objects
+Their parameters are either specified by the approximate radius(r≈σ√3),
+or the Gaussian width (σ) of the objects
 that you wish to detect within the image (instead of the object's diameter).
 
 

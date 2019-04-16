@@ -675,7 +675,7 @@ HandleThresholds(Settings settings,
                                       settings.out_thresh_b_value);
         else if (! settings.use_dual_thresholds) {
           if (settings.out_threshold_01_a == settings.out_threshold_01_b)
-            tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >=
+            tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >
                                            settings.out_threshold_01_a)
                                           ? 1.0
                                           : 0.0);
@@ -1123,7 +1123,7 @@ HandleRidgeDetector(Settings settings,
               settings.filter_truncate_ratio,
               &cerr);
 
-  cerr << "Diagonalizing the Hessian" << endl;
+  cerr << "Diagonalizing the Hessians" << endl;
 
 
   // DELETE THIS DEBUGGING CRUFT
