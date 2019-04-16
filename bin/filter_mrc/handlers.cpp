@@ -976,16 +976,77 @@ HandleClusterConnected(Settings settings,
                        MrcSimple &mask,
                        float voxel_width[3])
 {
-  // REMOVE THIS CRUFT
-  //settings.score_upper_bound = settings.connect_threshold_saliency;
-  //settings.score_bounds_are_ratios = false;
+  vector<vector<array<int, 3> > > *pMustLinkConstraints = NULL;
 
-  settings.watershed_threshold = settings.connect_threshold_saliency;
-  HandleWatershed(settings,
-                  tomo_in,
-                  tomo_out,
-                  mask,
-                  voxel_width);
+  if (settings.must_link_filename != "") {
+    // Prepare the list of coordinates in the settings.must_link_constraints
+    // array beforehand so that it will be ready by the time we have to
+    // invoke ClusterConnected().
+    ProcessLinkConstraints(settings.must_link_filename,
+                           settings.must_link_constraints,
+                           voxel_width);
+    if (settings.must_link_constraints.size() > 0)
+      pMustLinkConstraints = &settings.must_link_constraints;
+  }
+
+  int image_size[3];
+  for (int d = 0; d < 3; d++)
+    image_size[d] = tomo_in.header.nvoxels[d];
+
+  vector<array<int, 3> > cluster_centers;
+  vector<float> cluster_sizes;
+  vector<float> cluster_saliencies;
+
+  // Create a temporary array to store the cluster membership for each voxel.
+  // Because the number or clusters could (conceivably) exceed 10^6, we
+  // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
+  ptrdiff_t *aiClusterId = NULL;
+  ptrdiff_t ***aaaiClusterId = NULL;
+  Alloc3D(tomo_in.header.nvoxels,
+          &aiClusterId,
+          &aaaiClusterId);
+  // (Later on we will copy the contents of aaaiClusterId into tomo_out.aaafI
+  //  which will be written to a file later.  This way the end-user can
+  //  view the results.)
+
+  ClusterConnected(tomo_in.header.nvoxels, //image size
+                   tomo_in.aaafI, //<-saliency
+                   aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
+                   mask.aaafI,
+                   settings.connect_threshold_saliency,
+                   static_cast<ptrdiff_t>(0), //this value is ignored, but it specifies the type of array we are using
+                   true,  //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
+                   static_cast<array<float, 3> ***>(NULL),
+                   -std::numeric_limits<float>::infinity(),
+                   -std::numeric_limits<float>::infinity(),
+                   false, //normal default value for this (ignored) parameter
+                   static_cast<float****>(NULL),
+                   -std::numeric_limits<float>::infinity(),
+                   -std::numeric_limits<float>::infinity(),
+                   true,  //normal default value for this (ignored) parameter
+                   1,
+                   &cluster_centers,
+                   &cluster_sizes,
+                   &cluster_saliencies,
+                   ClusterSortCriteria::SORT_BY_SIZE,
+                   static_cast<float***>(NULL),
+                   #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                   static_cast<array<float, 3> ***>(NULL),
+                   #endif
+                   pMustLinkConstraints,
+                   true, //(clusters begin at regions of high saliency)
+                   &cerr);  //!< print progress to the user
+
+  // Now, copy the contents of aaaClusterId into tomo_out.aaafI
+  for (int iz = 0; iz < image_size[2]; ++iz)
+    for (int iy = 0; iy < image_size[1]; ++iy)
+      for (int ix = 0; ix < image_size[0]; ++ix)
+        tomo_out.aaafI[iz][iy][ix] = aaaiClusterId[iz][iy][ix];
+
+  Dealloc3D(tomo_in.header.nvoxels,
+            &aiClusterId,
+            &aaaiClusterId);
+
 } //HandleClusterConnected()
 
 
