@@ -406,5 +406,4 @@ namespace selfadjoint_eigen3
 
 
 
-
 #endif //#ifndef _EIGEN3_SIMPLE_HPP

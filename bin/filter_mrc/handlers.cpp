@@ -14,21 +14,15 @@ using namespace std;
 #include <omp.h>       // (OpenMP-specific)
 #endif
 
-#include <err_report.hpp>
-#include <alloc2d.hpp>
-#include <alloc3d.hpp>
-#include <filter1d.hpp>
-#include <filter2d.hpp>
-#include <filter3d.hpp>
-#include <multichannel_image3d.hpp>
-#include <lin3_utils.hpp>
+#include <visfd.hpp>
 #include <threshold.hpp>
 #include <mrc_simple.hpp>
 #include <random_gen.h>
 #include "settings.hpp"
 #include "file_io.hpp"
 #include "filter3d_variants.hpp"
-#include "filter3d_unsupported.hpp"
+#include "feature_variants.hpp"
+#include "feature_unsupported.hpp"
 #include "handlers.hpp"
 #include "handlers_unsupported.hpp"
 
@@ -513,7 +507,7 @@ HandleBlobDetector(Settings settings,
     fstream minima_file;
     minima_file.open(settings.blob_minima_file_name.c_str(), ios::out);
     if (! minima_file)
-      throw InputErr("Error: unable to open \""+ settings.blob_minima_file_name +"\" for reading.\n");
+      throw VisfdErr("Error: unable to open \""+ settings.blob_minima_file_name +"\" for reading.\n");
     for (int i=0; i < minima_crds_voxels.size(); i++) {
       minima_file << minima_crds[i][0] << " "
                   << minima_crds[i][1] << " "
@@ -539,7 +533,7 @@ HandleBlobDetector(Settings settings,
     fstream maxima_file;
     maxima_file.open(settings.blob_maxima_file_name.c_str(), ios::out);
     if (! maxima_file)
-      throw InputErr("Error: unable to open \""+ settings.blob_maxima_file_name +"\" for reading.\n");
+      throw VisfdErr("Error: unable to open \""+ settings.blob_maxima_file_name +"\" for reading.\n");
     for (int i=0; i < maxima_crds_voxels.size(); i++) {
       maxima_file << maxima_crds[i][0] << " "
                   << maxima_crds[i][1] << " "
@@ -846,7 +840,7 @@ HandleExtrema(Settings settings,
     fstream minima_file;
     minima_file.open(settings.find_minima_file_name.c_str(), ios::out);
     if (! minima_file)
-      throw InputErr("Error: unable to open \""+ settings.find_minima_file_name +"\" for reading.\n");
+      throw VisfdErr("Error: unable to open \""+ settings.find_minima_file_name +"\" for reading.\n");
     for (int i=0; i < minima_crds_voxels.size(); i++)
       minima_file << minima_crds_voxels[i][0] * voxel_width[0] << " "
                   << minima_crds_voxels[i][1] * voxel_width[1] << " "
@@ -859,7 +853,7 @@ HandleExtrema(Settings settings,
     fstream coords_file;
     coords_file.open(settings.find_maxima_file_name.c_str(), ios::out);
     if (! coords_file)
-      throw InputErr("Error: unable to open \""+ settings.find_maxima_file_name +"\" for reading.\n");
+      throw VisfdErr("Error: unable to open \""+ settings.find_maxima_file_name +"\" for reading.\n");
     for (int i=0; i < maxima_crds_voxels.size(); i++)
       coords_file << maxima_crds_voxels[i][0] * voxel_width[0] << " "
                   << maxima_crds_voxels[i][1] * voxel_width[1] << " "

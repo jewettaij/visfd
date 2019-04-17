@@ -1,5 +1,5 @@
-#ifndef _FILTER3D_UTILS_HPP
-#define _FILTER3D_UTILS_HPP
+#ifndef _VISFD_UTILS_HPP
+#define _VISFD_UTILS_HPP
 
 #include <cassert>
 #include <limits>
@@ -7,12 +7,44 @@ using namespace std;
 #include <alloc3d.hpp>
 
 
-
-
-
 #include <eigen3_simple.hpp>  //defines namespace selfadjoint_eigen3
-
+#include <lin3_utils.hpp>  //defines namespace selfadjoint_eigen3
 using namespace selfadjoint_eigen3;
+
+
+
+
+
+/// @brief invert a permutation
+template<class T, class Integer>
+void
+invert_permutation(const vector<Integer>& p,
+                   vector<T>& p_inv)
+{
+  p_inv.resize(p.size());
+  for (Integer i = 0; i < p.size(); i++)
+    p_inv[p[i]] = i;
+}
+
+
+
+/// @brief apply a permutation to a std::vector in-place
+template<class T, class Integer>
+void
+apply_permutation(const vector<Integer>& p,
+                  vector<T>& v)
+{
+  assert(p.size() == v.size());
+  int n = p.size();
+  vector<T> v_copy(v);
+  for (Integer i = 0; i < n; i++) {
+    Integer j = p[i];
+    assert((0 <= j) && (j < n));
+    v[i] = v_copy[j];
+  }
+}
+
+
 
 
 /// @brief  Calculate the hessian of a 3D image at a particular position 
@@ -540,4 +572,6 @@ HistogramArr(Scalar **paHistX,
 } //void HistogramArr()
 
 
-#endif //#ifndef _FILTER3D_UTILS_HPP
+
+
+#endif //#ifndef _VISFD_UTILS_HPP

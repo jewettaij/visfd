@@ -7,7 +7,7 @@ visfd
 ## Volumetric Image toolkit for Simple Feature Detection
 
 This is a C++ template library for 3D image processing
-("[filter3d.hpp](./lib/filter/filter3d.hpp)")
+("[visfd.hpp](./lib/visfd/)")
 as well as reading & writing image files using the the MRC file format
 ("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
 It is also a collection of stand-alone programs 
@@ -61,7 +61,7 @@ Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 The source code for the filters used by this program
 is located 
-[here](./lib/filter/).
+[here](./lib/visfd/).
 This program currently only supports the .mrc/.rec image file format.
 
 

@@ -1,10 +1,9 @@
-#ifndef _FILTER3D_UNSUPPORTED_HPP
-#define _FILTER3D_UNSUPPORTED_HPP
+#ifndef _FEATURE_UNSUPPORTED_HPP
+#define _FEATURE_UNSUPPORTED_HPP
 
 #include <cmath>
-#include <filter3d.hpp>
+#include <visfd.hpp>
 #include <random_gen.h>
-#include "filter3d_unsupported.hpp"
 
 
 /// @note DELETE THE NEXT COMMENT (not clear if relevant).
@@ -590,4 +589,4 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
 
 
 
-#endif //#ifndef _FILTER3D_UNSUPPORTED_HPP
+#endif //#ifndef _FEATURE_UNSUPPORTED_HPP

@@ -3,9 +3,10 @@
 #include <sstream>
 #include <vector>
 using namespace std;
-#include <err_report.hpp>
 #include <mrc_simple.hpp>
 #include <threshold.hpp>
+#include <err_mrcfile.hpp>
+#include "err.hpp"
 #include "settings.hpp"
 
 
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
     if ((tomo1.header.nvoxels[0] != tomo2.header.nvoxels[0]) ||
 	(tomo1.header.nvoxels[1] != tomo2.header.nvoxels[1]) ||
 	(tomo1.header.nvoxels[2] != tomo2.header.nvoxels[2]))
-      throw InputErr("Error: The size of the two input tomograms does not match.\n");
+      throw MrcfileErr("Error: The size of the two input tomograms does not match.\n");
 
     // Optional: Now apply the threshold filters to each input tomogram
     if (settings.in1_use_thresholds)
@@ -72,7 +73,7 @@ int main(int argc, char **argv) {
       if ((mask.header.nvoxels[0] != tomo1.header.nvoxels[0]) ||
           (mask.header.nvoxels[1] != tomo1.header.nvoxels[1]) ||
           (mask.header.nvoxels[2] != tomo1.header.nvoxels[2]))
-        throw InputErr("Error: The size of the mask image does not match the size of the input image.\n");
+        throw MrcfileErr("Error: The size of the mask image does not match the size of the input image.\n");
       // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
       if (settings.use_mask_select) {
         for (int iz=0; iz<mask.header.nvoxels[2]; iz++) {
@@ -193,7 +194,7 @@ int main(int argc, char **argv) {
     }
 
   } //try {
-  catch (InputErr& e) {
+  catch (const std::exception& e) {
     cerr << "\n" << e.what() << endl;
     exit(1);
   }

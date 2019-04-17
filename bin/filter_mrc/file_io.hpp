@@ -7,7 +7,7 @@
 #include <string>
 #include <sstream>
 using namespace std;
-#include <err_report.hpp>
+#include <err_visfd.hpp>
 #include <mrc_simple.hpp>
 #include "settings.hpp"
 
@@ -56,7 +56,7 @@ ReadMulticolumnFile(istream &f,  //<! the file to be read
       stringstream err_msg;
       err_msg << "Error: File read error (invalid entry?) on line: "
               << i_line << "\n";
-      throw InputErr(err_msg.str().c_str());
+      throw VisfdErr(err_msg.str().c_str());
     }
     vvDest.push_back(row);
     i_line++;
@@ -78,7 +78,7 @@ ReadMulticolumnFile(string file_name,  //<! the file to be read
   fstream f;
   f.open(file_name.c_str(), ios::in);
   if (! f)
-    throw InputErr("Error: unable to open \""+
+    throw VisfdErr("Error: unable to open \""+
                     file_name +"\" for reading.\n");
   ReadMulticolumnFile(f, vvDest);
   f.close();
@@ -155,7 +155,7 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! wo
         stringstream err_msg;
         err_msg << "Error: File read error (invalid entry?) on line: "
                 << i+1 << "\n";
-        throw InputErr(err_msg.str().c_str());
+        throw VisfdErr(err_msg.str().c_str());
       }
 
       // The way we interpret the number depends on whether or not
@@ -205,7 +205,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //<! name of file we will read
   fstream coords_file;
   coords_file.open(in_coords_file_name.c_str(), ios::in);
   if (! coords_file)
-    throw InputErr("Error: unable to open \""+
+    throw VisfdErr("Error: unable to open \""+
                    in_coords_file_name +"\" for reading.\n");
 
   bool custom_diameters = false;
@@ -355,7 +355,7 @@ WriteOrientedPointCloudBNPTS(string filename,
                              vector<array<Scalar,3> > norms)
 {
   assert(coords.size() == norms.size());
-  throw InputErr("The WriteOrientedPointCloudBNPTS() function is not working correctly.\n"
+  throw VisfdErr("The WriteOrientedPointCloudBNPTS() function is not working correctly.\n"
                  "No code should be invoking this function until the bug(s) is fixed.\n"
                  "If you are seeing this message, the error is the fault of the programmer.\n"
                  "Please contact the developer.");
@@ -479,7 +479,7 @@ ProcessLinkConstraints(string must_link_filename,
       err_msg << "Error: Each line of file \""
               << must_link_filename << "\"\n"
               <<"       should contain either 3 numbers or 0 numbers.\n";
-      throw InputErr(err_msg.str());
+      throw VisfdErr(err_msg.str());
     }
   } //for (size_t i = 0; i < vvCoords.size(); i++)
 
@@ -491,7 +491,7 @@ ProcessLinkConstraints(string must_link_filename,
     stringstream err_msg;
     err_msg << "Error: Format error in file \""<<must_link_filename<<"\".\n"
             << "       File contains no voxel coordinates.\n";
-    throw InputErr(err_msg.str());
+    throw VisfdErr(err_msg.str());
   }
 
   for (size_t i = 0; i < must_link_constraints.size(); i++) {
@@ -504,7 +504,7 @@ ProcessLinkConstraints(string must_link_filename,
         << "       lines, so blank-line delimters must not separate SINGLE non-blank lines)\n"
         << "       Furthermore, the voxels in each set must be unique.\n";
 
-      throw InputErr(err_msg.str());
+      throw VisfdErr(err_msg.str());
     }
   }
 

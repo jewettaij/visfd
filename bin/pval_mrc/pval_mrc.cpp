@@ -16,9 +16,9 @@ using namespace std;
 
 //#include <boost/math/special_functions/gamma.hpp>
 
-#include <err_report.hpp>
 #include <mrc_simple.hpp>
 #include <filter3d.hpp>
+#include "err.hpp"
 #include "settings.hpp"
 
 
@@ -547,7 +547,7 @@ int main(int argc, char **argv) {
     }
 
   } //try {
-  catch (InputErr& e) {
+  catch (const std::exception& e) {
     cerr << "\n" << e.what() << endl;
     exit(1);
   }

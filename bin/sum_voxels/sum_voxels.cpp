@@ -2,9 +2,9 @@
 #include <string>
 #include <iostream>
 using namespace std;
-#include <err_report.hpp>
 #include <mrc_simple.hpp>
 #include <threshold.hpp>
+#include "err.hpp"
 #include "settings.hpp"
 
 // (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)

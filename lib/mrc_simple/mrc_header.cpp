@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
-#include <err_report.hpp>
+#include "err_mrcfile.hpp"
 #include "mrc_header.hpp"
 
 

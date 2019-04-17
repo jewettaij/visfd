@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
         "directions so that all 3 voxel widths agree.\n"
         "Alternatively, use the \"-w WIDTH\" argument to specify the same voxel width for\n"
         "all 3 directions.  (For example \"-w "<<voxel_width[0]<<"\")\n";
-      throw InputErr(err_msg.str().c_str());
+      throw VisfdErr(err_msg.str().c_str());
     }
 
     settings.surface_tv_sigma /= voxel_width[0];
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
       if ((mask.header.nvoxels[0] != image_size[0]) ||
           (mask.header.nvoxels[1] != image_size[1]) ||
           (mask.header.nvoxels[2] != image_size[2]))
-        throw InputErr("Error: The size of the mask image does not match the size of the input image.\n");
+        throw VisfdErr("Error: The size of the mask image does not match the size of the input image.\n");
       // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
       if (settings.use_mask_select) {
         for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
     if ((voxel_width[0] <= 0.0) ||
         (voxel_width[1] <= 0.0) ||
         (voxel_width[2] <= 0.0))
-      throw InputErr("Error in tomogram header: Invalid voxel width(s).\n"
+      throw VisfdErr("Error in tomogram header: Invalid voxel width(s).\n"
                      "Use the -w argument to specify the voxel width.");
 
 
@@ -471,7 +471,7 @@ int main(int argc, char **argv) {
 
   } // try {
 
-  catch (InputErr& e) {
+  catch (const std::exception& e) {
     cerr << "\n" << e.what() << endl;
     exit(1);
   }

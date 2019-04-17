@@ -1,7 +1,6 @@
-#include <filter1d.hpp>
-#include <filter2d.hpp>
-#include <filter3d.hpp>
+#include <visfd.hpp>
 #include "filter3d_variants.hpp"
+#include "feature_variants.hpp"
 #include "file_io.hpp"
 #include "handlers_unsupported.hpp"
 
@@ -209,7 +208,7 @@ HandleBlobRadialIntensity(Settings settings,
     fstream f;
     f.open(intensity_vs_r_file_name_ss.str().c_str(), ios::out);
     if (! f)
-      throw InputErr("Error: unable to open \""+
+      throw VisfdErr("Error: unable to open \""+
                      intensity_vs_r_file_name_ss.str()+"\" for writing.\n");
     for (int ir = 0; ir < intensity_profiles[i].size(); ir++) {
       f << ir*voxel_width[0] << " " << intensity_profiles[i][ir] << "\n";
@@ -1287,7 +1286,7 @@ HandleDistanceToPoints(Settings settings,
   fstream coords_file;
   coords_file.open(settings.in_coords_file_name.c_str(), ios::in);
   if (! coords_file)
-    throw InputErr("Error: unable to open \""+
+    throw VisfdErr("Error: unable to open \""+
                    settings.in_coords_file_name +"\" for reading.\n");
   vector<array<int,3> > crds;
   while (coords_file) {

@@ -31,9 +31,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Eigen dependency
 ***Note:***
-Files located in the "lib/eigen_simple" directory contain a few hundred
-lines of code which were adapted from the ***Eigen*** linear algebra library,
-which uses a permissive open source license.
+
+The "lib/visfd/eigen3_simple.hpp" file contains a few hundred lines
+of code which were adapted from the ***Eigen*** linear algebra library.
+That library uses a permissive open source license.
 License details for that code can be found in the
 [LICENSE.md](lib/eigen_simple/LICENSE.md)
 file located in that directory.

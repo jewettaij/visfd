@@ -24,7 +24,7 @@
 #include <iostream>
 using namespace std;
 #include <alloc3d.hpp>
-#include <err_report.hpp>
+#include "err_mrcfile.hpp"
 #include "mrc_simple.hpp"
 
 
@@ -169,7 +169,7 @@ void MrcSimple::Read(string in_file_name,
   fstream mrc_file;
   mrc_file.open(in_file_name.c_str(), ios::binary | ios::in);
   if (! mrc_file) 
-    throw InputErr("Error: unable to open \""+ in_file_name +"\" for reading.\n");
+    throw MrcfileErr("Error: unable to open \""+ in_file_name +"\" for reading.\n");
   // Try to infer signed-vs-unsigned integers from the file name:
   //http://www.cgl.ucsf.edu/pipermail/chimera-users/2010-June/005245.html
   if ((len_in_file_name > 4)
@@ -299,7 +299,7 @@ void MrcSimple::ReadArray(istream& mrc_file,
           }
           break;
         default:
-          throw InputErr("UNSUPPORTED MODE in MRC file (unsupported MRC format)");
+          throw MrcfileErr("UNSUPPORTED MODE in MRC file (unsupported MRC format)");
           exit(-1);
           break;
         } // switch (header.mode)
@@ -341,7 +341,7 @@ void MrcSimple::Write(string out_file_name) {
   fstream mrc_file;
   mrc_file.open(out_file_name.c_str(), ios::binary | ios::out);
   if (! mrc_file) 
-    throw InputErr("Error: unable to open \""+ out_file_name+"\" for writing.\n");
+    throw MrcfileErr("Error: unable to open \""+ out_file_name+"\" for writing.\n");
   Write(mrc_file);  // You can also use "mrc_file << tomo;"
   mrc_file.close();
 }

@@ -28,7 +28,7 @@ INCLUDES = \
 -I$(INTERNAL_LIB_PATH)/alloc \
 -I$(INTERNAL_LIB_PATH)/random_gen \
 -I$(INTERNAL_LIB_PATH)/eigen_simple \
--I$(INTERNAL_LIB_PATH)/filter \
+-I$(INTERNAL_LIB_PATH)/visfd \
 -I$(INTERNAL_LIB_PATH)/threshold \
 -I$(INTERNAL_LIB_PATH)/mrc_simple
 
@@ -51,7 +51,7 @@ filter_mrc: $(OBJECT_FILES) $(LIB_FILES)
 install:
 	$(MAKE) ANSI_C="$(ANSI_C)" ANSI_CPP="$(ANSI_CPP)" L_COMP="$(L_COMP)" CFLAGS="$(CFLAGS)" LFLAGS="$(LFLAGS)" INSTALL_PATH="$(INSTALL_PATH)" filter_mrc
 	cp -f filter_mrc $(INSTALL_PATH)
-	#cp -f ../doc/doc_filter_mrc.md $(INSTALL_PATH)
+        #cp -f ../doc/doc_filter_mrc.md $(INSTALL_PATH)
 
 GENERATED_FILES = *.o *.a core filter_mrc $(COMPILER_TEMP_FILES) $(LINKER_TEMP_FILES)
 
@@ -61,7 +61,7 @@ clean:
 distclean:
 	$(MAKE) clean
 	rm -f $(INSTALL_PATH)/filter_mrc
-	#rm -f $(INSTALL_PATH)/doc_filter_mrc.md
+        #rm -f $(INSTALL_PATH)/doc_filter_mrc.md
 
 depend:
 	mv Makefile Makefile.tmp

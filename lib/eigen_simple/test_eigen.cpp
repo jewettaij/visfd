@@ -1,12 +1,11 @@
 #include <iostream>
 using namespace std;
 
-#include "eigen3_simple.hpp"
+#include "../visfd/eigen3_simple.hpp"
 using namespace selfadjoint_eigen3;
 
 int main(int argc, char **argv) {
 
-  //double M[3][3] = {{2.0,0.0,0.0}, {0.0,1.0,0.0}, {0.0,0.0,3.0}};
   double M[3][3] = {{-1.3,2,4},{2,-2.3,3},{4,3,-5.3}};
   double eivals[3];
   double eivects[3][3];

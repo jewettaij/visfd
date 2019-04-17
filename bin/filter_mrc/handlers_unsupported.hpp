@@ -14,7 +14,7 @@
 /// @brief
 ///  Perform template matching with a Gaussian.
 ///  DEPRECIATION WARNING: This function may be removed in the future.
-///  A comment describing of this function is provided in "unsupported.cpp"
+///  A comment describing of this function is provided in "handlers_unsupported.cpp"
 
 void
 HandleTemplateGauss(Settings settings,
@@ -30,7 +30,7 @@ HandleTemplateGauss(Settings settings,
 ///  Perform template matching with a (spherically symmetric)
 ///  generalized Gaussian.
 ///  DEPRECIATION WARNING: This function may be removed in the future.
-///  A comment describing of this function is provided in "unsupported.cpp"
+///  A comment describing of this function is provided in "handlers_unsupported.cpp"
 
 void
 HandleTemplateGGauss(Settings settings,

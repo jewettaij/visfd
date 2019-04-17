@@ -46,8 +46,8 @@ int main(int argc, char **argv) {
     tomo.Write(out_file_name); // You can also use "tomo.Write(cout);" 
                                // or "cout<<tomo;"
   }
-  catch (string s) {
-    cerr << s << endl; // In case of file format error, print message and exit
+  catch (const std::exception& e) {
+    cerr << "\n" << e.what() << endl;
     exit(1);
   }
 }

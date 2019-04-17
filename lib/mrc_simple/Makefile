@@ -14,8 +14,7 @@ INTERNAL_LIB_PATH = ..
 LIBS =
 
 INCLUDES = \
--I$(INTERNAL_LIB_PATH)/alloc \
--I$(INTERNAL_LIB_PATH)/err
+-I$(INTERNAL_LIB_PATH)/visfd
 
 #Default target: create a library
 libmrc_simple.a: mrc_simple.o mrc_header.o

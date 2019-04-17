@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 using namespace std;
-#include <err_report.hpp>
+#include "err.hpp"
 #include "mrc_simple.hpp"
 
 // (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     header.PrintStats(cout);
     mrc_file.close();
   }
-  catch (InputErr& e) {
+  catch (const std::exception& e) {
     cerr << "\n" << e.what() << endl;
     exit(1);
   }

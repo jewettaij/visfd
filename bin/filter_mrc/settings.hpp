@@ -9,8 +9,8 @@
 #include<string>
 using namespace std;
 #include <mrc_simple.hpp>
-#include <filter3d.hpp>
-#include "filter3d_unsupported.hpp"
+#include <visfd.hpp>
+#include "feature_unsupported.hpp"
 
 
 extern string g_program_name;

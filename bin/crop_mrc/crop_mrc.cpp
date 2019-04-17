@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 using namespace std;
-#include <err_report.hpp>
+#include "err.hpp"
 #include "mrc_simple.hpp"
 
 // (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     cropped_tomo.Write(out_file_name); //(You can also use cout<<cropped_tomo;)
 
   } //try {
-  catch (InputErr& e) {
+  catch (const std::exception& e) {
     cerr << "\n" << e.what() << endl;
     exit(1);
   }

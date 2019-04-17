@@ -8,7 +8,7 @@ using namespace std;
 #include <omp.h>       // (OpenMP-specific)
 #endif
 
-#include <err_report.hpp>
+#include "err.hpp"
 #include "settings.hpp"
 
 //  Example usage:
