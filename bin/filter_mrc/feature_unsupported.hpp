@@ -6,6 +6,15 @@
 #include <random_gen.h>
 
 
+
+
+
+namespace visfd {
+
+
+
+
+
 /// @note DELETE THE NEXT COMMENT (not clear if relevant).
 ///
 /// @code
@@ -586,6 +595,12 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
 } //BlobIntensityProfiles()
 
 #endif //#ifndef DISABLE_INTENSITY_PROFILES
+
+
+
+
+} //namespace visfd
+
 
 
 

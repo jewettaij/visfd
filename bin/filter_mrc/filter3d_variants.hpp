@@ -1,6 +1,14 @@
 #ifndef _FILTER_3D_VARIANTS_HPP
 #define _FILTER_3D_VARIANTS_HPP
 
+
+
+
+namespace visfd {
+
+
+
+
 /// THE CODE IN THIS FILE WAS NOT INTENDED FOR PUBLIC USE
 /// This file contains several variants of functions found in <filter3d.hpp>.
 /// These versions differ only in that they accept slightly different format
@@ -414,6 +422,11 @@ LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in 
                             pReportProgress);
 
 } //LocalFluctuations()
+
+
+
+
+} //namespace visfd
 
 
 

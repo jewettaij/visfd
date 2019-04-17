@@ -27,7 +27,7 @@ using namespace std;
 
 
 
-
+namespace visfd {
 
 
 
@@ -214,7 +214,7 @@ VisualizeBlobs(int const image_size[3], //!< image size
 
 
 
-
+} //namespace visfd
 
 
 

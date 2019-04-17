@@ -1,4 +1,5 @@
 #include <visfd.hpp>
+using namespace visfd;
 #include "filter3d_variants.hpp"
 #include "feature_variants.hpp"
 #include "file_io.hpp"

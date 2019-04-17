@@ -27,7 +27,7 @@ using namespace std;
 
 
 
-
+namespace visfd {
 
 
 
@@ -3320,6 +3320,7 @@ private:
 
 
 
+} //namespace visfd
 
 
 

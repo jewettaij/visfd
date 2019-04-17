@@ -10,6 +10,7 @@
 using namespace std;
 #include <mrc_simple.hpp>
 #include <visfd.hpp>
+using namespace visfd;
 #include "feature_unsupported.hpp"
 
 

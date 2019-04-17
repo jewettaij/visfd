@@ -6,6 +6,11 @@
 using namespace std;
 
 
+
+namespace visfd {
+
+
+
 template <class Scalar>
 static inline Scalar Trace3(const Scalar m[3][3]) {
   return m[0][0]+m[1][1]+m[2][2];
@@ -517,6 +522,10 @@ void ConvertDiagFlatSym2Evects3(const Scalar m[6],   //!< a symmetrix 3x3 matrix
   // Now extract the eigenvectors:
   Shoemake2Matrix(shoemake, eivects);//convert to an array of eigenvectors(rows)
 }
+
+
+
+} //namespace visfd
 
 
 

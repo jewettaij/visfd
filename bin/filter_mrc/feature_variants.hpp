@@ -28,6 +28,10 @@ using namespace std;
 
 
 
+namespace visfd {
+
+
+
 /// @brief Find scale-invariant blobs in the image as a function of diameter.
 ///        This variant detects blobs and performs non-max suppression.
 ///
@@ -193,6 +197,11 @@ _BlobDogNM(int const image_size[3], //!<source image size
             aafI);
 
 } //_BlobDogNM(...,filter_truncate_ratio,filter_truncate_threshold,...)
+
+
+
+
+} //namespace visfd
 
 
 

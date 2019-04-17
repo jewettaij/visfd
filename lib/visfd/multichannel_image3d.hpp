@@ -2,6 +2,11 @@
 #define _MULTICHANNEL_IMAGE3D_HPP
 
 
+
+namespace visfd {
+
+
+
 template<class Scalar>
 
 /// @brief   This class is useful IF you have a volumetric multi-channel image
@@ -148,6 +153,12 @@ private:
   }
 
 }; //class CompactMultiChannelImage3D
+
+
+
+
+} //namespace visfd
+
 
 
 #endif //#ifndef _MULTICHANNEL_IMAGE3D_HPP

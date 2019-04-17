@@ -2,6 +2,8 @@
 #define _ALLOC2D_HPP
 
 
+namespace visfd {
+
 // Alloc2D() is a function for allocating 2-dimensional arrays of data
 // (contiguous in memory, in row-major format.)
 // (The functions in this file are used to allocate arrays for storing
@@ -47,6 +49,8 @@ void Dealloc2D(Integer const size[2],
   }
 }
 
+
+} //namespace visfd
 
 
 #endif //#ifndef _ALLOC2D_HPP

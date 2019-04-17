@@ -27,6 +27,9 @@ using namespace std;
 
 
 
+namespace visfd {
+
+
 
 
 /// @brief  Perform the Meyer's flood-fill algorithm to segment a 3D image.
@@ -1810,6 +1813,10 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   delete [] neighbors;
 
 } // ClusterConnected()
+
+
+
+} //namespace visfd
 
 
 

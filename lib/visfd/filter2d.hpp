@@ -11,6 +11,8 @@ using namespace std;
 
 
 
+namespace visfd {
+
 
 
 template<class Scalar, class Integer>
@@ -530,6 +532,9 @@ GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
                           pReportProgress);
 } //GenFilterDogg2D(...halfwidth...)
 
+
+
+} //namespace visfd
 
 
 #endif //#ifndef _FILTER2D_HPP

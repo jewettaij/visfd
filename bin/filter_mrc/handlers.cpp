@@ -15,6 +15,8 @@ using namespace std;
 #endif
 
 #include <visfd.hpp>
+using namespace visfd;
+
 #include <threshold.hpp>
 #include <mrc_simple.hpp>
 #include <random_gen.h>

@@ -25,6 +25,11 @@ using namespace std;
 
 
 
+
+namespace visfd {
+
+
+
 /// @brief A simple class for general linear (convolutional) filters in 3D
 ///
 /// @note  In practice, this class is not used often because separable filters
@@ -2009,6 +2014,11 @@ GenFilterDogg3D(Scalar width_a[3],   //!< "a" parameter in formula
                           pB,
                           pReportEquation);
 } //GenFilterDogg3D(...halfwidth...)
+
+
+
+} //namespace visfd
+
 
 
 #endif //#ifndef _FILTER3D_HPP

@@ -9,8 +9,29 @@ using namespace std;
 
 #include <eigen3_simple.hpp>  //defines namespace selfadjoint_eigen3
 #include <lin3_utils.hpp>  //defines namespace selfadjoint_eigen3
-using namespace selfadjoint_eigen3;
+using namespace visfd::selfadjoint_eigen3;
 
+
+
+
+namespace visfd {
+
+
+
+
+template<class Scalar >
+static inline Scalar SQR(Scalar x) { return x*x; }
+
+template<class Scalar >
+static inline Scalar MIN(Scalar a, Scalar b) { return ((a<=b) ? a : b); }
+
+template<class Scalar >
+static inline Scalar MAX(Scalar a, Scalar b) { return ((a>=b) ? a : b); }
+
+template <class Scalar>
+static int SGN(Scalar val) {
+  return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));
+}
 
 
 
@@ -571,6 +592,9 @@ HistogramArr(Scalar **paHistX,
   }
 } //void HistogramArr()
 
+
+
+} //namespace visfd
 
 
 

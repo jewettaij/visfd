@@ -1,6 +1,10 @@
 #ifndef _VISFD_ERR_HPP
 #define _VISFD_ERR_HPP
 
+
+namespace visfd {
+
+
 #include <string>
 using namespace std;
 
@@ -12,5 +16,9 @@ public:
   virtual const char *what() const throw() { return msg.c_str(); }
   virtual ~VisfdErr() throw (){}
 };
+
+
+} //namespace visfd
+
 
 #endif //#ifndef _VISFD_ERR_HPP

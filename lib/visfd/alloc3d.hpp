@@ -2,6 +2,9 @@
 #define _ALLOC3D_HPP
 
 
+namespace visfd {
+
+
 // Alloc3D() is a function for allocating 3-dimensional arrays of data
 // (contiguous in memory, in row-major format.)
 // (The functions in this file are used to allocate arrays for storing
@@ -59,6 +62,8 @@ void Dealloc3D(Integer const size[3],
   }
 }
 
+
+} //namespace visfd
 
 
 #endif //#ifndef _ALLOC3D_HPP

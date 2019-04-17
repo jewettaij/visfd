@@ -18,6 +18,8 @@ using namespace std;
 
 #include <mrc_simple.hpp>
 #include <filter3d.hpp>
+using namespace visfd;
+
 #include "err.hpp"
 #include "settings.hpp"
 

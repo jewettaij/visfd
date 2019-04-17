@@ -26,9 +26,10 @@ using namespace std;
 #include "lin3_utils.hpp"
 
 
+namespace visfd {
 
-namespace selfadjoint_eigen3
-{
+
+namespace selfadjoint_eigen3 {
 
 
   typedef enum eEigenOrderType {
@@ -402,8 +403,11 @@ namespace selfadjoint_eigen3
                                eivects);
   }
 
-} // namespace selfadjoint_eigenvalues3
 
+} //namespace selfadjoint_eigenvalues3
+
+
+} //namespace visfd
 
 
 #endif //#ifndef _EIGEN3_SIMPLE_HPP

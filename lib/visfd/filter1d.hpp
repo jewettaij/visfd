@@ -9,19 +9,9 @@
 using namespace std;
 
 
-template<class Scalar >
-static inline Scalar SQR(Scalar x) { return x*x; }
+namespace visfd {
 
-template<class Scalar >
-static inline Scalar MIN(Scalar a, Scalar b) { return ((a<=b) ? a : b); }
 
-template<class Scalar >
-static inline Scalar MAX(Scalar a, Scalar b) { return ((a>=b) ? a : b); }
-
-template <class Scalar>
-static int SGN(Scalar val) {
-  return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));
-}
 
 
 
@@ -421,6 +411,8 @@ GenFilterGauss1D(Scalar sigma,  // The "σ" paramgeter in the Gaussian
   return filter;
 } //GenFilterGauss1D(sigma, halfwidth)
 
+
+} //namespace visfd
 
 
 #endif //#ifndef _FILTER1D_HPP
