@@ -1459,7 +1459,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
   if (pReportProgress)
     *pReportProgress <<
-      "-- Number of clusters found: " << n_clusters << " --\n";
+      "Number of clusters found: " << n_clusters << "\n";
 
   // Renumber the clusters from 0 ... n_clusters-1
   for (size_t i=0; i < basin2cluster.size(); i++) {

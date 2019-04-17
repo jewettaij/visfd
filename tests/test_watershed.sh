@@ -55,7 +55,7 @@ test_watershed() {
     # Test "-connect" to see if it behaves like "-watershed maxima"
     
     ../bin/filter_mrc/filter_mrc -w 19.2 -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -out ${OUT_FNAME_REC} -connect 36.75 >& test_log_e.txt
-    N_BASINS_INV=`grep 'Number of basins found: ' < test_log_e.txt | awk '{print $5}'`
+    N_BASINS_INV=`grep 'Number of clusters found: ' < test_log_e.txt | awk '{print $5}'`
     assertTrue "Failure: Either \"-connect\" argument or the \"-invert\" argument is behaving in an new and unnexpected way, or the extrema finding algorithm is failing" "[ $N_BASINS_INV -eq 2 ]"
 
     # Delete temporary files:
