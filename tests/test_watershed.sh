@@ -56,7 +56,7 @@ test_watershed() {
     
     ../bin/filter_mrc/filter_mrc -w 19.2 -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -out ${OUT_FNAME_REC} -connect 36.75 >& test_log_e.txt
     N_BASINS_INV=`grep 'Number of basins found: ' < test_log_e.txt | awk '{print $5}'`
-    assertTrue "Failure: Either \"-connect\" argument does not behave like \"-watershed\", or the \"-invert\" filter is behaving in an new and unnexpected way, or the extrema finding algorithm is failing" "[ $N_BASINS_INV -eq 3 ]"
+    assertTrue "Failure: Either \"-connect\" argument or the \"-invert\" argument is behaving in an new and unnexpected way, or the extrema finding algorithm is failing" "[ $N_BASINS_INV -eq 2 ]"
 
     # Delete temporary files:
     rm -rf "${OUT_FNAME_REC}" test_blob_detect_gauss_* test_log_e.txt
