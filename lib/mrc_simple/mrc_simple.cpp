@@ -24,6 +24,7 @@
 #include <iostream>
 using namespace std;
 #include <alloc3d.hpp>
+using namespace visfd;
 #include "err_mrcfile.hpp"
 #include "mrc_simple.hpp"
 
