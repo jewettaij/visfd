@@ -385,7 +385,7 @@ int main(int argc, char **argv) {
 
     else if (settings.filter_type == settings.SPHERE_DECALS) {
 
-      HandleVisualizeBlobs(settings, tomo_in, tomo_out, mask, voxel_width);
+      HandleDrawSpheres(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 

@@ -64,11 +64,11 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
 void
-HandleVisualizeBlobs(Settings settings,
-                     MrcSimple &tomo_in,
-                     MrcSimple &tomo_out,
-                     MrcSimple &mask,
-                     float voxel_width[3]);
+HandleDrawSpheres(Settings settings,
+                  MrcSimple &tomo_in,
+                  MrcSimple &tomo_out,
+                  MrcSimple &mask,
+                  float voxel_width[3]);
 
 
 

@@ -48,14 +48,16 @@ BlobDogNM(int const image_size[3], //!<source image size
           Scalar const *const *const *aaafSource,   //!<source image
           Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
           const vector<Scalar>& blob_diameters, //!< blob widths to try, ordered
-          vector<array<Scalar,3> >& minima_crds, //!<store minima x,y,z coords here
-          vector<array<Scalar,3> >& maxima_crds, //!<store maxima x,y,z coords here
-          vector<Scalar>& minima_diameters, //!< corresponding width for that minima
-          vector<Scalar>& maxima_diameters, //!< corresponding width for that maxima
-          vector<Scalar>& minima_scores, //!< what was the blob's score?
-          vector<Scalar>& maxima_scores, //!< (score = intensity after filtering)
-          Scalar delta_sigma_over_sigma,//!< param for approximating LOG with DOG
-          Scalar truncate_ratio,      //!< how many sigma before truncating?
+          //optional arguments:
+          vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
+          vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
+          vector<Scalar> *pv_minima_diameters=NULL, //!< if not NULL, stores the corresponding width for that minima
+          vector<Scalar> *pv_maxima_diameters=NULL, //!< if not NULL, stores the corresponding width for that maxima
+          vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
+          vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+          //the following optional parameters are usually left with default values
+          Scalar delta_sigma_over_sigma=0.02,//!< param for approximating LOG with DOG
+          Scalar truncate_ratio=2.5,      //!< how many sigma before truncating?
           Scalar minima_threshold=0.5,  //!< discard blobs with unremarkable scores
           Scalar maxima_threshold=0.5,  //!< discard blobs with unremarkable scores
           bool   use_threshold_ratios=true, //!< threshold=ratio*best_score?
@@ -69,16 +71,35 @@ BlobDogNM(int const image_size[3], //!<source image size
           )
 {
 
+  vector<array<Scalar,3> > minima_crds; //store minima blob x,y,z coords here
+  vector<array<Scalar,3> > maxima_crds; //store minima blob x,y,z coords here
+  vector<Scalar>  minima_diameters;     //corresponding width for that minima
+  vector<Scalar>  maxima_diameters;     //corresponding width for that maxima
+  vector<Scalar>  minima_scores;        //store the score of each blob minima
+  vector<Scalar>  maxima_scores;        //store the score of each blob maxima
+  if (pva_minima_crds == NULL)
+    pva_minima_crds = &minima_crds;
+  if (pva_maxima_crds == NULL)
+    pva_maxima_crds = &maxima_crds;
+  if (pv_minima_diameters == NULL)
+    pv_minima_diameters = &minima_diameters;
+  if (pv_maxima_diameters == NULL)
+    pv_maxima_diameters = &maxima_diameters;
+  if (pv_minima_scores == NULL)
+    pv_minima_scores = &minima_scores;
+  if (pv_maxima_scores == NULL)
+    pv_maxima_scores = &maxima_scores;
+
   BlobDogD(image_size,
            aaafSource,
            aaafMask,
            blob_diameters,
-           minima_crds,
-           maxima_crds,
-           minima_diameters,
-           maxima_diameters,
-           minima_scores,
-           maxima_scores,
+           pva_minima_crds,
+           pva_maxima_crds,
+           pv_minima_diameters,
+           pv_maxima_diameters,
+           pv_minima_scores,
+           pv_maxima_scores,
            delta_sigma_over_sigma,
            truncate_ratio,
            minima_threshold,
@@ -103,9 +124,9 @@ BlobDogNM(int const image_size[3], //!<source image size
   if (pReportProgress)
     *pReportProgress << "--- Discarding overlapping minima blobs ---\n";
 
-  DiscardOverlappingBlobs(minima_crds,
-                          minima_diameters,
-                          minima_scores,
+  DiscardOverlappingBlobs(*pva_minima_crds,
+                          *pv_minima_diameters,
+                          *pv_minima_scores,
                           PRIORITIZE_LOW_SCORES,
                           sep_ratio_thresh,
                           nonmax_max_overlap_large,
@@ -116,9 +137,9 @@ BlobDogNM(int const image_size[3], //!<source image size
     *pReportProgress << "done --\n"
                      << "--- Discarding overlapping maxima blobs ---\n";
 
-  DiscardOverlappingBlobs(maxima_crds,
-                          maxima_diameters,
-                          maxima_scores,
+  DiscardOverlappingBlobs(*pva_maxima_crds,
+                          *pv_maxima_diameters,
+                          *pv_maxima_scores,
                           PRIORITIZE_HIGH_SCORES,
                           sep_ratio_thresh,
                           nonmax_max_overlap_large,
@@ -146,17 +167,19 @@ _BlobDogNM(int const image_size[3], //!<source image size
            Scalar const *const *const *aaafSource,   //!<source image
            Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
            const vector<Scalar>& blob_diameters, //!<list of diameters to try (ordered)
-           vector<array<Scalar,3> >& minima_crds, //!<store minima x,y,z coords here
-           vector<array<Scalar,3> >& maxima_crds, //!<store maxima x,y,z coords here
-           vector<Scalar>& minima_diameters, //!<corresponding radius for that minima
-           vector<Scalar>& maxima_diameters, //!<corresponding radius for that maxima
-           vector<Scalar>& minima_scores, //!<what was the blobs score?
-           vector<Scalar>& maxima_scores, //!<(score = intensity after filtering)
-           Scalar delta_sigma_over_sigma, //!<difference in Gauss widths parameter
-           Scalar filter_truncate_ratio,     //!<how many sigma before truncating?
-           Scalar filter_truncate_threshold, //!<decay in filter before truncating
-           Scalar minima_threshold,       //!<discard unremarkable minima
-           Scalar maxima_threshold,       //!<discard unremarkable maxima
+           //optional arguments:
+           vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
+           vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
+           vector<Scalar> *pv_minima_diameters=NULL, //!< if not NULL, stores the corresponding width for that minima
+           vector<Scalar> *pv_maxima_diameters=NULL, //!< if not NULL, stores the corresponding width for that maxima
+           vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
+           vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+           //the following optional parameters are usually left with default values
+           Scalar delta_sigma_over_sigma=0.02, //!<difference in Gauss widths parameter
+           Scalar filter_truncate_ratio=2.5,   //!<how many sigma before truncating?
+           Scalar filter_truncate_threshold=0.02, //!<decay in filter before truncating
+           Scalar minima_threshold=0.0,    //!<discard unremarkable minima
+           Scalar maxima_threshold=0.0,    //!<discard unremarkable maxima
            bool use_threshold_ratios=true, //!<threshold=ratio*best_score ?
            Scalar sep_ratio_thresh=1.0,          //!<minimum radial separation between blobs
            Scalar nonmax_max_overlap_large=1.0,  //!<maximum volume overlap with larger blob
@@ -178,12 +201,12 @@ _BlobDogNM(int const image_size[3], //!<source image size
             aaafSource,
             aaafMask,
             blob_diameters,
-            minima_crds,
-            maxima_crds,
-            minima_diameters,
-            maxima_diameters,
-            minima_scores,
-            maxima_scores,
+            pva_minima_crds,
+            pva_maxima_crds,
+            pv_minima_diameters,
+            pv_maxima_diameters,
+            pv_minima_scores,
+            pv_maxima_scores,
             delta_sigma_over_sigma,
             filter_truncate_ratio,
             minima_threshold,

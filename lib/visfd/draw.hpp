@@ -38,19 +38,19 @@ namespace visfd {
 
 template<class Scalar>
 void
-VisualizeBlobs(int const image_size[3], //!< image size
-               Scalar ***aaafDest,  //!< array where we should write new image
-               Scalar const *const *const *aaafMask,   //!< Optional: ignore voxels where mask==0
-               const vector<array<Scalar,3> > &centers, //!< coordinates for the center of each sphere (blob)
-               const vector<Scalar> *pDiameters=NULL,         //!< Optional: diameter of each spherical shell (in voxels)
-               const vector<Scalar> *pShellThicknesses=NULL, //!< Optional: thickness of each spherical shell (in voxels)
-               const vector<Scalar> *pVoxelIntensitiesForeground=NULL, //!< Optional: assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
-               Scalar voxel_intensity_background = 0.0, //!< Optional: assign background voxels to this value
-               Scalar const *const *const *aaafBackground = NULL,   //!< Optional: superimpose background image?
-               Scalar voxel_intensity_background_rescale = 0.333, //!< Optional: superimpose with old image? This is the ratio of the fluctuations in voxel intensities of the newly created background image relative to the average foreground voxel intensity.
-               bool voxel_intensity_foreground_normalize = false, //!< Optional: divide brightnesses by number of voxels in spherical shell? (rarely useful)
-               ostream *pReportProgress = NULL //!<Optional: report progress to the user?
-               )
+DrawSpheres(int const image_size[3], //!< image size
+            Scalar ***aaafDest,  //!< array where we should write new image
+            Scalar const *const *const *aaafMask,   //!< Optional: ignore voxels where mask==0
+            const vector<array<Scalar,3> > &centers, //!< coordinates for the center of each sphere (blob)
+            const vector<Scalar> *pDiameters=NULL,         //!< Optional: diameter of each spherical shell (in voxels)
+            const vector<Scalar> *pShellThicknesses=NULL, //!< Optional: thickness of each spherical shell (in voxels)
+            const vector<Scalar> *pVoxelIntensitiesForeground=NULL, //!< Optional: assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
+            Scalar voxel_intensity_background = 0.0, //!< Optional: assign background voxels to this value
+            Scalar const *const *const *aaafBackground = NULL,   //!< Optional: superimpose background image?
+            Scalar voxel_intensity_background_rescale = 0.333, //!< Optional: superimpose with old image? This is the ratio of the fluctuations in voxel intensities of the newly created background image relative to the average foreground voxel intensity.
+            bool voxel_intensity_foreground_normalize = false, //!< Optional: divide brightnesses by number of voxels in spherical shell? (rarely useful)
+            ostream *pReportProgress = NULL //!<Optional: report progress to the user?
+            )
 {
   assert(image_size);
   assert(aaafDest);
@@ -210,7 +210,7 @@ VisualizeBlobs(int const image_size[3], //!< image size
     }
   } //for (int i = 0; i < centers.size(); i++) {
 
-} //VisualizeBlobs()
+} //DrawSpheres()
 
 
 

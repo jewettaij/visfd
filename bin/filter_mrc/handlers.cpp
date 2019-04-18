@@ -294,8 +294,8 @@ HandleBlobsNonmaxSuppression(Settings settings,
   if ((crds.size() > 0) && (mask.aaafI != NULL)) {
     cerr << "  discarding blobs outside the mask" << endl;
     DiscardMaskedBlobs(crds,
-                       diameters,
-                       scores,
+                       &diameters,
+                       &scores,
                        mask.aaafI);
   }
 
@@ -333,11 +333,11 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
 void
-HandleVisualizeBlobs(Settings settings,
-                     MrcSimple &tomo_in,
-                     MrcSimple &tomo_out,
-                     MrcSimple &mask,
-                     float voxel_width[3])
+HandleDrawSpheres(Settings settings,
+                  MrcSimple &tomo_in,
+                  MrcSimple &tomo_out,
+                  MrcSimple &mask,
+                  float voxel_width[3])
 {
 
   vector<array<float,3> > crds;
@@ -386,19 +386,19 @@ HandleVisualizeBlobs(Settings settings,
   reverse(shell_thicknesses.begin(), shell_thicknesses.end());
   reverse(scores.begin(), scores.end());
 
-  VisualizeBlobs(tomo_out.header.nvoxels,
-                 tomo_out.aaafI,
-                 mask.aaafI,
-                 crds,
-                 &diameters,
-                 &shell_thicknesses,
-                 &scores,
-                 settings.sphere_decals_background,
-                 tomo_in.aaafI,
-                 settings.sphere_decals_background_scale,
-                 settings.sphere_decals_foreground_norm);
+  DrawSpheres(tomo_out.header.nvoxels,
+              tomo_out.aaafI,
+              mask.aaafI,
+              crds,
+              &diameters,
+              &shell_thicknesses,
+              &scores,
+              settings.sphere_decals_background,
+              tomo_in.aaafI,
+              settings.sphere_decals_background_scale,
+              settings.sphere_decals_foreground_norm);
 
-} //HandleVisualizeBlobs()
+} //HandleDrawSpheres()
 
 
 
@@ -451,12 +451,12 @@ HandleBlobDetector(Settings settings,
              tomo_in.aaafI,
              mask.aaafI,
              settings.blob_diameters,  // try detecting blobs of these diameters
-             minima_crds_voxels,  // store minima x,y,z coords here
-             maxima_crds_voxels,  // store maxima x,y,z coords here
-             minima_diameters, // corresponding diameter for that minima
-             maxima_diameters, // corresponding diameter for that maxima
-             minima_scores, // what was the blob's score?
-             maxima_scores, // ("score" = intensity after filtering)
+             &minima_crds_voxels,  // store minima x,y,z coords here
+             &maxima_crds_voxels,  // store maxima x,y,z coords here
+             &minima_diameters, // corresponding diameter for that minima
+             &maxima_diameters, // corresponding diameter for that maxima
+             &minima_scores, // what was the blob's score?
+             &maxima_scores, // ("score" = intensity after filtering)
              settings.delta_sigma_over_sigma, //difference in Gauss widths parameter
              settings.filter_truncate_ratio,
              settings.filter_truncate_threshold,
@@ -588,17 +588,17 @@ HandleBlobDetector(Settings settings,
         display_shell_thicknesses[i] = 1.0;
     }
 
-    VisualizeBlobs(tomo_out.header.nvoxels,
-                   tomo_out.aaafI,
-                   mask.aaafI,
-                   display_crds_voxels,
-                   &display_diameters,
-                   &display_shell_thicknesses,
-                   &display_scores,
-                   settings.sphere_decals_background,
-                   tomo_in.aaafI,
-                   settings.sphere_decals_background_scale,
-                   false);
+    DrawSpheres(tomo_out.header.nvoxels,
+                tomo_out.aaafI,
+                mask.aaafI,
+                display_crds_voxels,
+                &display_diameters,
+                &display_shell_thicknesses,
+                &display_scores,
+                settings.sphere_decals_background,
+                tomo_in.aaafI,
+                settings.sphere_decals_background_scale,
+                false);
 
   } //if (tomo_out.aaafI)
 
@@ -788,14 +788,14 @@ HandleExtrema(Settings settings,
 
   if ((minima_crds_voxels.size() > 0) && (mask.aaafI != NULL))
     DiscardMaskedBlobs(minima_crds_voxels,
-                       minima_diameters,
-                       minima_scores,
+                       &minima_diameters,
+                       &minima_scores,
                        mask.aaafI);
 
   if ((maxima_crds_voxels.size() > 0) && (mask.aaafI != NULL))
     DiscardMaskedBlobs(maxima_crds_voxels,
-                       maxima_diameters,
-                       maxima_scores,
+                       &maxima_diameters,
+                       &maxima_scores,
                        mask.aaafI);
 
   if ((settings.nonmax_min_radial_separation_ratio > 0.0) ||

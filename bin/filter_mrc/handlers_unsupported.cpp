@@ -184,8 +184,8 @@ HandleBlobRadialIntensity(Settings settings,
 
   if ((sphere_centers.size() > 0) && (mask.aaafI != NULL))
     DiscardMaskedBlobs(sphere_centers,
-                       diameters,
-                       scores,
+                       &diameters,
+                       &scores,
                        mask.aaafI);
 
   cerr << "  creating intensity-vs-radius profiles for "

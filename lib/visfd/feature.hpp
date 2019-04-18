@@ -618,8 +618,8 @@ void
 FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
             Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
-            vector<array<Coordinate, 3> > *pv_minima_crds, //!< store minima locations (ix,iy,iz) here (if not NULL)
-            vector<array<Coordinate, 3> > *pv_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
+            vector<array<Coordinate, 3> > *pva_minima_crds, //!< store minima locations (ix,iy,iz) here (if not NULL)
+            vector<array<Coordinate, 3> > *pva_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
             vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
             vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
             vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
@@ -632,8 +632,8 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
             ostream *pReportProgress=NULL   //!< optional: print progress to the user?
                    )
 {
-  bool find_minima = (pv_minima_crds != NULL);
-  bool find_maxima = (pv_maxima_crds != NULL);
+  bool find_minima = (pva_minima_crds != NULL);
+  bool find_maxima = (pva_maxima_crds != NULL);
 
   vector<size_t> minima_indices;
   vector<size_t> maxima_indices;
@@ -669,10 +669,10 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
                pReportProgress);
 
   // Now convert the indices back to x,y,z coordinates
-  if (pv_minima_crds) {
+  if (pva_minima_crds) {
     size_t N = minima_indices.size();
-    assert(pv_minima_crds);
-    pv_minima_crds->resize(N);
+    assert(pva_minima_crds);
+    pva_minima_crds->resize(N);
     for (size_t n = 0; n < N; n++) {
       size_t i = minima_indices[n];
       // convert from a 1D index (i) to 3-D indices (ix, iy, iz)
@@ -681,15 +681,15 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
       size_t iy = i % image_size[1];
       i /= image_size[1];
       size_t iz = i;
-      (*pv_minima_crds)[n][0] = ix;
-      (*pv_minima_crds)[n][1] = iy;
-      (*pv_minima_crds)[n][2] = iz;
+      (*pva_minima_crds)[n][0] = ix;
+      (*pva_minima_crds)[n][1] = iy;
+      (*pva_minima_crds)[n][2] = iz;
     }
   }
-  if (pv_maxima_crds) {
+  if (pva_maxima_crds) {
     size_t N = maxima_indices.size();
-    assert(pv_maxima_crds);
-    pv_maxima_crds->resize(N);
+    assert(pva_maxima_crds);
+    pva_maxima_crds->resize(N);
     for (size_t n = 0; n < N; n++) {
       size_t i = maxima_indices[n];
       // convert from a 1D index (i) to 3-D indices (ix, iy, iz)
@@ -698,9 +698,9 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
       size_t iy = i % image_size[1];
       i /= image_size[1];
       size_t iz = i;
-      (*pv_maxima_crds)[n][0] = ix;
-      (*pv_maxima_crds)[n][1] = iy;
-      (*pv_maxima_crds)[n][2] = iz;
+      (*pva_maxima_crds)[n][0] = ix;
+      (*pva_maxima_crds)[n][1] = iy;
+      (*pva_maxima_crds)[n][2] = iz;
     }
   }
 } //FindExtrema()
@@ -783,16 +783,13 @@ FindExtrema(int const image_size[3],            //!< size of input image array
 
 /// @brief Find all scale-invariant blobs in the image as a function of sigma
 ///        regardless of overlap.  (Blobs with poor scores can be discarded)
-///        (Blobs with unremarkable scores can be discarded.)
 ///
 /// Algorithm described in:
 ///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
 ///
-/// @note  This function will find BOTH minima and maxima.
+/// @note  This function can find BOTH minima and maxima without additional cost
 ///        (corresponding to dark blobs on a light background
 ///         and light blobs on a dark background, respectively).
-///        You must supply arguments to store BOTH the minima and maxima
-///        even if you are only interested in one of them (minima OR maxima).
 
 template<class Scalar>
 void
@@ -800,16 +797,18 @@ BlobDog(int const image_size[3], //!< source image size
         Scalar const *const *const *aaafSource,   //!< source image
         Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
         const vector<Scalar>& blob_sigma, //!< blob widths to try, ordered
-        vector<array<Scalar,3> >& minima_crds, //!< store minima x,y,z coords here
-        vector<array<Scalar,3> >& maxima_crds, //!< store maxima x,y,z coords here
-        vector<Scalar>& minima_sigma, //!< corresponding width for that minima
-        vector<Scalar>& maxima_sigma, //!< corresponding width for that maxima
-        vector<Scalar>& minima_scores, //!< what was the blob's score?
-        vector<Scalar>& maxima_scores, //!< (score = intensity after filtering)
+        // optional arguments
+        vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
+        vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
+        vector<Scalar> *pv_minima_sigma=NULL, //!< if not NULL, stores the corresponding width for that minima
+        vector<Scalar> *pv_maxima_sigma=NULL, //!< if not NULL, stores the corresponding width for that maxima
+        vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
+        vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+        //the following optional parameters are usually left with default values
         Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
         Scalar truncate_ratio=2.8,      //!< how many sigma before truncating?
-        Scalar minima_threshold=0.0,    //!< discard blobs with unremarkable scores
-        Scalar maxima_threshold=0.0,    //!< discard blobs with unremarkable scores
+        Scalar minima_threshold=0.0,    //!< discard blobs with unremarkable scores (0 disables)
+        Scalar maxima_threshold=0.0,    //!< discard blobs with unremarkable scores (0 disables)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
         // optional arguments
         ostream *pReportProgress = NULL, //!< optional: report progress to the user?
@@ -818,6 +817,25 @@ BlobDog(int const image_size[3], //!< source image size
         )
 
 {
+
+  vector<array<Scalar,3> > minima_crds; //store minima blob x,y,z coords here
+  vector<array<Scalar,3> > maxima_crds; //store minima blob x,y,z coords here
+  vector<Scalar>  minima_sigma;         //corresponding width for that minima
+  vector<Scalar>  maxima_sigma;         //corresponding width for that maxima
+  vector<Scalar>  minima_scores;        //store the score of each blob minima
+  vector<Scalar>  maxima_scores;        //store the score of each blob maxima
+  if (pva_minima_crds == NULL)
+    pva_minima_crds = &minima_crds;
+  if (pva_maxima_crds == NULL)
+    pva_maxima_crds = &maxima_crds;
+  if (pv_minima_sigma == NULL)
+    pv_minima_sigma = &minima_sigma;
+  if (pv_maxima_sigma == NULL)
+    pv_maxima_sigma = &maxima_sigma;
+  if (pv_minima_scores == NULL)
+    pv_minima_scores = &minima_scores;
+  if (pv_maxima_scores == NULL)
+    pv_maxima_scores = &maxima_scores;
 
   // We need 3 images to store the result of filtering the image
   // using DoG filters with 3 different widths.  Store those images here:
@@ -1043,29 +1061,29 @@ BlobDog(int const image_size[3], //!< source image size
         // Append the newly minima and maxima discovered by this processor
         // to the global list of minima and maxima:
 
-        minima_crds.insert(minima_crds.end(),
-                           min_crds_proc.begin(),
-                           min_crds_proc.end());
+        pva_minima_crds->insert(pva_minima_crds->end(),
+                                min_crds_proc.begin(),
+                                min_crds_proc.end());
         min_crds_proc.clear();
-        minima_sigma.insert(minima_sigma.end(),
-                            min_sigma_proc.begin(),
-                            min_sigma_proc.end());
+        pv_minima_sigma->insert(pv_minima_sigma->end(),
+                                min_sigma_proc.begin(),
+                                min_sigma_proc.end());
         min_sigma_proc.clear();
-        minima_scores.insert(minima_scores.end(),
-                             min_scores_proc.begin(),
-                             min_scores_proc.end());
+        pv_minima_scores->insert(pv_minima_scores->end(),
+                                 min_scores_proc.begin(),
+                                 min_scores_proc.end());
         min_scores_proc.clear();
-        maxima_crds.insert(maxima_crds.end(),
-                           max_crds_proc.begin(),
-                           max_crds_proc.end());
+        pva_maxima_crds->insert(pva_maxima_crds->end(),
+                                max_crds_proc.begin(),
+                                max_crds_proc.end());
         max_crds_proc.clear();
-        maxima_sigma.insert(maxima_sigma.end(),
-                            max_sigma_proc.begin(),
-                            max_sigma_proc.end());
+        pv_maxima_sigma->insert(pv_maxima_sigma->end(),
+                                max_sigma_proc.begin(),
+                                max_sigma_proc.end());
         max_sigma_proc.clear();
-        maxima_scores.insert(maxima_scores.end(),
-                             max_scores_proc.begin(),
-                             max_scores_proc.end());
+        pv_maxima_scores->insert(pv_maxima_scores->end(),
+                                 max_scores_proc.begin(),
+                                 max_scores_proc.end());
         max_scores_proc.clear();
 
         // Update the global minima and maxima as well:
@@ -1079,17 +1097,23 @@ BlobDog(int const image_size[3], //!< source image size
 
     if (pReportProgress)
       *pReportProgress
-        << "--- (Found " << minima_crds.size ()
-        << " and " << maxima_crds.size()
+        << "--- (Found " << pva_minima_crds->size ()
+        << " and " << pva_maxima_crds->size()
         << " local minima and maxima, respectively so far) ---\n" << endl;
 
-    assert((minima_crds.size() == minima_sigma.size()) &&
-           (minima_crds.size() == minima_scores.size()));
-    assert((maxima_crds.size() == maxima_sigma.size()) &&
-           (maxima_crds.size() == maxima_scores.size()));
+    assert((pva_minima_crds->size() == pv_minima_sigma->size()) &&
+           (pva_minima_crds->size() == pv_minima_scores->size()));
+    assert((pva_maxima_crds->size() == pv_maxima_sigma->size()) &&
+           (pva_maxima_crds->size() == pv_maxima_scores->size()));
 
   } //for (ir = 0; ir < blob_sigma.size(); ir++)
 
+  if (pReportProgress)
+    *pReportProgress
+      << " Discarding poor scoring blobs...\n"
+      << " (If this is taking a while, just keep all the blobs, \n"
+      << "  and discard the poor-scoring blobs later on.)\n"
+      << endl;
 
   if (use_threshold_ratios) {
     minima_threshold *= global_min_score;
@@ -1105,12 +1129,14 @@ BlobDog(int const image_size[3], //!< source image size
     assert(minima_scores[i] < 0.0);
     if (minima_scores[i] >= minima_threshold) {
       // delete this blob
-      minima_crds.erase(minima_crds.begin() + i,
-                        minima_crds.begin() + i + 1);
-      minima_sigma.erase(minima_sigma.begin() + i,
-                         minima_sigma.begin() + i + 1);
-      minima_scores.erase(minima_scores.begin() + i,
-                          minima_scores.begin() + i + 1);
+      // WARNING: This might be a slow operation if there are millions of blobs
+      // Perhaps I should create a temporary array and copy the results.
+      pva_minima_crds->erase(pva_minima_crds->begin() + i,
+                             pva_minima_crds->begin() + i + 1);
+      pv_minima_sigma->erase(pv_minima_sigma->begin() + i,
+                             pv_minima_sigma->begin() + i + 1);
+      pv_minima_scores->erase(pv_minima_scores->begin() + i,
+                              pv_minima_scores->begin() + i + 1);
     }
     else
       i++;
@@ -1120,16 +1146,22 @@ BlobDog(int const image_size[3], //!< source image size
     assert(maxima_scores[i] > 0.0);
     if (maxima_scores[i] <= maxima_threshold) {
       // delete this blob
-      maxima_crds.erase(maxima_crds.begin() + i,
-                        maxima_crds.begin() + i + 1);
-      maxima_sigma.erase(maxima_sigma.begin() + i,
-                         maxima_sigma.begin() + i + 1);
-      maxima_scores.erase(maxima_scores.begin() + i,
-                          maxima_scores.begin() + i + 1);
+      // WARNING: This might be a slow operation if there are millions of blobs
+      // Perhaps I should create a temporary array and copy the results.
+      pva_maxima_crds->erase(pva_maxima_crds->begin() + i,
+                             pva_maxima_crds->begin() + i + 1);
+      pv_maxima_sigma->erase(pv_maxima_sigma->begin() + i,
+                             pv_maxima_sigma->begin() + i + 1);
+      pv_maxima_scores->erase(pv_maxima_scores->begin() + i,
+                              pv_maxima_scores->begin() + i + 1);
     }
     else
       i++;
   }
+
+
+  if (pReportProgress)
+    *pReportProgress << " ...done.\n" << endl;
 
 
   if (! preallocated) {
@@ -1171,14 +1203,15 @@ void
 BlobDogD(int const image_size[3], //!<source image size
          Scalar const *const *const *aaafSource,   //!< source image
          Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
-         const vector<Scalar>& blob_diameters, //!<blob widths to try, ordered
-         vector<array<Scalar,3> >& minima_crds, //!<store minima x,y,z coords here
-         vector<array<Scalar,3> >& maxima_crds, //!<store maxima x,y,z coords here
-         vector<Scalar>& minima_diameters, //!<corresponding width for that minima
-         vector<Scalar>& maxima_diameters, //!<corresponding width for that maxima
-         vector<Scalar>& minima_scores, //!<what was the blob's score?
-         vector<Scalar>& maxima_scores, //!<(score = intensity after filtering)
-         // optional arguments
+         const vector<Scalar>& blob_diameters, //!< blob widths to try, ordered
+         //optional arguments:
+         vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
+         vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
+         vector<Scalar> *pv_minima_diameters=NULL, //!< if not NULL, stores the corresponding width for that minima
+         vector<Scalar> *pv_maxima_diameters=NULL, //!< if not NULL, stores the corresponding width for that maxima
+         vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
+         vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+         //the following optional parameters are usually left with default values
          Scalar delta_sigma_over_sigma=0.02,//!<param for approximating LoG with DoG
          Scalar truncate_ratio=2.5,    //!<how many sigma before truncating?
          Scalar minima_threshold=0.5,  //!<discard blobs with unremarkable scores
@@ -1200,12 +1233,12 @@ BlobDogD(int const image_size[3], //!<source image size
           aaafSource,
           aaafMask,
           blob_sigma,
-          minima_crds,
-          maxima_crds,
-          minima_sigma,
-          maxima_sigma,
-          minima_scores,
-          maxima_scores,
+          pva_minima_crds,
+          pva_maxima_crds,
+          &minima_sigma,
+          &maxima_sigma,
+          pv_minima_scores,
+          pv_maxima_scores,
           delta_sigma_over_sigma,
           truncate_ratio,
           minima_threshold,
@@ -1215,13 +1248,17 @@ BlobDogD(int const image_size[3], //!<source image size
           aaaafI,
           aafI);
 
-  minima_diameters.resize(minima_sigma.size());
-  for (int i=0; i < minima_sigma.size(); i++)
-    minima_diameters[i] = minima_sigma[i] * 2.0 * sqrt(3);
+  if (pv_minima_diameters) {
+    pv_minima_diameters->resize(minima_sigma.size());
+    for (int i=0; i < minima_sigma.size(); i++)
+      (*pv_minima_diameters)[i] = minima_sigma[i] * 2.0 * sqrt(3);
+  }
 
-  maxima_diameters.resize(maxima_sigma.size());
-  for (int i=0; i < maxima_sigma.size(); i++)
-    maxima_diameters[i] = maxima_sigma[i] * 2.0 * sqrt(3);
+  if (pv_maxima_diameters) {
+    pv_maxima_diameters->resize(maxima_sigma.size());
+    for (int i=0; i < maxima_sigma.size(); i++)
+      (*pv_maxima_diameters)[i] = maxima_sigma[i] * 2.0 * sqrt(3);
+  }
 
 } // BlobDogD()
 
@@ -1559,8 +1596,9 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 template<class Scalar>
 void
 DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
-                   vector<Scalar>& blob_diameters,  //!< diameger of each blob
-                   vector<Scalar>& blob_scores, //!< priority of each blob
+                   // optional arguments:
+                   vector<Scalar> *pv_blob_diameters=NULL,  //!< diameger of each blob
+                   vector<Scalar> *pv_blob_scores=NULL, //!< priority of each blob
                    Scalar const *const *const *aaafMask = NULL, //!< if not NULL then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
                    ostream *pReportProgress=NULL)  //!< print progress to the user?
 
@@ -1589,10 +1627,10 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
     }
     else {
       blob_crds_cpy.push_back(blob_crds[i]);
-      if (blob_diameters.size() > 0)
-        blob_diameters_cpy.push_back(blob_diameters[i]);
-      if (blob_scores.size() > 0)
-        blob_scores_cpy.push_back(blob_scores[i]);
+      if (pv_blob_diameters && (pv_blob_diameters->size() > 0))
+        blob_diameters_cpy.push_back((*pv_blob_diameters)[i]);
+      if (pv_blob_scores && (pv_blob_scores->size() > 0))
+        blob_scores_cpy.push_back((*pv_blob_scores)[i]);
     } 
   } //for (size_t i = 0; i < blob_crds.size(); i++)
 
@@ -1602,8 +1640,10 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
       << "  blobs lying outside the mask." << endl;
 
   blob_crds = blob_crds_cpy;
-  blob_diameters = blob_diameters_cpy;
-  blob_scores = blob_scores_cpy;
+  if (pv_blob_diameters)
+    *pv_blob_diameters = blob_diameters_cpy;
+  if (pv_blob_scores)
+    *pv_blob_scores = blob_scores_cpy;
 } // DiscardMaskedBlobs()
 
 

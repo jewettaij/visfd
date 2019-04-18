@@ -306,7 +306,7 @@ argument.
 
 ## Detecting membranes
 
-### -surface  type  thickness
+### -surface type thickness
 
 When the "**-surface**" filter is selected, a
 [3D planar ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
@@ -319,7 +319,7 @@ structures which are bright on a dark background.
 The *thickness* parameter should be a number indicating
 the approximate target *thickness* for the thin membrane-like feature 
 you are interested in detecting.
-(in physical units, not voxels.  
+(This parameter should be expressed in physical units, not voxels.  
  Membranes whose thickness within a factor of 2 of this target
  are also likely to be detected.
  Technically, the *thickness* parameter controls the width Gaussian that will
@@ -1750,9 +1750,11 @@ subset of voxels in the tomogram (ie, the "mask").
 
 Masks can also be used to give some voxels more consideration
 than others during the bluring (filtering) process.  (A.K.A. "weighting".)
-This effectively makes it possible to apply a filter to an image
-whose boundaries are smooth and gradual as opposed to jagged and rectangular,
-slowly fading from 1 to 0 (near a curve-shaped boundary, for example).
+This makes it possible to apply a filter to an image
+whose boundaries are smooth and gradual
+(slowly fading from 1 to 0 near a curve-shaped boundary, for example),
+as opposed to jagged and rectangular.
+
 
 
 ### -mask MRC_FILE
