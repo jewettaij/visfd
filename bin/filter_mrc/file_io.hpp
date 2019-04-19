@@ -194,9 +194,9 @@ template<typename Scalar, typename Coordinate>
 
 static void
 ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
-                   vector<array<Coordinate, 3> > *pCrds=NULL, //!< store the blob coordinates here (if !=NULL)
-                   vector<Scalar> *pDiameters=NULL, //!< store the blob diameters here (if !=NULL)
-                   vector<Scalar> *pScores=NULL, //!< store blob scores here (if !=NULL)
+                   vector<array<Coordinate, 3> > *pCrds=nullptr, //!< store the blob coordinates here (if !=nullptr)
+                   vector<Scalar> *pDiameters=nullptr, //!< store the blob diameters here (if !=nullptr)
+                   vector<Scalar> *pScores=nullptr, //!< store blob scores here (if !=nullptr)
                    Scalar distance_scale=1.0, //!< divide all distances and coordinates by this value
                    Scalar diameter_override=-1.0, //!< use this diameter (useful if no 4th column is present)
                    Scalar diameter_factor=1.0, //!< multiply all diameters by this number
@@ -398,8 +398,8 @@ static void
 WriteOrientedPointCloud(string pointcloud_file_name,
                         const int image_size[3],
                         VectorContainer const *const *const *aaaafVector,
-                        Scalar const *const *const *aaafMask = NULL,
-                        const Scalar *voxel_width=NULL)
+                        Scalar const *const *const *aaafMask = nullptr,
+                        const Scalar *voxel_width=nullptr)
 {
   assert(aaaafVector);
   vector<array<Scalar,3> > coords;

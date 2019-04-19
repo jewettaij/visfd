@@ -66,11 +66,11 @@ public:
   void Apply(Integer const size_source[2],
              Scalar const *const *aafSource,
              Scalar **aafDest,
-             Scalar const *const *aafMask = NULL,
+             Scalar const *const *aafMask = nullptr,
              bool normalize = false) const
   {
-    Scalar *afDenominator = NULL;
-    Scalar **aafDenominator = NULL;
+    Scalar *afDenominator = nullptr;
+    Scalar **aafDenominator = nullptr;
     if (normalize)
       Alloc2D(size_source, &afDenominator, &aafDenominator);
 
@@ -94,11 +94,11 @@ public:
   /// @brief  Apply the filter to a 2D image (aafSource[][]).
   ///         This version is identical to the other version of Apply()
   ///         except that this version both d[i] and g[i] whenever
-  ///         you supply a non-NULL afDenominator[] argument (see below).
+  ///         you supply a non-nullptr afDenominator[] argument (see below).
   ///         It also does not normalize the result (by dividing g[i] / d[i]].
   ///     
   /// @code
-  /// If afMask == NULL, then filter computes g[i] and d[i]:
+  /// If afMask == nullptr, then filter computes g[i] and d[i]:
   ///        ___
   ///        \
   /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
@@ -108,7 +108,7 @@ public:
   /// d[i] = /__  h[j] * Theta[i-j]
   ///         j
   ///     (sum over the width of the filter)
-  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes:
+  /// Otherwise, if afMask!=nullptr and afDenominator!=nullptr, it computes:
   ///        ___
   ///        \
   /// g[i] = /__  h[j] * f[i-j] * mask[i-j]
@@ -135,13 +135,13 @@ public:
   /// @param aafSource[][] is the source array (source image) <==> "f[i]"
   /// @param aafDest[][] will store the image after filtering <==> "g[i]"
   /// @param aafMask[][]==0 whenever we want to ignore entries in afSource[][]. Optional.
-  /// @param aafDenominator[][] will store d[i] if you supply a non-NULL pointer
+  /// @param aafDenominator[][] will store d[i] if you supply a non-nullptr pointer
 
   void Apply(Integer const size_source[2],
              Scalar const *const *aafSource,
              Scalar **aafDest,
-             Scalar const *const *aafMask = NULL,
-             Scalar **aafDenominator = NULL) const
+             Scalar const *const *aafMask = nullptr,
+             Scalar **aafDenominator = nullptr) const
              //bool precompute_mask_times_source = true) const
   {
 
@@ -291,8 +291,8 @@ public:
     halfwidth[1] = -1;
     array_size[0] = -1;
     array_size[1] = -1;
-    afH = NULL;
-    aafH = NULL;
+    afH = nullptr;
+    aafH = nullptr;
   }
 
 
@@ -349,8 +349,8 @@ Filter2D<Scalar, int>
 GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
                     Scalar m_exp,       //"m" exponent parameter
                     int halfwidth[2],
-                    Scalar *pA=NULL,    //optional:report A coeff to user
-                    ostream *pReportProgress = NULL)
+                    Scalar *pA=nullptr,    //optional:report A coeff to user
+                    ostream *pReportProgress = nullptr)
 {
   Scalar truncate_threshold = 1.0;
   for (int d=0; d<2; d++) {
@@ -402,8 +402,8 @@ Filter2D<Scalar, int>
 GenFilterGenGauss2D(Scalar width[2],       //!< "s_x", "s_y" parameters
                     Scalar m_exp,          //!< "m" parameter in formula
                     Scalar filter_cutoff_ratio, //!< cutoff distance from center (in units of width[])
-                    Scalar *pA=NULL,    //!< optional:report A coeff to user?
-                    ostream *pReportProgress = NULL //!< optional:report filter details to the user?
+                    Scalar *pA=nullptr,    //!< optional:report A coeff to user?
+                    ostream *pReportProgress = nullptr //!< optional:report filter details to the user?
                     )
 {
   // choose the width of the filter window based on the filter_cutoff_ratio
@@ -438,9 +438,9 @@ _GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
                  Scalar n_exp,  //!< "n" parameter in formula
                  Filter2D<Scalar, int>& filterXY_A, //!< filters for the two
                  Filter2D<Scalar, int>& filterXY_B, //!< gaussians
-                 Scalar *pA=NULL, //!< optional:report A,B coeffs to user
-                 Scalar *pB=NULL, //!< optional:report A,B coeffs to user
-                 ostream *pReportProgress = NULL //!< optional:report filter details to the user?
+                 Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
+                 Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
+                 ostream *pReportProgress = nullptr //!< optional:report filter details to the user?
                  )
 {
 
@@ -518,9 +518,9 @@ GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
                 Scalar m_exp,       //"m" parameter in formula
                 Scalar n_exp,       //"n" parameter in formula
                 int halfwidth[2],
-                Scalar *pA = NULL,  //optional:report A,B coeffs to user
-                Scalar *pB = NULL,  //optional:report A,B coeffs to user
-                ostream *pReportProgress = NULL)
+                Scalar *pA = nullptr,  //optional:report A,B coeffs to user
+                Scalar *pB = nullptr,  //optional:report A,B coeffs to user
+                ostream *pReportProgress = nullptr)
 {
   Filter2D<Scalar, int> filterXY_A =
     GenFilterGenGauss2D(width_a,      //"a_x", "a_y" gaussian width parameters

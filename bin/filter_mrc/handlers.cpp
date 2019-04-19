@@ -41,7 +41,7 @@ HandleGGauss(Settings settings,
                                  settings.m_exp,
                                  settings.filter_truncate_ratio,
                                  settings.filter_truncate_threshold,
-                                 static_cast<float*>(NULL),
+                                 static_cast<float*>(nullptr),
                                  &cerr);
 
   filter.Apply(tomo_in.header.nvoxels,
@@ -291,7 +291,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
        << " \"" << settings.in_coords_file_name << "\" ---\n"
        << "\n";
 
-  if ((crds.size() > 0) && (mask.aaafI != NULL)) {
+  if ((crds.size() > 0) && (mask.aaafI != nullptr)) {
     cerr << "  discarding blobs outside the mask" << endl;
     DiscardMaskedBlobs(crds,
                        &diameters,
@@ -739,12 +739,12 @@ HandleExtrema(Settings settings,
   vector<float> maxima_scores;
   vector<size_t> minima_nvoxels;
   vector<size_t> maxima_nvoxels;
-  vector<array<float, 3> > *pv_minima_crds_voxels = NULL;
-  vector<array<float, 3> > *pv_maxima_crds_voxels = NULL;
-  vector<float> *pv_minima_scores = NULL;
-  vector<float> *pv_maxima_scores = NULL;
-  vector<size_t> *pv_minima_nvoxels = NULL;
-  vector<size_t> *pv_maxima_nvoxels = NULL;
+  vector<array<float, 3> > *pv_minima_crds_voxels = nullptr;
+  vector<array<float, 3> > *pv_maxima_crds_voxels = nullptr;
+  vector<float> *pv_minima_scores = nullptr;
+  vector<float> *pv_maxima_scores = nullptr;
+  vector<size_t> *pv_minima_nvoxels = nullptr;
+  vector<size_t> *pv_maxima_nvoxels = nullptr;
 
 
   if (settings.find_minima) {
@@ -786,13 +786,13 @@ HandleExtrema(Settings settings,
   vector<float> minima_diameters(minima_crds_voxels.size(), use_this_diameter);
   vector<float> maxima_diameters(maxima_crds_voxels.size(), use_this_diameter);
 
-  if ((minima_crds_voxels.size() > 0) && (mask.aaafI != NULL))
+  if ((minima_crds_voxels.size() > 0) && (mask.aaafI != nullptr))
     DiscardMaskedBlobs(minima_crds_voxels,
                        &minima_diameters,
                        &minima_scores,
                        mask.aaafI);
 
-  if ((maxima_crds_voxels.size() > 0) && (mask.aaafI != NULL))
+  if ((maxima_crds_voxels.size() > 0) && (mask.aaafI != nullptr))
     DiscardMaskedBlobs(maxima_crds_voxels,
                        &maxima_diameters,
                        &maxima_scores,
@@ -917,8 +917,8 @@ HandleWatershed(Settings settings,
   // Create a temporary array to store the basin membership for each voxel.
   // Because the number or clusters could (conceivably) exceed 10^6, we
   // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
-  ptrdiff_t *aiBasinId = NULL;
-  ptrdiff_t ***aaaiBasinId = NULL;
+  ptrdiff_t *aiBasinId = nullptr;
+  ptrdiff_t ***aaaiBasinId = nullptr;
   Alloc3D(tomo_in.header.nvoxels,
           &aiBasinId,
           &aaaiBasinId);
@@ -972,7 +972,7 @@ HandleClusterConnected(Settings settings,
                        MrcSimple &mask,
                        float voxel_width[3])
 {
-  vector<vector<array<int, 3> > > *pMustLinkConstraints = NULL;
+  vector<vector<array<int, 3> > > *pMustLinkConstraints = nullptr;
 
   if (settings.must_link_filename != "") {
     // Prepare the list of coordinates in the settings.must_link_constraints
@@ -996,8 +996,8 @@ HandleClusterConnected(Settings settings,
   // Create a temporary array to store the cluster membership for each voxel.
   // Because the number or clusters could (conceivably) exceed 10^6, we
   // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
-  ptrdiff_t *aiClusterId = NULL;
-  ptrdiff_t ***aaaiClusterId = NULL;
+  ptrdiff_t *aiClusterId = nullptr;
+  ptrdiff_t ***aaaiClusterId = nullptr;
   Alloc3D(tomo_in.header.nvoxels,
           &aiClusterId,
           &aaaiClusterId);
@@ -1012,11 +1012,11 @@ HandleClusterConnected(Settings settings,
                    settings.connect_threshold_saliency,
                    static_cast<ptrdiff_t>(0), //this value is ignored, but it specifies the type of array we are using
                    true,  //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
-                   static_cast<array<float, 3> ***>(NULL),
+                   static_cast<array<float, 3> ***>(nullptr),
                    -std::numeric_limits<float>::infinity(),
                    -std::numeric_limits<float>::infinity(),
                    false, //normal default value for this (ignored) parameter
-                   static_cast<float****>(NULL),
+                   static_cast<float****>(nullptr),
                    -std::numeric_limits<float>::infinity(),
                    -std::numeric_limits<float>::infinity(),
                    true,  //normal default value for this (ignored) parameter
@@ -1025,9 +1025,9 @@ HandleClusterConnected(Settings settings,
                    &cluster_sizes,
                    &cluster_saliencies,
                    ClusterSortCriteria::SORT_BY_SIZE,
-                   static_cast<float***>(NULL),
+                   static_cast<float***>(nullptr),
                    #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                   static_cast<array<float, 3> ***>(NULL),
+                   static_cast<array<float, 3> ***>(nullptr),
                    #endif
                    pMustLinkConstraints,
                    true, //(clusters begin at regions of high saliency)
@@ -1060,7 +1060,7 @@ HandleRidgeDetector(Settings settings,
 {
   cerr << "filter_type = surface ridge detector\n";
 
-  vector<vector<array<int, 3> > > *pMustLinkConstraints = NULL;
+  vector<vector<array<int, 3> > > *pMustLinkConstraints = nullptr;
 
   if (settings.must_link_filename != "") {
     // Prepare the list of coordinates in the settings.must_link_constraints
@@ -1121,7 +1121,7 @@ HandleRidgeDetector(Settings settings,
   // The storage requirement for Hessians (6 floats) is large enough that
   // I decided to represent hessians using a CompactMultiChannelImage3D.
   // Internally this is a 4-dimensional array, however the last dimension
-  // is only allocated (non-NULL) for voxels which were selected by the user
+  // is only allocated (non-nullptr) for voxels which were selected by the user
   // (ie voxels for which the mask is non-zero).  This can reduce memory usage
   // by a factor of up to 3 (for floats) for this array.
   CompactMultiChannelImage3D<float> tmp_tensor(6);
@@ -1415,8 +1415,8 @@ HandleRidgeDetector(Settings settings,
     // Create a temporary array to store the cluster membership for each voxel.
     // Because the number or clusters could (conceivably) exceed 10^6, we
     // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
-    ptrdiff_t *aiClusterId = NULL;
-    ptrdiff_t ***aaaiClusterId = NULL;
+    ptrdiff_t *aiClusterId = nullptr;
+    ptrdiff_t ***aaaiClusterId = nullptr;
     Alloc3D(tomo_in.header.nvoxels,
             &aiClusterId,
             &aaaiClusterId);
@@ -1444,7 +1444,7 @@ HandleRidgeDetector(Settings settings,
                      &cluster_sizes,
                      &cluster_saliencies,
                      ClusterSortCriteria::SORT_BY_SIZE,
-                     static_cast<float***>(NULL),
+                     static_cast<float***>(nullptr),
                      #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                      aaaafDirection,
                      #endif
@@ -1474,7 +1474,7 @@ HandleRidgeDetector(Settings settings,
     float ***aaafSelectedVoxels;
 
     // where is the lookup table to indicate which cluster a voxel belongs to?
-    float ***aaafVoxel2Cluster = NULL;
+    float ***aaafVoxel2Cluster = nullptr;
     if (settings.cluster_connected_voxels)
       aaafVoxel2Cluster = tomo_out.aaafI; //tomo_out set by ClusterConnected()
 

@@ -49,12 +49,12 @@ BlobDogNM(int const image_size[3], //!<source image size
           Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
           const vector<Scalar>& blob_diameters, //!< blob widths to try, ordered
           //optional arguments:
-          vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
-          vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
-          vector<Scalar> *pv_minima_diameters=NULL, //!< if not NULL, stores the corresponding width for that minima
-          vector<Scalar> *pv_maxima_diameters=NULL, //!< if not NULL, stores the corresponding width for that maxima
-          vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
-          vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+          vector<array<Scalar,3> > *pva_minima_crds=nullptr, //!< if not nullptr, stores blob minima x,y,z coords here
+          vector<array<Scalar,3> > *pva_maxima_crds=nullptr, //!< if not nullptr, stores blob maxima x,y,z coords here
+          vector<Scalar> *pv_minima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that minima
+          vector<Scalar> *pv_maxima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
+          vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
+          vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
           //the following optional parameters are usually left with default values
           Scalar delta_sigma_over_sigma=0.02,//!< param for approximating LOG with DOG
           Scalar truncate_ratio=2.5,      //!< how many sigma before truncating?
@@ -65,9 +65,9 @@ BlobDogNM(int const image_size[3], //!<source image size
           Scalar nonmax_max_overlap_large=1.0,  //!< maximum volume overlap with larger blob
           Scalar nonmax_max_overlap_small=1.0,  //!< maximum volume overlap with smaller blob
           // optional arguments
-          ostream *pReportProgress = NULL, //!< report progress to the user?
-          Scalar ****aaaafI = NULL, //!<preallocated memory for filtered images
-          Scalar **aafI = NULL     //!<preallocated memory for filtered images
+          ostream *pReportProgress = nullptr, //!< report progress to the user?
+          Scalar ****aaaafI = nullptr, //!<preallocated memory for filtered images
+          Scalar **aafI = nullptr     //!<preallocated memory for filtered images
           )
 {
 
@@ -77,17 +77,17 @@ BlobDogNM(int const image_size[3], //!<source image size
   vector<Scalar>  maxima_diameters;     //corresponding width for that maxima
   vector<Scalar>  minima_scores;        //store the score of each blob minima
   vector<Scalar>  maxima_scores;        //store the score of each blob maxima
-  if (pva_minima_crds == NULL)
+  if (pva_minima_crds == nullptr)
     pva_minima_crds = &minima_crds;
-  if (pva_maxima_crds == NULL)
+  if (pva_maxima_crds == nullptr)
     pva_maxima_crds = &maxima_crds;
-  if (pv_minima_diameters == NULL)
+  if (pv_minima_diameters == nullptr)
     pv_minima_diameters = &minima_diameters;
-  if (pv_maxima_diameters == NULL)
+  if (pv_maxima_diameters == nullptr)
     pv_maxima_diameters = &maxima_diameters;
-  if (pv_minima_scores == NULL)
+  if (pv_minima_scores == nullptr)
     pv_minima_scores = &minima_scores;
-  if (pv_maxima_scores == NULL)
+  if (pv_maxima_scores == nullptr)
     pv_maxima_scores = &maxima_scores;
 
   BlobDogD(image_size,
@@ -168,12 +168,12 @@ _BlobDogNM(int const image_size[3], //!<source image size
            Scalar const *const *const *aaafMask,     //!<ignore voxels where mask==0
            const vector<Scalar>& blob_diameters, //!<list of diameters to try (ordered)
            //optional arguments:
-           vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
-           vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
-           vector<Scalar> *pv_minima_diameters=NULL, //!< if not NULL, stores the corresponding width for that minima
-           vector<Scalar> *pv_maxima_diameters=NULL, //!< if not NULL, stores the corresponding width for that maxima
-           vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
-           vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+           vector<array<Scalar,3> > *pva_minima_crds=nullptr, //!< if not nullptr, stores blob minima x,y,z coords here
+           vector<array<Scalar,3> > *pva_maxima_crds=nullptr, //!< if not nullptr, stores blob maxima x,y,z coords here
+           vector<Scalar> *pv_minima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that minima
+           vector<Scalar> *pv_maxima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
+           vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
+           vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
            //the following optional parameters are usually left with default values
            Scalar delta_sigma_over_sigma=0.02, //!<difference in Gauss widths parameter
            Scalar filter_truncate_ratio=2.5,   //!<how many sigma before truncating?
@@ -184,9 +184,9 @@ _BlobDogNM(int const image_size[3], //!<source image size
            Scalar sep_ratio_thresh=1.0,          //!<minimum radial separation between blobs
            Scalar nonmax_max_overlap_large=1.0,  //!<maximum volume overlap with larger blob
            Scalar nonmax_max_overlap_small=1.0,  //!<maximum volume overlap with smaller blob
-           ostream *pReportProgress = NULL,
-           Scalar ****aaaafI = NULL, //!<preallocated memory for filtered images
-           Scalar **aafI = NULL     //!<preallocated memory for filtered images
+           ostream *pReportProgress = nullptr,
+           Scalar ****aaaafI = nullptr, //!<preallocated memory for filtered images
+           Scalar **aafI = nullptr     //!<preallocated memory for filtered images
            )
 {
   

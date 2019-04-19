@@ -102,7 +102,7 @@ void MrcSimple::Read(istream& mrc_file,
   header.Read(mrc_file);
 
   //    Row-major format ??
-  Int *axis_order = NULL;
+  Int *axis_order = nullptr;
   if ((header.mapCRS[0] != 1) ||
       (header.mapCRS[1] != 2) ||
       (header.mapCRS[2] != 3)) {
@@ -187,7 +187,7 @@ void MrcSimple::Read(string in_file_name,
 
 
 void MrcSimple::ReadArray(istream& mrc_file,
-                          int const *axis_order=NULL) {
+                          int const *axis_order=nullptr) {
 
   Dealloc(); //free up any space you may have allocated earlier
   Alloc();   //allocate space for the array
@@ -428,7 +428,7 @@ void MrcSimple::Rescale01(float ***aaafMask,
       }
     }
   }
-  FindMinMaxMean(NULL); // find min, max, mean, and update "header"
+  FindMinMaxMean(nullptr); // find min, max, mean, and update "header"
 }
 
 

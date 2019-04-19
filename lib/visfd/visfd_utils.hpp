@@ -234,7 +234,7 @@ template<typename Scalar, typename Integer>
 
 Scalar AverageArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
-                  Scalar const *const *const *aaafW = NULL) 
+                  Scalar const *const *const *aaafW = nullptr) 
 {
   Scalar total = 0.0;
   Scalar denom = 0.0;
@@ -272,7 +272,7 @@ template<typename Scalar, typename Integer>
 static
 Scalar _AveSqrArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
-                  Scalar const *const *const *aaafW = NULL) 
+                  Scalar const *const *const *aaafW = nullptr) 
 {
   Scalar total = 0.0;
   Scalar denom = 0.0;
@@ -313,7 +313,7 @@ template<typename Scalar, typename Integer>
 
 Scalar StdDevArr(Integer const array_size[3],
                  Scalar const *const *const *aaafH,
-                 Scalar const *const *const *aaafW = NULL) 
+                 Scalar const *const *const *aaafW = nullptr) 
 {
   Scalar ave = AverageArr(array_size, aaafH, aaafW);
   Scalar total = 0.0;
@@ -355,7 +355,7 @@ template<typename Scalar, typename Integer>
 static
 Scalar _SumArr(Integer const array_size[3],
                Scalar const *const *const *aaafH,
-               Scalar const *const *const *aaafW = NULL) 
+               Scalar const *const *const *aaafW = nullptr) 
 {
   Scalar total = 0.0;
   Scalar denom = 0.0;
@@ -390,7 +390,7 @@ template<typename Scalar, typename Integer>
 static
 Scalar _SumSqrArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
-                  Scalar const *const *const *aaafW = NULL) 
+                  Scalar const *const *const *aaafW = nullptr) 
 {
   Scalar total = 0.0;
   Scalar denom = 0.0;
@@ -467,8 +467,8 @@ template<typename Scalar, typename Integer>
 static
 Scalar _MinArr(Integer const array_size[3],
                Scalar const *const *const *aaafI,
-               Scalar const *const *const *aaafMask = NULL,
-               Integer *afLocation = NULL)
+               Scalar const *const *const *aaafMask = nullptr,
+               Integer *afLocation = nullptr)
 {
   Scalar min_I = std::numeric_limits<Scalar>::infinity(); //return this suspicious value if mask is empty
   bool first_iter = true;
@@ -507,8 +507,8 @@ template<typename Scalar, typename Integer>
 static
 Scalar _MaxArr(Integer const array_size[3],
                Scalar const *const *const *aaafI,
-               Scalar const *const *const *aaafMask = NULL,
-               Integer *afLocation = NULL)
+               Scalar const *const *const *aaafMask = nullptr,
+               Integer *afLocation = nullptr)
 {
   Scalar max_I = -std::numeric_limits<Scalar>::infinity(); //return this suspicious value if mask is empty
   bool first_iter = true;
@@ -551,7 +551,7 @@ HistogramArr(Scalar **paHistX,
              Scalar &bin_width,
              Integer const array_size[3],
              Scalar ***aaafI,
-             Scalar const *const *const *aaafMask = NULL) 
+             Scalar const *const *const *aaafMask = nullptr) 
 {
   Scalar hmin = 0.0;
   Scalar hmax = -1.0;

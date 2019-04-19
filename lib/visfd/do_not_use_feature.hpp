@@ -42,15 +42,15 @@ namespace visfd {
 /// @endcode
 /// where ix,iy,iz are the coordinates of the corresponding voxel in the image,
 /// and image_size[] stores the size of the image in the x,y,z directions.
-/// If pv_minima_indices!=NULL, then *pv_minima_indices will store a list
+/// If pv_minima_indices!=nullptr, then *pv_minima_indices will store a list
 /// of the indices corresponding to the locations of the local minima.
-/// If pv_maxima_indices!=NULL, then *pv_maxima_indices will store a list
+/// If pv_maxima_indices!=nullptr, then *pv_maxima_indices will store a list
 /// of the indices corresponding to the locations of the local maxima.
 /// The corresponding voxel intensities (brightness values) will be stored in
-/// *pv_minima_scores and *pv_maxima_scores (assuming they are != NULL).
+/// *pv_minima_scores and *pv_maxima_scores (assuming they are != nullptr).
 /// Thresholds can be used to discard minima or maxima whose corresponding
 /// voxel intensities are not sufficiently low or high, respectively.
-/// If the aaafMask[][][] is not equal to NULL, then local minima and maxima
+/// If the aaafMask[][][] is not equal to nullptr, then local minima and maxima
 /// will be ignored if the corresponding entry in aaafMask[][][] equals 0.
 ///
 /// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
@@ -59,24 +59,24 @@ template<typename Scalar, typename IntegerIndex, typename Label>
 static void
 _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafSource, //!< image array aaafSource[iz][iy][ix]
-             Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+             Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
              vector<IntegerIndex> *pv_minima_indices, //!< a list of integers uniquely identifying the location of each minima
              vector<IntegerIndex> *pv_maxima_indices, //!< a list of integers uniquely identifying the location of each maxima
-             vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafSource[iz][iy][ix] values here (if not NULL)
-             vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafSource[iz][iy][ix] values here (if not NULL)
+             vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafSource[iz][iy][ix] values here (if not nullptr)
+             vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafSource[iz][iy][ix] values here (if not nullptr)
              vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
              vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
              Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  // Ignore minima which are not sufficiently low
              Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(), // Ignore maxima which are not sufficiently high
              int connectivity=3,                      //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
              bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-             Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-             ostream *pReportProgress=NULL)  //!< print progress to the user?
+             Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
+             ostream *pReportProgress=nullptr)  //!< print progress to the user?
 {
   assert(aaafSource);
 
-  bool find_minima = (pv_minima_indices != NULL);
-  bool find_maxima = (pv_maxima_indices != NULL);
+  bool find_minima = (pv_minima_indices != nullptr);
+  bool find_maxima = (pv_maxima_indices != nullptr);
 
   vector<IntegerIndex> minima_indices; //store minima indices here
   vector<IntegerIndex> maxima_indices; //store maxima indices here
@@ -84,17 +84,17 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
   vector<Scalar>  maxima_scores;  //store the brightness of the maxima here
   vector<IntegerIndex> minima_nvoxels; //store number of voxels in each minima here
   vector<IntegerIndex> maxima_nvoxels; //store number of voxels in each maxima here
-  if (pv_minima_indices == NULL)
+  if (pv_minima_indices == nullptr)
     pv_minima_indices = &minima_indices;
-  if (pv_maxima_indices == NULL)
+  if (pv_maxima_indices == nullptr)
     pv_maxima_indices = &maxima_indices;
-  if (pv_minima_scores == NULL)
+  if (pv_minima_scores == nullptr)
     pv_minima_scores = &minima_scores;
-  if (pv_maxima_scores == NULL)
+  if (pv_maxima_scores == nullptr)
     pv_maxima_scores = &maxima_scores;
-  if (pv_minima_nvoxels == NULL)
+  if (pv_minima_nvoxels == nullptr)
     pv_minima_nvoxels = &minima_nvoxels;
-  if (pv_maxima_nvoxels == NULL)
+  if (pv_maxima_nvoxels == nullptr)
     pv_maxima_nvoxels = &maxima_nvoxels;
 
 
@@ -131,7 +131,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
     *pReportProgress << "---- searching for local minima & maxima ----\n";
 
   // Figure out which neighbors to consider when searching neighboring voxels
-  int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
+  int (*neighbors)[3] = nullptr; //a pointer to a fixed-length array of 3 ints
   int num_neighbors = 0;
   {
     // How big is the search neighborhood around each minima?
@@ -534,7 +534,7 @@ template<typename Scalar, typename IntegerIndex, typename Label>
 static void
 _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
-             Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
+             Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
              vector<IntegerIndex> &extrema_indices, //!< a list of integers uniquely identifying the location of each minima or maxima
              vector<Scalar> &extrema_scores, //!< corresponding voxel brightness at that location
              vector<IntegerIndex> &extrema_nvoxels, //!< how many voxels belong to each minima or maxima?
@@ -542,27 +542,27 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
              Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
              int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
              bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-             Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-             ostream *pReportProgress=NULL)  //!< print progress to the user?
+             Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
+             ostream *pReportProgress=nullptr)  //!< print progress to the user?
 {
   // NOTE:
-  // C++ will not allow us to supply NULL to a function that expects a pointer 
+  // C++ will not allow us to supply nullptr to a function that expects a pointer 
   // to a template expression: Template argument deduction/substitution fails.
-  // We need to re-cast "NULL" as a pointer with the correct type.
-  // One way to do that is to define these new versions of NULL:
-  vector<IntegerIndex> *NULL_vI = NULL;  
-  vector<IntegerIndex> *NULL_vi = NULL;  
-  vector<Scalar> *NULL_vf = NULL;  
+  // We need to re-cast "nullptr" as a pointer with the correct type.
+  // One way to do that is to define these new versions of nullptr:
+  vector<IntegerIndex> *null_vI = nullptr;  
+  vector<IntegerIndex> *null_vi = nullptr;  
+  vector<Scalar> *null_vf = nullptr;  
   if (seek_minima) {
     _FindExtrema(image_size,
                  aaafI,
                  aaafMask,
                  &extrema_indices, // store maxima locations here
-                 NULL_vI, // <-- don't search for maxima
+                 null_vI, // <-- don't search for maxima
                  &extrema_scores, // store minima values here
-                 NULL_vf, // <-- don't search for maxima
+                 null_vf, // <-- don't search for maxima
                  &extrema_nvoxels, // store number of voxels in each minima
-                 NULL_vi, // <-- don't search for maxima
+                 null_vi, // <-- don't search for maxima
                  threshold,
                  -std::numeric_limits<Scalar>::infinity(),
                  connectivity,
@@ -576,11 +576,11 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
     _FindExtrema(image_size,
                  aaafI,
                  aaafMask,
-                 NULL_vI, // <-- don't search for minima_crds,
+                 null_vI, // <-- don't search for minima_crds,
                  &extrema_indices, // store maxima locations here
-                 NULL_vf, // <-- don't search for minima_scores,
+                 null_vf, // <-- don't search for minima_scores,
                  &extrema_scores, // store maxima values here
-                 NULL_vi, // <-- don't search for minima
+                 null_vi, // <-- don't search for minima
                  &extrema_nvoxels, // store number of voxels in each maxima
                  std::numeric_limits<Scalar>::infinity(),
                  threshold,

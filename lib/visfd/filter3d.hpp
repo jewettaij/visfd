@@ -85,12 +85,12 @@ public:
   void Apply(Integer const size_source[3],
              Scalar const *const *const *aaafSource,
              Scalar ***aaafDest,
-             Scalar const *const *const *aaafMask = NULL,
+             Scalar const *const *const *aaafMask = nullptr,
              bool normalize = false,
-             ostream *pReportProgress = NULL) const
+             ostream *pReportProgress = nullptr) const
   {
-    Scalar *afDenominator = NULL;
-    Scalar ***aaafDenominator = NULL;
+    Scalar *afDenominator = nullptr;
+    Scalar ***aaafDenominator = nullptr;
     if (normalize)
       Alloc3D(size_source, &afDenominator, &aaafDenominator);
 
@@ -114,11 +114,11 @@ public:
   /// @brief  Apply the filter to a 3D image (aaafSource[][][]).
   ///         This version is identical to the other version of Apply()
   ///         except that this version returns both d(i) and g(i) whenever
-  ///         you supply a non-NULL afDenominator[] argument (see below).
+  ///         you supply a non-nullptr afDenominator[] argument (see below).
   ///         It also does NOT normalize the result (by dividing g(i) / d(i)).
   ///     
   /// @code
-  /// If afMask == NULL, then filter computes g[i] and d[i]:
+  /// If afMask == nullptr, then filter computes g[i] and d[i]:
   ///        ___
   ///        \
   /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
@@ -128,7 +128,7 @@ public:
   /// d[i] = /__  h[j] * Theta[i-j]
   ///         j
   ///     (sum over the width of the filter)
-  /// Otherwise, if afMask!=NULL and afDenominator!=NULL, it computes:
+  /// Otherwise, if afMask!=nullptr and afDenominator!=nullptr, it computes:
   ///        ___
   ///        \
   /// g[i] = /__  h[j] * f[i-j] * mask[i-j]
@@ -155,14 +155,14 @@ public:
   /// @param aaafSource[][][] is the source array (source image) <==> "f[i]"
   /// @param aaafDest[][][] will store the image after filtering <==> "g[i]"
   /// @param aaafMask[][][]==0 whenever we want to ignore entries in afSource[][]. Optional.
-  /// @param aaafDenominator[][][] will store d[i] if you supply a non-NULL pointer
+  /// @param aaafDenominator[][][] will store d[i] if you supply a non-nullptr pointer
 
   void Apply(Integer const size_source[3],
              Scalar const *const *const *aaafSource,
              Scalar ***aaafDest,
-             Scalar const *const *const *aaafMask = NULL,
-             Scalar ***aaafDenominator = NULL,
-             ostream *pReportProgress = NULL) const
+             Scalar const *const *const *aaafMask = nullptr,
+             Scalar ***aaafDenominator = nullptr,
+             ostream *pReportProgress = nullptr) const
   {
 
 
@@ -202,7 +202,7 @@ public:
                          aaafMask,
                          (aaafDenominator
                           ? &(aaafDenominator[iz][iy][ix])
-                          : NULL));
+                          : nullptr));
         }
       }
     }
@@ -273,7 +273,7 @@ public:
   /// @brief Calculate the (weighted) average value of the filter array aaafH
   /// @param aaafW optional weights used when calculating the averages
   /// @return the (weighted) average value of the filter array aaafH
-  Scalar Average(Scalar const *const *const *aaafW=NULL) const {
+  Scalar Average(Scalar const *const *const *aaafW=nullptr) const {
     Scalar numer = 0.0;
     Scalar denom = 0.0;
     for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
@@ -293,7 +293,7 @@ public:
   /// @brief Calculate the (weighted) average squared values in the filter array, aaafH
   /// @param aaafW optional weights used when calculating the averages
   /// @return the (weighted) average squared values in the filter array aaafH
-  Scalar AverageSqr(Scalar const *const *const *aaafW=NULL) const {
+  Scalar AverageSqr(Scalar const *const *const *aaafW=nullptr) const {
     Scalar numer = 0.0;
     Scalar denom = 0.0;
     for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
@@ -313,7 +313,7 @@ public:
   /// @brief Calculate the (weighted) standard deviation of the filter array values
   /// @param aaafW optional weights used when calculating the standard deviation
   /// @return the (weighted) standard deviation of the filter array aaafH
-  Scalar StdDev(Scalar const *const *const *aaafW=NULL) const {
+  Scalar StdDev(Scalar const *const *const *aaafW=nullptr) const {
     Scalar ave = Average(aaafW);
     Scalar numer = 0.0;
     Scalar denom = 0.0;
@@ -334,7 +334,7 @@ public:
   /// @brief Calculate the (weighted) sum of the filter array values, aaafH
   /// @param aaafW optional weights used when calculating the sum
   /// @return the (weighted) sum of the filter array values
-  Scalar Sum(Scalar const *const *const *aaafW=NULL) const {
+  Scalar Sum(Scalar const *const *const *aaafW=nullptr) const {
     Scalar sum = 0.0;
     for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
       for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
@@ -352,7 +352,7 @@ public:
   /// @brief Calculate the (weighted) sum of the squared filter array values
   /// @param aaafW optional weights used when calculating the sum
   /// @return the (weighted) sum of the squared filter array values
-  Scalar SumSqr(Scalar const *const *const *aaafW=NULL) const {
+  Scalar SumSqr(Scalar const *const *const *aaafW=nullptr) const {
     Scalar sum = 0.0;
     for (int iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
       for (int iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
@@ -407,8 +407,8 @@ public:
                        Integer iz,
                        Integer const size_source[3],
                        Scalar const *const *const *aaafSource,
-                       Scalar const *const *const *aaafMask = NULL,
-                       Scalar *pDenominator = NULL) const
+                       Scalar const *const *const *aaafMask = nullptr,
+                       Scalar *pDenominator = nullptr) const
 
   {
     Scalar g = 0.0;
@@ -526,8 +526,8 @@ public:
     array_size[0] = -1;
     array_size[1] = -1;
     array_size[2] = -1;
-    afH = NULL;
-    aaafH = NULL;
+    afH = nullptr;
+    aaafH = nullptr;
   }
   
 }; // class Filter3D
@@ -550,8 +550,8 @@ Filter3D<Scalar, int>
 GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
                     Scalar m_exp,       //!< "m" exponent parameter
                     int truncate_halfwidth[3], //!< size of filter window
-                    Scalar *pA=NULL,    //!< optional:report A coeff to user
-                    ostream *pReportEquation=NULL//!< optional:report equation used to the user
+                    Scalar *pA=nullptr,    //!< optional:report A coeff to user
+                    ostream *pReportEquation=nullptr//!< optional:report equation used to the user
                     )
 {
   Scalar truncate_threshold = 1.0;
@@ -664,8 +664,8 @@ Filter3D<Scalar, int>
 GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
                     Scalar m_exp,       //!< "m" parameter in formula
                     Scalar filter_cutoff_ratio=2.5, //!< how many sigma (σ) before truncating?
-                    Scalar *pA=NULL,    //!< optional:report A coeff to user
-                    ostream *pReportEquation = NULL //!< optional:report equation used to the user
+                    Scalar *pA=nullptr,    //!< optional:report A coeff to user
+                    ostream *pReportEquation = nullptr //!< optional:report equation used to the user
                     )
 {
   // choose the width of the filter window based on the filter_cutoff_ratio
@@ -717,7 +717,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 ///        mask) but instead fades to the shade of the remaining nearby voxels.
 ///        This feature is enabled whenever the "normalize" argument is "true",
 ///        however this will slow the calculation. (If the aaafMask array is not
-///        NULL, then it will slow the calculation by a factor of up to 1.83)
+///        nullptr, then it will slow the calculation by a factor of up to 1.83)
 
 
 
@@ -734,10 +734,10 @@ Scalar
 ApplySeparable(int const image_size[3],              //!<number of voxels in x,y,z directions
                Scalar const *const *const *aaafSource, //!<image to which we want to apply the filter
                Scalar ***aaafDest,                   //!<store the filtered image here
-               Scalar const *const *const *aaafMask, //!<if not NULL, ignore voxels if aaafMask[iz][iy][ix]!=0
+               Scalar const *const *const *aaafMask, //!<if not nullptr, ignore voxels if aaafMask[iz][iy][ix]!=0
                Filter1D<Scalar, int> aFilter[3],     //!<preallocated 1D filters
                bool normalize = true, //!< normalize the result near the boundaries?
-               ostream *pReportProgress = NULL) //!< print out progress to the user?
+               ostream *pReportProgress = nullptr) //!< print out progress to the user?
 {
   assert(aaafSource);
   assert(aaafDest);
@@ -768,8 +768,8 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
   // (at that location).  The sum of those weights are called the "denominator".
   // Create an array to store the denominator.
   // First create the 3D version of the denominator array:
-  Scalar ***aaafDenom = NULL;
-  Scalar *afDenom = NULL;
+  Scalar ***aaafDenom = nullptr;
+  Scalar *afDenom = nullptr;
 
   if (normalize) {
     if (aaafMask) {
@@ -798,10 +798,10 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
     // Then use a simple 1-D filter on that array and copy the results back.
     Scalar *afDest_tmp   = new Scalar [image_size[d]];
     Scalar *afSource_tmp = new Scalar [image_size[d]];
-    Scalar *afMask_tmp   = NULL;
+    Scalar *afMask_tmp   = nullptr;
     if (aaafMask)
       afMask_tmp = new Scalar [image_size[d]];
-    Scalar *afDenom_tmp = NULL;
+    Scalar *afDenom_tmp = nullptr;
     if (normalize && aaafMask)
       afDenom_tmp = new Scalar [image_size[d]];
 
@@ -852,7 +852,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
           aaafDest[iz][iy][ix] = afDest_tmp[iz];
           if (normalize && aaafMask)
             aaafDenom[iz][iy][ix] = afDenom_tmp[iz]; //copy back into aaafDenom
-            // (Note: if aaafMask==NULL then we normalize using a faster method)
+            // (Note: if aaafMask==nullptr then we normalize using a faster method)
         }
       } //for (int ix = 0; ix < image_size[0]; ix++)
     } //for (int iy = 0; iy < image_size[1]; iy++)
@@ -883,11 +883,11 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
     // Then use a simple 1-D filter on that array and copy the results back.
     Scalar *afDest_tmp   = new Scalar [image_size[d]];
     Scalar *afSource_tmp = new Scalar [image_size[d]];
-    //Scalar *afMask_tmp   = NULL;
+    //Scalar *afMask_tmp   = nullptr;
     //if (aaafMask)
     //  afMask_tmp = new Scalar [image_size[d]];
-    Scalar *afDenom_src_tmp = NULL;
-    Scalar *afDenom_tmp = NULL;
+    Scalar *afDenom_src_tmp = nullptr;
+    Scalar *afDenom_tmp = nullptr;
     if (normalize && aaafMask) {
       afDenom_src_tmp = new Scalar [image_size[d]];
       afDenom_tmp     = new Scalar [image_size[d]];
@@ -928,7 +928,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
           aaafDest[iz][iy][ix] = afDest_tmp[iy];
           if (normalize && aaafMask)
             //copy the weights from afDenom_tmp[] into aaafDenom[][][]
-            // (Note: if aaafMask==NULL then we normalize using a faster method)
+            // (Note: if aaafMask==nullptr then we normalize using a faster method)
             aaafDenom[iz][iy][ix] = afDenom_tmp[iy];
         }
       } //for (int ix = 0; ix < image_size[0]; ix++)
@@ -963,11 +963,11 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
     // Then use a simple 1-D filter on that array and copy the results back.
     Scalar *afDest_tmp   = new Scalar [image_size[d]];
     Scalar *afSource_tmp = new Scalar [image_size[d]];
-    //Scalar *afMask_tmp   = NULL;
+    //Scalar *afMask_tmp   = nullptr;
     //if (aaafMask)
     //  afMask_tmp = new Scalar [image_size[d]];
-    Scalar *afDenom_src_tmp = NULL;
-    Scalar *afDenom_tmp = NULL;
+    Scalar *afDenom_src_tmp = nullptr;
+    Scalar *afDenom_tmp = nullptr;
     if (normalize && aaafMask) {
       afDenom_src_tmp = new Scalar [image_size[d]];
       afDenom_tmp     = new Scalar [image_size[d]];
@@ -1008,7 +1008,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
           aaafDest[iz][iy][ix] = afDest_tmp[ix];
           if (normalize && aaafMask)
             //copy the weights from afDenom_tmp[] into aaafDenom[][][]
-            // (Note: if aaafMask==NULL then we normalize using a faster method)
+            // (Note: if aaafMask==nullptr then we normalize using a faster method)
             aaafDenom[iz][iy][ix] = afDenom_tmp[ix];
         }
       } //for (int iy = 0; iy < image_size[1]; iy++)
@@ -1103,7 +1103,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 /// specifies the filter truncation window width (truncation_halfwidth)
 /// in units of voxels.
 ///
-/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// If the user specifies a mask image (if aaafMask != nullptr), then voxels whose
 /// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
 /// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
 /// the averaging process.  (Usually the entries lie in the range from 0 to 1).
@@ -1137,7 +1137,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
            int const truncate_halfwidth[3], //!< the filter window width
            bool normalize = true,           //!< normalize the average?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
+           ostream *pReportProgress = nullptr  //!< print progress to the user?
            )
 {
   assert(aaafSource);
@@ -1171,7 +1171,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// and the caller specifies the filter truncation window width
 /// (truncation_halfwidth) directly in units of voxels.
 ///
-/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// If the user specifies a mask image (if aaafMask != nullptr), then voxels whose
 /// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
 /// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
 /// the averaging process.  (Usually the entries lie in the range from 0 to 1).
@@ -1206,7 +1206,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            int     truncate_halfwidth,      //!< the filter window width
 
            bool normalize = true,           //!< normalize the average?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
+           ostream *pReportProgress = nullptr  //!< print progress to the user?
            )
 {
   Scalar afSigma[3] = {sigma, sigma, sigma};
@@ -1236,7 +1236,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// specifies the filter truncation window width ("truncate_ratio") in units
 /// of the Gaussian width parameter σ (as opposed to units of voxels).
 ///
-/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// If the user specifies a mask image (if aaafMask != nullptr), then voxels whose
 /// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
 /// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
 /// the averaging process.  (Usually the entries lie in the range from 0 to 1).
@@ -1270,7 +1270,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
            Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
            bool normalize = true,           //!< normalize the average?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
+           ostream *pReportProgress = nullptr  //!< print progress to the user?
            )
 {
   Scalar A;
@@ -1303,7 +1303,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// specifies the filter truncation window width ("truncate_ratio") in units
 /// of the Gaussian width parameter σ (as opposed to units of voxels).
 ///
-/// If the user specifies a mask image (if aaafMask != NULL), then voxels whose
+/// If the user specifies a mask image (if aaafMask != nullptr), then voxels whose
 /// corresponding entry in the aaafMask[][][] array equals 0 are ignored,
 /// If the entry in the aaafMask[][][] is non-zero, it is used as a weight in
 /// the averaging process.  (Usually the entries lie in the range from 0 to 1).
@@ -1337,7 +1337,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar sigma,                 //!< Gaussian sigma parameter σ
            Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
            bool normalize = true,           //!< normalize the average?
-           ostream *pReportProgress = NULL  //!< print progress to the user?
+           ostream *pReportProgress = nullptr  //!< print progress to the user?
            )
 {
   Scalar afSigma[3] = {sigma, sigma, sigma};
@@ -1378,9 +1378,9 @@ ApplyDog(int const image_size[3], //!< image size in x,y,z directions
          Scalar const sigma_a[3], //!< (a_x, a_y, a_z) in the formula above
          Scalar const sigma_b[3], //!< (b_x, b_y, b_z) in the formula above
          int const truncate_halfwidth[3],//!<(half the filter window width along x,y,z)
-         Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-         Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-         ostream *pReportProgress = NULL  //!< print progress to the user?
+         Scalar *pA = nullptr, //!< Optional: report "A" (normalized coefficient) to the caller?
+         Scalar *pB = nullptr, //!< Optional: report "B" (normalized coefficient) to the caller?
+         ostream *pReportProgress = nullptr  //!< print progress to the user?
          )
 {
   Scalar ***aaafTemp; //temporary array to store partially processed tomogram
@@ -1471,9 +1471,9 @@ ApplyLog(int const image_size[3], //!< source image size
          Scalar const sigma[3],  //!< Gaussian width in x,y,z drections
          Scalar delta_sigma_over_sigma=0.02, //δ, difference in Gauss widths (approximation to LoG)
          Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-         Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-         Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-         ostream *pReportProgress = NULL  //!< print progress to the user?
+         Scalar *pA = nullptr, //!< Optional: report "A" (normalized coefficient) to the caller?
+         Scalar *pB = nullptr, //!< Optional: report "B" (normalized coefficient) to the caller?
+         ostream *pReportProgress = nullptr  //!< print progress to the user?
          )
 {
   // "-log" approximates to the "Laplacian of a Gaussian" ("DoG") filter
@@ -1574,9 +1574,9 @@ ApplyLog(int const image_size[3], //!< source image size
          Scalar sigma,  //!< Gaussian width in x,y,z drections
          Scalar delta_sigma_over_sigma=0.02, //!< δ, difference in Gauss widths (approximation to LoG)
          Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-         Scalar *pA = NULL, //!< Optional: report "A" (normalized coefficient) to the caller?
-         Scalar *pB = NULL, //!< Optional: report "B" (normalized coefficient) to the caller?
-         ostream *pReportProgress = NULL  //!< print progress to the user?
+         Scalar *pA = nullptr, //!< Optional: report "A" (normalized coefficient) to the caller?
+         Scalar *pB = nullptr, //!< Optional: report "B" (normalized coefficient) to the caller?
+         ostream *pReportProgress = nullptr  //!< print progress to the user?
          )
 {
   Scalar sigma_xyz[3] = {sigma, sigma, sigma};
@@ -1605,7 +1605,7 @@ ApplyLog(int const image_size[3], //!< source image size
 ///        template_background_exponent argument to a large number.)
 ///        Voxels outside the truncation window are not considered.
 ///        The width of the truncation window is σ*filter_truncate_ratio.
-///        If a non-NULL aaafMask argument is supplied, then voxels from
+///        If a non-nullptr aaafMask argument is supplied, then voxels from
 ///        aaafSource will be ignored if aaafMask[iz][iy][ix] is zero
 ///        (and the resulting filtered output will be normalized accordingly
 ///         unless the "normalize" argument is set to false).
@@ -1621,12 +1621,12 @@ void
 LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z directions
                   Scalar const *const *const *aaafSource, //!< original image
                   Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
-                  Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+                  Scalar const *const *const *aaafMask, //!< optional: if not nullptr then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
                   Scalar sigma[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
                   Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
                   Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
                   bool normalize = true, //!< normalize the result?
-                  ostream *pReportProgress = NULL //!< report progress to the user?
+                  ostream *pReportProgress = nullptr //!< report progress to the user?
                   )
 {
   // Filter weights, w_i:
@@ -1635,8 +1635,8 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
                             template_background_exponent,
                             //template_profile.halfwidth,
                             filter_truncate_ratio,
-                            static_cast<Scalar*>(NULL),
-                            static_cast<ostream*>(NULL));
+                            static_cast<Scalar*>(nullptr),
+                            static_cast<ostream*>(nullptr));
   // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
@@ -1793,7 +1793,7 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
 ///        template_background_exponent argument to a large number.)
 ///        Voxels outside the truncation window are not considered.
 ///        The width of the truncation window is σ*filter_truncate_ratio.
-///        If a non-NULL aaafMask argument is supplied, then voxels from
+///        If a non-nullptr aaafMask argument is supplied, then voxels from
 ///        aaafSource will be ignored if aaafMask[iz][iy][ix] is zero
 ///        (and the resulting filtered output will be normalized accordingly
 ///         unless the "normalize" argument is set to false).
@@ -1829,12 +1829,12 @@ void
 LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
                           Scalar const *const *const *aaafSource, //!< original image
                           Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
-                          Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+                          Scalar const *const *const *aaafMask, //!< optional: if not nullptr then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
                           Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
                           Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
                           Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
                           bool normalize = true, //!< normalize the result?
-                          ostream *pReportProgress = NULL //!< report progress to the user?
+                          ostream *pReportProgress = nullptr //!< report progress to the user?
                         )
 {
   Scalar sigma[3];
@@ -1883,9 +1883,9 @@ _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
                  Scalar n_exp,  //!< "n" parameter in formula
                  Filter3D<Scalar, int>& filter_A, //!< filters for the two
                  Filter3D<Scalar, int>& filter_B, //!< gaussians
-                 Scalar *pA=NULL, //!< optional:report A,B coeffs to user
-                 Scalar *pB=NULL, //!< optional:report A,B coeffs to user
-                 ostream *pReportEquation = NULL //!< optional: report equation to the user
+                 Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
+                 Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
+                 ostream *pReportEquation = nullptr //!< optional: report equation to the user
                  )
 {
   Scalar A, B;
@@ -2006,9 +2006,9 @@ GenFilterDogg3D(Scalar width_a[3],   //!< "a" parameter in formula
                 Scalar m_exp,        //!< "m" parameter in formula
                 Scalar n_exp,        //!< "n" parameter in formula
                 int halfwidth[3],    //!< the width of the filter
-                Scalar *pA=NULL,     //!< optional:report A,B coeffs to user
-                Scalar *pB=NULL,     //!< optional:report A,B coeffs to user
-                ostream *pReportEquation = NULL //!< optional: print params used?
+                Scalar *pA=nullptr,     //!< optional:report A,B coeffs to user
+                Scalar *pB=nullptr,     //!< optional:report A,B coeffs to user
+                ostream *pReportEquation = nullptr //!< optional: print params used?
                 )
 {
   Filter3D<Scalar, int> filter_A =

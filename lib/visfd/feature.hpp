@@ -37,12 +37,12 @@ namespace visfd {
 ///          increasing and decreasing order respectively.  (IE they are sorted
 ///          so that the most significant local minima or maxima will appear
 ///          first in the list.)
-///          If either pv_minima_crds or pv_maxima_crds is NULL, then
+///          If either pv_minima_crds or pv_maxima_crds is nullptr, then
 ///          the minima or maxima will be ignored.
 ///          The optional pv_minima_scores and pv_maxima_scores store the
 ///          The caller can automatically discard minima or maxima which
 ///          are not sufficiently low or high, by supplying thresholds.
-///          The optional aaafMask array (if not NULL) can be used to ignore
+///          The optional aaafMask array (if not nullptr) can be used to ignore
 ///          certain voxels in the image (whose aaafMask entries are zero).
 /// @note    Local minima or maxima on the boundaries of the image 
 ///          (or near the edge of the mask)
@@ -57,30 +57,30 @@ template<typename Scalar, typename Coordinate, typename IntegerIndex, typename L
 void
 FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
-            Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=NULL and aaafMask[iz][iy][ix]==0
-            vector<array<Coordinate, 3> > *pva_minima_crds, //!< store minima locations (ix,iy,iz) here (if not NULL)
-            vector<array<Coordinate, 3> > *pva_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not NULL)
-            vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not NULL)
-            vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not NULL)
+            Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+            vector<array<Coordinate, 3> > *pva_minima_crds, //!< store minima locations (ix,iy,iz) here (if not nullptr)
+            vector<array<Coordinate, 3> > *pva_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not nullptr)
+            vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not nullptr)
+            vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not nullptr)
             vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
             vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
             Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
             Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
             int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
             bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-            Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-            ostream *pReportProgress=NULL   //!< optional: print progress to the user?
+            Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
+            ostream *pReportProgress=nullptr   //!< optional: print progress to the user?
                    )
 {
-  bool find_minima = (pva_minima_crds != NULL);
-  bool find_maxima = (pva_maxima_crds != NULL);
+  bool find_minima = (pva_minima_crds != nullptr);
+  bool find_maxima = (pva_maxima_crds != nullptr);
 
   vector<size_t> minima_indices;
   vector<size_t> maxima_indices;
   vector<Scalar> minima_scores;
   vector<Scalar> maxima_scores;
-  vector<size_t> *pv_minima_indices = NULL;
-  vector<size_t> *pv_maxima_indices = NULL;
+  vector<size_t> *pv_minima_indices = nullptr;
+  vector<size_t> *pv_maxima_indices = nullptr;
   if (find_minima) {
     pv_minima_indices = &minima_indices;
     if (! pv_minima_scores)
@@ -159,7 +159,7 @@ template<typename Scalar, typename Coordinate, typename IntegerIndex, typename L
 void
 FindExtrema(int const image_size[3],            //!< size of input image array
             Scalar const *const *const *aaafI,   //!< input image array
-            Scalar const *const *const *aaafMask, //!< if not NULL then zero entries indicate which voxels to ignore
+            Scalar const *const *const *aaafMask, //!< if not nullptr then zero entries indicate which voxels to ignore
             vector<array<Coordinate, 3> > &extrema_crds, //!< store the location of each extrema
             vector<Scalar> &extrema_scores, //!< store the brightness of each extrema
             vector<IntegerIndex> &extrema_nvoxels, //!< store number of voxels in each extrema (usually 1)
@@ -167,28 +167,28 @@ FindExtrema(int const image_size[3],            //!< size of input image array
             Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
             int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
             bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-            Label ***aaaiDest=NULL,  //!< optional: create an image showing where the extrema are?
-            ostream *pReportProgress=NULL)  //!< print progress to the user?
+            Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
+            ostream *pReportProgress=nullptr)  //!< print progress to the user?
 {
   // NOTE:
-  // C++ will not allow us to supply NULL to a function that expects a pointer 
+  // C++ will not allow us to supply nullptr to a function that expects a pointer 
   // to a template expression: Template argument deduction/substitution fails.
-  // We need to re-cast "NULL" as a pointer with the correct type.
-  // One way to do that is to define these new versions of NULL:
-  vector<array<Coordinate, 3> > *NULL_vai3 = NULL;  
-  vector<Scalar> *NULL_vf = NULL;  
-  vector<IntegerIndex> *NULL_vi = NULL;  
+  // We need to re-cast "nullptr" as a pointer with the correct type.
+  // One way to do that is to define these new versions of nullptr:
+  vector<array<Coordinate, 3> > *null_vai3 = nullptr;  
+  vector<Scalar> *null_vf = nullptr;  
+  vector<IntegerIndex> *null_vi = nullptr;  
 
   if (seek_minima) {
     FindExtrema(image_size,
                 aaafI,
                 aaafMask,
                 &extrema_crds,    // store minima locations here
-                NULL_vai3,        // <-- don't search for maxima
+                null_vai3,        // <-- don't search for maxima
                 &extrema_scores,  // store minima values here
-                NULL_vf,          // <-- don't search for maxima
+                null_vf,          // <-- don't search for maxima
                 &extrema_nvoxels, // store number of voxels in each minima
-                NULL_vi,          // <-- don't search for maxima
+                null_vi,          // <-- don't search for maxima
                 threshold,
                 -std::numeric_limits<Scalar>::infinity(),
                 connectivity,
@@ -202,11 +202,11 @@ FindExtrema(int const image_size[3],            //!< size of input image array
     FindExtrema(image_size,
                 aaafI,
                 aaafMask,
-                NULL_vai3,        // <-- don't search for minima
+                null_vai3,        // <-- don't search for minima
                 &extrema_crds,    // store maxima locations here
-                NULL_vf,          // <-- don't search for minima
+                null_vf,          // <-- don't search for minima
                 &extrema_scores,  // store maxima values here
-                NULL_vi,          // <-- don't search for minima
+                null_vi,          // <-- don't search for minima
                 &extrema_nvoxels, // store number of voxels in each maxima
                 std::numeric_limits<Scalar>::infinity(),
                 threshold,
@@ -240,12 +240,12 @@ BlobDog(int const image_size[3], //!< source image size
         Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
         const vector<Scalar>& blob_sigma, //!< blob widths to try, ordered
         // optional arguments
-        vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
-        vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
-        vector<Scalar> *pv_minima_sigma=NULL, //!< if not NULL, stores the corresponding width for that minima
-        vector<Scalar> *pv_maxima_sigma=NULL, //!< if not NULL, stores the corresponding width for that maxima
-        vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
-        vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+        vector<array<Scalar,3> > *pva_minima_crds=nullptr, //!< if not nullptr, stores blob minima x,y,z coords here
+        vector<array<Scalar,3> > *pva_maxima_crds=nullptr, //!< if not nullptr, stores blob maxima x,y,z coords here
+        vector<Scalar> *pv_minima_sigma=nullptr, //!< if not nullptr, stores the corresponding width for that minima
+        vector<Scalar> *pv_maxima_sigma=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
+        vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
+        vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
         //the following optional parameters are usually left with default values
         Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
         Scalar truncate_ratio=2.8,      //!< how many sigma before truncating?
@@ -253,9 +253,9 @@ BlobDog(int const image_size[3], //!< source image size
         Scalar maxima_threshold=0.0,    //!< discard blobs with unremarkable scores (0 disables)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
         // optional arguments
-        ostream *pReportProgress = NULL, //!< optional: report progress to the user?
-        Scalar ****aaaafI = NULL, //!<optional: preallocated memory for filtered images (indexable)
-        Scalar **aafI = NULL      //!<optional: preallocated memory for filtered images (contiguous)
+        ostream *pReportProgress = nullptr, //!< optional: report progress to the user?
+        Scalar ****aaaafI = nullptr, //!<optional: preallocated memory for filtered images (indexable)
+        Scalar **aafI = nullptr      //!<optional: preallocated memory for filtered images (contiguous)
         )
 
 {
@@ -266,17 +266,17 @@ BlobDog(int const image_size[3], //!< source image size
   vector<Scalar>  maxima_sigma;         //corresponding width for that maxima
   vector<Scalar>  minima_scores;        //store the score of each blob minima
   vector<Scalar>  maxima_scores;        //store the score of each blob maxima
-  if (pva_minima_crds == NULL)
+  if (pva_minima_crds == nullptr)
     pva_minima_crds = &minima_crds;
-  if (pva_maxima_crds == NULL)
+  if (pva_maxima_crds == nullptr)
     pva_maxima_crds = &maxima_crds;
-  if (pv_minima_sigma == NULL)
+  if (pv_minima_sigma == nullptr)
     pv_minima_sigma = &minima_sigma;
-  if (pv_maxima_sigma == NULL)
+  if (pv_maxima_sigma == nullptr)
     pv_maxima_sigma = &maxima_sigma;
-  if (pv_minima_scores == NULL)
+  if (pv_minima_scores == nullptr)
     pv_minima_scores = &minima_scores;
-  if (pv_maxima_scores == NULL)
+  if (pv_maxima_scores == nullptr)
     pv_maxima_scores = &maxima_scores;
 
   // We need 3 images to store the result of filtering the image
@@ -288,11 +288,11 @@ BlobDog(int const image_size[3], //!< source image size
       << " -- (If this crashes your computer, find a computer with   --\n"
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
-  bool preallocated = ! (aaaafI == NULL);
+  bool preallocated = ! (aaaafI == nullptr);
 
   if (! preallocated) {
-    assert(aaaafI == NULL);
-    assert(aafI == NULL);
+    assert(aaaafI == nullptr);
+    assert(aafI == nullptr);
     aaaafI = new Scalar*** [3];
     aafI = new Scalar* [3];
     Alloc3D(image_size,
@@ -648,21 +648,21 @@ BlobDogD(int const image_size[3], //!<source image size
          Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
          const vector<Scalar>& blob_diameters, //!< blob widths to try, ordered
          //optional arguments:
-         vector<array<Scalar,3> > *pva_minima_crds=NULL, //!< if not NULL, stores blob minima x,y,z coords here
-         vector<array<Scalar,3> > *pva_maxima_crds=NULL, //!< if not NULL, stores blob maxima x,y,z coords here
-         vector<Scalar> *pv_minima_diameters=NULL, //!< if not NULL, stores the corresponding width for that minima
-         vector<Scalar> *pv_maxima_diameters=NULL, //!< if not NULL, stores the corresponding width for that maxima
-         vector<Scalar> *pv_minima_scores=NULL, //!< if not NULL, stores the blob's score?
-         vector<Scalar> *pv_maxima_scores=NULL, //!< (score = intensity after filtering)
+         vector<array<Scalar,3> > *pva_minima_crds=nullptr, //!< if not nullptr, stores blob minima x,y,z coords here
+         vector<array<Scalar,3> > *pva_maxima_crds=nullptr, //!< if not nullptr, stores blob maxima x,y,z coords here
+         vector<Scalar> *pv_minima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that minima
+         vector<Scalar> *pv_maxima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
+         vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
+         vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
          //the following optional parameters are usually left with default values
          Scalar delta_sigma_over_sigma=0.02,//!<param for approximating LoG with DoG
          Scalar truncate_ratio=2.5,    //!<how many sigma before truncating?
          Scalar minima_threshold=0.5,  //!<discard blobs with unremarkable scores
          Scalar maxima_threshold=0.5,  //!<discard blobs with unremarkable scores
          bool    use_threshold_ratios=true, //!<threshold=ratio*best_score?
-         ostream *pReportProgress = NULL, //!<report progress to the user?
-         Scalar ****aaaafI = NULL, //!<preallocated memory for filtered images
-         Scalar **aafI = NULL     //!<preallocated memory for filtered images (conserve memory)
+         ostream *pReportProgress = nullptr, //!<report progress to the user?
+         Scalar ****aaaafI = nullptr, //!<preallocated memory for filtered images
+         Scalar **aafI = nullptr     //!<preallocated memory for filtered images (conserve memory)
          )
 {
 
@@ -719,7 +719,7 @@ SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
           vector<Scalar>& blob_diameters,  //!< the width of each blob
           vector<Scalar>& blob_scores,  //!< the score for each blob
           bool descending_order = true, //!<sort scores in ascending or descending order?
-          ostream *pReportProgress = NULL //!< optional: report progress to the user?
+          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
           )
 { 
   size_t n_blobs = blob_crds.size();
@@ -819,7 +819,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
                         Scalar min_radial_separation_ratio, //!< discard blobs if closer than this (ratio of sum of radii)
                         Scalar max_volume_overlap_large, //!< discard blobs which overlap too much with the large blob
                         Scalar max_volume_overlap_small, //!< discard blobs which overlap too much with the small blob
-                        ostream *pReportProgress = NULL, //!< report progress back to the user?
+                        ostream *pReportProgress = nullptr, //!< report progress back to the user?
                         int scale=6 //!<occupancy_table_size shrunk by this much
                                     //!<relative to source (necessary to reduce memory usage)
                         )
@@ -1046,10 +1046,10 @@ template<typename Scalar>
 void
 DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                    // optional arguments:
-                   vector<Scalar> *pv_blob_diameters=NULL,  //!< diameger of each blob
-                   vector<Scalar> *pv_blob_scores=NULL, //!< priority of each blob
-                   Scalar const *const *const *aaafMask = NULL, //!< if not NULL then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
-                   ostream *pReportProgress=NULL)  //!< print progress to the user?
+                   vector<Scalar> *pv_blob_diameters=nullptr,  //!< diameger of each blob
+                   vector<Scalar> *pv_blob_scores=nullptr, //!< priority of each blob
+                   Scalar const *const *const *aaafMask = nullptr, //!< if not nullptr then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
+                   ostream *pReportProgress=nullptr)  //!< print progress to the user?
 
 {
   if (pReportProgress)
@@ -1059,7 +1059,7 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
   vector<Scalar> blob_diameters_cpy;
   vector<Scalar> blob_scores_cpy;
 
-  if (pReportProgress && (aaafMask != NULL))
+  if (pReportProgress && (aaafMask != nullptr))
     *pReportProgress
       << "  checking which blobs lie within the mask (out of "
       << blob_crds.size() << " blobs)." << endl;
@@ -1083,7 +1083,7 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
     } 
   } //for (size_t i = 0; i < blob_crds.size(); i++)
 
-  if (pReportProgress && (aaafMask != NULL))
+  if (pReportProgress && (aaafMask != nullptr))
     *pReportProgress
       << "  discarded " << n_discarded
       << "  blobs lying outside the mask." << endl;
@@ -1103,7 +1103,7 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 /// @brief  Calculate matrix of 2nd derivatives (the hessian)
 ///         as well as the the vector of 1st derivatives (the gradient)
 ///         of the source image (aaafSource), at every location where aaafMask
-///         is non-zero (or everywhere if aaafMask is NULL)
+///         is non-zero (or everywhere if aaafMask is nullptr)
 ///         Apply a Gaussian blur to the image (of width sigma) beforehand,
 ///         (truncating the blur filter at a distance of truncate_ratio*sigma
 ///          voxels from the center of the Gaussian).
@@ -1121,12 +1121,12 @@ template<typename Scalar, typename VectorContainer=Scalar*, typename TensorConta
 void
 CalcHessian(int const image_size[3], //!< source image size
             Scalar const *const *const *aaafSource, //!< source image
-            VectorContainer ***aaaafGradient,  //!< save results here (if not NULL)
-            TensorContainer ***aaaafHessian, //!< save results here (if not NULL)
+            VectorContainer ***aaaafGradient,  //!< save results here (if not nullptr)
+            TensorContainer ***aaaafHessian, //!< save results here (if not nullptr)
             Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
             Scalar sigma,  //!< Gaussian width in x,y,z drections
             Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-            ostream *pReportProgress = NULL  //!< print progress to the user?
+            ostream *pReportProgress = nullptr  //!< print progress to the user?
             )
 {
   assert(aaafSource);
@@ -1291,12 +1291,12 @@ template<typename Scalar, typename FirstMomentContainer, typename SecondMomentCo
 void
 CalcMomentTensor(int const image_size[3], //!< source image size
                  Scalar const *const *const *aaafSource, //!< source image
-                 FirstMomentContainer ***aaaaf1stMoment,  //!< save results here (if not NULL)
-                 SecondMomentContainer ***aaaaf2ndMoment, //!< save results here (if not NULL)
+                 FirstMomentContainer ***aaaaf1stMoment,  //!< save results here (if not nullptr)
+                 SecondMomentContainer ***aaaaf2ndMoment, //!< save results here (if not nullptr)
                  Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
                  Scalar sigma,  //!< Gaussian width in x,y,z drections
                  Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-                 ostream *pReportProgress = NULL  //!< print progress to the user?
+                 ostream *pReportProgress = nullptr  //!< print progress to the user?
                  )
 {
   assert(image_size);
@@ -1379,7 +1379,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIx,
                           aaafMask,
                           aFilter,
-                          (aaafMask == NULL), //don't normalize if theres a mask
+                          (aaafMask == nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     // calculate the y moment (=x^0 * y^1 * z^0)
@@ -1391,7 +1391,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIy,
                           aaafMask,
                           aFilter,
-                          (aaafMask == NULL), //don't normalize if theres a mask
+                          (aaafMask == nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     // calculate the x moment (=x^0 * y^0 * z^1)
@@ -1403,7 +1403,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIz,
                           aaafMask,
                           aFilter,
-                          (aaafMask == NULL), //don't normalize if theres a mask
+                          (aaafMask == nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     if (aaafMask) {
@@ -1537,7 +1537,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIxx,
                           aaafMask,
                           aFilter,
-                          (aaafMask == NULL), //don't normalize if theres a mask
+                          (aaafMask == nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     // calculate the y*y moment of the innertia (=x^0 * y^2 * z^0)
@@ -1549,7 +1549,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIyy,
                           aaafMask,
                           aFilter,
-                          (aaafMask == NULL), //don't normalize if theres a mask
+                          (aaafMask == nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     // calculate the z*z moment of the innertia (=x^0 * y^0 * z^2)
@@ -1561,7 +1561,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIzz,
                           aaafMask,
                           aFilter,
-                          (aaafMask==NULL), //don't normalize if theres a mask
+                          (aaafMask==nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     // calculate the x*y moment of the innertia (=x^1 * y^1 * z^0)
@@ -1573,7 +1573,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIxy,
                           aaafMask,
                           aFilter,
-                          (aaafMask==NULL), //don't normalize if theres a mask
+                          (aaafMask==nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     // calculate the y*z moment of the innertia (=x^0 * y^1 * z^1)
@@ -1585,7 +1585,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIyz,
                           aaafMask,
                           aFilter,
-                          (aaafMask==NULL), //don't normalize if theres a mask
+                          (aaafMask==nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     // calculate the x*z moment of the innertia (=x^1 * y^0 * z^1)
@@ -1597,7 +1597,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
                           aaafIxz,
                           aaafMask,
                           aFilter,
-                          (aaafMask==NULL), //don't normalize if theres a mask
+                          (aaafMask==nullptr), //don't normalize if theres a mask
                           pReportProgress);
 
     if (aaafMask) {
@@ -1703,7 +1703,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
 ///         The output of this function is another 3D 6-channel image, however
 ///         each voxel in this image contains the 3-eigenvalues as well as the
 ///         eigevectors (stored as 3 Shoemake coordinates).
-///         If a non-NULL "aaafMask" argument was specified, voxels in the
+///         If a non-nullptr "aaafMask" argument was specified, voxels in the
 ///         image are ignored when aaafMask[iz][iy][ix] == 0.
 /// @note   The "TensorContainer" object type is expected to behave like
 ///         a one-dimensional array of 6 scalars.
@@ -1716,7 +1716,7 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
                         TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
                         Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
                         EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS, //!< Order of the eigenvalues/eivenvectors.  The default value is typically useful if you are seeking bright objects on a dark background.  Use DECREASING_EIVALS when seeking dark objects on a bright bacground.
-                        ostream *pReportProgress = NULL  //!< print progress to the user?
+                        ostream *pReportProgress = nullptr  //!< print progress to the user?
                         )
 {
   assert(aaaafSource);
@@ -1843,7 +1843,7 @@ UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
                           TensorContainer const *const *const *aaaafSource, //!< input tensor
                           TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
                           Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                          ostream *pReportProgress = NULL  //!< print progress to the user?
+                          ostream *pReportProgress = nullptr  //!< print progress to the user?
                           )
 {
   assert(aaaafSource);
@@ -1882,7 +1882,7 @@ template<typename TensorContainer, typename VectorContainer>
 
 double
 ScoreHessianPlanar(TensorContainer diagonalizedHessian,
-                   VectorContainer gradient=NULL)
+                   VectorContainer gradient=nullptr)
 {
   //typedef decltype(diagonalizedHessian[0]) Scalar;
   double lambda1 = diagonalizedHessian[0];
@@ -1930,7 +1930,7 @@ double
 ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 {
   //return ScoreHessianPlanar(diagonalizedMatrix3x3,
-  //                          NULL,
+  //                          nullptr,
   //                          multiplier);
   double lambda1 = diagonalizedMatrix3[0];
   double lambda2 = diagonalizedMatrix3[1];
@@ -2017,14 +2017,14 @@ public:
   ///         however they must support 1-dimensional subscripting (i=0,1,2).
   ///         Optionally, the caller can supply an array of numbers
   ///         ("saliencies") which store the "strength" of each vector.
-  ///         If the aaafSaliency[][][] array argument == NULL, then these
+  ///         If the aaafSaliency[][][] array argument == nullptr, then these
   ///         saliencies will be inferred from the magnitude of the vectors.
   ///         which are stored in the aaaafV array.
   ///         (Otherwise, the vectors are assumed to have been normalized.)
   ///         
   /// After this function is invoked, aaaafDest will store an array of
   /// tensors, one tensor for each voxel in the original image
-  /// (unless aaafMaskDest!=NULL and the corresponding entry there is 0).
+  /// (unless aaafMaskDest!=nullptr and the corresponding entry there is 0).
   ///
   /// @note:  The computation time for this algorithm is proportional to the 
   ///         number of voxels with non-zero aaafSaliency[][][] values.
@@ -2038,13 +2038,13 @@ public:
                Scalar const *const *const *aaafSaliency,  //!< optional saliency (score) of each voxel (usually based on Hessian eigenvalues)
                VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
                TensorContainer ***aaaafDest,  //!< votes will be collected here
-               Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
-               Scalar const *const *const *aaafMaskDest=NULL,  //!< don't cast votes wherever mask==0
+               Scalar const *const *const *aaafMaskSource=nullptr,  //!< ignore voxels in source where mask==0
+               Scalar const *const *const *aaafMaskDest=nullptr,  //!< don't cast votes wherever mask==0
                bool detect_curves_not_surfaces=false, //!< do "sticks" represent curve tangents (instead of surface normals)?
                //Scalar saliency_threshold = 0.0,
                bool normalize=true, //!< normalize aaaafDest due to incomplete sums near boundaries?
                bool diagonalize_dest=false, //!< diagonalize each tensor in aaaafDest?
-               ostream *pReportProgress=NULL  //!< print progress to the user?
+               ostream *pReportProgress=nullptr  //!< print progress to the user?
                )
   {
     assert(aaaafV);
@@ -2055,8 +2055,8 @@ public:
         << " -- (If this crashes your computer, find a computer with\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
 
-    Scalar *afDenominator = NULL;
-    Scalar ***aaafDenominator = NULL;
+    Scalar *afDenominator = nullptr;
+    Scalar ***aaafDenominator = nullptr;
 
     if (normalize && aaafMaskSource) {
       Alloc3D(image_size,
@@ -2064,11 +2064,11 @@ public:
               &aaafDenominator);
     }
 
-    // If the user did not specify an aaafSaliency[] array (if NULL),
+    // If the user did not specify an aaafSaliency[] array (if nullptr),
     // then we must create our own temporary saliency array.
     Scalar const *const *const *saliency_array = aaafSaliency;
-    Scalar *_afSaliency = NULL;
-    Scalar ***_aaafSaliency = NULL;
+    Scalar *_afSaliency = nullptr;
+    Scalar ***_aaafSaliency = nullptr;
 
     if (! aaafSaliency) {
       // If the caller did not specify an aaafSaliency array, then
@@ -2143,7 +2143,7 @@ public:
         // BUT IT MAKES TENSOR-VOTING CODE ABOUT 10% FASTER.
         // IF YOU WANT TO MAKE THE CODE PRETTIER, DELETE THIS ELSE-CLAUSE
         // AND MAKE SURE "aaafDenominator" IS ALLWAYS ALLOCATED.
-        assert(aaafDenominator == NULL);
+        assert(aaafDenominator == nullptr);
       
         // When no mask is supplied, 
         // If there is no mask, but the user wants the result to be normalized,
@@ -2241,12 +2241,12 @@ private:
                Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
                VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
                TensorContainer ***aaaafDest,  //!< votes will be collected here
-               Scalar const *const *const *aaafMaskSource=NULL,  //!< ignore voxels in source where mask==0
-               Scalar const *const *const *aaafMaskDest=NULL,  //!< don't cast votes wherever mask==0
+               Scalar const *const *const *aaafMaskSource=nullptr,  //!< ignore voxels in source where mask==0
+               Scalar const *const *const *aaafMaskDest=nullptr,  //!< don't cast votes wherever mask==0
                bool detect_curves_not_surfaces=false,
                //Scalar saliency_threshold = 0.0,
-               Scalar ***aaafDenominator=NULL,
-               ostream *pReportProgress=NULL  //!< print progress to the user?
+               Scalar ***aaafDenominator=nullptr,
+               ostream *pReportProgress=nullptr  //!< print progress to the user?
                )
   {
     assert(aaafSaliency);
@@ -2356,7 +2356,7 @@ private:
           //                    //saliency_threshold,
           //                    (aaafDenominator
           //                     ? &(aaafDenominator[iz][iy][ix])
-          //                     : NULL));
+          //                     : nullptr));
 
         }
       }
@@ -2378,7 +2378,7 @@ private:
                    Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
                    bool detect_curves_not_surfaces = false,
                    //Scalar saliency_threshold = 0.0,
-                   Scalar ***aaafDenominator = NULL) const
+                   Scalar ***aaafDenominator = nullptr) const
   {
     assert(aaafSaliency);
     assert(aaaafV);
@@ -2554,7 +2554,7 @@ private:
                       Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
                       bool detect_curves_not_surfaces = false,
                       //Scalar saliency_threshold = 0.0,
-                      Scalar *pDenominator = NULL) const
+                      Scalar *pDenominator = nullptr) const
   {
     assert(aaafSaliency);
     assert(aaaafV);
@@ -2744,8 +2744,8 @@ private:
     array_size[0] = -1;
     array_size[1] = -1;
     array_size[2] = -1;
-    aafDisplacement = NULL;
-    aaaafDisplacement = NULL;
+    aafDisplacement = nullptr;
+    aaaafDisplacement = nullptr;
   }
 
 

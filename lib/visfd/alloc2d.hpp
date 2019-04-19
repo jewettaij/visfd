@@ -49,11 +49,11 @@ void Dealloc2D(Integer const size[2], //!< size of the array in x,y directions
 {
   if (paaX && *paaX) {
     delete [] (*paaX);
-    *paaX = NULL;
+    *paaX = nullptr;
   }
   if (paX && *paX) {
     delete [] *paX;
-    *paX = NULL;
+    *paX = nullptr;
   }
 }
 

@@ -75,7 +75,7 @@ public:
   /// @brief  Read an .MRC/.REC file
   void Read(string mrc_file_name,  //!<name of the file
             bool rescale=false,     //!<Optional: rescale densities from 0 to 1?
-            float ***aaafMask=NULL//!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
+            float ***aaafMask=nullptr//!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
             );
 
   /// @brief  Write an .MRC/.REC file
@@ -84,7 +84,7 @@ public:
   /// @brief  Read an .MRC/.REC file
   void Read(istream& mrc_file,      //!< Read an .MRC/.REC file (input stream)
             bool rescale=false,      //!<Optional: rescale densities from 0 to 1?
-	    float ***aaafMask=NULL  //!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
+	    float ***aaafMask=nullptr  //!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
             );
   void Write(ostream& mrc_file); //Write an .MRC/.REC file (output stream)
 
@@ -101,7 +101,7 @@ public:
   //  magnitude of the range of densities which are allowed in the file.
   //  If an optional pmask argument is provided, then voxels in the mask
   //  containing zeros 0 are ignored and are not rescaled.
-  void FindMinMaxMean(float ***aaafMask=NULL); 
+  void FindMinMaxMean(float ***aaafMask=nullptr); 
 
   /// @brief  linearly rescale the voxel intensities in the image so that the
   ///         new voxel intensities range from outA to outB
@@ -113,7 +113,7 @@ public:
   /// and the black voxels look white.
   /// The Invert() will change the density of every voxel using:
   ///   new_density = (ave_density - old_density)
-  void Invert(float ***aaafMask=NULL); 
+  void Invert(float ***aaafMask=nullptr); 
 
   /// @brief  Print information about the tomogram size and format
   void PrintStats(ostream &out) { header.PrintStats(out); }
@@ -122,8 +122,8 @@ public:
 
 private:
   void Init() {
-    afI = NULL;
-    aaafI = NULL;
+    afI = nullptr;
+    aaafI = nullptr;
     header.mode = MrcHeader::MRC_MODE_FLOAT;
   }
 

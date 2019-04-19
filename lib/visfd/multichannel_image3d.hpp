@@ -16,7 +16,7 @@ template<typename Scalar>
 ///        is public.  The constructor also accepts a "aaafMask" argument.
 ///        It will only allocate space for voxels if the corresponding entry
 ///        in the aaafMask[iz][iy][ix] array is non-zero.  If zero, then
-///        aaaafI[iz][iy][ix]=NULL.  If not, it points to an array of N numbers.
+///        aaaafI[iz][iy][ix]=nullptr.  If not, it points to an array of N numbers.
 ///        ("N" is the number of channels, an argument to the constructor.)
 ///        The resulting array, aaaafI, can be passed to any function
 ///        which expects multi-channel images (and accepts a aaafMask argument).
@@ -53,25 +53,25 @@ public:
   CompactMultiChannelImage3D(int set_n_channels_per_voxel) {
     n_channels_per_voxel = set_n_channels_per_voxel;
     n_good_voxels = 0;
-    aaaafI = NULL;
+    aaaafI = nullptr;
   }
 
   CompactMultiChannelImage3D(int set_n_channels_per_voxel,
                              int const set_image_size[3],
-                             Scalar const *const *const *aaafMask = NULL,
-                             ostream *pReportProgress = NULL  //!< print progress to the user?
+                             Scalar const *const *const *aaafMask = nullptr,
+                             ostream *pReportProgress = nullptr  //!< print progress to the user?
                              )
   {
     n_channels_per_voxel = set_n_channels_per_voxel;
     n_good_voxels = 0;
-    aaaafI = NULL;
+    aaaafI = nullptr;
     Resize(image_size, aaafMask, pReportProgress);
   }
 
   void
   Resize(int const set_image_size[3],
-         Scalar const *const *const *aaafMask = NULL,
-         ostream *pReportProgress = NULL  //!< print progress to the user?
+         Scalar const *const *const *aaafMask = nullptr,
+         ostream *pReportProgress = nullptr  //!< print progress to the user?
          )
   {
     if (aaaafI)
@@ -87,8 +87,8 @@ private:
 
   void
   Alloc(int const set_image_size[3],
-        Scalar const *const *const *aaafMask = NULL,
-        ostream *pReportProgress = NULL  //!< print progress to the user?
+        Scalar const *const *const *aaafMask = nullptr,
+        ostream *pReportProgress = nullptr  //!< print progress to the user?
         )
   {
     image_size[0] = set_image_size[0];
@@ -107,7 +107,7 @@ private:
     for (int iz = 0; iz < image_size[2]; iz++)
       for (int iy = 0; iy < image_size[1]; iy++)
         for (int ix = 0; ix < image_size[0]; ix++)
-          aaaafI[iz][iy][ix] = NULL;
+          aaaafI[iz][iy][ix] = nullptr;
 
     for (int iz = 0; iz < image_size[2]; iz++) {
       for (int iy = 0; iy < image_size[1]; iy++) {
@@ -147,9 +147,9 @@ private:
     Dealloc3D(image_size,
               &aafI,
               &aaaafI);
-    afI = NULL;
-    aafI = NULL;
-    aaaafI = NULL;
+    afI = nullptr;
+    aafI = nullptr;
+    aaaafI = nullptr;
   }
 
 }; //class CompactMultiChannelImage3D

@@ -56,7 +56,7 @@ class TV3D_ACO : public TV3D<Scalar,Integer,VectorContainer,TensorContainer>
       Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
       VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
       Scalar ***aaafPheremones,  //!< the pheremone density of every voxel is stored here
-      Scalar const *const *const *aaafMask, //!< optional: if not NULL then we ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+      Scalar const *const *const *aaafMask, //!< optional: if not nullptr then we ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
       Integer num_ants, //!< number of independent "ant" agents in the simulation
       Scalar evaporation_rate, //!< the fraction of pheremones which evaporate at every simulation timestep (between 0 and 1.  Usually << 1)
       Scalar exponent_saliency = 1, //!< parameter used in ACO
@@ -66,8 +66,8 @@ class TV3D_ACO : public TV3D<Scalar,Integer,VectorContainer,TensorContainer>
       //bool normalize=true,           //!< REMOVE THIS?  not clear if this parameter is still relevant
       Integer sim_duration=0,        //!< run the ACO simulation for this may iterations
       //Integer backup_interval=0,    //!< periodically back up the simulation
-      //ostream *pReportBackups=NULL, //!< periodically back up the simulation
-      ostream *pReportProgress=NULL   //!< print progress to the user?
+      //ostream *pReportBackups=nullptr, //!< periodically back up the simulation
+      ostream *pReportProgress=nullptr   //!< print progress to the user?
       )
   {
     assert(image_size);
@@ -107,7 +107,7 @@ class TV3D_ACO : public TV3D<Scalar,Integer,VectorContainer,TensorContainer>
     //       simulation times due to numerical underflow.
 
     // Randomize the initial position of the ants
-    Integer (*aaiAntCrds)[3] = NULL;
+    Integer (*aaiAntCrds)[3] = nullptr;
     aaiAntCrds = new int[num_ants][3];
     for (Integer i = 0; i < num_ants; i++) {
       bool inside = false;
@@ -124,7 +124,7 @@ class TV3D_ACO : public TV3D<Scalar,Integer,VectorContainer,TensorContainer>
     // In the next step, simulated "ants" will wander from one voxel
     // to its neighbors.  Before we continue, we should
     // figure out which neighbors to consider when searching neighboring voxels
-    int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
+    int (*neighbors)[3] = nullptr; //a pointer to a fixed-length array of 3 ints
     int num_neighbors = 0;
     {
       // How big is the search neighborhood around each minima?
@@ -291,8 +291,8 @@ public:
                  Scalar scale, //!< how much to scale template intensities
                  Scalar const *const *const *aaafW, //!< weights used in all summations
                  Scalar err_exponent=2, //!< exponent used for calculating error
-                 Scalar const *const *const *aaafMask = NULL, //!< optional array storing voxels we should ignore (if 0)
-                 ostream *pReportProgress = NULL //!< optional ostream for printing out progress of the calculation
+                 Scalar const *const *const *aaafMask = nullptr, //!< optional array storing voxels we should ignore (if 0)
+                 ostream *pReportProgress = nullptr //!< optional ostream for printing out progress of the calculation
                  ) const 
   {
 
@@ -384,8 +384,8 @@ public:
                      Scalar ***aaafC, //!< how much to scale template intensities
                      Scalar const *const *const *aaafW, //!< weights used in all summations
                      Scalar err_exponent=2, //!< exponent used for calculating error
-                     Scalar const *const *const *aaafMask = NULL, //!< optional: indicate which entries should be ignored
-                     ostream *pReportProgress = NULL //!< optional: print out the progress of the calculation
+                     Scalar const *const *const *aaafMask = nullptr, //!< optional: indicate which entries should be ignored
+                     ostream *pReportProgress = nullptr //!< optional: print out the progress of the calculation
                      ) const
   {
     if (pReportProgress)
@@ -415,7 +415,7 @@ public:
                           aaafC[iz][iy][ix],
                           aaafW,
                           err_exponent,
-                          NULL); //aaafMask);
+                          nullptr); //aaafMask);
                           //normalize);
         }
       }

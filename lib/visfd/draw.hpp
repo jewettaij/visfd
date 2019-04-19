@@ -34,7 +34,7 @@ namespace visfd {
 /// @brief  Create a 3D image containing multiple spheres (or spherical shells)
 ///         various sizes, thicknesses, and locations, specified by the caller.
 ///         The resulting spheres can (optionally) be superimposed with the
-///         existing image (if the aaafBackground image array is != NULL).
+///         existing image (if the aaafBackground image array is != nullptr).
 
 template<typename Scalar>
 
@@ -43,14 +43,14 @@ DrawSpheres(int const image_size[3], //!< image size
             Scalar ***aaafDest,  //!< array where we should write new image
             Scalar const *const *const *aaafMask,   //!< Optional: ignore voxels where mask==0
             const vector<array<Scalar,3> > &centers, //!< coordinates for the center of each sphere (blob)
-            const vector<Scalar> *pDiameters=NULL,         //!< Optional: diameter of each spherical shell (in voxels)
-            const vector<Scalar> *pShellThicknesses=NULL, //!< Optional: thickness of each spherical shell (in voxels)
-            const vector<Scalar> *pVoxelIntensitiesForeground=NULL, //!< Optional: assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
+            const vector<Scalar> *pDiameters=nullptr,         //!< Optional: diameter of each spherical shell (in voxels)
+            const vector<Scalar> *pShellThicknesses=nullptr, //!< Optional: thickness of each spherical shell (in voxels)
+            const vector<Scalar> *pVoxelIntensitiesForeground=nullptr, //!< Optional: assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
             Scalar voxel_intensity_background = 0.0, //!< Optional: assign background voxels to this value
-            Scalar const *const *const *aaafBackground = NULL,   //!< Optional: superimpose background image?
+            Scalar const *const *const *aaafBackground = nullptr,   //!< Optional: superimpose background image?
             Scalar voxel_intensity_background_rescale = 0.333, //!< Optional: superimpose with old image? This is the ratio of the fluctuations in voxel intensities of the newly created background image relative to the average foreground voxel intensity.
             bool voxel_intensity_foreground_normalize = false, //!< Optional: divide brightnesses by number of voxels in spherical shell? (rarely useful)
-            ostream *pReportProgress = NULL //!<Optional: report progress to the user?
+            ostream *pReportProgress = nullptr //!<Optional: report progress to the user?
             )
 {
   assert(image_size);
@@ -64,17 +64,17 @@ DrawSpheres(int const image_size[3], //!< image size
   vector<Scalar> shell_thicknesses;
   vector<Scalar> voxel_intensities_foreground;
   
-  if (pDiameters == NULL) {
+  if (pDiameters == nullptr) {
     // if empty, then fill the vector with the default value
     diameters.resize(centers.size(), 0.0);
     pDiameters = &diameters;
   }
-  if (pShellThicknesses == NULL) {
+  if (pShellThicknesses == nullptr) {
     // if empty, then fill the vector with the default value
     shell_thicknesses.resize(centers.size(), 1.0);
     pShellThicknesses = &shell_thicknesses;
   }
-  if (pVoxelIntensitiesForeground == NULL) {
+  if (pVoxelIntensitiesForeground == nullptr) {
     // if empty, then fill the vector with the default foreground voxel value
     voxel_intensities_foreground.resize(centers.size(), 1.0);
     pVoxelIntensitiesForeground = &voxel_intensities_foreground;

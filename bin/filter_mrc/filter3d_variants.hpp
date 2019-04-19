@@ -48,8 +48,8 @@ GenFilterGenGauss2D(Scalar width[2],    //!< "s_x", "s_y" parameters
                     Scalar m_exp,       //!< "m" parameter in formula
                     Scalar filter_truncate_ratio, //!< controls window width
                     Scalar filter_truncate_threshold, //!< controls window width
-                    Scalar *pA=NULL,    //!< optional:report A coeff to user
-                    ostream *pReportEquation = NULL //!< optional: print equation to the terminal
+                    Scalar *pA=nullptr,    //!< optional:report A coeff to user
+                    ostream *pReportEquation = nullptr //!< optional: print equation to the terminal
                     )
                     
 {
@@ -88,8 +88,8 @@ GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
                     Scalar m_exp,       //!<"m" parameter in formula
                     Scalar filter_truncate_ratio, //!<controls window width
                     Scalar filter_truncate_threshold, //!<controls window width
-                    Scalar *pA=NULL,    //!<optional:report A coeff to user
-                    ostream *pReportEquation = NULL  //!< optional: print equation to the terminal
+                    Scalar *pA=nullptr,    //!<optional:report A coeff to user
+                    ostream *pReportEquation = nullptr  //!< optional: print equation to the terminal
                     )
 {
   // choose the filter window width based on the filter_truncate_threshold
@@ -128,9 +128,9 @@ GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
                 Scalar n_exp,       //!< "n" parameter in formula
                 Scalar filter_truncate_ratio,//how many sigma before cutoff?
                 Scalar filter_truncate_threshold,//cutoff when decay below threshold
-                Scalar *pA=NULL, //!< optional:report A,B coeffs to user
-                Scalar *pB=NULL, //!< optional:report A,B coeffs to user
-                ostream *pReportProgress = NULL  //!< optional: print equation to the terminal
+                Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
+                Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
+                ostream *pReportProgress = nullptr  //!< optional: print equation to the terminal
                 )
 {
   Scalar filter_truncate_ratio_A = filter_truncate_ratio;
@@ -183,9 +183,9 @@ GenFilterDogg3D(Scalar width_a[3],  //"a" parameter in formula
                 Scalar n_exp,       //"n" parameter in formula
                 Scalar filter_truncate_ratio,//how many sigma before cutoff?
                 Scalar filter_truncate_threshold,//cutoff when decay below threshold
-                Scalar *pA = NULL, //optional:report A,B coeffs to user
-                Scalar *pB = NULL, //optional:report A,B coeffs to user
-                ostream *pReportProgress = NULL  //!< optional: print equation to the terminal
+                Scalar *pA = nullptr, //optional:report A,B coeffs to user
+                Scalar *pB = nullptr, //optional:report A,B coeffs to user
+                ostream *pReportProgress = nullptr  //!< optional: print equation to the terminal
                 )
 {
   Scalar filter_truncate_ratio_A = filter_truncate_ratio;
@@ -245,7 +245,7 @@ ApplyGauss(int const image_size[3],
            Scalar filter_truncate_ratio,
            Scalar filter_truncate_threshold,
            bool normalize = true,
-           ostream *pReportProgress = NULL)
+           ostream *pReportProgress = nullptr)
 {
 
   if (filter_truncate_ratio <= 0) {
@@ -287,9 +287,9 @@ ApplyDog(int const image_size[3], //source image size
          Scalar sigma_b[3],
          Scalar filter_truncate_ratio,
          Scalar filter_truncate_threshold,
-         Scalar *pA = NULL,
-         Scalar *pB = NULL,
-         ostream *pReportProgress = NULL)
+         Scalar *pA = nullptr,
+         Scalar *pB = nullptr,
+         ostream *pReportProgress = nullptr)
 {
   Scalar ***aaafTemp; //temporary array to store partially processed tomogram
   Scalar *afTemp;     //temporary array to store partially processed tomogram
@@ -353,9 +353,9 @@ ApplyLog(int const image_size[3], //source image size
          Scalar delta_sigma_over_sigma, //difference in Gauss widths
          Scalar filter_truncate_ratio,
          Scalar filter_truncate_threshold,
-         Scalar *pA = NULL,
-         Scalar *pB = NULL,
-         ostream *pReportProgress = NULL)
+         Scalar *pA = nullptr,
+         Scalar *pB = nullptr,
+         ostream *pReportProgress = nullptr)
 {
 
   if (filter_truncate_ratio < 0)
@@ -395,13 +395,13 @@ static void
 LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
                           Scalar const *const *const *aaafSource, //!< original image
                           Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
-                          Scalar const *const *const *aaafMask, //!< optional: if not NULL then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
+                          Scalar const *const *const *aaafMask, //!< optional: if not nullptr then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
                           Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
                           Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
                           Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
                           Scalar filter_truncate_threshold=0.02, //!< alternatively, specify how much the Gaussian must decay before we truncate it
                           bool normalize = true, //!< normalize the result?
-                          ostream *pReportProgress = NULL //!< report progress to the user?
+                          ostream *pReportProgress = nullptr //!< report progress to the user?
                           )
 {
   if (filter_truncate_ratio < 0.0)

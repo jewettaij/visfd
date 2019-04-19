@@ -60,11 +60,11 @@ void Dealloc3D(Integer const size[3], //!< size of the array in x,y,z directions
       if ((*paaaX)[iz])
         delete [] (*paaaX)[iz];
     delete [] (*paaaX);
-    *paaaX = NULL;
+    *paaaX = nullptr;
   }
   if (paX && *paX) {
     delete [] *paX;
-    *paX = NULL;
+    *paX = nullptr;
   }
 }
 

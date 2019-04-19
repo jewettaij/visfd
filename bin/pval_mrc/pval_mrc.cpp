@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
 
       long random_seed = settings.random_seed;
       if (random_seed <= 0) {
-        random_seed = time(NULL);
+        random_seed = time(nullptr);
         cerr << "(random_seed = " << random_seed << ")" << endl;
       }
       shuffle(random_bit_list.begin(), random_bit_list.end(),

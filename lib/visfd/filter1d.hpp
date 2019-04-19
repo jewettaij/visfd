@@ -139,7 +139,7 @@ public:
              Scalar const *afMask,
              bool normalize) const
   {
-    Scalar *afDenominator = NULL;
+    Scalar *afDenominator = nullptr;
     if (normalize)
       afDenominator = new Scalar[size_source];
 
@@ -161,7 +161,7 @@ public:
   /// @brief  Apply the filter to data in the original source array ("afSource")
   ///         This version is identical to the other version of Apply() except
   ///         that this version returns g[i] AND the normalization d[i] whenever
-  ///         you supply a non-NULL afDenominator[] argument (see below).
+  ///         you supply a non-nullptr afDenominator[] argument (see below).
   ///         This version does NOT normalize the result (by dividing g[i]/d[i])
   /// @code
   /// This function computes both g[i] and d[i]  (d[i] is optional)  where:
@@ -191,14 +191,14 @@ public:
   /// @param afSource[] is the original source data <==> h(j)
   /// @param afDest[] will store the result after filtering <==> g(j)
   /// @param afMask[]==0 whenever we want to ignore entries in afSource[]. Optional.
-  /// @param afDenominator[] will store d(i) if you supply a non-NULL pointer.
+  /// @param afDenominator[] will store d(i) if you supply a non-nullptr pointer.
 
 
   void Apply(Integer const size_source, 
              Scalar const *afSource,
              Scalar *afDest,
              Scalar const *afMask,
-             Scalar *afDenominator = NULL) const
+             Scalar *afDenominator = nullptr) const
   {
     assert(afDest != afSource);
     assert(afDest != afMask);
@@ -224,7 +224,7 @@ public:
     if (init_width > size_source)
       init_width = size_source;
     for (Integer I=0; I<init_width; I++) {
-      if ((afMask == NULL) || (afMask[I] != 0.0))
+      if ((afMask == nullptr) || (afMask[I] != 0.0))
         m = 0;
       else
         m++;
@@ -236,7 +236,7 @@ public:
     for (Integer i=0; i<size_source; i++) {
 
       // update m
-      if ((I < size_source) && ((afMask == NULL) || (afMask[I] != 0.0)))
+      if ((I < size_source) && ((afMask == nullptr) || (afMask[I] != 0.0)))
         m = 0;
       else
         m++;
@@ -301,7 +301,7 @@ public:
 
   void Init() {
     halfwidth = -1;
-    afH = NULL;
+    afH = nullptr;
   }
 
 
@@ -395,7 +395,7 @@ template<typename Scalar>
 Filter1D<Scalar, int>
 GenFilterGauss1D(Scalar sigma,  //!< The "σ" paramgeter in the Gaussian
                  int halfwidth,  //!< number of entries in the filter array / 2
-                 ostream *pReportProgress = NULL //!< report filter details to the user?  (WARNING: This argument is currently ignored.)
+                 ostream *pReportProgress = nullptr //!< report filter details to the user?  (WARNING: This argument is currently ignored.)
                  )
 {
   Filter1D<Scalar, int> filter(halfwidth);

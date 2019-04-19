@@ -42,10 +42,10 @@ namespace visfd {
 ///          the voxel is located at the boundary between 2 or more basins)
 ///      3) N_BASINS + 1
 ///         (when the voxel's intensity passes the threshold set by the caller)
-///      4) left unmodified (if aaafMask!=NULL and aaafMask[iz][iy][ix]==0)
+///      4) left unmodified (if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0)
 /// @note  If the "halt_threshold" argument is not supplied by the caller,
 ///         then std::numeric_limits::infinity is used by default.
-/// @note  If aaafMask!=NULL then voxels in aaaiDest are not modified if
+/// @note  If aaafMask!=nullptr then voxels in aaaiDest are not modified if
 ///        their corresponding entry in aaafMask equals 0.
 
 template<typename Scalar, typename Label, typename Coordinate>
@@ -60,9 +60,9 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
           int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
           bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled?
           Scalar boundary_label=0,       //!< if so, what intensity (ie. label) should boundary voxels be assigned to?
-          vector<array<Coordinate, 3> > *pv_extrema_locations=NULL, //!< optional: the location of each minima or maxima
-          vector<Scalar> *pv_extrema_scores=NULL, //!< optional: the voxel intensities (brightnesses) at these locations
-          ostream *pReportProgress=NULL)  //!< print progress to the user?
+          vector<array<Coordinate, 3> > *pv_extrema_locations=nullptr, //!< optional: the location of each minima or maxima
+          vector<Scalar> *pv_extrema_scores=nullptr, //!< optional: the voxel intensities (brightnesses) at these locations
+          ostream *pReportProgress=nullptr)  //!< print progress to the user?
 {
   assert(image_size);
   assert(aaafSource);
@@ -70,7 +70,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
 
 
   // Figure out which neighbors to consider when searching neighboring voxels
-  int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
+  int (*neighbors)[3] = nullptr; //a pointer to a fixed-length array of 3 ints
   int num_neighbors = 0;
   {
     // How big is the search neighborhood around each minima?
@@ -117,11 +117,11 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
   }
 
   vector<array<Coordinate, 3> > extrema_locations;
-  if (pv_extrema_locations == NULL)
+  if (pv_extrema_locations == nullptr)
     pv_extrema_locations = &extrema_locations;
 
   vector<Scalar> extrema_scores;
-  if (pv_extrema_scores == NULL)
+  if (pv_extrema_scores == nullptr)
     pv_extrema_scores = &extrema_scores;
 
   vector<size_t> extrema_nvoxels;
@@ -138,7 +138,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
               halt_threshold,
               connectivity,
               true,
-              static_cast<Label***>(NULL),
+              static_cast<Label***>(nullptr),
               pReportProgress);
 
   ptrdiff_t WATERSHED_BOUNDARY = 0; //an impossible value
@@ -570,7 +570,7 @@ typedef enum eClusterSortCriteria {
 /// @brief  This function is used to cluster voxels of high saliency
 ///         into islands which are connected together by adjacent voxels,
 ///         and are separated by regions of low saliency
-///         (or, if aaaafVector or aaaafSymmetricTensor are not NULL,
+///         (or, if aaaafVector or aaaafSymmetricTensor are not nullptr,
 ///          regions where the voxels point in incompatible directions
 ///          from their neighbors).
 ///         These different islands may correspond to different objects
@@ -586,7 +586,7 @@ typedef enum eClusterSortCriteria {
 ///         The clusters are sorted by their size (by default), and this is
 ///         relfected in their cluster-IDs.  (The largest cluster has ID 1)
 ///         (Cluster-ID numbers begin at 1, not 0.)
-///         (The "pv_cluster_maxima" argument, if != NULL, will store
+///         (The "pv_cluster_maxima" argument, if != nullptr, will store
 ///          the location of the saliency maxima (or minima) for each cluster.)
 ///
 /// @note   Voxels below the saliency threshold are ignored, and will
@@ -601,20 +601,20 @@ typedef enum eClusterSortCriteria {
 /// The remaining notes below describe the behavior of the optional
 /// aaaafVector, aaaafSymmetricTensor, aaaafVectorStandardized arguments,
 /// which are not generally useful in all situations
-/// @note   If aaaafVector != NULL, then
+/// @note   If aaaafVector != nullptr, then
 ///         neighboring voxels whose direction (vector) changes discontinuously,
 ///         will not be added to an existing cluster.
-/// @note   If aaaafSymmetricTensor != NULL, then
+/// @note   If aaaafSymmetricTensor != nullptr, then
 ///         neighboring voxels whose direction (tensor) changes discontinuously,
 ///         will not be added to an existing cluster.
 /// @note   In addition, voxels whose Hessian (2nd derivative matrix) of the
 ///         aaafSaliency array is INCOMPATIBLE with the corresponding entry from
-///         aaaafSymmetricTensor (if != NULL) will not be added to any cluster.
+///         aaaafSymmetricTensor (if != nullptr) will not be added to any cluster.
 ///         (Tensors are compared using the normalized Trace-product.)
 /// @note   In addition, voxels whose principle eigenvector from the Hessian
 ///         (2nd derivative matrix) of the aaafSaliency array is POINTING IN A
 ///         SIGNIFICANTLY DIFFERENT DIRECTION FROM the corresponding entry from
-///         the aaaafVector array (if != NULL) will not be added to any cluster.
+///         the aaaafVector array (if != nullptr) will not be added to any cluster.
 /// @note   If (consider_dot_product_sign == false), the difference in vector
 ///         directions will be calculated by considering only the magnitude
 ///         of the dot product between them (not the sign).
@@ -623,7 +623,7 @@ typedef enum eClusterSortCriteria {
 ///         detectors calculate vectors normal to a surface, which are equally
 ///         likely to point inward or outward.)
 /// @note   If (consider_dot_product_sign == false) AND
-///         if aaaafVector and aaaafVectorStandardized are both non-NULL, THEN
+///         if aaaafVector and aaaafVectorStandardized are both non-nullptr, THEN
 ///         aaaafVectorStandardized array will store a version of aaaafVector
 ///         array whose signs have been flipped to preserve consistency
 ///         of directionality as much as possible.  If any clusters contain any
@@ -641,26 +641,26 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Scalar threshold_saliency=-std::numeric_limits<Scalar>::infinity(), //!< don't consider voxels with saliencies below this value
                  Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
                  bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
-                 VectorContainer const *const *const *aaaafVector=NULL,
+                 VectorContainer const *const *const *aaaafVector=nullptr,
                  Scalar threshold_vector_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and vector are ignored (=-1.001 disables)
                  Scalar threshold_vector_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible vectors are ignored (=-1.001 disables)
                  bool consider_dot_product_sign = true,        //!< does the sign of the dot product matter?  If not, compare abs(DotProduct()) with threshold_vector variables
-                 TensorContainer const *const *const *aaaafSymmetricTensor=NULL,
+                 TensorContainer const *const *const *aaaafSymmetricTensor=nullptr,
                  Scalar threshold_tensor_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and tensor are ignored (=-1.1 disables)
                  Scalar threshold_tensor_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible tensors are ignored (=-1.1 disables)
                  bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
-                 vector<array<Coordinate, 3> > *pv_cluster_maxima=NULL, //!< optional: the location of saliency minima or maxima which seeded each cluster
-                 vector<Scalar> *pv_cluster_sizes=NULL, //!< optional: what was the size of each cluster? (either the number of voxels, or the sum of voxel weights)
-                 vector<Scalar> *pv_cluster_saliencies=NULL, //!< optional: what was the saliency (brightness) of each cluster's brightest voxel?
+                 vector<array<Coordinate, 3> > *pv_cluster_maxima=nullptr, //!< optional: the location of saliency minima or maxima which seeded each cluster
+                 vector<Scalar> *pv_cluster_sizes=nullptr, //!< optional: what was the size of each cluster? (either the number of voxels, or the sum of voxel weights)
+                 vector<Scalar> *pv_cluster_saliencies=nullptr, //!< optional: what was the saliency (brightness) of each cluster's brightest voxel?
                  ClusterSortCriteria sort_criteria = ClusterSortCriteria::SORT_BY_SIZE, //!< which clusters get reported first? (by default, the biggest ones)
-                 Scalar const *const *const *aaafVoxelWeights=NULL, //!< optional: weights of each voxel used when sort_criteria==SORT_BY_SIZE
+                 Scalar const *const *const *aaafVoxelWeights=nullptr, //!< optional: weights of each voxel used when sort_criteria==SORT_BY_SIZE
                  #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                 VectorContainer ***aaaafVectorStandardized=NULL, //!< optional: place to store "standardized" vector directions
+                 VectorContainer ***aaaafVectorStandardized=nullptr, //!< optional: place to store "standardized" vector directions
                  #endif
-                 const vector<vector<array<Coordinate, 3> > > *pMustLinkConstraints=NULL,  //!< Optional: a list of sets of voxel locations.  This insures that voxels in each set will belong to the same cluster.
+                 const vector<vector<array<Coordinate, 3> > > *pMustLinkConstraints=nullptr,  //!< Optional: a list of sets of voxel locations.  This insures that voxels in each set will belong to the same cluster.
                  bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)  WARNING: As of 2019-2-28, this function has not yet been tested with the non-default value (false)
-                 ostream *pReportProgress=NULL)  //!< print progress to the user?
+                 ostream *pReportProgress=nullptr)  //!< print progress to the user?
 {
   selfadjoint_eigen3::EigenOrderType eival_order;
   if (start_from_saliency_maxima)
@@ -693,7 +693,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
 
   // Figure out which neighbors to consider when searching neighboring voxels
-  int (*neighbors)[3] = NULL; //a pointer to a fixed-length array of 3 ints
+  int (*neighbors)[3] = nullptr; //a pointer to a fixed-length array of 3 ints
   int num_neighbors = 0;
   {
     // How big is the search neighborhood around each minima?
@@ -748,7 +748,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               threshold_saliency,
               connectivity,
               true,  // maxima are allowed to be located on the image border
-              static_cast<Label***>(NULL),
+              static_cast<Label***>(nullptr),
               pReportProgress);
 
   ptrdiff_t UNDEFINED = extrema_locations.size() + 1; //an impossible value
@@ -1543,7 +1543,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   // Keep track of the number of voxels in each cluster.
   // I call this the "size" of each cluster.
   //
-  // (If the caller supplied a non-NULL "aaafVoxelWeights" array, then instead
+  // (If the caller supplied a non-nullptr "aaafVoxelWeights" array, then instead
   //  I define the "size" of a cluster as the sum of the entries in the
   //  "aaafVoxelWeights[][][]" array for the voxels within that cluster.)
   //
@@ -1602,7 +1602,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           if (aaafVoxelWeights) {
             // Example:
             // Suppose the voxel directions correspond to surface normals.
-            // One reason the caller might pass a non-NULL aaafVoxelWeights
+            // One reason the caller might pass a non-nullptr aaafVoxelWeights
             // array would be to store the surface area corresponding to
             // each voxel.  If that's the case, then we are performing
             // a surface area weighted center-of-mass for each cluster.
@@ -1646,7 +1646,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           if (aaafVoxelWeights) {
             // Example:
             // Suppose the voxel directions correspond to surface normals.
-            // One reason the caller might pass a non-NULL aaafVoxelWeights
+            // One reason the caller might pass a non-nullptr aaafVoxelWeights
             // array would be to store the surface area corresponding to
             // each voxel.  If that's the case, then the
             // sum we are calculating here is the surface integral of the
@@ -1682,7 +1682,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
 
 
-  if (pv_cluster_maxima != NULL) {
+  if (pv_cluster_maxima != nullptr) {
     pv_cluster_maxima->resize(n_clusters);
     for (size_t i = 0; i < n_clusters; i++)
       (*pv_cluster_maxima)[i] = extrema_locations[ cluster2deepestbasin[i] ];
@@ -1749,7 +1749,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       }
     }
 
-  } // if (aaafVoxelWeights != NULL)
+  } // if (aaafVoxelWeights != nullptr)
 
 
 

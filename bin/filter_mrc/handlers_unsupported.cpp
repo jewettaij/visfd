@@ -73,7 +73,7 @@ HandleDoggXY(Settings settings,
   // Create temporary 1-D arrays to perform the filter in the Z-direction:
   float *afIZorig = new float [tomo_in.header.nvoxels[2]];
   float *afIZnew  = new float [tomo_in.header.nvoxels[2]];
-  float *afMask         = NULL;
+  float *afMask         = nullptr;
   if (mask.aaafI)
     afMask       = new float [tomo_in.header.nvoxels[2]];
 
@@ -107,7 +107,7 @@ HandleDoggXY(Settings settings,
   cerr << "  progress: processing plane#" << endl;
   for (int iz = 0; iz < tomo_in.header.nvoxels[2]; iz++) {
     cerr << "  " << iz+1 << " / " << tomo_in.header.nvoxels[2] << "\n";
-    float **aafMaskXY = NULL;
+    float **aafMaskXY = nullptr;
     if (mask.aaafI)
       aafMaskXY = mask.aaafI[iz];
     filterXY.Apply(tomo_in.header.nvoxels,
@@ -182,7 +182,7 @@ HandleBlobRadialIntensity(Settings settings,
   for (int d = 0; d < 3; d++)
     image_size[d] = tomo_in.header.nvoxels[d];
 
-  if ((sphere_centers.size() > 0) && (mask.aaafI != NULL))
+  if ((sphere_centers.size() > 0) && (mask.aaafI != nullptr))
     DiscardMaskedBlobs(sphere_centers,
                        &diameters,
                        &scores,
@@ -382,7 +382,7 @@ HandleBootstrapDogg(Settings settings,
     //
     // (If the don't, this procedure will take a really, really long time.)
     //
-    if (mask.aaafI == NULL) {
+    if (mask.aaafI == nullptr) {
       cerr << "WARNING: THIS FILTER IS VERY SLOW UNLESS YOU USE THE \"-mask\" ARGUMENT\n"
            << "         TO SPECIFY THE VOXELS YOU WANT TO CONSIDER.\n"
            << "         (BY DEFAULT, THIS PROGRAM USES ALL THE VOXELS).\n";
@@ -680,8 +680,8 @@ HandleTemplateGGauss(Settings settings,
                             //template_profile.halfwidth,
                             settings.filter_truncate_ratio,
                             settings.filter_truncate_threshold,
-                            static_cast<float*>(NULL),
-                            static_cast<ostream*>(NULL));
+                            static_cast<float*>(nullptr),
+                            static_cast<ostream*>(nullptr));
   // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
@@ -696,8 +696,8 @@ HandleTemplateGGauss(Settings settings,
     Q = GenFilterGenGauss3D(settings.width_a, //"a" parameter in formula
                             settings.m_exp,   //"m" parameter in formula
                             w.halfwidth,
-                            static_cast<float*>(NULL),
-                            static_cast<ostream*>(NULL));
+                            static_cast<float*>(nullptr),
+                            static_cast<ostream*>(nullptr));
 
   // Q_ = q_ - <q_>
   float qave = Q.Average(w.aaafH);
@@ -917,7 +917,7 @@ HandleTemplateGGauss(Settings settings,
   //    Q_rand = GenFilterGenGauss3D(settings.width_a,//"a" parameter in formula
   //                                 settings.m_exp,  //"m" parameter in formula
   //                                 Q_rand_halfwidth,
-  //                                 static_cast<float*>(NULL),
+  //                                 static_cast<float*>(nullptr),
   //                                 &cerr);
   //  RANDOM_INIT();
   //  MrcSimple Q_rand_mrc(Q_rand.array_size,
@@ -956,8 +956,8 @@ HandleTemplateGauss(Settings settings,
                             //template_profile.halfwidth,
                             settings.filter_truncate_ratio,
                             settings.filter_truncate_threshold,
-                            static_cast<float*>(NULL),
-                            static_cast<ostream*>(NULL));
+                            static_cast<float*>(nullptr),
+                            static_cast<ostream*>(nullptr));
   // GenFilterGenGauss() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
@@ -972,8 +972,8 @@ HandleTemplateGauss(Settings settings,
     q = GenFilterGenGauss3D(settings.width_a, //"a" parameter in formula
                             static_cast<float>(2.0), //settings.m_exp,
                             w.halfwidth,
-                            static_cast<float*>(NULL),
-                            static_cast<ostream*>(NULL));
+                            static_cast<float*>(nullptr),
+                            static_cast<ostream*>(nullptr));
 
   // Q_ = q_ - <q_>
   Filter3D<float, int> Q = q;
