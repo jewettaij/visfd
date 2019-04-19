@@ -1,3 +1,8 @@
+///   @file filter2d.hpp
+///   @brief classes and functions that apply filters to 2D arrays
+///   @author Andrew Jewett
+///   @date 2018-2-26
+
 #ifndef _FILTER2D_HPP
 #define _FILTER2D_HPP
 
@@ -94,7 +99,7 @@ public:
   /// @brief  Apply the filter to a 2D image (aafSource[][]).
   ///         This version is identical to the other version of Apply()
   ///         except that this version both d[i] and g[i] whenever
-  ///         you supply a non-nullptr afDenominator[] argument (see below).
+  ///         you supply a non-null afDenominator[] argument (see below).
   ///         It also does not normalize the result (by dividing g[i] / d[i]].
   ///     
   /// @code
@@ -135,7 +140,7 @@ public:
   /// @param aafSource[][] is the source array (source image) <==> "f[i]"
   /// @param aafDest[][] will store the image after filtering <==> "g[i]"
   /// @param aafMask[][]==0 whenever we want to ignore entries in afSource[][]. Optional.
-  /// @param aafDenominator[][] will store d[i] if you supply a non-nullptr pointer
+  /// @param aafDenominator[][] will store d[i] if you supply a non-null pointer
 
   void Apply(Integer const size_source[2],
              Scalar const *const *aafSource,

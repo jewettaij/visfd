@@ -1,3 +1,8 @@
+///   @file filter1d.hpp
+///   @brief classes and functions that apply filters to 1D arrays
+///   @author Andrew Jewett
+///   @date 2018-2-26
+
 #ifndef _FILTER1D_HPP
 #define _FILTER1D_HPP
 
@@ -161,7 +166,7 @@ public:
   /// @brief  Apply the filter to data in the original source array ("afSource")
   ///         This version is identical to the other version of Apply() except
   ///         that this version returns g[i] AND the normalization d[i] whenever
-  ///         you supply a non-nullptr afDenominator[] argument (see below).
+  ///         you supply a non-null afDenominator[] argument (see below).
   ///         This version does NOT normalize the result (by dividing g[i]/d[i])
   /// @code
   /// This function computes both g[i] and d[i]  (d[i] is optional)  where:
@@ -191,7 +196,7 @@ public:
   /// @param afSource[] is the original source data <==> h(j)
   /// @param afDest[] will store the result after filtering <==> g(j)
   /// @param afMask[]==0 whenever we want to ignore entries in afSource[]. Optional.
-  /// @param afDenominator[] will store d(i) if you supply a non-nullptr pointer.
+  /// @param afDenominator[] will store d(i) if you supply a non-null pointer.
 
 
   void Apply(Integer const size_source, 

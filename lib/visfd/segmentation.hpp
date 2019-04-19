@@ -567,7 +567,9 @@ typedef enum eClusterSortCriteria {
 
 
 
-/// @brief  This function is used to cluster voxels of high saliency
+/// @brief  WARNING: EXPERIMENTAL CODE.
+///         THIS FUNCTION'S ARGUMENT LIST MAY CHANGE IN THE FUTURE.
+///         This function is used to cluster voxels of high saliency
 ///         into islands which are connected together by adjacent voxels,
 ///         and are separated by regions of low saliency
 ///         (or, if aaaafVector or aaaafSymmetricTensor are not nullptr,
@@ -577,8 +579,8 @@ typedef enum eClusterSortCriteria {
 ///         in the source image.
 ///         Based on the watershed algorithm, this algorithm starts with
 ///         voxels which lie near a maxima (or a minima) of saliency, 
-///         and groups voxels of similar saliency,
-///         (and compatible tensor direction) together.
+///         and groups voxels of similar saliency together (as well as voxels
+///         whose vector and/or tensor directions are compatible, if applicable)
 ///
 /// @return The function does not have a return value.
 ///         After the function is finished, the aaaiDest[][][] array will
@@ -623,7 +625,7 @@ typedef enum eClusterSortCriteria {
 ///         detectors calculate vectors normal to a surface, which are equally
 ///         likely to point inward or outward.)
 /// @note   If (consider_dot_product_sign == false) AND
-///         if aaaafVector and aaaafVectorStandardized are both non-nullptr, THEN
+///         if aaaafVector and aaaafVectorStandardized are both non-null, THEN
 ///         aaaafVectorStandardized array will store a version of aaaafVector
 ///         array whose signs have been flipped to preserve consistency
 ///         of directionality as much as possible.  If any clusters contain any
@@ -1543,7 +1545,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   // Keep track of the number of voxels in each cluster.
   // I call this the "size" of each cluster.
   //
-  // (If the caller supplied a non-nullptr "aaafVoxelWeights" array, then instead
+  // (If the caller supplied a non-null "aaafVoxelWeights" array, then instead
   //  I define the "size" of a cluster as the sum of the entries in the
   //  "aaafVoxelWeights[][][]" array for the voxels within that cluster.)
   //
@@ -1602,7 +1604,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           if (aaafVoxelWeights) {
             // Example:
             // Suppose the voxel directions correspond to surface normals.
-            // One reason the caller might pass a non-nullptr aaafVoxelWeights
+            // One reason the caller might pass a non-null aaafVoxelWeights
             // array would be to store the surface area corresponding to
             // each voxel.  If that's the case, then we are performing
             // a surface area weighted center-of-mass for each cluster.
@@ -1646,7 +1648,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
           if (aaafVoxelWeights) {
             // Example:
             // Suppose the voxel directions correspond to surface normals.
-            // One reason the caller might pass a non-nullptr aaafVoxelWeights
+            // One reason the caller might pass a non-null aaafVoxelWeights
             // array would be to store the surface area corresponding to
             // each voxel.  If that's the case, then the
             // sum we are calculating here is the surface integral of the

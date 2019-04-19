@@ -1,3 +1,8 @@
+///   @file alloc2d.hpp
+///   @brief functions that allocate and deallocate 2D arrays
+///   @author Andrew Jewett
+///   @date 2018-2-26
+
 #ifndef _ALLOC2D_HPP
 #define _ALLOC2D_HPP
 

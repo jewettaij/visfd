@@ -637,8 +637,6 @@ BlobDog(int const image_size[3], //!< source image size
 /// @note  This function will find BOTH minima and maxima.
 ///        (corresponding to dark blobs on a light background
 ///         and light blobs on a dark background, respectively).
-///        You must supply arguments to store BOTH the minima and maxima
-///        even if you are only interested in one of them (minima OR maxima).
 
 template<typename Scalar>
 
@@ -1703,7 +1701,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
 ///         The output of this function is another 3D 6-channel image, however
 ///         each voxel in this image contains the 3-eigenvalues as well as the
 ///         eigevectors (stored as 3 Shoemake coordinates).
-///         If a non-nullptr "aaafMask" argument was specified, voxels in the
+///         If a non-null "aaafMask" argument was specified, voxels in the
 ///         image are ignored when aaafMask[iz][iy][ix] == 0.
 /// @note   The "TensorContainer" object type is expected to behave like
 ///         a one-dimensional array of 6 scalars.

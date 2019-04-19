@@ -1121,9 +1121,9 @@ HandleRidgeDetector(Settings settings,
   // The storage requirement for Hessians (6 floats) is large enough that
   // I decided to represent hessians using a CompactMultiChannelImage3D.
   // Internally this is a 4-dimensional array, however the last dimension
-  // is only allocated (non-nullptr) for voxels which were selected by the user
+  // is only allocated (non-null) for voxels which were selected by the user
   // (ie voxels for which the mask is non-zero).  This can reduce memory usage
-  // by a factor of up to 3 (for floats) for this array.
+  // by a factor of up to 3 (assuming floats) for this array.
   CompactMultiChannelImage3D<float> tmp_tensor(6);
   tmp_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
 

@@ -1,7 +1,7 @@
 ///   @file filter3d.hpp
-///   @brief a collection of image processing operations on 3D arrays
+///   @brief classes and functions that apply filters to 3D arrays
 ///   @author Andrew Jewett
-///   @date 2019-2-26
+///   @date 2018-2-26
 
 #ifndef _FILTER3D_HPP
 #define _FILTER3D_HPP
@@ -114,7 +114,7 @@ public:
   /// @brief  Apply the filter to a 3D image (aaafSource[][][]).
   ///         This version is identical to the other version of Apply()
   ///         except that this version returns both d(i) and g(i) whenever
-  ///         you supply a non-nullptr afDenominator[] argument (see below).
+  ///         you supply a non-null afDenominator[] argument (see below).
   ///         It also does NOT normalize the result (by dividing g(i) / d(i)).
   ///     
   /// @code
@@ -155,7 +155,7 @@ public:
   /// @param aaafSource[][][] is the source array (source image) <==> "f[i]"
   /// @param aaafDest[][][] will store the image after filtering <==> "g[i]"
   /// @param aaafMask[][][]==0 whenever we want to ignore entries in afSource[][]. Optional.
-  /// @param aaafDenominator[][][] will store d[i] if you supply a non-nullptr pointer
+  /// @param aaafDenominator[][][] will store d[i] if you supply a non-null pointer
 
   void Apply(Integer const size_source[3],
              Scalar const *const *const *aaafSource,
@@ -1605,7 +1605,7 @@ ApplyLog(int const image_size[3], //!< source image size
 ///        template_background_exponent argument to a large number.)
 ///        Voxels outside the truncation window are not considered.
 ///        The width of the truncation window is σ*filter_truncate_ratio.
-///        If a non-nullptr aaafMask argument is supplied, then voxels from
+///        If a non-null aaafMask argument is supplied, then voxels from
 ///        aaafSource will be ignored if aaafMask[iz][iy][ix] is zero
 ///        (and the resulting filtered output will be normalized accordingly
 ///         unless the "normalize" argument is set to false).
@@ -1793,7 +1793,7 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
 ///        template_background_exponent argument to a large number.)
 ///        Voxels outside the truncation window are not considered.
 ///        The width of the truncation window is σ*filter_truncate_ratio.
-///        If a non-nullptr aaafMask argument is supplied, then voxels from
+///        If a non-null aaafMask argument is supplied, then voxels from
 ///        aaafSource will be ignored if aaafMask[iz][iy][ix] is zero
 ///        (and the resulting filtered output will be normalized accordingly
 ///         unless the "normalize" argument is set to false).

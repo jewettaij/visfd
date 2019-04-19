@@ -1,3 +1,9 @@
+///   @file alloc3d.hpp
+///   @brief functions that allocate and deallocate 3D arrays
+///   @author Andrew Jewett
+///   @date 2018-2-26
+
+
 #ifndef _ALLOC3D_HPP
 #define _ALLOC3D_HPP
 

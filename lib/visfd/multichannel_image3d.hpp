@@ -1,3 +1,11 @@
+///   @file multichannel_image3d.hpp
+///   @brief a class for storing images containing an arbitrary number of
+///          channels.  (IE. multiple numbers per voxel, such as r,g,b values
+///          or directional vector information.)
+///   @author Andrew Jewett
+///   @date 2018-2-26
+
+
 #ifndef _MULTICHANNEL_IMAGE3D_HPP
 #define _MULTICHANNEL_IMAGE3D_HPP
 
@@ -6,8 +14,6 @@
 namespace visfd {
 
 
-
-template<typename Scalar>
 
 /// @brief   This class is useful IF you have a volumetric multi-channel image
 ///             (ie, multiple numbers are stored for every voxel)
@@ -28,6 +34,8 @@ template<typename Scalar>
 ///        regardless of the contents of the aaafMask[][][] array.
 ///        However for the 6-channel images used in Tensor-Voting, the space
 ///        savings can be substantial.
+
+template<typename Scalar>
 
 class CompactMultiChannelImage3D
 {

@@ -1,3 +1,10 @@
+///   @file visfd_utils.hpp
+///   @brief a collection of functions used repeatedly in different places
+///          in the VISFD library.
+///   @author Andrew Jewett
+///   @date 2019-4-15
+
+
 #ifndef _VISFD_UTILS_HPP
 #define _VISFD_UTILS_HPP
 

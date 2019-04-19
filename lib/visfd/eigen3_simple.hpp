@@ -1,19 +1,20 @@
+/// @file eigen3_simple.hpp
+/// @brief
+/// This file contains code from "Eigen", a lightweight C++ template library
+/// for linear algebra.
+/// (Eigen is quite large.  The code in this directory is a simplified version
+///  which removes the many dependencies on other files from the Eigen library.)
+//
+/// Copyright (C) 2008-2010 Gael Guennebaud <gael.guennebaud@inria.fr>
+/// Copyright (C) 2010 Jitse Niesen <jitse@maths.leeds.ac.uk>
+/// Copyright (C) 2018 Andrew Jewett <jewett@scripps.edu>
+//
+/// This Source Code Form is subject to the terms of the Mozilla
+/// Public License v. 2.0. If a copy of the MPL was not distributed
+/// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #ifndef _EIGEN3_SIMPLE_HPP
 #define _EIGEN3_SIMPLE_HPP
-
-// This file contains code from "Eigen", a lightweight C++ template library
-// for linear algebra.
-// (Eigen is quite large.  The code in this directory is a simplified version
-//  which removes the many dependencies on other files from the Eigen library.)
-//
-// Copyright (C) 2008-2010 Gael Guennebaud <gael.guennebaud@inria.fr>
-// Copyright (C) 2010 Jitse Niesen <jitse@maths.leeds.ac.uk>
-// Copyright (C) 2018 Andrew Jewett <jewett@scripps.edu>
-//
-// This Source Code Form is subject to the terms of the Mozilla
-// Public License v. 2.0. If a copy of the MPL was not distributed
-// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 
 #include <cmath>
 #include <limits>

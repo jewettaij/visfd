@@ -1,3 +1,13 @@
+///   @file lin3_utils.hpp
+///   @brief a collection of functions related to linear algebra
+///          which are used repeatedly in different places
+///          in the VISFD library.
+///   @note  functions which calculate eigenvalues and eigenvectors
+///          are defined elsewhere.
+///   @author Andrew Jewett
+///   @date 2019-4-15
+
+
 #ifndef _LIN3_UTILS_HPP
 #define _LIN3_UTILS_HPP
 
