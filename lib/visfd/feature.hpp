@@ -23,7 +23,7 @@ using namespace std;
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
 #include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable())
 #include <filter3d.hpp>   // defines common 3D image filters
-#include <do_not_use_feature.hpp>
+#include <do_not_use_feature.hpp> // defines _FindExtrema()
 
 
 
@@ -46,8 +46,11 @@ namespace visfd {
 ///          certain voxels in the image (whose aaafMask entries are zero).
 /// @note    Local minima or maxima on the boundaries of the image 
 ///          (or near the edge of the mask)
-///          are not as trustworthy since some of the 26 neighboring voxels
-///          will not be available for comparison.
+///          are not as trustworthy since some of the neighboring voxels
+///          will not be available for comparison.  These minima and maxima
+///          can be ignored by setting allow_borders=false.  The number of
+///          neighbors around every voxel which are considered (eg, 6, 18, 26)
+///          can be controlled using the "connectivity" argument.
 
 template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
 

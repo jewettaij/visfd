@@ -277,10 +277,10 @@ namespace selfadjoint_eigen3 {
     // These variables will be of type "Scalar" which should be the same
     // numeric type (ie float, double) as the entries in the "dest" argument
     // (which is array-like and supports subscripting).
-    // Unfortunately, the next line of hellish C++ failed to infer the type
-    // of the entries in the "dest" argument correctly:
-    // typedef std::remove_reference<decltype(dest[0])>::type Scalar;
-    // ...so I'm just goint to use doubles instead for these temporary variables
+    // Unfortunately, the next line of hellish C++ code failed to infer
+    // the type of the entries in the "dest" argument correctly:
+    //    typedef std::remove_reference<decltype(dest[0])>::type Scalar;
+    // so I'm just going to use doubles instead for these temporary variables.
     typedef double Scalar;
 
     // Convert the "source" from type "FlatSymMatrix"
