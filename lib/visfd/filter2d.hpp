@@ -15,7 +15,7 @@ namespace visfd {
 
 
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 
 class Filter2D {
 public:
@@ -332,7 +332,7 @@ public:
 
 
 
-template<class Scalar>
+template<typename Scalar>
 // Create a 2D filter and fill it with a "generalized Gaussian" function:
 //    h_xy(r) = A*exp(-r^m)
 // where   r  = sqrt((x/σ_x)^2 + (y/σ_y)^2)
@@ -390,7 +390,7 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
 
 
 
-template<class Scalar>
+template<typename Scalar>
 Filter2D<Scalar, int>
 GenFilterGenGauss2D(Scalar width[2],            //"s_x", "s_y" parameters
                     Scalar m_exp,               //"m" parameter in formula
@@ -416,7 +416,7 @@ GenFilterGenGauss2D(Scalar width[2],            //"s_x", "s_y" parameters
 
 
 
-template<class Scalar>
+template<typename Scalar>
 // Create a 2D filter and fill it with a difference of (generalized) Gaussians:
 // This version requires that the caller has already created individual
 // filters for the two gaussians.
@@ -498,7 +498,7 @@ _GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
 
 
 
-template<class Scalar>
+template<typename Scalar>
 // Create a 2D filter and fill it with a difference of (generalized) Gaussians:
 Filter2D<Scalar, int> 
 GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula

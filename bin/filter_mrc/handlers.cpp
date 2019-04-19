@@ -1171,6 +1171,12 @@ HandleRidgeDetector(Settings settings,
   cerr << "Applying a Gaussian blur of width sigma="
        << sigma*voxel_width[0] << " voxels" << endl;
 
+  if ((image_size[0] < 3) ||
+      (image_size[1] < 3) ||
+      (image_size[2] < 3))
+    throw VisfdErr("Error: Ridge-detection requires an image that is at least 3 voxels\n"
+                   "       wide in the x,y,z directions.\n");
+
   CalcHessian(tomo_in.header.nvoxels,
               tomo_in.aaafI,
               aaaafGradient,

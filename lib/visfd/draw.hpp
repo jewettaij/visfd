@@ -36,7 +36,7 @@ namespace visfd {
 ///         The resulting spheres can (optionally) be superimposed with the
 ///         existing image (if the aaafBackground image array is != NULL).
 
-template<class Scalar>
+template<typename Scalar>
 void
 DrawSpheres(int const image_size[3], //!< image size
             Scalar ***aaafDest,  //!< array where we should write new image

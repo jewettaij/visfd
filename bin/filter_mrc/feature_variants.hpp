@@ -42,7 +42,7 @@ namespace visfd {
 /// (This is sometimes called "non-max suppression".)
 /// This function is not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 static void
 BlobDogNM(int const image_size[3], //!<source image size
           Scalar const *const *const *aaafSource,   //!<source image
@@ -160,7 +160,7 @@ BlobDogNM(int const image_size[3], //!<source image size
 /// This version can discard blobs which overlap with existing blobs.
 /// (This is sometimes called "non-max suppression".)
 
-template<class Scalar>
+template<typename Scalar>
 static
 void
 _BlobDogNM(int const image_size[3], //!<source image size

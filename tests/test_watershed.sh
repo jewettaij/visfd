@@ -5,11 +5,26 @@ SIGMA=120
 test_watershed() {
     cd tests/
 
+    # 1D examples:
+    # find the number of maxima in the image exceeding a certain threshold
+    ../bin/filter_mrc/filter_mrc -w 1 -in test_1d_example.rec -find-maxima test_1d_example_maxima1.txt -maxima-threshold 1200
+    N_MAXIMA_STEP1=`wc test_1d_example_maxima1.txt | awk '{print $1}'`
+    # generate an image of solid non-overlapping white spheres at each maxima
+    ../bin/filter_mrc/filter_mrc -w 1 -in test_1d_example.rec -out test_1d_example_spheres.rec -draw-spheres test_1d_example_maxima1.txt -diameters 3 -foreground 1 -background 0 -spheres-shell-ratio 1
+    # find maxima in this image (which has many voxels with the same brightness)
+    ../bin/filter_mrc/filter_mrc -w 1 -in test_1d_example_spheres.rec -find-maxima test_1d_example_maxima2.txt -maxima-threshold 0.5
+    N_MAXIMA_STEP2=`wc test_1d_example_maxima2.txt | awk '{print $1}'`
+    assertTrue "Failure: -find-maxima fails on images having multiple voxels with the same brightness." "[ $N_MAXIMA_STEP1 -eq $N_MAXIMA_STEP2 ]"
+
+
+    # 3D examples:
     IN_FNAME_BASE="test_blob_detect"
     OUT_FNAME_BASE="test_image_watershed"
     OUT_FNAME_REC=${OUT_FNAME_BASE}.rec
     ../bin/filter_mrc/filter_mrc -w 19.2 -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}.rec -o ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -gauss ${SIGMA}
     assertTrue "Failure during Gaussian blur:  File \"test_blob_detect_gauss_${SIGMA}.rec\" not created" "[ -s test_blob_detect_gauss_${SIGMA}.rec ]"
+
+    # 1D examples:
 
     # Test -find-minima
     ../bin/filter_mrc/filter_mrc -w 19.2 -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -find-minima ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt -o ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.rec
@@ -59,7 +74,7 @@ test_watershed() {
     assertTrue "Failure: Either \"-connect\" argument or the \"-invert\" argument is behaving in an new and unnexpected way, or the extrema finding algorithm is failing" "[ $N_BASINS_INV -eq 2 ]"
 
     # Delete temporary files:
-    rm -rf "${OUT_FNAME_REC}" test_blob_detect_gauss_* test_log_e.txt
+    rm -rf "${OUT_FNAME_REC}" test_blob_detect_gauss_* test_log_e.txt test_1d_example_*
 
   cd ../
 }

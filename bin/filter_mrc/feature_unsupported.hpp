@@ -38,7 +38,7 @@ namespace visfd {
 
 
 /// @brief  IGNORE THIS CLASS.  NOT CURRENTLY AVAILABLE
-template<class Scalar, class Integer, class VectorContainer, class TensorContainer>
+template<typename Scalar, typename Integer, typename VectorContainer, typename TensorContainer>
 class TV3D_ACO : public TV3D<Scalar,Integer,VectorContainer,TensorContainer>
 {
   /// @brief  IGNORE THIS FUNCTION.
@@ -258,7 +258,7 @@ class TV3D_ACO : public TV3D<Scalar,Integer,VectorContainer,TensorContainer>
 #ifndef DISABLE_TEMPLATE_MATCHING
 
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 class TemplateMatcher3D : public Filter3D<Scalar, Integer>
 {
 public:
@@ -434,7 +434,7 @@ public:
 /// @brief   Scramble the contents of an image by replacing the current voxel
 ///          with a randmly chosen voxel nearby (which lies within an
 ///          ellipsoid specified by "scramble_radius")
-template<class Scalar>
+template<typename Scalar>
 void
 ScrambleImage(int image_size[3],
               Scalar const *const *const *aaafSource,
@@ -481,7 +481,7 @@ typedef enum eBlobCenterCriteria {
 ///         (It's not clear this is of general use to people, so I will keep
 ///          this function out of the main library for now.  -andrew 2019-3-22)
 
-template<class Scalar>
+template<typename Scalar>
 void
 BlobIntensityProfiles(int const image_size[3], //!< image size
                       Scalar const *const *const *aaafSource,   //!< ignore voxels where mask==0

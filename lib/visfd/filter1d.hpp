@@ -15,7 +15,7 @@ namespace visfd {
 
 
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 
 class Filter1D {
 public:
@@ -383,7 +383,7 @@ public:
 
 
 
-template<class Scalar>
+template<typename Scalar>
 // GenFilterGauss1D() generates a 1-D filter and fills its array with values
 // corresponding to a normalized Gaussian evaluated at evenly spaced intervals.
 // The caller must specify the "σ" parameter (width of the Gaussian,

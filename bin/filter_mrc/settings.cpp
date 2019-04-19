@@ -89,7 +89,6 @@ Settings::Settings() {
   in_coords_file_name = "";
   out_coords_file_name = "";
   sphere_decals_diameter = -1.0;
-  sphere_decals_shell_thickness = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
   sphere_decals_background_scale = 0.333; //default dimming of original image to emphasize spheres
@@ -97,8 +96,9 @@ Settings::Settings() {
   //sphere_decals_background_use_orig = true;
   sphere_decals_foreground_norm = false;
   sphere_decals_scale = 1.0;
-  sphere_decals_shell_thickness_is_ratio = true;
+  //sphere_decals_shell_thickness = -1.0;
   sphere_decals_shell_thickness = 0.05;
+  sphere_decals_shell_thickness_is_ratio = true;
   sphere_decals_shell_thickness_min = 1.0;
   score_lower_bound = -std::numeric_limits<float>::infinity();
   score_upper_bound = std::numeric_limits<float>::infinity();
@@ -1589,7 +1589,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-spheres") {
+    else if ((vArgs[i] == "-draw-spheres") ||
+             (vArgs[i] == "-spheres")) {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -1606,7 +1607,9 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-sphere-diameter") ||
+    else if ((vArgs[i] == "-diameters") ||
+             (vArgs[i] == "-diameter") ||
+             (vArgs[i] == "-sphere-diameter") ||
              (vArgs[i] == "-sphere-diameters") ||
              (vArgs[i] == "-spheres-diameter") ||
              (vArgs[i] == "-spheres-diameters")) {
@@ -1624,7 +1627,9 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-sphere-radius") ||
+    else if ((vArgs[i] == "-radii") ||
+             (vArgs[i] == "-radius") ||
+             (vArgs[i] == "-sphere-radius") ||
              (vArgs[i] == "-sphere-radii") ||
              (vArgs[i] == "-spheres-radius") ||
              (vArgs[i] == "-spheres-radii")) {
@@ -1722,7 +1727,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 1;
     }
 
-    else if ((vArgs[i] == "-spheres-background") ||
+    else if ((vArgs[i] == "-background") ||
+             (vArgs[i] == "-spheres-background") ||
              (vArgs[i] == "-sphere-background")) {
       //sphere_decals_background_use_orig = false;
       sphere_decals_background_scale = 0.0;
@@ -1741,7 +1747,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-spheres-background-scale") ||
+    else if ((vArgs[i] == "-background-scale") ||
+             (vArgs[i] == "-spheres-background-scale") ||
              (vArgs[i] == "-sphere-background-scale")) {
       //sphere_decals_background_use_orig = true;
       try {
@@ -1759,7 +1766,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-spheres-foreground") ||
+    else if ((vArgs[i] == "-foreground") ||
+             (vArgs[i] == "-spheres-foreground") ||
              (vArgs[i] == "-sphere-foreground")) {
       sphere_decals_foreground_use_score = false;
       try {

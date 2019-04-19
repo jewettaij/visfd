@@ -6,7 +6,7 @@
 using namespace std;
 
 
-template<class X>
+template<typename X>
 bool IsBetween(X x, X a, X b) {
   return ((a <= x) && (x < b)) || ((b < x) && (x <= a));
 }
@@ -49,7 +49,7 @@ bool IsBetween(X x, X a, X b) {
 ///
 /// @endcode
 
-template<class Number>
+template<typename Number>
 Number Threshold2(Number intensity,
                   Number threshold_01_a,
                   Number threshold_01_b,
@@ -114,7 +114,7 @@ Number Threshold2(Number intensity,
 ///
 /// @endcode
 
-template<class Number>
+template<typename Number>
 Number Threshold4(Number intensity,
                   Number threshold_01_a,
                   Number threshold_01_b,
@@ -203,7 +203,7 @@ Number Threshold4(Number intensity,
 ///
 /// @endcode
 
-template<class Number>
+template<typename Number>
 Number SelectIntensityRange(Number intensity,
                             Number range_a,
                             Number range_b,
@@ -245,7 +245,7 @@ Number SelectIntensityRange(Number intensity,
 ///                                x0
 /// @endcode
 
-template<class Number>
+template<typename Number>
 Number SelectIntensityRangeGauss(Number intensity,
                                  Number x0,
                                  Number sigma,

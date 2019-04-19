@@ -33,7 +33,7 @@ static vector<string> split(const string &s, char delim) {
 ///          in a vector of vectors.  This function can also be used to
 ///          read a file containing multiple columns of numbers, for example
 ///          a list of 3D coordinates.  ("Entry" can be numeric.)
-template<class Entry>
+template<typename Entry>
 static void
 ReadMulticolumnFile(istream &f,  //<! the file to be read
                     vector<vector<Entry> > &vvDest //<! store the results here
@@ -69,7 +69,7 @@ ReadMulticolumnFile(istream &f,  //<! the file to be read
 ///          in a vector of vectors.  This function can also be used to
 ///          read a file containing multiple columns of numbers, for example
 ///          a list of 3D coordinates.  ("Entry" can be numeric.)
-template<class Entry>
+template<typename Entry>
 static void
 ReadMulticolumnFile(string file_name,  //<! the file to be read
                     vector<vector<Entry> > &vvDest //<! store the results here
@@ -98,7 +98,7 @@ ReadMulticolumnFile(string file_name,  //<! the file to be read
 ///         units of voxels, not physical distance, however indices start at 1).
 ///         Otherwise, simply divide the numbers by the voxel width.
 
-template<class Scalar, class Coordinate>
+template<typename Scalar, typename Coordinate>
 static void
 ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! words on each line of a file
                             vector<vector<Scalar> > &vvCoords, //<! convert these words to a matrix of numbers
@@ -186,7 +186,7 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! wo
 /// @brief   Read a list of blob coordinates, diameters, and scores
 ///          from a text file.
 
-template<class Scalar, class Coordinate>
+template<typename Scalar, typename Coordinate>
 static void
 ReadBlobCoordsFile(string in_coords_file_name, //<! name of file we will read
                    vector<array<Coordinate, 3> > *pCrds=NULL, //<! store the blob coordinates here (if !=NULL)
@@ -283,7 +283,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //<! name of file we will read
 
 
 
-template<class Scalar>
+template<typename Scalar>
 static void
 WriteOrientedPointCloudPLY(string filename,
                            vector<array<Scalar,3> > coords,
@@ -317,7 +317,7 @@ WriteOrientedPointCloudPLY(string filename,
 
 
 
-template<class Scalar>
+template<typename Scalar>
 static void
 WriteOrientedPointCloudOBJ(string filename,
                            vector<array<Scalar,3> > coords,
@@ -348,7 +348,7 @@ WriteOrientedPointCloudOBJ(string filename,
 
 
 
-template<class Scalar>
+template<typename Scalar>
 static void
 WriteOrientedPointCloudBNPTS(string filename,
                              vector<array<Scalar,3> > coords,
@@ -384,7 +384,7 @@ WriteOrientedPointCloudBNPTS(string filename,
 
 
 
-template<class Scalar, class VectorContainer>
+template<typename Scalar, typename VectorContainer>
 static void
 WriteOrientedPointCloud(string pointcloud_file_name,
                         const int image_size[3],
@@ -446,7 +446,7 @@ WriteOrientedPointCloud(string pointcloud_file_name,
 /// @brief   Parse the list of voxel coordinates provided 
 ///          by the user to use in "link" constraints.
 
-template<class Scalar, class Coordinate>
+template<typename Scalar, typename Coordinate>
 static void
 ProcessLinkConstraints(string must_link_filename,
                        vector<vector<array<Coordinate, 3> > > &must_link_constraints,

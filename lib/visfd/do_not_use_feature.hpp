@@ -55,7 +55,7 @@ namespace visfd {
 ///
 /// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
-template<class Scalar, class IntegerIndex, class Label>
+template<typename Scalar, typename IntegerIndex, typename Label>
 static void
 _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafSource, //!< image array aaafSource[iz][iy][ix]
@@ -530,7 +530,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
 ///
 /// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
-template<class Scalar, class IntegerIndex, class Label>
+template<typename Scalar, typename IntegerIndex, typename Label>
 static void
 _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]

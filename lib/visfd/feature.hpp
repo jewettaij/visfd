@@ -49,7 +49,7 @@ namespace visfd {
 ///          are not as trustworthy since some of the 26 neighboring voxels
 ///          will not be available for comparison.
 
-template<class Scalar, class Coordinate, class IntegerIndex, class Label>
+template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
 void
 FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
@@ -150,7 +150,7 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
 ///         That version is faster than invoking this function twice.)
 ///         See the description of that version for details.
 
-template<class Scalar, class Coordinate, class IntegerIndex, class Label>
+template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
 void
 FindExtrema(int const image_size[3],            //!< size of input image array
             Scalar const *const *const *aaafI,   //!< input image array
@@ -227,7 +227,7 @@ FindExtrema(int const image_size[3],            //!< size of input image array
 ///        (corresponding to dark blobs on a light background
 ///         and light blobs on a dark background, respectively).
 
-template<class Scalar>
+template<typename Scalar>
 void
 BlobDog(int const image_size[3], //!< source image size
         Scalar const *const *const *aaafSource,   //!< source image
@@ -634,7 +634,7 @@ BlobDog(int const image_size[3], //!< source image size
 ///        You must supply arguments to store BOTH the minima and maxima
 ///        even if you are only interested in one of them (minima OR maxima).
 
-template<class Scalar>
+template<typename Scalar>
 void
 BlobDogD(int const image_size[3], //!<source image size
          Scalar const *const *const *aaafSource,   //!< source image
@@ -704,7 +704,7 @@ BlobDogD(int const image_size[3], //!<source image size
 
 
 /// @brief sort blobs by their scores
-template<class Scalar>
+template<typename Scalar>
 void
 SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
           vector<Scalar>& blob_diameters,  //!< the width of each blob
@@ -748,7 +748,7 @@ SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
 /// @brief  Calculate the volume of overlap between two spheres of radius 
 ///         Ri and Rj separated by a distance of rij.
 
-template<class Scalar>
+template<typename Scalar>
 Scalar CalcSphereVolOverlap(Scalar rij,//!<the distance between the spheres' centers
                             Scalar Ri, //!< the radius of sphere i
                             Scalar Rj  //!< the radius of sphere j
@@ -798,7 +798,7 @@ typedef enum eSortBlobCriteria {
 ///
 ///   In this function, the width of each blob is located in an array storing
 ///   their diameters (instead of their corresponding "sigma" values).
-template<class Scalar>
+template<typename Scalar>
 void
 DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                         vector<Scalar>& blob_diameters,  //!< diameger of each blob
@@ -1029,7 +1029,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 /// @brief  Discard blobs whose centers lie outside the 
 ///         "masked" region defined by aaafMask.
 
-template<class Scalar>
+template<typename Scalar>
 void
 DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                    // optional arguments:
@@ -1103,7 +1103,7 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 ///         Each "VectorContainer" object is expected to behave like
 ///         a one-dimensional array of 3 scalars.
 
-template<class Scalar, class VectorContainer, class TensorContainer>
+template<typename Scalar, typename VectorContainer=Scalar*, typename TensorContainer=Scalar*>
 void
 CalcHessian(int const image_size[3], //!< source image size
             Scalar const *const *const *aaafSource, //!< source image
@@ -1158,6 +1158,11 @@ CalcHessian(int const image_size[3], //!< source image size
   if (pReportProgress)
     *pReportProgress << "Calculating the Hessian associated with each voxel\n";
 
+  if ((image_size[0] < 3) ||
+      (image_size[1] < 3) ||
+      (image_size[2] < 3))
+    throw VisfdErr("Error: CalcHessian() requires an image that is at least 3 voxels\n"
+                   "       wide in the x,y,z directions.\n");
   assert(image_size[0] >= 3);
   assert(image_size[1] >= 3);
   assert(image_size[2] >= 3);
@@ -1267,7 +1272,7 @@ CalcHessian(int const image_size[3], //!< source image size
 /// Unfortunately this version is slower and needs much more memory.
 /// Eventually, I might elliminate one of these implementations.
 
-template<class Scalar, class FirstMomentContainer, class SecondMomentContainer>
+template<typename Scalar, typename FirstMomentContainer, typename SecondMomentContainer>
 void
 CalcMomentTensor(int const image_size[3], //!< source image size
                  Scalar const *const *const *aaafSource, //!< source image
@@ -1688,7 +1693,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
 /// @note   The "TensorContainer" object type is expected to behave like
 ///         a one-dimensional array of 6 scalars.
 
-template<class Scalar, class TensorContainer>
+template<typename Scalar, typename TensorContainer>
 void
 DiagonalizeHessianImage(int const image_size[3], //!< source image size
                         TensorContainer const *const *const *aaaafSource, //!< input tensor
@@ -1815,14 +1820,14 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
 /// @note   The "TensorContainer" object type is expected to behave like
 ///         a one-dimensional array of 6 scalars.
 
-template<class Scalar, class TensorContainer>
+template<typename Scalar, typename TensorContainer>
 void
 UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
-                            TensorContainer const *const *const *aaaafSource, //!< input tensor
-                            TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
-                            Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                            ostream *pReportProgress = NULL  //!< print progress to the user?
-                            )
+                          TensorContainer const *const *const *aaaafSource, //!< input tensor
+                          TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
+                          Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+                          ostream *pReportProgress = NULL  //!< print progress to the user?
+                          )
 {
   assert(aaaafSource);
 
@@ -1856,10 +1861,10 @@ UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
 ///         and that the first 3 entries of the "diagonalizedHessian"
 ///         argument are the eigenvalues of the original hessian matrix.
 
-template<class TensorContainer, class VectorContainer>
+template<typename TensorContainer, typename VectorContainer>
 double
 ScoreHessianPlanar(TensorContainer diagonalizedHessian,
-                   VectorContainer gradient)
+                   VectorContainer gradient=NULL)
 {
   //typedef decltype(diagonalizedHessian[0]) Scalar;
   double lambda1 = diagonalizedHessian[0];
@@ -1900,7 +1905,7 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
 ///         This function assumes that "diagonalizedMatrix3x3" has been 
 ///         diagonalized, and that its first 3 entries 
 ///         are the eigenvalues of the original hessian matrix.
-template<class TensorContainer>
+template<typename TensorContainer>
 double
 ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 {
@@ -1922,7 +1927,7 @@ ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 ///         (1) Stick-fields corresponding to 2D surface-like features,
 ///         (2) Stick-fields corresponding to 1D curve-like features.
 
-template<class Scalar, class Integer, class VectorContainer, class TensorContainer>
+template<typename Scalar, typename Integer, typename VectorContainer, typename TensorContainer>
 
 class TV3D {
 

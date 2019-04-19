@@ -45,10 +45,17 @@ tests/test_*.ply
 tests/test_*.obj
 tests/test_*.txt
 
+
 # ...but DON'T ignore the original source images (which are needed by the tests)
 !tests/test_image_membrane.rec
 !tests/test_blob_detect.rec
 !tests/test_blob_detect_mask.rec
+!tests/test_1d_example.rec
+# ...or the scripts which are used for testing
+!tests/test_membrane_detection.sh
+!tests/test_blob_detection.sh
+!tests/test_watershed.sh
+!tests/test_fluctuation_filter.sh
 
 
 

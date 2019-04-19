@@ -42,7 +42,7 @@ using namespace std;
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 Filter2D<Scalar, int>
 GenFilterGenGauss2D(Scalar width[2],    //!< "s_x", "s_y" parameters
                     Scalar m_exp,       //!< "m" parameter in formula
@@ -82,7 +82,7 @@ GenFilterGenGauss2D(Scalar width[2],    //!< "s_x", "s_y" parameters
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 Filter3D<Scalar, int>
 GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
                     Scalar m_exp,       //!<"m" parameter in formula
@@ -120,7 +120,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 Filter2D<Scalar, int> 
 GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
                 Scalar width_b[2],  //!< "b" parameter in formula
@@ -174,7 +174,7 @@ GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 // Create a 3-D filter and fill it with a difference of (generalized) Gaussians:
 Filter3D<Scalar, int> 
 GenFilterDogg3D(Scalar width_a[3],  //"a" parameter in formula
@@ -235,7 +235,7 @@ GenFilterDogg3D(Scalar width_a[3],  //"a" parameter in formula
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 Scalar
 ApplyGauss(int const image_size[3], 
            Scalar const *const* const *aaafSource,
@@ -277,7 +277,7 @@ ApplyGauss(int const image_size[3],
 /// specifies how much the filter must decay before the filter is cutoff.
 /// This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 void
 ApplyDog(int const image_size[3], //source image size
          Scalar const *const *const *aaafSource,  //source image
@@ -343,7 +343,7 @@ ApplyDog(int const image_size[3], //source image size
 
 
 
-template<class Scalar>
+template<typename Scalar>
 void
 ApplyLog(int const image_size[3], //source image size
          Scalar const *const *const *aaafSource,   //source image
@@ -390,7 +390,7 @@ ApplyLog(int const image_size[3], //source image size
 ///        For details regarding what this function does, see the comments
 ///        for the other version of this function (located in filter3d.hpp).
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 static void
 LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
                           Scalar const *const *const *aaafSource, //!< original image

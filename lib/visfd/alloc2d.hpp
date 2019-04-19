@@ -10,7 +10,7 @@ namespace visfd {
 //  tomographic data, and also precomputed filter-weights.)
 
 
-template<class Entry, class Integer>
+template<typename Entry, typename Integer>
 void Alloc2D(Integer const size[2], 
              Entry **paX,      // <--pointer to 1-D contiguous-memory array
              Entry ***paaX)    // <--pointer to 2-D multidimensional array
@@ -35,7 +35,7 @@ void Alloc2D(Integer const size[2],
 }
 
 
-template<class Entry, class Integer>
+template<typename Entry, typename Integer>
 void Dealloc2D(Integer const size[2], 
                Entry **paX, 
                Entry ***paaX) {

@@ -19,16 +19,16 @@ namespace visfd {
 
 
 
-template<class Scalar >
+template<typename Scalar >
 static inline Scalar SQR(Scalar x) { return x*x; }
 
-template<class Scalar >
+template<typename Scalar >
 static inline Scalar MIN(Scalar a, Scalar b) { return ((a<=b) ? a : b); }
 
-template<class Scalar >
+template<typename Scalar >
 static inline Scalar MAX(Scalar a, Scalar b) { return ((a>=b) ? a : b); }
 
-template <class Scalar>
+template <typename Scalar>
 static int SGN(Scalar val) {
   return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));
 }
@@ -37,7 +37,7 @@ static int SGN(Scalar val) {
 
 
 /// @brief invert a permutation
-template<class T, class Integer>
+template<typename T, typename Integer>
 void
 invert_permutation(const vector<Integer>& p,
                    vector<T>& p_inv)
@@ -50,7 +50,7 @@ invert_permutation(const vector<Integer>& p,
 
 
 /// @brief apply a permutation to a std::vector in-place
-template<class T, class Integer>
+template<typename T, typename Integer>
 void
 apply_permutation(const vector<Integer>& p,
                   vector<T>& v)
@@ -74,7 +74,7 @@ apply_permutation(const vector<Integer>& p,
 ///         (if necessary) before this function is called.
 /// @note   You must insure that ix,iy,iz (and their neighbors!) lie within
 ///         the boundaries of the image.  THERE IS NO BOUNDS CHECKING.
-template<class Scalar>
+template<typename Scalar>
 void
 CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source image
                              int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
@@ -124,7 +124,7 @@ CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source
 ///          brightnesses from the nearest neighbor.)
 /// @note   This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 void
 CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source image
                              int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
@@ -176,7 +176,7 @@ CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source
 ///          brightnesses from the nearest neighbor.)
 /// @note   This function was not intended for public use.
 
-template<class Scalar>
+template<typename Scalar>
 void
 CalcGradientFiniteDifferences(Scalar const *const *const *aaafSource, //!< source image
                               int ix, int iy, int iz, //!< location in the image where you wish to calculate the Hessian
@@ -230,7 +230,7 @@ CalcGradientFiniteDifferences(Scalar const *const *const *aaafSource, //!< sourc
 /// @return the weighted average
 
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 Scalar AverageArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
                   Scalar const *const *const *aaafW = NULL) 
@@ -266,7 +266,7 @@ Scalar AverageArr(Integer const array_size[3],
 /// @param  aaafW       an optional array of weights (for weighted averages)
 /// @return the weighted average of the squared entries in the array
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 static
 Scalar _AveSqrArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
@@ -307,7 +307,7 @@ Scalar _AveSqrArr(Integer const array_size[3],
 /// @param  aaafW       an optional array of weights (for weighted averages)
 /// @return the weighted standard deviation
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 Scalar StdDevArr(Integer const array_size[3],
                  Scalar const *const *const *aaafH,
                  Scalar const *const *const *aaafW = NULL) 
@@ -347,7 +347,7 @@ Scalar StdDevArr(Integer const array_size[3],
 ///                     the corresponding entry value)
 /// @return the (weighted) sum
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 static
 Scalar _SumArr(Integer const array_size[3],
                Scalar const *const *const *aaafH,
@@ -381,7 +381,7 @@ Scalar _SumArr(Integer const array_size[3],
 ///                     the corresponding squared entry value)
 /// @return the (weighted) sum of squares
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 static
 Scalar _SumSqrArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
@@ -412,7 +412,7 @@ Scalar _SumSqrArr(Integer const array_size[3],
 /// @param  array_size  an array of 3 integers storing the size of the array
 /// @param  aaafH       the 3D array containing the entries to be modified
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 void AddScalarArr(Scalar offset,
                   Integer const array_size[3],
                   Scalar ***aaafH)
@@ -431,7 +431,7 @@ void AddScalarArr(Scalar offset,
 /// @param  array_size  an array of 3 integers storing the size of the array
 /// @param  aaafH       the 3D array containing the entries to be modified
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 void MultiplyScalarArr(Scalar scale,
                        Integer const array_size[3],
                        Scalar ***aaafH)
@@ -455,7 +455,7 @@ void MultiplyScalarArr(Scalar scale,
 /// @return the minimum entry in the aaafI array (not ignored by the mask)
 ///         (or std::numeric_limits::infinty(), if the aaafMask array has no non-zero entries)
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 static
 Scalar _MinArr(Integer const array_size[3],
                Scalar const *const *const *aaafI,
@@ -494,7 +494,7 @@ Scalar _MinArr(Integer const array_size[3],
 /// @return the minimum entry in the aaafI array (not ignored by the mask)
 ///         (or std::numeric_limits::infinty(), if the aaafMask array has no non-zero entries)
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 static
 Scalar _MaxArr(Integer const array_size[3],
                Scalar const *const *const *aaafI,
@@ -533,7 +533,7 @@ Scalar _MaxArr(Integer const array_size[3],
 /// @param  aaafI       the 3D array containing the entries
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 void
 HistogramArr(Scalar **paHistX,  
              size_t  **paHistY,

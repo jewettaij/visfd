@@ -7,7 +7,7 @@ namespace visfd {
 
 
 
-template<class Scalar>
+template<typename Scalar>
 
 /// @brief   This class is useful IF you have a volumetric multi-channel image
 ///             (ie, multiple numbers are stored for every voxel)

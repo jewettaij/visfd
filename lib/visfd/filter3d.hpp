@@ -35,7 +35,7 @@ namespace visfd {
 /// @note  In practice, this class is not used often because separable filters
 ///        based on Gaussians are much faster.
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 
 class Filter3D {
 
@@ -544,7 +544,7 @@ public:
 /// @note "A" is equal to the value stored in the middle of the array,
 ///       The caller can determine what "A" is by looking at this value.
 
-template<class Scalar>
+template<typename Scalar>
 Filter3D<Scalar, int>
 GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
                     Scalar m_exp,       //!< "m" exponent parameter
@@ -657,7 +657,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 /// @note "A" is equal to the value stored in the middle of the array (aaafH),
 ///       The caller can determine what "A" is by looking at aaafH there
 
-template<class Scalar>
+template<typename Scalar>
 Filter3D<Scalar, int>
 GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
                     Scalar m_exp,       //!< "m" parameter in formula
@@ -726,7 +726,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 //      implementation here is a little bit faster than that: ~17% faster.)
 
 
-template<class Scalar>
+template<typename Scalar>
 Scalar
 ApplySeparable(int const image_size[3],              //!<number of voxels in x,y,z directions
                Scalar const *const *const *aaafSource, //!<image to which we want to apply the filter
@@ -1124,7 +1124,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
-template<class Scalar>
+template<typename Scalar>
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1190,7 +1190,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// simply due to lying close to the edge of the image.
 ///
 /// @returns the "A" coefficient (determined by normalization)
-template<class Scalar>
+template<typename Scalar>
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1254,7 +1254,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
-template<class Scalar>
+template<typename Scalar>
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1320,7 +1320,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 ///
 /// @returns the "A" coefficient (determined by normalization)
 
-template<class Scalar>
+template<typename Scalar>
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1360,7 +1360,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
 
-template<class Scalar>
+template<typename Scalar>
 void
 ApplyDog(int const image_size[3], //!< image size in x,y,z directions
          Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1452,7 +1452,7 @@ ApplyDog(int const image_size[3], //!< image size in x,y,z directions
 /// In this version, the user specifies the filter truncation width
 /// (truncate_ratio) in units of σ_x, σ_y, σ_z (in the x,y,z directions).
 
-template<class Scalar>
+template<typename Scalar>
 void
 ApplyLog(int const image_size[3], //!< source image size
          Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1554,7 +1554,7 @@ ApplyLog(int const image_size[3], //!< source image size
 /// considered during the averaging (blurring) process, and the resulting
 /// after blurring is weighted accordingly.  (normalize=true by default)
 
-template<class Scalar>
+template<typename Scalar>
 void
 ApplyLog(int const image_size[3], //!< source image size
          Scalar const *const *const *aaafSource, //!< source image
@@ -1604,7 +1604,7 @@ ApplyLog(int const image_size[3], //!< source image size
 ///         the intensity fluctuations would be within a (uniformly weighted)
 ///         spherical volume of radius=sigma.)  This will slow the calculation.
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 void
 LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z directions
                   Scalar const *const *const *aaafSource, //!< original image
@@ -1811,7 +1811,7 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
 ///        If you do this, you will have to multiply your radius arguments by
 ///        1.5549880806696572 beforehand to compensate.
 
-template<class Scalar, class Integer>
+template<typename Scalar, typename Integer>
 void
 LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
                           Scalar const *const *const *aaafSource, //!< original image
@@ -1860,7 +1860,7 @@ LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in 
 ///                              I may delete this function in the future.
 /// @note: THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
 
-template<class Scalar>
+template<typename Scalar>
 static
 Filter3D<Scalar, int> 
 _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
@@ -1983,7 +1983,7 @@ _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
 ///   and "A" and "B" are determined by normalization of each term independently
 /// DEPRECIATION WARNING:  It's not clear if this type if filter is useful.
 ///                        I may delete this function in the future.
-template<class Scalar>
+template<typename Scalar>
 Filter3D<Scalar, int> 
 GenFilterDogg3D(Scalar width_a[3],   //!< "a" parameter in formula
                 Scalar width_b[3],   //!< "b" parameter in formula

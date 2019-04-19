@@ -48,7 +48,7 @@ namespace visfd {
 /// @note  If aaafMask!=NULL then voxels in aaaiDest are not modified if
 ///        their corresponding entry in aaafMask equals 0.
 
-template<class Scalar, class Label, class Coordinate>
+template<typename Scalar, typename Label, typename Coordinate>
 void
 Watershed(int const image_size[3],                 //!< #voxels in xyz
           Scalar const *const *const *aaafSource,  //!< intensity of each voxel
@@ -445,7 +445,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
 ///         "location" arguments are both of type C++-style std::array
 ///         instead of C-style pointers.
 
-template<class Scalar, class Label, class Coordinate>
+template<typename Scalar, typename Label, typename Coordinate>
 static void
 FindNearestVoxel(int const image_size[3],                   //!< #voxels in xyz
                  const array<Coordinate, 3> &nearby_location, //<! find the voxel in aaaiVoxels closest to this
@@ -513,7 +513,7 @@ FindNearestVoxel(int const image_size[3],                   //!< #voxels in xyz
 ///         "location" arguments are both C-style pointers,
 ///         instead of C++-style std::array.
 
-template<class Scalar, class Label, class Coordinate>
+template<typename Scalar, typename Label, typename Coordinate>
 void
 FindNearestVoxel(int const image_size[3],             //!< #voxels in xyz
                  const Coordinate nearby_location[3], //<! find voxel in aaaiVoxels closest to this
@@ -628,7 +628,7 @@ typedef enum eClusterSortCriteria {
 ///         consistently, they will be cut at a location where their saliency
 ///         is weak.  (The goal is to avoid Möbius-strip-like defects.)
 
-template<class Scalar, class Label, class Coordinate, class VectorContainer, class TensorContainer>
+template<typename Scalar, typename Label, typename Coordinate, typename VectorContainer=Scalar*, typename TensorContainer=Scalar*>
 void
 ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Scalar const *const *const *aaafSaliency,  //!< intensity of each voxel

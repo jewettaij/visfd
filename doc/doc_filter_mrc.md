@@ -79,7 +79,7 @@ filter_mrc -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
 
 filter_mrc -in tomogram.rec \
   -out tomogram_ribosomes.rec \
-  -spheres tomogram_ribosomes.txt
+  -draw-spheres tomogram_ribosomes.txt
 ```
 
 Note: The
@@ -163,7 +163,7 @@ are assumed to be in **physical units**.  (Eg. *Angstroms*, not *voxels*.)
 This makes it more convenient to apply the software
 to images at different magnifications.
 (This includes all of the width parameters used with the
- "-gauss", "-blob", "-dog", "-spheres", and "-template-gauss" filters.)
+ "-gauss", "-blob", "-dog", "-draw-spheres", and "-template-gauss" filters.)
 
 Consequently, this program needs to know the physical width of each voxel.
 By default it will attempt to infer that from the MRC file
@@ -713,7 +713,7 @@ The x,y,z coordinates of each minima or maxima are in the first 3 columns,
 followed by the number of voxels in the maxima or minimaa (which is usually 1), and finally
 it's "score" (which is the brightness of the voxel at that location).
 *(This format is nearly identical to the format used by the
-  "-blob",  "-blobr",  "-blobd" and "-spheres" arguments.)*
+  "-blob",  "-blobr",  "-blobd" and "-draw-spheres" arguments.)*
 When a minima or maxima contains multiple voxels of identical brightness,
 the position of one of the voxels among them is chosen arbitrarily.
 
@@ -757,13 +757,13 @@ whose "scores" (brightnesses) do not fall below (or above) "threshold".
 It may also be useful to discard minima which are too close together.
 This can be done using a combination of these two arguments:
 ```
-  -sphere-radius    radius
+  -radii    radius
 ```
 and
 ```
   -radial-separation  ratio
 ```
-The "**-sphere-radius** argument allows you to assign a radius to each minima
+The "**-radii** argument allows you to assign a radius for all the minima
 (or maxima).  When used together with "**-radial-separation**", it means that
 if a pair of minima (or maxima) lie within the sum of their
 radii times ratio (*2\*radius\*ratio*), 
@@ -854,7 +854,8 @@ a (scale-adjusted) LoG filter of that size was applied to it.
 For *minima* type blobs, the list is ordered
 from low score (most negative) to high score score
 For *maxima* type blobs, the list is ordered from high score to low score.
-These blobs can be visualized using the "**-spheres**" argument (see below).
+These blobs can be visualized using the "**-draw-spheres**" argument
+(see below).
 
 #### Blob types
 
@@ -915,7 +916,7 @@ it is recommended that you save all of these blobs to a file.
 *Then* you can decide which of these blobs are meaningful
 by running non-max suppression later on (as shown below).
 Then you can run "filter_mrc" a third time using the
-["**-spheres**"](#-spheres-filename)
+["**-draw-spheres**"](#-draw-spheres-filename)
 argument to visualize the remaining blobs you did not throw away.
 (This is what we did in [example 2](#Example-2).)
 Sometimes several iterations of non-max suppression followed by visualization
@@ -923,7 +924,7 @@ are needed before you achieve visually pleasing results.
 
 Details are provided below explaining how visualize these blobs
 (using the 
-["**-spheres**"](#-spheres-filename)
+["**-draw-spheres**"](#-draw-spheres-filename)
  argument),
 as well as how to discard low-quality and overlapping blobs
 (using the 
@@ -943,7 +944,7 @@ but it only has to be performed once.
 Typically, users will perform blob detection with the default (permissive)
 score thresholds, so that they keep most of the minima and maxima.
 Then later, they will run **filter_mrc** with the
-["**-spheres**"](#-spheres-filename)
+["**-draw-spheres**"](#-draw-spheres-filename)
 and 
 ["**-minima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
 (or 
@@ -1163,7 +1164,7 @@ by running this program again on the new image using the
 "**-find-minima**", "**-find-maxima**" and "-radial-separation" arguments.
 These locations can be saved to a file and then a new anotated image can be
 created using the 
-["**-spheres**"](#-spheres-filename)
+["**-draw-spheres**"](#-draw-spheres-filename)
 argument.  This provides a fast, sloppy, 
 and unselective way to search for features in an image.
 However scale-free 
@@ -1523,9 +1524,9 @@ centered around *x0* with standard deviation σ.
 
 ## Annotation of detected objects in an image
 
-## -spheres filename
+## -draw-spheres filename
 
-The "**-spheres**" argument does not perform a filtering operation
+The "**-draw-spheres**" argument does not perform a filtering operation
 on the original image.
 Instead it reads a text file containing between 3 and 5 columns (eg "filename")
 indicating the location, size, and brightness of a series of points in space.
@@ -1542,10 +1543,10 @@ by default.
 If the file contains a 4th column, then it is assumed to store the diameter of
 the sphere (in physical units, not voxels).
 (Either way, the sphere size can be overridden using
- the "**-sphere-diameter d**" argument.)
+ the "**-diameters d**" or "**-radii r** arguments.)
 If the file contains a 5th column, it is assumed to represent the brightness
 of that sphere.
-(This can be overridden using the "**-sphere-foreground brightness**" argument.)
+(This can be overridden using the "**-foreground brightness**" argument.)
 Incidentally, the format of this file matches the formmat of the text file
 generated during blob detection (using the "**-blob**" argument).
 
@@ -1559,9 +1560,9 @@ By default, these spherical shells will be superimposed upon the
 original image (whose voxel's brightness will be shifted and scaled
 so that the voxels remain easy to see in the presence of the spherical shells).
 The average *brightness* and *contrast* of these background voxels
-is controlled by the "**-sphere-background brightness**", and the
-"**-sphere-background-scale ratio**" arguments, respectively.
-(Using "**-sphere-background-scale 0**" makes this background image invisible.
+is controlled by the "**-background brightness**", and the
+"**-background-scale ratio**" arguments, respectively.
+(Using "**-background-scale 0**" makes this background image invisible.
  The default scale ratio is 0.333.)
 
 When displayed in IMOD,
@@ -1584,7 +1585,7 @@ Instead, *filter_mrc* will read the list of blobs reported in a file
 (created by running *filter_mrc* with the *-blob* argument),
 and discard blobs with poor scores, or blobs which overlap with other blobs.
 The new list of blobs can then be visualized later by running
-*filter_mrc* again using the "**-spheres**" argument.
+*filter_mrc* again using the "**-draw-spheres**" argument.
 
 Note that the "**-discard-blobs**" argument by itself does nothing.
 You must run it with other arguments telling it which blobs you want to discard.
@@ -1722,14 +1723,14 @@ that you wish to detect within the image (instead of the object's diameter).
 
 
 
-####  Visualizing blobs using the "*-spheres*" argument
+####  Visualizing blobs using the "*-draw-spheres*" argument
 
 Again, after 
 [blob-detection](#Blob-detection)
 AND 
 [non-max suppression](#Non-max-suppression:-automatic-disposal-of-blobs),
 you can visualize the resulting blobs using the
-["**-spheres**"](#-spheres-filename)
+["**-draw-spheres**"](#-draw-spheres-filename)
 and
 ["**-out**"](#Input-and-Output-files)
 arguments.

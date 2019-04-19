@@ -11,18 +11,18 @@ namespace visfd {
 
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar Trace3(const Scalar m[3][3]) {
   return m[0][0]+m[1][1]+m[2][2];
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar Trace3(const array<array<int, 3>, 3>& m) {
   return m[0][0]+m[1][1]+m[2][2];
 }
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline void CrossProduct(const Scalar a[3],
                                 const Scalar b[3],
                                 Scalar dest[3])
@@ -33,7 +33,7 @@ static inline void CrossProduct(const Scalar a[3],
   dest[1] = a[2]*b[0] - a[0]*b[2];
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline void CrossProduct(const array<Scalar, 3>& a,
                                 const array<Scalar, 3>& b,
                                 array<Scalar, 3>& dest)
@@ -46,24 +46,24 @@ static inline void CrossProduct(const array<Scalar, 3>& a,
 
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar DotProduct3(const Scalar a[3], const Scalar b[3]) {
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar DotProduct3(const array<Scalar, 3>& a,
                                  const array<Scalar, 3>& b) {
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar DotProduct3(const Scalar a[3],
                                  const array<Scalar, 3>& b) {
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar DotProduct3(const array<Scalar, 3>& a,
                                  const Scalar b[3]) {
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
@@ -71,31 +71,31 @@ static inline Scalar DotProduct3(const array<Scalar, 3>& a,
 
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar SquaredNorm3(const Scalar a[3]) {
   return DotProduct3(a, a);
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar SquaredNorm3(const array<Scalar, 3>& a) {
   return DotProduct3(a, a);
 }
 
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar Length3(const Scalar a[3]) {
   return std::sqrt(SquaredNorm3(a));
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar Length3(const array<Scalar, 3>& a) {
   return std::sqrt(DotProduct3(a, a));
 }
 
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline void Normalize3(Scalar a[3]) {
   Scalar L_inv = Length3(a);
   if (L_inv > 0.0) {
@@ -110,7 +110,7 @@ static inline void Normalize3(Scalar a[3]) {
   }
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline void MatProduct3(const Scalar A[3][3],
                                const Scalar B[3][3],
                                Scalar dest[3][3]) {
@@ -125,7 +125,7 @@ static inline void MatProduct3(const Scalar A[3][3],
 
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline void Copy3x3(const Scalar source[3][3], Scalar dest[3][3]) {
   //for (int i=0; i<3; i++)
   //  for (int j=0; j<3; j++)
@@ -135,7 +135,7 @@ static inline void Copy3x3(const Scalar source[3][3], Scalar dest[3][3]) {
 }
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline void Transpose3(Scalar m[3][3]) {
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -143,7 +143,7 @@ static inline void Transpose3(Scalar m[3][3]) {
 }
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline void Transpose3(const Scalar source[3][3], Scalar dest[3][3]) {
   if (source != dest) {
     for (int i=0; i<3; i++)
@@ -155,7 +155,7 @@ static inline void Transpose3(const Scalar source[3][3], Scalar dest[3][3]) {
 }
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar Determinant3(const Scalar m[3][3]) {
   Scalar v12[3];
   CrossProduct(m[0], m[1], v12);
@@ -167,7 +167,7 @@ static inline Scalar Determinant3(const Scalar m[3][3]) {
 /// @brief  Convert a 3x3 rotation matrix (M) to a quaternion (q)
 /// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
 
-template<class Scalar>
+template<typename Scalar>
 static inline void Matrix2Quaternion(const Scalar M[3][3], Scalar q[4])
 {
   Scalar S;
@@ -216,7 +216,7 @@ static inline void Matrix2Quaternion(const Scalar M[3][3], Scalar q[4])
 /// @brief  Convert a quaternion (q) to a 3x3 rotation matrix (M)
 /// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
 
-template<class RealNum>
+template<typename RealNum>
 static inline void Quaternion2Matrix(const RealNum q[4], RealNum M[3][3])
 {
   // Alternate convention for quaternion->rotation conversion
@@ -247,7 +247,7 @@ static inline void Quaternion2Matrix(const RealNum q[4], RealNum M[3][3])
 
 /// @brief  Convert a 3-component Shoemake coordinate list to a quaternion (q)
 ///         Shoemake, Graphics Gems III (1992) pp. 124-132
-template <class Scalar>
+template <typename Scalar>
 static inline void Shoemake2Quaternion(const Scalar sm[3], Scalar q[4])
 {
   const Scalar M_2PI = 6.283185307179586;
@@ -280,7 +280,7 @@ static inline void Shoemake2Quaternion(const Scalar sm[3], Scalar q[4])
 
 /// @brief  Convert a quaternion (q) to a 3-component Shoemake coordinate list
 ///         Shoemake, Graphics Gems III (1992) pp. 124-132
-template <class Scalar>
+template <typename Scalar>
 static inline void Quaternion2Shoemake(const Scalar q[4], Scalar sm[3])
 {
   const Scalar M_2PI = 6.283185307179586;
@@ -317,7 +317,7 @@ static inline void Quaternion2Shoemake(const Scalar q[4], Scalar sm[3])
 
 
 /// @brief  Convert 3 Shoemake coordinates to a 3x3 rotation matrix (M)
-template <class Scalar>
+template <typename Scalar>
 static inline void Shoemake2Matrix(const Scalar sm[3], Scalar M[3][3]) {
   Scalar q[4];
   Shoemake2Quaternion(sm, q);
@@ -326,7 +326,7 @@ static inline void Shoemake2Matrix(const Scalar sm[3], Scalar M[3][3]) {
 
 
 /// @brief  Convert 3 Shoemake coordinates to a 3x3 rotation matrix (M)
-template <class Scalar>
+template <typename Scalar>
 static inline void Matrix2Shoemake(const Scalar M[3][3], Scalar sm[3]) {
   Scalar q[4];
   Matrix2Quaternion(M, q);
@@ -350,7 +350,7 @@ static const int MapIndices_linear_to_3x3[][2] =
 ///         A symmetric 3x3 matrix contains only 6 unique numbers.
 ///         Internally, this is stored as a 1-D array with 6 entries.
 
-template<class Scalar>
+template<typename Scalar>
 
 class SymmetricMatrix3x3 {
 
@@ -423,7 +423,7 @@ public:
 
 /// @brief  Calculate Tr(A B^T)
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar TraceProduct3(const Scalar A[3][3],
                                    const Scalar B[3][3]) {
   Scalar sum = 0.0;
@@ -437,7 +437,7 @@ static inline Scalar TraceProduct3(const Scalar A[3][3],
 ///   where A and B are represented as 1-D arrays containing 6 entries, instead
 ///   of 3x3 arrays.  (See MapIndices_linear_to_3x3[] above for conversion.)
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar TraceProductSym3(const Scalar A[6],
                                       const Scalar B[6])
 {
@@ -470,22 +470,22 @@ static inline Scalar TraceProductSym3(const Scalar A[6],
 }
 
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar FrobeniusNormSqd3(const Scalar A[3][3]) {
   return TraceProduct3(A, A);
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar FrobeniusNorm3(const Scalar A[3][3]) {
   return std::sqrt(TraceProduct3(A, A));
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar FrobeniusNormSqdSym3(const Scalar A[6]) {
   return TraceProductSym3(A, A);
 }
 
-template <class Scalar>
+template <typename Scalar>
 static inline Scalar FrobeniusNormSym3(const Scalar A[6]) {
   return std::sqrt(TraceProductSym3(A, A));
 }
@@ -503,7 +503,7 @@ static inline Scalar FrobeniusNormSym3(const Scalar A[6]) {
 ///          (Shoemake, Graphics Gems III (1992) pp. 124-132)
 ///       This could change.
 
-template <class Scalar>
+template <typename Scalar>
 void ConvertDiagFlatSym2Evects3(const Scalar m[6],   //!< a symmetrix 3x3 matrix which has been diagonalized and flattened
                                 Scalar eivals[3],    //!< store eigenvalues here
                                 Scalar eivects[3][3] //!< store eigenvectors (as rows) here

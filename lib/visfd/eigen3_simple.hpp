@@ -43,7 +43,7 @@ namespace selfadjoint_eigen3 {
 
 
 
-  template <class Scalar>
+  template <typename Scalar>
   static void
   computeRoots3(const Scalar m[3][3],
                 Scalar roots[3])
@@ -82,7 +82,7 @@ namespace selfadjoint_eigen3 {
  
 
 
-  template <class Scalar>
+  template <typename Scalar>
   static void
   extract_kernel3(const Scalar mat[3][3],
                   Scalar res[3],
@@ -133,7 +133,7 @@ namespace selfadjoint_eigen3 {
  
 
 
-  template <class Scalar>
+  template <typename Scalar>
   void
   DiagonalizeSym3(const Scalar mat[3][3],
                   Scalar eivals[3], // store eigenvalues here
@@ -267,7 +267,7 @@ namespace selfadjoint_eigen3 {
 
 
 
-  template <class FlatSymMatrix, class ConstFlatSymMatrix>
+  template <typename FlatSymMatrix, typename ConstFlatSymMatrix>
   void
   DiagonalizeFlatSym3(ConstFlatSymMatrix source,
                       FlatSymMatrix dest,
@@ -342,7 +342,7 @@ namespace selfadjoint_eigen3 {
 
 
 
-  template <class FlatSymMatrix, class ConstFlatSymMatrix>
+  template <typename FlatSymMatrix, typename ConstFlatSymMatrix>
   void
   UndiagonalizeFlatSym3(ConstFlatSymMatrix source,
                         FlatSymMatrix dest)
@@ -387,7 +387,7 @@ namespace selfadjoint_eigen3 {
   } // UndiagonalizeFlatSym3()
 
 
-  template <class Scalar>
+  template <typename Scalar>
   void ConvertFlatSym2Evects3(const Scalar m[6],    //!< a symmetrix 3x3 matrix which has been diagonalized and flattened
                               Scalar eivals[3],     //!< store eigenvalues here
                               Scalar eivects[3][3], //!< store eigenvectors (as rows) here
