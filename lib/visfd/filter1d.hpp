@@ -383,16 +383,20 @@ public:
 
 
 
+/// @brief
+/// This function generates a 1-D filter and fills its array with values
+/// corresponding to a normalized Gaussian evaluated at evenly spaced intervals.
+/// The caller must specify the "σ" parameter (width of the Gaussian,
+/// in units of pixels/voxels), in addition to the "halfwidth" parameter, which
+/// indicates the number of entries in the array (in units of pixels/voxels).
+
 template<typename Scalar>
-// GenFilterGauss1D() generates a 1-D filter and fills its array with values
-// corresponding to a normalized Gaussian evaluated at evenly spaced intervals.
-// The caller must specify the "σ" parameter (width of the Gaussian,
-// in units of pixels/voxels), in addition to the "halfwidth" parameter, which
-// indicates the number of entries in the array (in units of pixels/voxels).
+
 Filter1D<Scalar, int>
-GenFilterGauss1D(Scalar sigma,  // The "σ" paramgeter in the Gaussian
-                 int halfwidth,  // number of entries in the filter array / 2
-                 ostream *pReportProgress = NULL)
+GenFilterGauss1D(Scalar sigma,  //!< The "σ" paramgeter in the Gaussian
+                 int halfwidth,  //!< number of entries in the filter array / 2
+                 ostream *pReportProgress = NULL //!< report filter details to the user?  (WARNING: This argument is currently ignored.)
+                 )
 {
   Filter1D<Scalar, int> filter(halfwidth);
 
@@ -412,7 +416,9 @@ GenFilterGauss1D(Scalar sigma,  // The "σ" paramgeter in the Gaussian
 } //GenFilterGauss1D(sigma, halfwidth)
 
 
+
 } //namespace visfd
+
 
 
 #endif //#ifndef _FILTER1D_HPP

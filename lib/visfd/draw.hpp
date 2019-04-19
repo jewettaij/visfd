@@ -37,6 +37,7 @@ namespace visfd {
 ///         existing image (if the aaafBackground image array is != NULL).
 
 template<typename Scalar>
+
 void
 DrawSpheres(int const image_size[3], //!< image size
             Scalar ***aaafDest,  //!< array where we should write new image

@@ -4,17 +4,17 @@
 
 namespace visfd {
 
-
-// Alloc3D() is a function for allocating 3-dimensional arrays of data
-// (contiguous in memory, in row-major format.)
-// (The functions in this file are used to allocate arrays for storing
-//  tomographic data, and also precomputed filter-weights.)
+/// @brief
+/// Alloc3D() is a function for allocating 3-dimensional arrays of data
+/// (contiguous in memory, in row-major format.)
+/// (The functions in this file are used to allocate arrays for storing
+///  tomographic data, and also precomputed filter-weights.)
 
 
 template<typename Entry, typename Integer>
-void Alloc3D(Integer const size[3], 
-             Entry **paX,       // <--pointer to 1-D contiguous-memory array
-             Entry ****paaaX)   // <--pointer to 3-D multidimensional array
+void Alloc3D(Integer const size[3], //!< size of the array in x,y,z directions
+             Entry **paX,           //!< pointer to 1-D contiguous-memory array
+             Entry ****paaaX)       //!< pointer to 3-D multidimensional array
 {
   if (! paX)
     return;
@@ -45,10 +45,16 @@ void Alloc3D(Integer const size[3],
 }
 
 
+/// @brief
+/// This function is the corresponding way to dellocate arrays
+/// that were created using Alloc3D()
+
 template<typename Entry, typename Integer>
-void Dealloc3D(Integer const size[3], 
-               Entry **paX, 
-               Entry ****paaaX) {
+
+void Dealloc3D(Integer const size[3], //!< size of the array in x,y,z directions
+               Entry **paX,          //!< pointer to 1-D contiguous-memory array
+               Entry ****paaaX)      //!< pointer to 3-D multidimensional array
+{
   if (paaaX && *paaaX) {
     for(Integer iz=0; iz<size[2]; iz++)
       if ((*paaaX)[iz])

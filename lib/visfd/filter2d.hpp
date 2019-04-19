@@ -331,14 +331,20 @@ public:
 
 
 
+/// @brief
+/// Create a 2D filter and fill it with a "generalized Gaussian" function:
+///
+/// @code
+///    h_xy(r) = A*exp(-r^m)
+/// where   r  = sqrt((x/σ_x)^2 + (y/σ_y)^2)
+///   and   A  is determined by normalization of the discrete sum
+/// @endcode
+///
+/// @note "A" is equal to the value stored in the middle of the array,
+///       The caller can determine what "A" is by looking at this value.
 
 template<typename Scalar>
-// Create a 2D filter and fill it with a "generalized Gaussian" function:
-//    h_xy(r) = A*exp(-r^m)
-// where   r  = sqrt((x/σ_x)^2 + (y/σ_y)^2)
-//   and   A  is determined by normalization of the discrete sum
-// Note: "A" is equal to the value stored in the middle of the array,
-//       The caller can determine what "A" is by looking at this value.
+
 Filter2D<Scalar, int>
 GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
                     Scalar m_exp,       //"m" exponent parameter
@@ -376,10 +382,10 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
       filter.aafH[iy][ix] /= total;
                  
       //FOR DEBUGGING REMOVE EVENTUALLY
-      if (pReportProgress)
-        *pReportProgress << "GenGauss2D:" //<< truncate_threshold
-                         <<" aafH["<<iy<<"]["<<ix<<"] = "
-                         << filter.aafH[iy][ix] << endl;
+      //if (pReportProgress)
+      //  *pReportProgress << "GenGauss2D:" //<< truncate_threshold
+      //                   <<" aafH["<<iy<<"]["<<ix<<"] = "
+      //                   << filter.aafH[iy][ix] << endl;
     }
   }
   return filter;
@@ -391,12 +397,14 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
 
 
 template<typename Scalar>
+
 Filter2D<Scalar, int>
-GenFilterGenGauss2D(Scalar width[2],            //"s_x", "s_y" parameters
-                    Scalar m_exp,               //"m" parameter in formula
-                    Scalar filter_cutoff_ratio,
-                    Scalar *pA=NULL,    //optional:report A coeff to user
-                    ostream *pReportProgress = NULL)
+GenFilterGenGauss2D(Scalar width[2],       //!< "s_x", "s_y" parameters
+                    Scalar m_exp,          //!< "m" parameter in formula
+                    Scalar filter_cutoff_ratio, //!< cutoff distance from center (in units of width[])
+                    Scalar *pA=NULL,    //!< optional:report A coeff to user?
+                    ostream *pReportProgress = NULL //!< optional:report filter details to the user?
+                    )
 {
   // choose the width of the filter window based on the filter_cutoff_ratio
   int halfwidth[2];
@@ -415,22 +423,25 @@ GenFilterGenGauss2D(Scalar width[2],            //"s_x", "s_y" parameters
 
 
 
+/// @brief
+/// Create a 2D filter and fill it with a difference of (generalized) Gaussians:
+/// This version requires that the caller has already created individual
+/// filters for the two gaussians.
+/// All this function does is subtract one filter from the other (and rescale).
 
 template<typename Scalar>
-// Create a 2D filter and fill it with a difference of (generalized) Gaussians:
-// This version requires that the caller has already created individual
-// filters for the two gaussians.
-// All this function does is subtract one filter from the other (and rescale).
-Filter2D<Scalar, int> 
-_GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
-                 Scalar width_b[2],  //"b" parameter in formula
-                 Scalar m_exp,  //"m" parameter in formula
-                 Scalar n_exp,  //"n" parameter in formula
-                 Filter2D<Scalar, int>& filterXY_A, //filters for the two
-                 Filter2D<Scalar, int>& filterXY_B, //gaussians
-                 Scalar *pA=NULL, //optional:report A,B coeffs to user
-                 Scalar *pB=NULL, //optional:report A,B coeffs to user
-                 ostream *pReportProgress = NULL)
+
+static Filter2D<Scalar, int> 
+_GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
+                 Scalar width_b[2],  //!< "b" parameter in formula
+                 Scalar m_exp,  //!< "m" parameter in formula
+                 Scalar n_exp,  //!< "n" parameter in formula
+                 Filter2D<Scalar, int>& filterXY_A, //!< filters for the two
+                 Filter2D<Scalar, int>& filterXY_B, //!< gaussians
+                 Scalar *pA=NULL, //!< optional:report A,B coeffs to user
+                 Scalar *pB=NULL, //!< optional:report A,B coeffs to user
+                 ostream *pReportProgress = NULL //!< optional:report filter details to the user?
+                 )
 {
 
   Scalar A, B;
@@ -470,9 +481,10 @@ _GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
 
 
       //FOR DEBUGGING REMOVE EVENTUALLY
-      if (pReportProgress)
-        *pReportProgress << "GenDogg2D: aafH["<<iy<<"]["<<ix<<"] = "
-                         << filter.aafH[iy][ix] << endl;
+      //if (pReportProgress)
+      //  *pReportProgress << "GenDogg2D: aafH["<<iy<<"]["<<ix<<"] = "
+      //                   << filter.aafH[iy][ix] << endl;
+
 
       // *pReportProgress  << aafH[iy][ix];
       //if (ix == 0)

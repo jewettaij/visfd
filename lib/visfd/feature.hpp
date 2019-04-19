@@ -50,6 +50,7 @@ namespace visfd {
 ///          will not be available for comparison.
 
 template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
+
 void
 FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
@@ -151,6 +152,7 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
 ///         See the description of that version for details.
 
 template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
+
 void
 FindExtrema(int const image_size[3],            //!< size of input image array
             Scalar const *const *const *aaafI,   //!< input image array
@@ -228,6 +230,7 @@ FindExtrema(int const image_size[3],            //!< size of input image array
 ///         and light blobs on a dark background, respectively).
 
 template<typename Scalar>
+
 void
 BlobDog(int const image_size[3], //!< source image size
         Scalar const *const *const *aaafSource,   //!< source image
@@ -635,6 +638,7 @@ BlobDog(int const image_size[3], //!< source image size
 ///        even if you are only interested in one of them (minima OR maxima).
 
 template<typename Scalar>
+
 void
 BlobDogD(int const image_size[3], //!<source image size
          Scalar const *const *const *aaafSource,   //!< source image
@@ -704,7 +708,9 @@ BlobDogD(int const image_size[3], //!<source image size
 
 
 /// @brief sort blobs by their scores
+
 template<typename Scalar>
+
 void
 SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
           vector<Scalar>& blob_diameters,  //!< the width of each blob
@@ -749,6 +755,7 @@ SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
 ///         Ri and Rj separated by a distance of rij.
 
 template<typename Scalar>
+
 Scalar CalcSphereVolOverlap(Scalar rij,//!<the distance between the spheres' centers
                             Scalar Ri, //!< the radius of sphere i
                             Scalar Rj  //!< the radius of sphere j
@@ -798,7 +805,9 @@ typedef enum eSortBlobCriteria {
 ///
 ///   In this function, the width of each blob is located in an array storing
 ///   their diameters (instead of their corresponding "sigma" values).
+
 template<typename Scalar>
+
 void
 DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                         vector<Scalar>& blob_diameters,  //!< diameger of each blob
@@ -1030,6 +1039,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 ///         "masked" region defined by aaafMask.
 
 template<typename Scalar>
+
 void
 DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                    // optional arguments:
@@ -1104,6 +1114,7 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 ///         a one-dimensional array of 3 scalars.
 
 template<typename Scalar, typename VectorContainer=Scalar*, typename TensorContainer=Scalar*>
+
 void
 CalcHessian(int const image_size[3], //!< source image size
             Scalar const *const *const *aaafSource, //!< source image
@@ -1273,6 +1284,7 @@ CalcHessian(int const image_size[3], //!< source image size
 /// Eventually, I might elliminate one of these implementations.
 
 template<typename Scalar, typename FirstMomentContainer, typename SecondMomentContainer>
+
 void
 CalcMomentTensor(int const image_size[3], //!< source image size
                  Scalar const *const *const *aaafSource, //!< source image
@@ -1694,6 +1706,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
 ///         a one-dimensional array of 6 scalars.
 
 template<typename Scalar, typename TensorContainer>
+
 void
 DiagonalizeHessianImage(int const image_size[3], //!< source image size
                         TensorContainer const *const *const *aaaafSource, //!< input tensor
@@ -1821,6 +1834,7 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
 ///         a one-dimensional array of 6 scalars.
 
 template<typename Scalar, typename TensorContainer>
+
 void
 UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
                           TensorContainer const *const *const *aaaafSource, //!< input tensor
@@ -1862,6 +1876,7 @@ UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
 ///         argument are the eigenvalues of the original hessian matrix.
 
 template<typename TensorContainer, typename VectorContainer>
+
 double
 ScoreHessianPlanar(TensorContainer diagonalizedHessian,
                    VectorContainer gradient=NULL)
@@ -1905,7 +1920,9 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
 ///         This function assumes that "diagonalizedMatrix3x3" has been 
 ///         diagonalized, and that its first 3 entries 
 ///         are the eigenvalues of the original hessian matrix.
+
 template<typename TensorContainer>
+
 double
 ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 {

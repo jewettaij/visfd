@@ -34,9 +34,10 @@ static vector<string> split(const string &s, char delim) {
 ///          read a file containing multiple columns of numbers, for example
 ///          a list of 3D coordinates.  ("Entry" can be numeric.)
 template<typename Entry>
+
 static void
-ReadMulticolumnFile(istream &f,  //<! the file to be read
-                    vector<vector<Entry> > &vvDest //<! store the results here
+ReadMulticolumnFile(istream &f,  //!< the file to be read
+                    vector<vector<Entry> > &vvDest //!< store the results here
                     )
 {
   vvDest.clear();
@@ -70,9 +71,10 @@ ReadMulticolumnFile(istream &f,  //<! the file to be read
 ///          read a file containing multiple columns of numbers, for example
 ///          a list of 3D coordinates.  ("Entry" can be numeric.)
 template<typename Entry>
+
 static void
-ReadMulticolumnFile(string file_name,  //<! the file to be read
-                    vector<vector<Entry> > &vvDest //<! store the results here
+ReadMulticolumnFile(string file_name,  //!< the file to be read
+                    vector<vector<Entry> > &vvDest //!< store the results here
                     )
 {
   fstream f;
@@ -99,11 +101,13 @@ ReadMulticolumnFile(string file_name,  //<! the file to be read
 ///         Otherwise, simply divide the numbers by the voxel width.
 
 template<typename Scalar, typename Coordinate>
+
 static void
-ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! words on each line of a file
-                            vector<vector<Scalar> > &vvCoords, //<! convert these words to a matrix of numbers
-                            Coordinate *voxel_width, //<! scale factors.  Divide coordinates by these numbers
-                            int num_columns = 3)
+ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< words on each line of a file
+                            vector<vector<Scalar> > &vvCoords, //!< convert these words to a matrix of numbers
+                            Coordinate *voxel_width, //!< scale factors.  Divide coordinates by these numbers
+                            int num_columns = 3 //!< number of columns in the matrix (same for each row)
+                            )
 {
   assert(voxel_width);
 
@@ -187,19 +191,20 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //<! wo
 ///          from a text file.
 
 template<typename Scalar, typename Coordinate>
+
 static void
-ReadBlobCoordsFile(string in_coords_file_name, //<! name of file we will read
-                   vector<array<Coordinate, 3> > *pCrds=NULL, //<! store the blob coordinates here (if !=NULL)
-                   vector<Scalar> *pDiameters=NULL, //<! store the blob diameters here (if !=NULL)
-                   vector<Scalar> *pScores=NULL, //<! store blob scores here (if !=NULL)
-                   Scalar distance_scale=1.0, //<! divide all distances and coordinates by this value
-                   Scalar diameter_override=-1.0, //<! use this diameter (useful if no 4th column is present)
-                   Scalar diameter_factor=1.0, //<! multiply all diameters by this number
-                   Scalar diameter_lower_bound=-std::numeric_limits<float>::infinity(), //<! discard blobs smaller than this
-                   Scalar diameter_upper_bound=std::numeric_limits<float>::infinity(), //<! discard blobs bigger than this
-                   Scalar score_default=0.0, //<! default "score" (if no 5th column is present)
-                   Scalar score_lower_bound=-std::numeric_limits<float>::infinity(), //<! discard blobs with scores below this
-                   Scalar score_upper_bound=std::numeric_limits<float>::infinity() //<! discard blobs with scores above this
+ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
+                   vector<array<Coordinate, 3> > *pCrds=NULL, //!< store the blob coordinates here (if !=NULL)
+                   vector<Scalar> *pDiameters=NULL, //!< store the blob diameters here (if !=NULL)
+                   vector<Scalar> *pScores=NULL, //!< store blob scores here (if !=NULL)
+                   Scalar distance_scale=1.0, //!< divide all distances and coordinates by this value
+                   Scalar diameter_override=-1.0, //!< use this diameter (useful if no 4th column is present)
+                   Scalar diameter_factor=1.0, //!< multiply all diameters by this number
+                   Scalar diameter_lower_bound=-std::numeric_limits<float>::infinity(), //!< discard blobs smaller than this
+                   Scalar diameter_upper_bound=std::numeric_limits<float>::infinity(), //!< discard blobs bigger than this
+                   Scalar score_default=0.0, //!< default "score" (if no 5th column is present)
+                   Scalar score_lower_bound=-std::numeric_limits<float>::infinity(), //!< discard blobs with scores below this
+                   Scalar score_upper_bound=std::numeric_limits<float>::infinity() //!< discard blobs with scores above this
                    )
 {
   fstream coords_file;
@@ -284,6 +289,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //<! name of file we will read
 
 
 template<typename Scalar>
+
 static void
 WriteOrientedPointCloudPLY(string filename,
                            vector<array<Scalar,3> > coords,
@@ -318,6 +324,7 @@ WriteOrientedPointCloudPLY(string filename,
 
 
 template<typename Scalar>
+
 static void
 WriteOrientedPointCloudOBJ(string filename,
                            vector<array<Scalar,3> > coords,
@@ -349,6 +356,7 @@ WriteOrientedPointCloudOBJ(string filename,
 
 
 template<typename Scalar>
+
 static void
 WriteOrientedPointCloudBNPTS(string filename,
                              vector<array<Scalar,3> > coords,
@@ -385,6 +393,7 @@ WriteOrientedPointCloudBNPTS(string filename,
 
 
 template<typename Scalar, typename VectorContainer>
+
 static void
 WriteOrientedPointCloud(string pointcloud_file_name,
                         const int image_size[3],
@@ -447,6 +456,7 @@ WriteOrientedPointCloud(string pointcloud_file_name,
 ///          by the user to use in "link" constraints.
 
 template<typename Scalar, typename Coordinate>
+
 static void
 ProcessLinkConstraints(string must_link_filename,
                        vector<vector<array<Coordinate, 3> > > &must_link_constraints,

@@ -4,16 +4,18 @@
 
 namespace visfd {
 
-// Alloc2D() is a function for allocating 2-dimensional arrays of data
-// (contiguous in memory, in row-major format.)
-// (The functions in this file are used to allocate arrays for storing
-//  tomographic data, and also precomputed filter-weights.)
+/// @brief
+/// Alloc2D() is a function for allocating 2-dimensional arrays of data
+/// (contiguous in memory, in row-major format.)
+/// (The functions in this file are used to allocate arrays for storing
+///  tomographic data, and also precomputed filter-weights.)
 
 
 template<typename Entry, typename Integer>
-void Alloc2D(Integer const size[2], 
-             Entry **paX,      // <--pointer to 1-D contiguous-memory array
-             Entry ***paaX)    // <--pointer to 2-D multidimensional array
+
+void Alloc2D(Integer const size[2], //!< size of the array in x,y directions
+             Entry **paX,           //!< pointer to 1-D contiguous-memory array
+             Entry ***paaX)         //!< pointer to 2-D multidimensional array
 {
   if (! paX)
     return;
@@ -35,10 +37,16 @@ void Alloc2D(Integer const size[2],
 }
 
 
+/// @brief
+/// This function is the corresponding way to dellocate arrays
+/// that were created using Alloc2D()
+
 template<typename Entry, typename Integer>
-void Dealloc2D(Integer const size[2], 
-               Entry **paX, 
-               Entry ***paaX) {
+
+void Dealloc2D(Integer const size[2], //!< size of the array in x,y directions
+               Entry **paX,          //!< pointer to 1-D contiguous-memory array
+               Entry ***paaX)        //!< pointer to 2-D multidimensional array
+{
   if (paaX && *paaX) {
     delete [] (*paaX);
     *paaX = NULL;

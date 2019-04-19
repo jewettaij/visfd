@@ -545,6 +545,7 @@ public:
 ///       The caller can determine what "A" is by looking at this value.
 
 template<typename Scalar>
+
 Filter3D<Scalar, int>
 GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
                     Scalar m_exp,       //!< "m" exponent parameter
@@ -593,10 +594,10 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
         filter.aaafH[iz][iy][ix] /= total;
 
         //FOR DEBUGGING REMOVE EVENTUALLY:
-        if (pReportEquation)
-          *pReportEquation << "GenGauss3D:" //<< truncate_threshold
-                           << " aaafH["<<iz<<"]["<<iy<<"]["<<ix<<"] = "
-                           << filter.aaafH[iz][iy][ix] << endl;
+        //if (pReportEquation)
+        //  *pReportEquation << "GenGauss3D:" //<< truncate_threshold
+        //                   << " aaafH["<<iz<<"]["<<iy<<"]["<<ix<<"] = "
+        //                   << filter.aaafH[iz][iy][ix] << endl;
       }
     }
   }
@@ -658,6 +659,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 ///       The caller can determine what "A" is by looking at aaafH there
 
 template<typename Scalar>
+
 Filter3D<Scalar, int>
 GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
                     Scalar m_exp,       //!< "m" parameter in formula
@@ -727,6 +729,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 
 
 template<typename Scalar>
+
 Scalar
 ApplySeparable(int const image_size[3],              //!<number of voxels in x,y,z directions
                Scalar const *const *const *aaafSource, //!<image to which we want to apply the filter
@@ -1125,6 +1128,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 /// @returns the "A" coefficient (determined by normalization)
 
 template<typename Scalar>
+
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1190,7 +1194,9 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// simply due to lying close to the edge of the image.
 ///
 /// @returns the "A" coefficient (determined by normalization)
+
 template<typename Scalar>
+
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1255,6 +1261,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// @returns the "A" coefficient (determined by normalization)
 
 template<typename Scalar>
+
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1321,6 +1328,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// @returns the "A" coefficient (determined by normalization)
 
 template<typename Scalar>
+
 Scalar
 ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1361,6 +1369,7 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 /// after blurring is weighted accordingly.  (normalize=true by default)
 
 template<typename Scalar>
+
 void
 ApplyDog(int const image_size[3], //!< image size in x,y,z directions
          Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1453,6 +1462,7 @@ ApplyDog(int const image_size[3], //!< image size in x,y,z directions
 /// (truncate_ratio) in units of σ_x, σ_y, σ_z (in the x,y,z directions).
 
 template<typename Scalar>
+
 void
 ApplyLog(int const image_size[3], //!< source image size
          Scalar const *const *const *aaafSource,   //!< source image (3D array)
@@ -1555,6 +1565,7 @@ ApplyLog(int const image_size[3], //!< source image size
 /// after blurring is weighted accordingly.  (normalize=true by default)
 
 template<typename Scalar>
+
 void
 ApplyLog(int const image_size[3], //!< source image size
          Scalar const *const *const *aaafSource, //!< source image
@@ -1605,6 +1616,7 @@ ApplyLog(int const image_size[3], //!< source image size
 ///         spherical volume of radius=sigma.)  This will slow the calculation.
 
 template<typename Scalar, typename Integer>
+
 void
 LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z directions
                   Scalar const *const *const *aaafSource, //!< original image
@@ -1812,6 +1824,7 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
 ///        1.5549880806696572 beforehand to compensate.
 
 template<typename Scalar, typename Integer>
+
 void
 LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
                           Scalar const *const *const *aaafSource, //!< original image
@@ -1861,6 +1874,7 @@ LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in 
 /// @note: THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
 
 template<typename Scalar>
+
 static
 Filter3D<Scalar, int> 
 _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
@@ -1889,8 +1903,8 @@ _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
   Filter3D<Scalar, int> filter(halfwidth);
 
   //FOR DEBUGGING REMOVE EVENTUALLY
-  if (pReportEquation)
-    *pReportEquation << "Array of 3D filter entries:" << endl;
+  //if (pReportEquation)
+  //  *pReportEquation << "Array of 3D filter entries:" << endl;
 
 
   for (int iz=-halfwidth[2]; iz<=halfwidth[2]; iz++) {
@@ -1983,13 +1997,15 @@ _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
 ///   and "A" and "B" are determined by normalization of each term independently
 /// DEPRECIATION WARNING:  It's not clear if this type if filter is useful.
 ///                        I may delete this function in the future.
+
 template<typename Scalar>
+
 Filter3D<Scalar, int> 
 GenFilterDogg3D(Scalar width_a[3],   //!< "a" parameter in formula
                 Scalar width_b[3],   //!< "b" parameter in formula
                 Scalar m_exp,        //!< "m" parameter in formula
                 Scalar n_exp,        //!< "n" parameter in formula
-                int halfwidth[3],     //!< the width of the filter
+                int halfwidth[3],    //!< the width of the filter
                 Scalar *pA=NULL,     //!< optional:report A,B coeffs to user
                 Scalar *pB=NULL,     //!< optional:report A,B coeffs to user
                 ostream *pReportEquation = NULL //!< optional: print params used?

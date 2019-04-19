@@ -231,6 +231,7 @@ CalcGradientFiniteDifferences(Scalar const *const *const *aaafSource, //!< sourc
 
 
 template<typename Scalar, typename Integer>
+
 Scalar AverageArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
                   Scalar const *const *const *aaafW = NULL) 
@@ -267,6 +268,7 @@ Scalar AverageArr(Integer const array_size[3],
 /// @return the weighted average of the squared entries in the array
 
 template<typename Scalar, typename Integer>
+
 static
 Scalar _AveSqrArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
@@ -308,6 +310,7 @@ Scalar _AveSqrArr(Integer const array_size[3],
 /// @return the weighted standard deviation
 
 template<typename Scalar, typename Integer>
+
 Scalar StdDevArr(Integer const array_size[3],
                  Scalar const *const *const *aaafH,
                  Scalar const *const *const *aaafW = NULL) 
@@ -348,6 +351,7 @@ Scalar StdDevArr(Integer const array_size[3],
 /// @return the (weighted) sum
 
 template<typename Scalar, typename Integer>
+
 static
 Scalar _SumArr(Integer const array_size[3],
                Scalar const *const *const *aaafH,
@@ -382,6 +386,7 @@ Scalar _SumArr(Integer const array_size[3],
 /// @return the (weighted) sum of squares
 
 template<typename Scalar, typename Integer>
+
 static
 Scalar _SumSqrArr(Integer const array_size[3],
                   Scalar const *const *const *aaafH,
@@ -413,6 +418,7 @@ Scalar _SumSqrArr(Integer const array_size[3],
 /// @param  aaafH       the 3D array containing the entries to be modified
 
 template<typename Scalar, typename Integer>
+
 void AddScalarArr(Scalar offset,
                   Integer const array_size[3],
                   Scalar ***aaafH)
@@ -432,6 +438,7 @@ void AddScalarArr(Scalar offset,
 /// @param  aaafH       the 3D array containing the entries to be modified
 
 template<typename Scalar, typename Integer>
+
 void MultiplyScalarArr(Scalar scale,
                        Integer const array_size[3],
                        Scalar ***aaafH)
@@ -456,6 +463,7 @@ void MultiplyScalarArr(Scalar scale,
 ///         (or std::numeric_limits::infinty(), if the aaafMask array has no non-zero entries)
 
 template<typename Scalar, typename Integer>
+
 static
 Scalar _MinArr(Integer const array_size[3],
                Scalar const *const *const *aaafI,
@@ -495,6 +503,7 @@ Scalar _MinArr(Integer const array_size[3],
 ///         (or std::numeric_limits::infinty(), if the aaafMask array has no non-zero entries)
 
 template<typename Scalar, typename Integer>
+
 static
 Scalar _MaxArr(Integer const array_size[3],
                Scalar const *const *const *aaafI,
@@ -534,6 +543,7 @@ Scalar _MaxArr(Integer const array_size[3],
 /// @param  aaafMask    (optional) If aaafMask[i][j][k]==0 ignore this entry
 
 template<typename Scalar, typename Integer>
+
 void
 HistogramArr(Scalar **paHistX,  
              size_t  **paHistY,

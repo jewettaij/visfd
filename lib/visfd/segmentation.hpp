@@ -49,6 +49,7 @@ namespace visfd {
 ///        their corresponding entry in aaafMask equals 0.
 
 template<typename Scalar, typename Label, typename Coordinate>
+
 void
 Watershed(int const image_size[3],                 //!< #voxels in xyz
           Scalar const *const *const *aaafSource,  //!< intensity of each voxel
@@ -446,14 +447,15 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
 ///         instead of C-style pointers.
 
 template<typename Scalar, typename Label, typename Coordinate>
-static void
+
+void
 FindNearestVoxel(int const image_size[3],                   //!< #voxels in xyz
-                 const array<Coordinate, 3> &nearby_location, //<! find the voxel in aaaiVoxels closest to this
-                 array<Coordinate, 3> &nearest_location, //<! and store the location of that voxel here.
-                 Label const *const *const *aaaiVoxels, //<! some property associated with each voxel
+                 const array<Coordinate, 3> &nearby_location, //!< find the voxel in aaaiVoxels closest to this
+                 array<Coordinate, 3> &nearest_location, //!< and store the location of that voxel here.
+                 Label const *const *const *aaaiVoxels, //!< some property associated with each voxel
                  Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
-                 set<Label> select_these_voxel_types, //<! voxels must have one of these properties
-                 bool invert_selection=false //<! (...or NOT one of these properties)
+                 set<Label> select_these_voxel_types, //!< voxels must have one of these properties
+                 bool invert_selection=false //!< (...or NOT one of these properties)
                  )
 {
   nearest_location[0] = -1; // an impossible initial value
@@ -514,13 +516,14 @@ FindNearestVoxel(int const image_size[3],                   //!< #voxels in xyz
 ///         instead of C++-style std::array.
 
 template<typename Scalar, typename Label, typename Coordinate>
+
 void
 FindNearestVoxel(int const image_size[3],             //!< #voxels in xyz
-                 const Coordinate nearby_location[3], //<! find voxel in aaaiVoxels closest to this
-                 Coordinate nearest_location[3], //<! find voxel in aaaiVoxels closest to this
-                 Label const *const *const *aaaiVoxels, //<! some property associated with each voxel
+                 const Coordinate nearby_location[3], //!< find voxel in aaaiVoxels closest to this
+                 Coordinate nearest_location[3], //!< find voxel in aaaiVoxels closest to this
+                 Label const *const *const *aaaiVoxels, //!< some property associated with each voxel
                  Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
-                 set<Label> select_these_voxel_types, //<! voxels must have this property
+                 set<Label> select_these_voxel_types, //!< voxels must have this property
                  bool invert_selection=true //invert selection (skip over them)
                  )
 {
@@ -629,6 +632,7 @@ typedef enum eClusterSortCriteria {
 ///         is weak.  (The goal is to avoid Möbius-strip-like defects.)
 
 template<typename Scalar, typename Label, typename Coordinate, typename VectorContainer=Scalar*, typename TensorContainer=Scalar*>
+
 void
 ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Scalar const *const *const *aaafSaliency,  //!< intensity of each voxel
