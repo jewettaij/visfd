@@ -344,8 +344,10 @@ HandleDrawSpheres(Settings settings,
   vector<float> diameters;
   vector<float> scores;
 
+  MrcSimple unallocated_image;
   HandleBlobsNonmaxSuppression(settings,
-                               mask,
+                               //mask, <-- commenting out.  keep masked blobs
+                               unallocated_image,//use a NULL image instead
                                voxel_width,
                                crds,
                                diameters,
