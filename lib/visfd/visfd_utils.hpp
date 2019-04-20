@@ -26,13 +26,13 @@ namespace visfd {
 
 
 
-template<typename Scalar >
+template<typename Scalar>
 static inline Scalar SQR(Scalar x) { return x*x; }
 
-template<typename Scalar >
+template<typename Scalar>
 static inline Scalar MIN(Scalar a, Scalar b) { return ((a<=b) ? a : b); }
 
-template<typename Scalar >
+template<typename Scalar>
 static inline Scalar MAX(Scalar a, Scalar b) { return ((a>=b) ? a : b); }
 
 template <typename Scalar>
