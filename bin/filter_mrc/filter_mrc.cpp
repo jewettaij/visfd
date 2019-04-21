@@ -207,10 +207,10 @@ int main(int argc, char **argv) {
 
     } //else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
 
-    if (settings.rescale01_in)
+    if (settings.rescale_min_max_in)
       tomo_in.Rescale01(mask.aaafI,
-                        settings.out_threshold_01_a,
-                        settings.out_threshold_01_b);
+                        settings.out_thresh_a_value,
+                        settings.out_thresh_b_value);
 
     // ---- make an array that will store the new tomogram we will create ----
 
@@ -454,10 +454,10 @@ int main(int argc, char **argv) {
 
     // --- Rescale so that the lowest, highest voxels have density 0 and 1? ---
 
-    if (settings.rescale01_out)
+    if (settings.rescale_min_max_out)
       tomo_out.Rescale01(mask.aaafI,
-                         settings.out_threshold_01_a,
-                         settings.out_threshold_01_b);
+                         settings.out_thresh_a_value,
+                         settings.out_thresh_b_value);
 
     tomo_out.FindMinMaxMean();
 

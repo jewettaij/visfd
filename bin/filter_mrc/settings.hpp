@@ -173,8 +173,8 @@ class Settings {
   //  of the eFilterType setting selected by the user.)
 
   bool use_intensity_map;
-  bool rescale01_in;
-  bool rescale01_out;
+  bool rescale_min_max_in;
+  bool rescale_min_max_out;
   bool invert_output;
 
   bool  use_dual_thresholds;

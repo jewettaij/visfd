@@ -21,8 +21,8 @@ Settings::Settings() {
   in_file_name = "";
   invert_output = false;
   out_file_name = "";
-  rescale01_in = false;
-  rescale01_out = false;
+  rescale_min_max_in = false;
+  rescale_min_max_out = false;
   mask_file_name = "";
   mask_select = 1;
   use_mask_select = false;
@@ -348,7 +348,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by voxel width.\n");
       }
       num_arguments_deleted = 2;
-    } // if (vArgs[i] == "-mask")
+    } // if (vArgs[i] == "-w")
 
 
     else if ((vArgs[i] == "-a2nm") || (vArgs[i] == "-ang-to-nm"))
@@ -1170,15 +1170,17 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-rescale")
 
 
-    else if (vArgs[i] == "-rescale-min-max")
+    else if (vArgs[i] == "-rescale01")
     {
+      rescale_min_max_out = false;
       try {
         if ((i+2 >= vArgs.size()) ||
             (vArgs[i+1] == "") ||
             (vArgs[i+2] == ""))
           throw invalid_argument("");
-        out_threshold_01_a = stof(vArgs[i+1]);
-        out_threshold_01_b = stof(vArgs[i+2]);
+
+        out_thresh_a_value = stof(vArgs[i+1]);
+        out_thresh_b_value = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1186,20 +1188,35 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " outA  outB\n"
                        "  (the desired minimum and maximum voxel intensity values for the final image)\n");
       }
-      if (filter_type == NONE) {
-        rescale01_in = true;
+      num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-rescale-min-max")
+
+
+    else if (vArgs[i] == "-rescale-min-max")
+    {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == ""))
+          throw invalid_argument("");
+
+        out_thresh_a_value = stof(vArgs[i+1]);
+        out_thresh_b_value = stof(vArgs[i+2]);
       }
-      else {
-        rescale01_out = true;
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 2 numbers:\n"
+                       " outA  outB\n"
+                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
       }
+      rescale_min_max_out = true;
       num_arguments_deleted = 3;
     } // if (vArgs[i] == "-rescale-min-max")
 
 
     else if ((vArgs[i] == "-no-rescale") || (vArgs[i] == "-norescale"))
     {
-      rescale01_in = false;
-      rescale01_out = false;
+      rescale_min_max_out = false;
       out_threshold_01_a = 1.0;
       out_threshold_01_b = 1.0;
       num_arguments_deleted = 1;
@@ -1399,7 +1416,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = r;
         template_background_radius[1] = r;
         template_background_radius[2] = r;
-        //rescale01_out = false;
+        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1438,7 +1455,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = stof(vArgs[i+4]);
         template_background_radius[1] = stof(vArgs[i+5]);
         template_background_radius[2] = stof(vArgs[i+6]);
-        //rescale01_out = false;
+        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1471,7 +1488,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = stof(vArgs[i+1]);
         template_background_radius[1] = stof(vArgs[i+2]);
         template_background_radius[2] = stof(vArgs[i+3]);
-        //rescale01_out = false;
+        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1502,7 +1519,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = stof(vArgs[i+1]);
         template_background_radius[1] = template_background_radius[0];
         template_background_radius[2] = template_background_radius[0];
-        //rescale01_out = false;
+        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -2314,7 +2331,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //  template_background_radius[1] = r;
     //  template_background_radius[2] = r;
     //  template_background_exponent = stof(vArgs[i+4]);
-    //  rescale01_out = false;
+    //  rescale_min_max_out = false;
     //  num_arguments_deleted = 5;
     //  #else
     //  throw InputErr("Error: The " + vArgs[i] + 

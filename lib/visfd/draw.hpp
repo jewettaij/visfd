@@ -144,12 +144,6 @@ DrawSpheres(int const image_size[3], //!< image size
         throw VisfdErr("Error: Coordinates in the text file lie outside the boundaries of the image.\n"
                        "       Did you set the voxel width correctly?\n"
                        "       (Did you use the \"-w\" argument?)\n");
-      
-    if (aaafMask &&
-        (aaafMask[static_cast<int>(centers[i][2])]
-                 [static_cast<int>(centers[i][1])]
-                 [static_cast<int>(centers[i][0])] == 0.0))
-      continue;
 
     int Rs = ceil((*pDiameters)[i]/2-0.5);
     if (Rs < 0) Rs = 0;
@@ -173,6 +167,13 @@ DrawSpheres(int const image_size[3], //!< image size
       for (int jz = -Rs; jz <= Rs; jz++) {
         for (int jy = -Rs; jy <= Rs; jy++) {
           for (int jx = -Rs; jx <= Rs; jx++) {
+            if (aaafMask
+                &&
+                (aaafMask[static_cast<int>(centers[i][2])+jz]
+                         [static_cast<int>(centers[i][1])+jy]
+                         [static_cast<int>(centers[i][0])+jx]
+                 == 0.0))
+              continue;
             Scalar rsqr = jx*jx + jy*jy + jz*jz;
             if ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max))
               nvoxelspersphere++;
@@ -180,7 +181,9 @@ DrawSpheres(int const image_size[3], //!< image size
         }
       }
     }
-    imultiplier = 1.0 / nvoxelspersphere;
+    imultiplier = 1.0;
+    if (nvoxelspersphere > 0)
+      imultiplier = 1.0 / nvoxelspersphere;
     for (int jz = -Rs; jz <= Rs; jz++) {
       for (int jy = -Rs; jy <= Rs; jy++) {
         for (int jx = -Rs; jx <= Rs; jx++) {

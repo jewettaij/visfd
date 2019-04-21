@@ -1271,14 +1271,28 @@ Afterwards *new_intensity=m\*old_intensity+b*.
             |     /     /__|
             |    /                      
   <---------|---/------------------->  input
-        /|\ |  /                       intensity
-      b  |  | /
+         |  |  /                       intensity
+     -b  |  | /
         \|/ |/
             /
            /|
           / |
          /  |/
 ```
+
+
+### -rescale01 outA outB
+
+If you use the **-rescale01** argument, then the final voxel intensity
+will be scaled linearly so that a voxel brightness of 0 and 1 will
+become $outA$ and $outB$, respectively.
+(This is useful when combined with the
+ "*-thresh*"
+ "*-thresh-range*"
+ "*-thresh2*"
+ "*-thresh4*"
+ arguments.
+ This argument is equivalent to "*-rescale m outA*", where *m*=*outB-outA*.)
 
 
 ### -rescale-min-max outA outB
@@ -1393,17 +1407,17 @@ results in:
        It displays the range of voxel intensities in an image.*
 
 
-*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+*Note: You can use the "-rescale01 outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
 
 
 ### -thresh-range range_a range_b
-    Select a range of voxels whose intensities fall within
-    the range from *range_a* to *range_b*.
-    Each voxel's new intensity will be a function of its former intensity.
-    If the range_a < range_b, then the thresholding function will be
+Select a range of voxels whose intensities fall within
+the range from *range_a* to *range_b*.
+Each voxel's new intensity will be a function of its former intensity.
+If the range_a < range_b, then the thresholding function will be:
 
 ```
          output
@@ -1418,8 +1432,9 @@ results in:
 (usually 0)             range_a             range_b            / intensity
 ```
 
-*Note: You can use the "-rescale-min-max outA outB" argument to scale the
-       resulting voxel intensities from outA to outB (instead of from 0 to 1).*
+*Note: You can use the "-rescale01 outA outB" argument to scale the
+       resulting voxel intensities from outA to outB (instead of from 0 to 1).
+       (It is not necessary for outA < outB.)*
 
 *Note: This command is equivalent to "-thresh4 range_a range_a range_b range_b"*
 
@@ -1458,7 +1473,7 @@ with a smooth ramp between *thresh_a* and *thresh_b*:
        can be useful.
        It displays the range of voxel intensities in an image.*
 
-*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+*Note: You can use the "-rescale01 outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
@@ -1493,7 +1508,7 @@ between 0 and 1 according to the following function:
        It displays the range of voxel intensities in an image.*
 
 
-*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+*Note: You can use the "-rescale01 outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
@@ -1508,7 +1523,7 @@ centered around *x0* with standard deviation σ.
         intensity
            /|\
             |
-            |                       _---_
+    outB    |                       _---_
 (usually 1) |                     ,'  :  `.
             |                    /    :<-->\
             |                _.-'     :  σ  `-,_
@@ -1516,7 +1531,7 @@ centered around *x0* with standard deviation σ.
 (usually 0)                          x0                          intensity
 ```
 
-*Note: You can use the "-rescale-min-max outA outB" argument to scale the
+*Note: You can use the "-rescale01 outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
@@ -1782,11 +1797,6 @@ argument.)
 If the "-mask-out" argument is specified, then voxels outside the mask will
 be assigned to the intensity following this argument.  Otherwise they are
 assigned to 0 by default.  
-*(Note that by default, voxel brightnesses
-are rescaled between 0 and 1 before and after filtering.  
-This means that "-mask-out 0" assigns these voxels same brightness as the lowest brightness voxels in the image.
-If you are using "-rescale-min-max", then
-"-mask-out 1" assigns them to the brightest voxels in the image.)
 
 
 ### -mask-select intensity_value
