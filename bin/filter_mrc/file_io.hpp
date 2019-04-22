@@ -255,7 +255,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
     if (diameter < 0) { //If file does not contain a 4th column, or if < 0
       diameter = diameter_override;
       if (diameter_override < 0)
-        diameter = 0.5;   // (sphere will be 1 voxel wide by default)
+        diameter = 1.0;   // (sphere will be 1 voxel wide by default)
     }
 
     if (diameter_override >= 0) //override the diameter ?

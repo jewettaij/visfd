@@ -1613,7 +1613,6 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = SPHERE_DECALS;
-        sphere_decals_diameter = -1.0;
         in_coords_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
