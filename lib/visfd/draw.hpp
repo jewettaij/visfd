@@ -131,19 +131,23 @@ DrawSpheres(int const image_size[3], //!< image size
         aaafDest[iz][iy][ix] += voxel_intensity_background;
 
 
+  bool warn_points_outside_image = false;
+
   for (int i = 0; i < centers.size(); i++) {
     if (pReportProgress)
       *pReportProgress << "processing coordinates " << i+1 << " / "
            << centers.size() << ": x,y,z(in_voxels)="
            << centers[i][0] << "," << centers[i][1] << "," << centers[i][2];
 
-    if ((centers[i][0] < 0) || (centers[i][1] < 0) || (centers[i][2] < 0) ||
-        (centers[i][0] >= image_size[0]) ||
-        (centers[i][1] >= image_size[1]) ||
-        (centers[i][2] >= image_size[2]))
-        throw VisfdErr("Error: Coordinates in the text file lie outside the boundaries of the image.\n"
-                       "       Did you set the voxel width correctly?\n"
-                       "       (Did you use the \"-w\" argument?)\n");
+    int ix = centers[i][0];
+    int iy = centers[i][1];
+    int iz = centers[i][2];
+
+    if ((ix < 0) || (iy < 0) || (iz < 0) ||
+        (ix >= image_size[0]) ||
+        (iy >= image_size[1]) ||
+        (iz >= image_size[2]))
+      warn_points_outside_image = true;
 
     int Rs = ceil((*pDiameters)[i]/2-0.5);
     if (Rs < 0) Rs = 0;
@@ -169,9 +173,9 @@ DrawSpheres(int const image_size[3], //!< image size
           for (int jx = -Rs; jx <= Rs; jx++) {
             if (aaafMask
                 &&
-                (aaafMask[static_cast<int>(centers[i][2])+jz]
-                         [static_cast<int>(centers[i][1])+jy]
-                         [static_cast<int>(centers[i][0])+jx]
+                (aaafMask[static_cast<int>(iz)+jz]
+                         [static_cast<int>(iy)+jy]
+                         [static_cast<int>(ix)+jx]
                  == 0.0))
               continue;
             Scalar rsqr = jx*jx + jy*jy + jz*jz;
@@ -190,29 +194,35 @@ DrawSpheres(int const image_size[3], //!< image size
           int rsqr = jx*jx + jy*jy + jz*jz;
           if (! ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max)))
             continue;
-          else if ((centers[i][0] + jx < 0) ||
-                   (centers[i][0] + jx >= image_size[0]) ||
-                   (centers[i][1] + jy < 0) ||
-                   (centers[i][1] + jy >= image_size[1]) ||
-                   (centers[i][2] + jz < 0) ||
-                   (centers[i][2] + jz >= image_size[2]))
+          else if ((ix+jx < 0) ||
+                   (ix+jx >= image_size[0]) ||
+                   (iy+jy < 0) ||
+                   (iy+jy >= image_size[1]) ||
+                   (iz+jz < 0) ||
+                   (iz+jz >= image_size[2]))
             continue;
           else if (aaafMask
                    &&
-                   (aaafMask[static_cast<int>(centers[i][2])+jz]
-                            [static_cast<int>(centers[i][1])+jy]
-                            [static_cast<int>(centers[i][0])+jx]
-                    == 0.0))
+                   (aaafMask[iz+jz][iy+jy][ix+jx] == 0.0))
             continue;
           else
-            aaafDest[static_cast<int>(centers[i][2])+jz]
-                    [static_cast<int>(centers[i][1])+jy]
-                    [static_cast<int>(centers[i][0])+jx] =
-                         (*pVoxelIntensitiesForeground)[i] * imultiplier;
+            aaafDest[iz+jz][iy+jy][ix+jx] =
+              (*pVoxelIntensitiesForeground)[i] * imultiplier;
         }
       }
     }
   } //for (int i = 0; i < centers.size(); i++) {
+
+
+  if (pReportProgress && warn_points_outside_image)
+    *pReportProgress <<
+      "------------------------------------------------------------------------------\n"
+      "WARNING:\n"
+      "    Some coordinates in the text file lie outside the boundaries of the image.\n"
+      "    Did you remember to set the voxel width correctly?\n"
+      "    (Did you use the \"-w\" argument?)\n"
+      "--------------------------------------------------------------------------=---\n"
+                     << endl;
 
 } //DrawSpheres()
 

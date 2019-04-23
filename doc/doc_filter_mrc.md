@@ -1285,7 +1285,7 @@ Afterwards *new_intensity=m\*old_intensity+b*.
 
 If you use the **-rescale01** argument, then the final voxel intensity
 will be scaled linearly so that a voxel brightness of 0 and 1 will
-become $outA$ and $outB$, respectively.
+become *outA* and *outB*, respectively.
 (This is useful when combined with the
  "*-thresh*"
  "*-thresh-range*"

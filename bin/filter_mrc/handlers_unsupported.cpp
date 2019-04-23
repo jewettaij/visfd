@@ -312,6 +312,24 @@ HandleBlobRadialIntensity(Settings settings,
         }
       }
     }
+    double max_slope = 0.0;
+    for (int ip = 0; ip < intensity_profiles[i].size()-1; ip++) {
+      double slope = intensity_profiles[i][ip] - intensity_profiles[i][ip+1];
+      if ((ip==0) || (slope > max_slope))
+        max_slope = slope;
+    }
+    double contrast_profile_min_max = 0.0;
+    {
+      if (intensity_profiles[i].size() > 0) {
+        double profile_max = intensity_profiles[i][0];
+        double profile_min;
+        for (int ip = 0; ip < intensity_profiles[i].size(); ip++) {
+          if ((ip==0) || (intensity_profiles[i][ip] < profile_min))
+            profile_min = intensity_profiles[i][ip];
+        }
+        contrast_profile_min_max = profile_max - profile_min;
+      }
+    }
     cout << sphere_centers[i][0]<<" "<<sphere_centers[i][1]<<" "<<sphere_centers[i][2]
          << " " << diameters[i]
          << " " << scores[i]
@@ -319,7 +337,9 @@ HandleBlobRadialIntensity(Settings settings,
                                 [ sphere_centers_i[1] ]
                                 [ sphere_centers_i[0] ]
          << " " << intensity_profiles[i][0]
-         << " " << fluctuation_brightness;
+         << " " << fluctuation_brightness
+         << " " << max_slope
+         << " " << contrast_profile_min_max;
     // Now print the distance to various 
     for (int im = 0; im < n_mask_values; im++) {
       cout << " " << ((min_dist_sq[im]!=std::numeric_limits<float>::infinity())
