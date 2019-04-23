@@ -27,31 +27,37 @@ All other voxels will be ignored during filtering.
   during filtering, and all others will be completely ignored.)*
 
 #### -ave
-The **-ave** argument will calculate the average voxel brightness.
+The **-ave** argument will print the average voxel brightness.
 
 #### -stddev
-The **-stddev** argument will calculate the standard deviation
+The **-stddev** argument will print the standard deviation
 of voxel brightnesses.
 
 #### -volume
-The **-volume** argument will multiply the resulting sum by the
-volume of each voxel.  The width of each voxel is either inferred from
+The **-volume** argument will multiply the resulting sum of the voxel
+brightness by the volume of each voxel.
+The width of each voxel is either inferred from
 the input file or specified manually using the **-w** argument.
+(This argument is called "-volume" because this sum happens to be a volume
+ when the voxel brightnesses are allways either 0 or 1.
+ To insure that this is so, you can use the
+ **-thresh**, **-thresh-range**, **-thresh2**, or **-thresh4**, arguments.)
 
 #### -w VOXELWIDTH
 The **-w VOXELWIDTH** argument allows the user to specify the width
 of each voxel in physical units (ie in Angstroms or nm).
-(This is not useful unless the **-volume** argument is also specified.)
+(This argument is ignored unless the **-volume** argument is also specified.)
+
 #### -thresh
 For convenience, threshold operation can be applied
-(using the **-thresh**, **-thresh2**, and **-thresh4** arguments)
+(using the **-thresh**, "**-thresh-range**",
+ **-thresh2**, or **-thresh4**, arguments)
 so that the voxels intensities are changed to either 0 or 1
 *before* the sum is calculated.
 (This will convert all the voxels above/below the threshold(s) to 1
- and the others to 0.  In some cases, this can make it easier to
- use the program to estimate volumes.)
+ and the others to 0.)
 
 *Note:* The **-w**, **-mask**, **-mask-select**,
-**-thresh**, **-thresh2**, **-thresh4**, **-clip**
+**-thresh**, **-thresh-range**, **-thresh2**, **-thresh4**, **-clip**
 arguments are shared with the *filter_mrc* program
 and are explained in more detail [here](./doc_filter_mrc.md).

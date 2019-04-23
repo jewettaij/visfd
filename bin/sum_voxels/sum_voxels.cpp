@@ -56,30 +56,30 @@ int main(int argc, char **argv) {
 
 
     float voxel_width[3] = {1.0, 1.0, 1.0};
-    if (settings.voxel_width > 0.0) {
-      // Did the user manually specify the width of each voxel?
-      voxel_width[0] = settings.voxel_width;
-      voxel_width[1] = settings.voxel_width;
-      voxel_width[2] = settings.voxel_width;
-    }
-    else {
-      // Otherwise, infer it from the header of the MRC file
-      voxel_width[0] = tomo_in.header.cellA[0]/tomo_in.header.nvoxels[0];
-      voxel_width[1] = tomo_in.header.cellA[1]/tomo_in.header.nvoxels[1];
-      voxel_width[2] = tomo_in.header.cellA[2]/tomo_in.header.nvoxels[2];
-      if (settings.voxel_width_divide_by_10) {
-        voxel_width[0] *= 0.1;
-        voxel_width[1] *= 0.1;
-        voxel_width[2] *= 0.1;
-      }
-      cerr << "voxel width in physical units = ("
-           << voxel_width[0] << ", "
-           << voxel_width[1] << ", "
-           << voxel_width[2] << ")\n";
-    }
 
 
     if (settings.multiply_by_voxel_volume) {
+      if (settings.voxel_width > 0.0) {
+        // Did the user manually specify the width of each voxel?
+        voxel_width[0] = settings.voxel_width;
+        voxel_width[1] = settings.voxel_width;
+        voxel_width[2] = settings.voxel_width;
+      }
+      else {
+        // Otherwise, infer it from the header of the MRC file
+        voxel_width[0] = tomo_in.header.cellA[0]/tomo_in.header.nvoxels[0];
+        voxel_width[1] = tomo_in.header.cellA[1]/tomo_in.header.nvoxels[1];
+        voxel_width[2] = tomo_in.header.cellA[2]/tomo_in.header.nvoxels[2];
+        if (settings.voxel_width_divide_by_10) {
+          voxel_width[0] *= 0.1;
+          voxel_width[1] *= 0.1;
+          voxel_width[2] *= 0.1;
+        }
+        cerr << "voxel width in physical units = ("
+             << voxel_width[0] << ", "
+             << voxel_width[1] << ", "
+             << voxel_width[2] << ")\n";
+      }
 
       if ((voxel_width[0] <= 0.0) ||
           (voxel_width[1] <= 0.0) ||

@@ -73,6 +73,20 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-volume")
 
 
+
+    else if ((vArgs[i] == "-ave") ||
+             (vArgs[i] == "-average")) {
+      calc_ave = true;
+      num_arguments_deleted = 1;
+    }
+
+
+    else if (vArgs[i] == "-stddev") {
+      calc_stddev = true;
+      num_arguments_deleted = 1;
+    }
+
+
     else if (vArgs[i] == "-w") {
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -173,16 +187,21 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-ave") ||
-             (vArgs[i] == "-average")) {
-      calc_ave = true;
-      num_arguments_deleted = 1;
-    }
-
-
-    else if (vArgs[i] == "-stddev") {
-      calc_stddev = true;
-      num_arguments_deleted = 1;
+    else if (vArgs[i] == "-thresh-range") {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        use_dual_thresholds = true;
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+1]);
+        in_threshold_10_a = stof(vArgs[i+2]);
+        in_threshold_10_b = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 4 numbers.\n");
+      }
+      num_arguments_deleted = 3;
     }
 
 
@@ -209,6 +228,15 @@ Settings::ParseArgs(vector<string>& vArgs)
     throw InputErr(err_msg.str());
   }
 
+  if (calc_ave && calc_stddev)
+    throw InputErr("Error: You can request \"-ave\" or \"-stddev\", but not both.\n");
+
+  if (multiply_by_voxel_volume && (calc_ave || calc_stddev)) {
+    throw InputErr("Error: The \"-ave\" or \"-stddev\" arguments do not make sense when used\n"
+                   "       simulatneously with the \"-volume\" argument.\n"
+                   "       (Omit the \"-volume\" argument.)\n");
+  }
+    
   in_file_name = vArgs[1];
 
 } //Settings::ParseArgs(vector<string>& vArgs)

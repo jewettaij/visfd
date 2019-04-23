@@ -1320,7 +1320,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
-        use_intensity_map = true;
         use_dual_thresholds = true;
         out_threshold_01_a = stof(vArgs[i+1]);
         out_threshold_01_b = stof(vArgs[i+1]);
