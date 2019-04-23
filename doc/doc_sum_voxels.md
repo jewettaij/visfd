@@ -26,6 +26,13 @@ All other voxels will be ignored during filtering.
   during the process of filtering, all selected voxels will be weighted equally
   during filtering, and all others will be completely ignored.)*
 
+#### -ave
+The **-ave** argument will calculate the average voxel brightness.
+
+#### -stddev
+The **-stddev** argument will calculate the standard deviation
+of voxel brightnesses.
+
 #### -volume
 The **-volume** argument will multiply the resulting sum by the
 volume of each voxel.  The width of each voxel is either inferred from
@@ -35,14 +42,6 @@ the input file or specified manually using the **-w** argument.
 The **-w VOXELWIDTH** argument allows the user to specify the width
 of each voxel in physical units (ie in Angstroms or nm).
 (This is not useful unless the **-volume** argument is also specified.)
-
-#### -ave
-The **-ave** argument will calculate the average voxel brightness.
-
-#### -stddev
-The **-stddev** argument will calculate the standard deviation
-of voxel brightnesses.
-
 #### -thresh
 For convenience, threshold operation can be applied
 (using the **-thresh**, **-thresh2**, and **-thresh4** arguments)

@@ -78,22 +78,17 @@ int main(int argc, char **argv) {
            << voxel_width[2] << ")\n";
     }
 
-    if ((voxel_width[0] <= 0.0) ||
-        (voxel_width[1] <= 0.0) ||
-        (voxel_width[2] <= 0.0))
-      throw InputErr("Error in tomogram header: Invalid voxel width(s).\n"
-                     "Use the -w argument to specify the voxel width.");
 
-    //if (abs((voxel_width[0] - voxel_width[1])
-    //        /
-    //        (0.5*(voxel_width[0] + voxel_width[1]))) > 0.0001)
-    //  throw InputErr("Error in tomogram header: Unequal voxel widths in the x and y directions.\n"
-    //                 "Use the -w argument to specify the voxel width.");
+    if (settings.multiply_by_voxel_volume) {
 
-    if ((voxel_width[0] != voxel_width[1]) ||
-        (voxel_width[1] != voxel_width[2]))
-      throw InputErr("Error in tomogram header: Unequal voxel widths in the x, y and directions.\n"
-                     "Use the -w argument to specify the voxel width.");
+      if ((voxel_width[0] <= 0.0) ||
+          (voxel_width[1] <= 0.0) ||
+          (voxel_width[2] <= 0.0))
+        throw InputErr("Error in tomogram header: Invalid voxel width(s).\n"
+                       "Use the -w argument to specify the voxel width.");
+
+    } //if (settings.multiply_by_voxel_volume)
+
 
 
     float voxel_volume = voxel_width[0] * voxel_width[1] * voxel_width[2];
