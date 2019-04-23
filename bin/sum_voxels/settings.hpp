@@ -17,6 +17,9 @@ class Settings {
   int mask_select;
   bool use_mask_select;
 
+  bool calc_ave;
+  bool calc_stddev;
+
   bool multiply_by_voxel_volume;
   float voxel_width;  //physical width of each voxel (for example in Angstroms)
   bool voxel_width_divide_by_10; //Use nm instead of Angstroms?

@@ -36,11 +36,18 @@ The **-w VOXELWIDTH** argument allows the user to specify the width
 of each voxel in physical units (ie in Angstroms or nm).
 (This is not useful unless the **-volume** argument is also specified.)
 
+#### -ave
+The **-ave** argument will calculate the average voxel brightness.
+
+#### -stddev
+The **-stddev** argument will calculate the standard deviation
+of voxel brightnesses.
+
 #### -thresh
 For convenience, threshold operation can be applied
 (using the **-thresh**, **-thresh2**, and **-thresh4** arguments)
 so that the voxels intensities are changed to either 0 or 1
-before the sum is calculated.
+*before* the sum is calculated.
 (This will convert all the voxels above/below the threshold(s) to 1
  and the others to 0.  In some cases, this can make it easier to
  use the program to estimate volumes.)

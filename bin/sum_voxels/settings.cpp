@@ -16,6 +16,9 @@ Settings::Settings() {
   mask_select = 1;
   use_mask_select = false;
 
+  calc_ave = false;
+  calc_stddev = false;
+
   multiply_by_voxel_volume = false;
   voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
   voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
@@ -169,6 +172,18 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 5;
     }
 
+
+    else if ((vArgs[i] == "-ave") ||
+             (vArgs[i] == "-average")) {
+      calc_ave = true;
+      num_arguments_deleted = 1;
+    }
+
+
+    else if (vArgs[i] == "-stddev") {
+      calc_stddev = true;
+      num_arguments_deleted = 1;
+    }
 
 
 

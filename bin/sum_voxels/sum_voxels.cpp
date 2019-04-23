@@ -137,26 +137,74 @@ int main(int argc, char **argv) {
       }
     }
 
+    // ----- now sum the voxels ------
+
+    double ave = -1.0;
     double sum = 0.0;
-    //double denominator = 0.0;
-    for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
-      for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
-        for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
-          if (mask.aaafI) {
-            // compute a weighted sum using the mask values for weights
-            sum += tomo_in.aaafI[iz][iy][ix] * mask.aaafI[iz][iy][ix];
-            //denominator += 1.0;
+    double denominator = 0.0;
+    {
+      for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+        for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+          for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+            if (mask.aaafI) { // Is this a weighted sum?
+              // compute a weighted sum using the mask values for weights
+              sum += tomo_in.aaafI[iz][iy][ix] * mask.aaafI[iz][iy][ix];
+              denominator += mask.aaafI[iz][iy][ix];
+            }
+            else {
+              sum += tomo_in.aaafI[iz][iy][ix];
+              denominator += 1.0;
+            }
           }
-          else
-            sum += tomo_in.aaafI[iz][iy][ix];
         }
       }
+      if (denominator > 0.0)
+        ave = sum / denominator;
     }
 
-    //if (mask.aaafI)
-    //  sum /= denominator; // divide by the sum of the weights (mask values)
+      
+    if (settings.calc_ave) {
+      // print the average voxel brightness to the user?
+      if (denominator == 0.0)
+        throw InputErr("This image has no valid voxels.\n");
+      cout << ave << endl;
+    }
+    else if (settings.calc_stddev) {
 
-    cout << sum * sum_multiplier << endl;
+      // print the standard deviation of voxel brightnesses to the user?
+      if (denominator == 0.0)
+        throw InputErr("This image has no valid voxels.\n");
+      sum = 0.0;
+      denominator = 0.0;
+      double stddev = -1.0;
+      for (int iz=0; iz<tomo_in.header.nvoxels[2]; iz++) {
+        for (int iy=0; iy<tomo_in.header.nvoxels[1]; iy++) {
+          for (int ix=0; ix<tomo_in.header.nvoxels[0]; ix++) {
+            double sq = (tomo_in.aaafI[iz][iy][ix] - ave);
+            sq *= sq;
+            if (mask.aaafI) {
+              // compute a weighted sum using the mask values for weights
+              sq *= mask.aaafI[iz][iy][ix];
+              denominator += mask.aaafI[iz][iy][ix];
+              sum += sq;
+            }
+            else {
+              sum += sq;
+              denominator += 1.0;
+            }
+          }
+        }
+      }
+      assert(sum >= 0.0);
+      assert(denominator > 0.0);
+      stddev = sqrt(sum / denominator);
+      cout << stddev << endl;
+    }
+    else {
+      // by default, just pring the sum of the voxels:
+      cout << sum * sum_multiplier << endl;
+    }
+
 
   } //try {
   catch (InputErr& e) {
