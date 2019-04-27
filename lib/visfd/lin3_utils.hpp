@@ -86,11 +86,11 @@ static inline Scalar SquaredNorm3(const Scalar a[3]) {
   return DotProduct3(a, a);
 }
 
+
 template <typename Scalar>
 static inline Scalar SquaredNorm3(const array<Scalar, 3>& a) {
   return DotProduct3(a, a);
 }
-
 
 
 template <typename Scalar>
@@ -118,7 +118,7 @@ template <typename Scalar>
 static inline Scalar DistanceSquared3(const array<Scalar, 3>& a,
                                       const array<Scalar, 3>& b)
 {
-  array<Scalar, 3>& ab;
+  array<Scalar, 3> ab;
   for (int d=0; d<3; d++)
     ab[d] = a[d]-b[d];
   return DotProduct3(ab, ab);
