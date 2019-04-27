@@ -98,9 +98,43 @@ static inline Scalar Length3(const Scalar a[3]) {
   return std::sqrt(SquaredNorm3(a));
 }
 
+
 template <typename Scalar>
 static inline Scalar Length3(const array<Scalar, 3>& a) {
   return std::sqrt(DotProduct3(a, a));
+}
+
+
+template <typename Scalar>
+static inline Scalar DistanceSquared3(const Scalar a[3], const Scalar b[3]) {
+  Scalar ab[3];
+  for (int d=0; d<3; d++)
+    ab[d] = a[d]-b[d];
+  return DotProduct3(ab, ab);
+}
+
+
+template <typename Scalar>
+static inline Scalar DistanceSquared3(const array<Scalar, 3>& a,
+                                      const array<Scalar, 3>& b)
+{
+  array<Scalar, 3>& ab;
+  for (int d=0; d<3; d++)
+    ab[d] = a[d]-b[d];
+  return DotProduct3(ab, ab);
+}
+
+
+template <typename Scalar>
+static inline Scalar Distance3(const Scalar a[3], const Scalar b[3]) {
+  return sqrt(DistanceSquared3(a, b));
+}
+
+
+template <typename Scalar>
+static inline Scalar Distance3(const array<Scalar, 3>& a,
+                               const array<Scalar, 3>& b) {
+  return sqrt(DistanceSquared3(a, b));
 }
 
 

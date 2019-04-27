@@ -29,17 +29,10 @@ namespace visfd {
 template<typename Scalar>
 static inline Scalar SQR(Scalar x) { return x*x; }
 
-template<typename Scalar>
-static inline Scalar MIN(Scalar a, Scalar b) { return ((a<=b) ? a : b); }
-
-template<typename Scalar>
-static inline Scalar MAX(Scalar a, Scalar b) { return ((a>=b) ? a : b); }
-
 template <typename Scalar>
 static int SGN(Scalar val) {
   return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));
 }
-
 
 
 
@@ -70,6 +63,133 @@ apply_permutation(const vector<Integer>& p,
     assert((0 <= j) && (j < n));
     v[i] = v_copy[j];
   }
+}
+
+
+
+
+/// @brief  This function was intended to be used as a way to allow end-users
+///         to select certain voxels for consideration.
+///         However, because it is difficult to click on exactly the
+///         feature you are looking for (which is normally how the
+///         "nearby_location" coordinates are obtained),
+///         we often need to search for nearby
+///         voxels that have the feature we want.
+///
+///         This function finds the voxel in the image whose indices
+///         are closest to the "nearby_location" argument.
+///         Only voxels whose corresponding entry in the aaaiVoxels[][][] array
+///         belong to "select_these_voxel_types"
+///         (AND whose corresponding entry in aaafMask[][][] is not zero)
+///         will be considered (unless "invert_selection" is true).
+/// @return The function has no return value, however the coordinates of the
+///         nearest voxel will be stored in the "nearest_location" argument.
+/// @note   Zero-indexing is used.  In other words image indices (ie, entries
+///         in the location arguments) are assumed to begin at 0 not 1.
+/// @note   In this variant of the function, the "nearby_location" and
+///         "location" arguments are both of type C++-style std::array
+///         instead of C-style pointers.
+
+template<typename Scalar, typename Label, typename Coordinate>
+
+void
+FindNearestVoxel(int const image_size[3],                   //!< #voxels in xyz
+                 const array<Coordinate, 3> &nearby_location, //!< find the voxel in aaaiVoxels closest to this
+                 array<Coordinate, 3> &nearest_location, //!< and store the location of that voxel here.
+                 Label const *const *const *aaaiVoxels, //!< some property associated with each voxel
+                 Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
+                 set<Label> select_these_voxel_types, //!< voxels must have one of these properties
+                 bool invert_selection=false //!< (...or NOT one of these properties)
+                 )
+{
+  nearest_location[0] = -1; // an impossible initial value
+  nearest_location[1] = -1; // an impossible initial value
+  nearest_location[2] = -1; // an impossible initial value
+  Coordinate r_min_sq = -1; //special (uninitialized) impossible value
+  // Note: I'm too lazy to write this a faster, smarter way.  It's fast enough.
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          continue;
+        array<double, 3> rv;
+        rv[0] = nearby_location[0] - ix;
+        rv[1] = nearby_location[1] - iy;
+        rv[2] = nearby_location[2] - iz;
+        double r_sq = SquaredNorm3(rv); // length of rv squared
+        bool selected = (select_these_voxel_types.find(aaaiVoxels[iz][iy][ix])
+                         != select_these_voxel_types.end());
+        if (invert_selection)
+          selected = !selected;
+        if (! selected)
+          continue;
+        if ((r_min_sq == -1) || (r_sq < r_min_sq)) {
+          r_min_sq = r_sq;
+          nearest_location[0] = ix;
+          nearest_location[1] = iy;
+          nearest_location[2] = iz;
+        }
+      }
+    }
+  }
+} //FindNearestVoxel()
+
+
+
+
+/// @brief  This function was intended to be used as a way to allow end-users
+///         to select certain voxels for consideration.
+///         However, because it is difficult to click on exactly the
+///         feature you are looking for (which is normally how the
+///         "nearby_location" coordinates are obtained),
+///         we often need to search for nearby
+///         voxels that have the feature we want.
+///
+///         This function finds the voxel in the image whose indices
+///         are closest to the "nearby_location" argument.
+///         Only voxels whose corresponding entry in the aaaiVoxels[][][] array
+///         belong to "select_these_voxel_types"
+///         (AND whose corresponding entry in aaafMask[][][] is not zero)
+///         will be considered (unless "invert_selection" is true).
+/// @return The function has no return value, however the coordinates of the
+///         nearest voxel will be stored in the "nearest_location" argument.
+/// @note   Zero-indexing is used.  In other words image indices (ie, entries
+///         in the location arguments) are assumed to begin at 0 not 1.
+/// @note   In this variant of the function, the "nearby_location" and
+///         "location" arguments are both C-style pointers,
+///         instead of C++-style std::array.
+
+template<typename Scalar, typename Label, typename Coordinate>
+
+void
+FindNearestVoxel(int const image_size[3],             //!< #voxels in xyz
+                 const Coordinate nearby_location[3], //!< find voxel in aaaiVoxels closest to this
+                 Coordinate nearest_location[3], //!< find voxel in aaaiVoxels closest to this
+                 Label const *const *const *aaaiVoxels, //!< some property associated with each voxel
+                 Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
+                 set<Label> select_these_voxel_types, //!< voxels must have this property
+                 bool invert_selection=true //invert selection (skip over them)
+                 )
+{
+  assert(nearby_location);
+  assert(nearest_location);
+
+  array<Coordinate, 3> aNearbyLocation;
+  array<Coordinate, 3> aNearestLocation;
+
+  for (int d = 0; d < 3; d++)
+    aNearbyLocation[d] = nearby_location[d];
+
+  FindNearestVoxel(image_size,
+                   aNearbyLocation,
+                   aNearestLocation,
+                   aaaiVoxels,
+                   aaafMask,
+                   select_these_voxel_types,
+                   invert_selection);
+
+  for (int d = 0; d < 3; d++)
+    nearest_location[d] = aNearestLocation[d];
 }
 
 

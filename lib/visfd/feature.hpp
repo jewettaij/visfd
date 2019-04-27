@@ -822,6 +822,9 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
                                     //!<relative to source (necessary to reduce memory usage)
                         )
 {
+  assert(blob_crds.size() == blob_diameters.size());
+  assert(blob_crds.size() == blob_scores.size());
+
   // Strategy:
   // 1) Sort the blobs in order of their scores: from good scores, to bad scores
   // 2) Beginning with the best scoring blobs and proceeding downwards,
