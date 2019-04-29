@@ -97,7 +97,7 @@ Note: All of these parameters make reasonable defaults for ribosome detection
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
       *Alternatively,* it can be determined automatically using the
-      "*-auto-thresh*"(#-auto-thresh-file_accept.txt-file_reject.txt)
+      ["*-auto-thresh*"](#-auto-thresh-file_accept.txt-file_reject.txt)
       argument.
 
 
@@ -945,16 +945,20 @@ arguments).
 Blob-detection is computationally expensive,
 but it only has to be performed once.
 Typically, users will perform blob detection with the default (permissive)
-score thresholds, so that they keep most of the minima and maxima.
-Then later, they will run **filter_mrc** with the
-["**-draw-spheres**"](#-draw-spheres-filename)
-and 
+score thresholds, so that they keep all of the blobs detected
+(no matter how small or insignificant).
+Then later, they will run **filter_mrc** again using *either* the
+["*-auto-thresh*"](#-auto-thresh-file_accept.txt-file_reject.txt)
+argument,
+*or*
+the 
 ["**-minima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
 (or 
 ["**-maxima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
-)
-arguments several times with different thresholds to decide which of
-these blobs are worth keeping.
+["**-draw-spheres**"](#-draw-spheres-filename)
+arguments
+(perhaps several times with different thresholds)
+...to decide which of these blobs are worth keeping.
 
 
 
@@ -1605,70 +1609,17 @@ and discard blobs with poor scores, or blobs which overlap with other blobs.
 The new list of blobs can then be visualized later by running
 *filter_mrc* again using the "**-draw-spheres**" argument.
 
-Note that the "**-discard-blobs**" argument by itself does nothing.
-You must run it with other arguments telling it which blobs you want to discard.
+Note that the "**-discard-blobs**" argument by itself has no effect.
+You must run the program with other arguments telling it 
+which blobs you want to discard.
 Typically you would run *filter_mrc* together with the "**-discard-blobs**",
-**-maxima-threshold** (OR **-minima-threshold**), AND the
-**-max-volume-overlap** arguments, simultaneously.  (See below for details.)
-
-
-#### Automatic disposal of poor scoring blobs
-
-Typically poor-scoring blobs are discarded either of these arguments:
-```
-   -minima-threshold  thresh_min
-```
-or
-```
-   -maxima-threshold  thresh_max
-```
-Here, "thresh_min" and "thresh_max" are the thresholds below which,
-and above which, the blob score must lie in order not to be discarded,
-respectively.
-Since the general magnitude of the blobs' scores
-are not known in advance,
-sometimes the following arguments are useful instead:
-```
-   -minima-ratio  ratio_min
-   -maxima-ratio  ratio_max
-```
-The *-maxima-ratio* argument allows you to discard maxima whose score 
-is less than *ratio_max* times the blob with the highest score,
-(where *ratio_max* is a number between 0 and 1.
- *-minima-ratio* behaves in a similar way.)
-*(Note: You can either use thresolds or ratios, but you cannot mix both.)*
-*(Note: This only makes sense in the context of discarding blobs.
-        These arguments have no effect unless you are also using the
-        "-discard-blobs" argument.)*
-
-
-#### -auto-thresh file_accept.txt file_reject.txt
-
-***(WARNING: This feature does not yet work as of 2019-4-29.)***
-
-As an alternative to specifying the threshold(s) manually,
-you can instead examples of blobs that you want to keep,
-and blobs you want to discard.
-Blobs will be discarded if their score does not lie in the range
-of scores similar to the blobs you selected.
-The (upper-bound and lower-bound) thresholds will be chosen 
-which minimize the number of incorrectly classified blobs.
-Equal weight is given to false-positives and false-negatives.
-Choosing blobs which are "edge-cases" is recommended.
-(IE. blobs that would difficult to classify or are barely visible.)
-
-*(Note: This only makes sense in the context of discarding blobs.
-        The "-auto-thresh" argument will have no effect unless 
-        you are also using the "-discard-blobs" argument.)*
-
-*(Note: You must provide examples of both
-        blobs that you want to keep and 
-        blobs that you want to discard.
-        These example blobs must already be present
-        within the list of blobs that you have provided 
-        to the "-discard-blobs" argument. 
-        If you are using a mask, 
-        then these examples should also lie within the mask.)*
+**-maxima-threshold**, (or **-minima-threshold**, or
+**-auto-thresh**)
+AND the
+**-radial-separation** (or **-max-volume-overlap**)
+(and possibly the **-mask** arguments)
+***...simultaneously***.
+(See below for details.)
 
 
 #### Automatic disposal of overlapping blobs
@@ -1727,6 +1678,67 @@ To prevent the small sphere from being discarded, you can use
 together with
 [**-max-volume-overlap-small 1**](#-max-volume-overlap-small-fraction)
 .
+
+
+#### Automatic disposal of poor scoring blobs
+
+Typically poor-scoring blobs are discarded using either of these arguments:
+```
+   -minima-threshold  thresh_min
+```
+or
+```
+   -maxima-threshold  thresh_max
+```
+Here, "thresh_min" and "thresh_max" are the thresholds below which,
+and above which, the blob score must lie in order not to be discarded,
+respectively.
+Since the general magnitude of the blobs' scores
+are not known in advance,
+sometimes the following arguments are useful instead:
+```
+   -minima-ratio  ratio_min
+   -maxima-ratio  ratio_max
+```
+The *-maxima-ratio* argument allows you to discard maxima whose score 
+is less than *ratio_max* times the blob with the highest score,
+(where *ratio_max* is a number between 0 and 1.
+ *-minima-ratio* behaves in a similar way.)
+*(Note: You can either use thresolds or ratios, but you cannot mix both.)*
+*(Note: This only makes sense in the context of discarding blobs.
+        These arguments have no effect unless you are also using the
+        "-discard-blobs" argument.)*
+
+
+#### -auto-thresh file_accept.txt file_reject.txt
+
+***(WARNING: This feature does not yet work as of 2019-4-29.)***
+
+As an alternative to specifying the threshold(s) manually,
+you can instead examples of blobs that you want to keep,
+and blobs you want to discard.
+Blobs will be discarded if their score does not lie in the range
+of scores similar to the blobs you selected.
+This range is determined automatically.
+The (upper-bound and lower-bound) thresholds will be chosen 
+which minimize the number of incorrectly classified blobs.
+Equal weight is given to false-positives and false-negatives.
+Choosing blobs which are "edge-cases" is recommended.
+(IE. blobs that would difficult to classify or are barely visible.)
+
+*(Note: This only makes sense in the context of discarding blobs.
+        The "-auto-thresh" argument will have no effect unless 
+        you are also using the "-discard-blobs" argument.)*
+
+*(Note: You must provide examples of both
+        blobs that you want to keep and 
+        blobs that you want to discard.
+        These example blobs must already be present
+        within the list of blobs that you have provided 
+        to the "-discard-blobs" argument. 
+        If you are using a mask, 
+        then these examples should also lie within the mask.)*
+
 
 
 ### -blob-intensity-vs-radius center_type blobs_file.txt base_name

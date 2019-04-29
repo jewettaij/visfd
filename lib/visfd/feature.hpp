@@ -1048,7 +1048,6 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 ///         "masked" region defined by aaafMask.
 
 template<typename Scalar>
-
 void
 DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                    // optional arguments:
