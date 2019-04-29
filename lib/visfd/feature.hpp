@@ -1132,8 +1132,8 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
   assert(blob_crds.size() == blob_diameters.size());
   assert(blob_crds.size() == blob_scores.size());
 
-  size_t Nn = training_set_neg.size();
-  size_t Np = training_set_pos.size();
+  size_t _Nn = training_set_neg.size();
+  size_t _Np = training_set_pos.size();
 
   // Figure out which training_data coordinates lie sufficiently close
   // to one of the blobs to be counted.  Ignore the others.
@@ -1147,27 +1147,27 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
                             training_set_neg.end());
 
   // The next variable keeps track of which data we should keep or discard:
-  vector<bool> _training_set_blob_nearby(Nn + Np, false);
+  vector<bool> _training_set_blob_nearby(_Nn + _Np, false);
 
   // _training_set_score[i] = score of the ith training datum
   // (if there is a blob at that location)
   vector<Scalar> _training_set_scores =
-    vector<bool>(Np + Nn,
+    vector<bool>(_Np + _Nn,
                  -std::numeric_limits<Scalar>::infinity()); //<-impossible score
 
 
   // _training_set_accepted = true or false depending on whether it is 
   //                      part of the positive (accepted) training set,
   //                      or the negative (rejected) training set
-  vector<bool> _training_set_accepted =  vector<bool>(Np + Nn, true);
-  for (size_t i = Np; i < Np + Nn; i++)
+  vector<bool> _training_set_accepted =  vector<bool>(_Np + _Nn, true);
+  for (size_t i = _Np; i < _Np + _Nn; i++)
     _training_set_accepted[i] = false;
 
-  assert(_training_set_crds.size() == Np + Nn);
-  assert(_training_set_scores.size() == Np + Nn);
-  assert(_training_set_accepted.size() == Np + Nn);
+  assert(_training_set_crds.size() == _Np + _Nn);
+  assert(_training_set_scores.size() == _Np + _Nn);
+  assert(_training_set_accepted.size() == _Np + _Nn);
 
-  for (size_t i=0; i < Np + Nn; i++) {
+  for (size_t i=0; i < _Np + _Nn; i++) {
     // Note: There are faster ways to quickly locate nearby blobs, such as
     //       creating an image (table) where each voxel contains an integer
     //       indicating(pointing to) the closest blob within some cutoff radius.
@@ -1194,11 +1194,17 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
   vector<bool> training_set_scores;
   vector<bool> training_indices;
 
-  for (size_t i=0; i < Np + Nn; i++) {
+  size_t Nn = 0;
+  size_t Np = 0;
+  for (size_t i=0; i < _Np + _Nn; i++) {
     if (_training_set_blob_nearby[i]) {
       training_set_crds.push_back(_training_set_crds[i]);
       training_set_scores.push_back(_training_set_scores[i]);
       training_set_accepted.push_back(_training_set_accepted[i]);
+      if (_training_set_accepted[i])
+        Np++;
+      else
+        Nn++;
     }
   }
 
@@ -1207,6 +1213,25 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
   size_t N = training_set_crds.size();
   assert(N == training_set_scores.size());
   assert(N == training_set_accepted.size());
+  assert(N == Nn + Np);
+
+  if (Nn == 0)
+    throw VisfdErr("Error: Empty list of negative training examples.\n"
+                   "       Either you have provided no examples of data that you want to discard\n"
+                   "          (IE. Your file of negative training examples is empty),\n"
+                   "       OR none of the examples that you provided are sufficiently close to ANY\n"
+                   "       of the blobs in the list of blobs that you are considering discarding.\n"
+                   "       Either provide more negative training examples, or specify your\n"
+                   "       selection threshold(s) manually.\n");
+  if (Np == 0)
+    throw VisfdErr("Error: Empty list of positive training examples.\n"
+                   "       Either you have provided no examples of data that you want to keep\n"
+                   "          (IE. Your file of positive training examples is empty),\n"
+                   "       OR none of the examples that you provided are sufficiently close to ANY\n"
+                   "       of the blobs in the list of blobs that you are considering discarding.\n"
+                   "       Either provide more positive training examples, or specify your\n"
+                   "       selection threshold(s) manually.\n");
+
 
   if (pReportProgress)
     *pReportProgress
@@ -1226,12 +1251,32 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
     *pthreshold_lower_bound = threshold_lower_bound;
   if (pthreshold_upper_bound)
     *pthreshold_upper_bound = threshold_upper_bound;
-  
-  if (pReportProgress)
+
+  if (pReportProgress) {
     *pReportProgress
       << "  threshold lower bound: " << threshold_lower_bound << "\n"
-      << "  threshold upper bound: " << threshold_upper_bound << "\n"
+      << "  threshold upper bound: " << threshold_upper_bound << "\n";
+    // Optional: Also report the number of mistakes to the user
+    size_t num_false_negatives = 0;
+    size_t num_false_positives = 0;
+    for (size_t i=0; i < N; i++) {
+      if ((training_set_scores[i] >= threshold_lower_bound) &&
+          (training_set_scores[i] <= threshold_upper_bound)) {
+        if (! training_set_accepted[i])
+          num_false_positives++;
+      }
+      else {
+        if (training_set_accepted[i])
+          num_false_negatives++;
+      }
+    }
+    *pReportProgress
+      << "  number of false positives: " << num_false_positives
+      << " (out of " << Np << " positives)\n"
+      << "  number of false negatives: " << num_false_negatives
+      << " (out of " << Nn << " negatives)\n"
       << endl;
+  }
 
 } //ChooseBlobScoreThresholds()
 

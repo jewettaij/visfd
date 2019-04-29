@@ -96,6 +96,9 @@ Note: All of these parameters make reasonable defaults for ribosome detection
       parameter ("-70" in the example).
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
+      *Alternatively,* it can be determined automatically using the
+      "*-auto-thresh*"(#-auto-thresh-file_accept.txt-file_reject.txt)
+      argument.
 
 
 
@@ -1634,7 +1637,38 @@ is less than *ratio_max* times the blob with the highest score,
 (where *ratio_max* is a number between 0 and 1.
  *-minima-ratio* behaves in a similar way.)
 *(Note: You can either use thresolds or ratios, but you cannot mix both.)*
+*(Note: This only makes sense in the context of discarding blobs.
+        These arguments have no effect unless you are also using the
+        "-discard-blobs" argument.)*
 
+
+#### -auto-thresh file_accept.txt file_reject.txt
+
+***(WARNING: This feature does not yet work as of 2019-4-29.)***
+
+As an alternative to specifying the threshold(s) manually,
+you can instead examples of blobs that you want to keep,
+and blobs you want to discard.
+Blobs will be discarded if their score does not lie in the range
+of scores similar to the blobs you selected.
+The (upper-bound and lower-bound) thresholds will be chosen 
+which minimize the number of incorrectly classified blobs.
+Equal weight is given to false-positives and false-negatives.
+Choosing blobs which are "edge-cases" is recommended.
+(IE. blobs that would difficult to classify or are barely visible.)
+
+*(Note: This only makes sense in the context of discarding blobs.
+        The "-auto-thresh" argument will have no effect unless 
+        you are also using the "-discard-blobs" argument.)*
+
+*(Note: You must provide examples of both
+        blobs that you want to keep and 
+        blobs that you want to discard.
+        These example blobs must already be present
+        within the list of blobs that you have provided 
+        to the "-discard-blobs" argument. 
+        If you are using a mask, 
+        then these examples should also lie within the mask.)*
 
 
 #### Automatic disposal of overlapping blobs

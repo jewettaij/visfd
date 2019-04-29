@@ -233,7 +233,7 @@ HandleBlobRadialIntensity(Settings settings,
     }
 
 
-    float fluctuation_brightness = 0.0;
+    float stddev_brightness = 0.0;
     {
       int Rsphere = ceil(diameters[i]/2); //radius of the sphere (surrounding the current blob)
       int ixs = sphere_centers_i[0];
@@ -282,9 +282,9 @@ HandleBlobRadialIntensity(Settings settings,
       }
       if (n_vox > 0) {
         double variance = sum_sq / n_vox;
-        fluctuation_brightness = sqrt(variance);
+        stddev_brightness = sqrt(variance);
       }
-    } // calculate "fluctuation_brightness"
+    } // calculate "stddev_brightness"
 
 
     int n_mask_values = 0;
@@ -337,7 +337,7 @@ HandleBlobRadialIntensity(Settings settings,
                                 [ sphere_centers_i[1] ]
                                 [ sphere_centers_i[0] ]
          << " " << intensity_profiles[i][0]
-         << " " << fluctuation_brightness
+         << " " << stddev_brightness
          << " " << max_slope
          << " " << contrast_profile_min_max;
     // Now print the distance to various 
