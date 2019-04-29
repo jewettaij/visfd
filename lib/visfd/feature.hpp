@@ -249,8 +249,8 @@ BlobDog(int const image_size[3], //!< source image size
         //the following optional parameters are usually left with default values
         Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
         Scalar truncate_ratio=2.8,      //!< how many sigma before truncating?
-        Scalar minima_threshold=0.0,    //!< discard blobs with unremarkable scores (0 disables)
-        Scalar maxima_threshold=0.0,    //!< discard blobs with unremarkable scores (0 disables)
+        Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (0 disables)
+        Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(),    //!< discard blobs with unremarkable scores (0 disables)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
         // optional arguments
         ostream *pReportProgress = nullptr, //!< optional: report progress to the user?
@@ -550,60 +550,65 @@ BlobDog(int const image_size[3], //!< source image size
 
   } //for (ir = 0; ir < blob_sigma.size(); ir++)
 
-  if (pReportProgress)
-    *pReportProgress
-      << " Discarding poor scoring blobs...\n"
-      << " (If this is taking a while, just keep all the blobs, \n"
-      << "  and discard the poor-scoring blobs later on.)\n"
-      << endl;
 
-  if (use_threshold_ratios) {
-    minima_threshold *= global_min_score;
-    maxima_threshold *= global_max_score;
-  }
-  // Now that we know what the true global minima and maxima are,
-  // go back and discard maxima whose scores are not higher than
-  // maxima_threshold * global_max_score.
-  // (Do the same for local minima as well.)
-  int i;
-  i = 0;
-  while (i < minima_scores.size()) {
-    assert(minima_scores[i] < 0.0);
-    if (minima_scores[i] >= minima_threshold) {
-      // delete this blob
-      // WARNING: This might be a slow operation if there are millions of blobs
-      // Perhaps I should create a temporary array and copy the results.
-      pva_minima_crds->erase(pva_minima_crds->begin() + i,
-                             pva_minima_crds->begin() + i + 1);
-      pv_minima_sigma->erase(pv_minima_sigma->begin() + i,
-                             pv_minima_sigma->begin() + i + 1);
-      pv_minima_scores->erase(pv_minima_scores->begin() + i,
-                              pv_minima_scores->begin() + i + 1);
+
+  if ((minima_threshold != std::numeric_limits<Scalar>::infinity()) ||
+      (maxima_threshold != -std::numeric_limits<Scalar>::infinity()))
+  {
+    if (pReportProgress)
+      *pReportProgress
+        << " Discarding poor scoring blobs...\n"
+        << " (If this is taking a while, just keep all the blobs, \n"
+        << "  and discard the poor-scoring blobs later on.)\n"
+        << endl;
+
+    if (use_threshold_ratios) {
+      minima_threshold *= global_min_score;
+      maxima_threshold *= global_max_score;
     }
-    else
-      i++;
-  }
-  i = 0;
-  while (i < maxima_scores.size()) {
-    assert(maxima_scores[i] > 0.0);
-    if (maxima_scores[i] <= maxima_threshold) {
-      // delete this blob
-      // WARNING: This might be a slow operation if there are millions of blobs
-      // Perhaps I should create a temporary array and copy the results.
-      pva_maxima_crds->erase(pva_maxima_crds->begin() + i,
-                             pva_maxima_crds->begin() + i + 1);
-      pv_maxima_sigma->erase(pv_maxima_sigma->begin() + i,
-                             pv_maxima_sigma->begin() + i + 1);
-      pv_maxima_scores->erase(pv_maxima_scores->begin() + i,
-                              pv_maxima_scores->begin() + i + 1);
+    // Now that we know what the true global minima and maxima are,
+    // go back and discard maxima whose scores are not higher than
+    // maxima_threshold * global_max_score.
+    // (Do the same for local minima as well.)
+    int i;
+    i = 0;
+    while (i < minima_scores.size()) {
+      assert(minima_scores[i] < 0.0);
+      if (minima_scores[i] >= minima_threshold) {
+        // delete this blob
+        // WARNING: This might be a slow operation if there are millions of blobs
+        // Perhaps I should create a temporary array and copy the results.
+        pva_minima_crds->erase(pva_minima_crds->begin() + i,
+                               pva_minima_crds->begin() + i + 1);
+        pv_minima_sigma->erase(pv_minima_sigma->begin() + i,
+                               pv_minima_sigma->begin() + i + 1);
+        pv_minima_scores->erase(pv_minima_scores->begin() + i,
+                                pv_minima_scores->begin() + i + 1);
+      }
+      else
+        i++;
     }
-    else
-      i++;
-  }
+    i = 0;
+    while (i < maxima_scores.size()) {
+      assert(maxima_scores[i] > 0.0);
+      if (maxima_scores[i] <= maxima_threshold) {
+        // delete this blob
+        // WARNING: This might be a slow operation if there are millions of blobs
+        // Perhaps I should create a temporary array and copy the results.
+        pva_maxima_crds->erase(pva_maxima_crds->begin() + i,
+                               pva_maxima_crds->begin() + i + 1);
+        pv_maxima_sigma->erase(pv_maxima_sigma->begin() + i,
+                               pv_maxima_sigma->begin() + i + 1);
+        pv_maxima_scores->erase(pv_maxima_scores->begin() + i,
+                                pv_maxima_scores->begin() + i + 1);
+      }
+      else
+        i++;
+    }
 
-
-  if (pReportProgress)
-    *pReportProgress << " ...done.\n" << endl;
+    if (pReportProgress)
+      *pReportProgress << " ...done.\n" << endl;
+  } //if ((minima_threshold != -std::numeric_limits<Scalar>::infinity()) || ...
 
 
   if (! preallocated) {
@@ -655,9 +660,9 @@ BlobDogD(int const image_size[3], //!<source image size
          //the following optional parameters are usually left with default values
          Scalar delta_sigma_over_sigma=0.02,//!<param for approximating LoG with DoG
          Scalar truncate_ratio=2.5,    //!<how many sigma before truncating?
-         Scalar minima_threshold=0.5,  //!<discard blobs with unremarkable scores
-         Scalar maxima_threshold=0.5,  //!<discard blobs with unremarkable scores
-         bool    use_threshold_ratios=true, //!<threshold=ratio*best_score?
+         Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
+         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
+         bool    use_threshold_ratios=false, //!<threshold=ratio*best_score?
          ostream *pReportProgress = nullptr, //!<report progress to the user?
          Scalar ****aaaafI = nullptr, //!<preallocated memory for filtered images
          Scalar **aafI = nullptr     //!<preallocated memory for filtered images (conserve memory)
@@ -710,12 +715,12 @@ BlobDogD(int const image_size[3], //!<source image size
 
 /// @brief sort blobs by their scores
 
-template<typename Scalar>
+template<typename Scalar1, typename Scalar2, typename Scalar3>
 
 void
-SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
-          vector<Scalar>& blob_diameters,  //!< the width of each blob
-          vector<Scalar>& blob_scores,  //!< the score for each blob
+SortBlobs(vector<array<Scalar1,3> >& blob_crds, //!< x,y,z of each blob's center
+          vector<Scalar2>& blob_diameters,  //!< the width of each blob
+          vector<Scalar3>& blob_scores,  //!< the score for each blob
           bool descending_order = true, //!<sort scores in ascending or descending order?
           ostream *pReportProgress = nullptr //!< optional: report progress to the user?
           )
@@ -723,7 +728,7 @@ SortBlobs(vector<array<Scalar,3> >& blob_crds, //!< x,y,z of each blob's center
   size_t n_blobs = blob_crds.size();
   assert(n_blobs == blob_diameters.size());
   assert(n_blobs == blob_scores.size());
-  vector<tuple<Scalar, size_t> > score_index(n_blobs);
+  vector<tuple<Scalar3, size_t> > score_index(n_blobs);
   for (size_t i = 0; i < n_blobs; i++)
     score_index[i] = make_tuple(blob_scores[i], i);
 
@@ -1095,6 +1100,209 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
   if (pv_blob_scores)
     *pv_blob_scores = blob_scores_cpy;
 } // DiscardMaskedBlobs()
+
+
+
+
+
+
+// @brief  This function calculates a range of score values
+//         (a lower bound and upper bound)
+//         which maximizes the accuracy of training data provided by the caller.
+//         (It minimizes the number of times that either the positive training
+//          set has a score outside this range, and the negative training set
+//          has scores inside this range.  Equal weight is given to to
+//          either false positives or false negatives.)
+// @return This function does not return anything.
+//         The two thresholds are returned to the caller using the 
+//         pthreshold_lower_bound and pthreshold_upper_bound arguments.
+
+template<typename Scalar>
+void
+ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob
+                          const vector<Scalar>& blob_diameters,  //!< diameger of each blob
+                          const vector<Scalar>& blob_scores, //!< priority of each blob
+                          const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
+                          const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
+                          Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
+                          Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
+                          ostream *pReportProgress = nullptr //!< report progress back to the user?
+                          )
+{
+  assert(blob_crds.size() == blob_diameters.size());
+  assert(blob_crds.size() == blob_scores.size());
+
+  size_t Nn = training_set_neg.size();
+  size_t Np = training_set_pos.size();
+
+  // Figure out which training_data coordinates lie sufficiently close
+  // to one of the blobs to be counted.  Ignore the others.
+  // While doing this, also figure out the score of each training datum.
+  // (This is the score of the blob that is nearby, if applicable.)
+
+  // Concatinate all of the training data together.
+  vector<array<Scalar,3> > _training_set_crds = training_set_pos;
+  _training_set_crds.insert(_training_set_crds.end(),
+                            training_set_neg.begin(),
+                            training_set_neg.end());
+
+  // The next variable keeps track of which data we should keep or discard:
+  vector<bool> _training_set_blob_nearby(Nn + Np, false);
+
+  // _training_set_score[i] = score of the ith training datum
+  // (if there is a blob at that location)
+  vector<Scalar> _training_set_scores =
+    vector<bool>(Np + Nn,
+                 -std::numeric_limits<Scalar>::infinity()); //<-impossible score
+
+
+  // _training_set_accepted = true or false depending on whether it is 
+  //                      part of the positive (accepted) training set,
+  //                      or the negative (rejected) training set
+  vector<bool> _training_set_accepted =  vector<bool>(Np + Nn, true);
+  for (size_t i = Np; i < Np + Nn; i++)
+    _training_set_accepted[i] = false;
+
+  assert(_training_set_crds.size() == Np + Nn);
+  assert(_training_set_scores.size() == Np + Nn);
+  assert(_training_set_accepted.size() == Np + Nn);
+
+  for (size_t i=0; i < Np + Nn; i++) {
+    // Note: There are faster ways to quickly locate nearby blobs, such as
+    //       creating an image (table) where each voxel contains an integer
+    //       indicating(pointing to) the closest blob within some cutoff radius.
+    //       If the current code is too slow, I can implement that optimization.
+    //       But I don't anticipate that users will want to invoke this with
+    //       thousands of training coordinates.
+    for (size_t j=0; j < blob_crds.size(); j++) {
+      Scalar rsq = DistanceSquared3(_training_set_crds[i], blob_crds[j]);
+      if (rsq <= SQR(blob_diameters[j] / 2.0)) {
+        // Since blobs can overlap, it's possible this location has already been
+        // visited by earlier blobs.  If so, pick the one with the higher score.
+        if(_training_set_scores[i] < blob_scores[j]) {
+          _training_set_scores[i] = blob_scores[j];
+          _training_set_blob_nearby[i] = true;
+        }
+      }
+    }
+  }
+
+  // consider only training set data that was sufficiently close to one of
+  // the blobs.  Store that data here:
+  vector<array<Scalar,3> > training_set_crds;
+  vector<bool> training_set_accepted;
+  vector<bool> training_set_scores;
+  vector<bool> training_indices;
+
+  for (size_t i=0; i < Np + Nn; i++) {
+    if (_training_set_blob_nearby[i]) {
+      training_set_crds.push_back(_training_set_crds[i]);
+      training_set_scores.push_back(_training_set_scores[i]);
+      training_set_accepted.push_back(_training_set_accepted[i]);
+    }
+  }
+
+  // N = the number of training data left after discarding datum which
+  //     do not lie within any blobs.  (not within any blob radii)
+  size_t N = training_set_crds.size();
+  assert(N == training_set_scores.size());
+  assert(N == training_set_accepted.size());
+
+  if (pReportProgress)
+    *pReportProgress
+      << "  examining training data to determine optimal thresholds\n";
+
+  Scalar threshold_lower_bound =
+    ChooseThreshold1D(training_set_scores,
+                      training_set_accepted,
+                      true);
+
+  Scalar threshold_upper_bound =
+    ChooseThreshold1D(training_set_scores,
+                      training_set_accepted,
+                      false);
+
+  if (pthreshold_lower_bound)
+    *pthreshold_lower_bound = threshold_lower_bound;
+  if (pthreshold_upper_bound)
+    *pthreshold_upper_bound = threshold_upper_bound;
+  
+  if (pReportProgress)
+    *pReportProgress
+      << "  threshold lower bound: " << threshold_lower_bound << "\n"
+      << "  threshold upper bound: " << threshold_upper_bound << "\n"
+      << endl;
+
+} //ChooseBlobScoreThresholds()
+
+
+
+
+
+
+// @brief  This function calculates a range of score values
+//         (a lower bound and upper bound)
+//         which maximizes the accuracy of training data provided by the caller.
+//         (It minimizes the number of times that either the positive training
+//          set has a score outside this range, and the negative training set
+//          has scores inside this range.  Equal weight is given to to
+//          either false positives or false negatives.)
+//         Blobs with scores outside this range will be discarded.
+
+template<typename Scalar>
+void
+DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
+                              vector<Scalar>& blob_diameters,  //!< diameger of each blob
+                              vector<Scalar>& blob_scores, //!< priority of each blob
+                              const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
+                              const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
+                              Scalar *pthreshold_lower_bound = nullptr, //!< optional: return threshold to the caller
+                              Scalar *pthreshold_upper_bound = nullptr, //!< optional: return threshold to the caller
+                              ostream *pReportProgress = nullptr //!< report progress back to the user?
+                              )
+{
+  assert(blob_crds.size() == blob_diameters.size());
+  assert(blob_crds.size() == blob_scores.size());
+
+  Scalar threshold_lower_bound;
+  Scalar threshold_upper_bound;
+
+  ChooseBlobScoreThresholds(blob_crds,
+                            blob_diameters,
+                            blob_scores,
+                            training_set_pos,
+                            training_set_neg,
+                            &threshold_lower_bound,
+                            &threshold_upper_bound,
+                            pReportProgress);
+
+  if (pthreshold_lower_bound)
+    *pthreshold_lower_bound = threshold_lower_bound;
+  if (pthreshold_upper_bound)
+    *pthreshold_upper_bound = threshold_upper_bound;
+  
+  if (pReportProgress)
+    *pReportProgress << "  allocating another blob list copy." << endl;
+
+  vector<array<Scalar,3> > blob_crds_cpy;
+  vector<Scalar> blob_diameters_cpy;
+  vector<Scalar> blob_scores_cpy;
+
+  for (int i = 0; i < blob_crds.size(); i++) {
+    if ((blob_scores[i] >= threshold_lower_bound)
+        (blob_scores[i] <= threshold_upper_bound))
+    {
+      blob_crds_cpy.push_back(blob_crds[i]);
+      blob_diameters_cpy.push_back(blob_diameters[i]);
+      blob_scores_cpy.push_back(blob_scores[i]);
+    }  
+  }
+
+  blob_crds = blob_crds_cpy;
+  blob_diameters = blob_diameters_cpy;
+  blob_scores = blob_scores_cpy;
+
+} //DiscardBlobsByScoreSupervised()
 
 
 

@@ -190,7 +190,152 @@ FindNearestVoxel(int const image_size[3],             //!< #voxels in xyz
 
   for (int d = 0; d < 3; d++)
     nearest_location[d] = aNearestLocation[d];
-}
+} //FindNearestVoxel()
+
+
+
+
+
+// @brief  This function chooses the "score" threshold which maximizes the
+//         number of correctly labelled training data.
+//         (One can think of this threshold as a crude 1D linear SVM.)
+//         If theshold_is_lower_bound == true, then data whose scores are above
+//         this threshold will be classified as accepted.  (below->rejected.)
+//         The reverse is true if theshold_is_lower_bound==false.
+//         (This function can be run twice with threshold_is_lower_bound
+//          set to both true and false to find both a lower and upper bound.)
+
+template<typename Scalar>
+Scalar
+ChooseThreshold1D(vector<Scalar>& training_set_scores, //!< a list of scores in sorted order
+                  vector<bool>& training_set_accepted,//!< was this datum accepted or rejected (positive or negative)
+                  bool threshold_is_lower_bound = true //!< should data with scores ABOVE the threshold be accepted? (or BELOW?)
+                  )
+{
+  size_t N = training_set_scores.size();
+  assert(N == training_set_accepted.size());
+
+  size_t Nn = 0;
+  size_t Np = 0;
+  for (size_t i = 0; i < N; i++) {
+    if (training_set_accepted[i])
+      Np++;
+    else
+      Nn++;
+  }
+  assert(Nn + Np == N);
+
+  Scalar SGN = 1.0;
+  if (! threshold_is_lower_bound)
+    SGN = -1.0;
+
+  // sort the training set according to their scores:
+  vector<tuple<Scalar, size_t> > score_index(N);
+  for (size_t i = 0; i < N; i++)
+    score_index[i] = make_tuple(training_set_scores[i], i);
+  if (N > 0) {
+    if (threshold_is_lower_bound)
+      // then sort the list (of data according to scores) in increasing order
+      sort(score_index.begin(),
+           score_index.end());
+    else
+      // then sort the list (of data according to scores) in decreasing order
+      sort(score_index.rbegin(),
+           score_index.rend());
+    vector<size_t> permutation(N);
+    for (size_t i = 0; i < score_index.size(); i++)
+      permutation[i] = get<1>(score_index[i]);
+    score_index.clear();
+    apply_permutation(permutation, training_set_scores);
+    apply_permutation(permutation, training_set_accepted);
+  }
+
+  // The negative training data are assumed to have lower scores
+  // than the positive training data (after multiplication by SGN).
+  // If the threshold for deciding if a blob is good or bad
+  // is set below the scores of all of the negative training data
+  // then the number of mistakes is Nn, the number of negative traing data,
+  // because if we set the threshold there, every one of them will be
+  // predicted to be positive, when in fact they are negative.
+  // (Similarly, if the threshold is set above the highest scores,
+  // then the number of mistakes is Np, the number of positive traing data.)
+
+  // In the loop below, we start with a threshold below the minimum score, and
+  // increase the threshold until we exceed the maximum score.
+  // We keep track of which thresholds corresponded to the mininum number of
+  // mistakes.
+
+  size_t num_mistakes = Nn; // (see comment above)
+  size_t min_num_mistakes = Nn;
+  Scalar threshold;
+  for (int i = 0; i < N; i++) {
+    threshold = training_set_scores[i];
+    if (training_set_accepted[i] == false)
+      num_mistakes--;
+    else
+      num_mistakes++;
+    if (num_mistakes < min_num_mistakes)
+      min_num_mistakes = num_mistakes;
+    assert(num_mistakes <= std::max(Nn, Np));
+    i++;
+  }
+
+  // at what threshold value(s) was that same number of mistakes made?
+  vector<size_t> indices_min_mistakes;
+  {
+    num_mistakes = Nn;
+    int i = -1;
+    while (i < N) {
+      if (i >= 0) {
+        if (training_set_accepted[i] == false)
+          num_mistakes--;
+        else
+          num_mistakes++;
+      }
+      if (num_mistakes == min_num_mistakes)
+        indices_min_mistakes.push_back(i);
+      i++;
+    }
+  }
+  assert(indices_min_mistakes.size() > 0);
+
+  //choose the median index into this array of threshold values
+  size_t i_threshold = indices_min_mistakes[indices_min_mistakes.size() / 2];
+
+  //then pick the corresponding nearby score 
+  threshold = training_set_scores[i_threshold];
+  if (i_threshold == -1) {
+    assert(num_mistakes == Nn);
+    // ...then you get the minimum number of mistakes
+    // if you set the threshold so that all of the training data is accepted.
+    // This means the caller only provided examples of "positive" training data
+    // (ie. blobs which were accepted.)  
+    // Setting the threshold to -infinity will reproduce this result.
+    threshold = -SGN * std::numeric_limits<Scalar>::infinity();
+  }
+  else if (i_threshold == N-1) {
+    assert(min_num_mistakes == Np);
+    // ...then you get the minimum number of mistakes
+    // if you set the threshold so that all of the training data is rejected.
+    // This means the caller only provided examples of "negative" training data
+    // (ie. blobs which were rejected.)
+    // Setting the threshold to infinity will reproduce this result.
+    threshold = SGN * std::numeric_limits<Scalar>::infinity();
+  }
+  else {
+    // Otherwise choose the threshold which minimizes the number of mistakes:
+    threshold = training_set_scores[i_threshold];
+    if (i_threshold < N-1) {
+      // for a more robust estimate, 
+      // choose the average of this score and the one above it
+      threshold = 0.5 * (training_set_scores[i_threshold] +
+                         training_set_scores[i_threshold+1]);
+    }
+  }
+
+  return threshold;
+
+} //ChooseThreshold1D()
 
 
 
