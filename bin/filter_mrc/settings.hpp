@@ -255,6 +255,12 @@ class Settings {
   float sphere_diameters_lower_bound;//Ignore blobs outside a desired range of sizes
   float sphere_diameters_upper_bound;
 
+  bool auto_thresh_score = false;
+  string training_data_pos_fname;
+  string training_data_neg_fname;
+  vector<array<float, 3> > training_data_pos_crds;
+  vector<array<float, 3> > training_data_neg_crds;
+
   // ---- parameters for detecting local minima and local maxima ----
 
   bool find_minima = false;

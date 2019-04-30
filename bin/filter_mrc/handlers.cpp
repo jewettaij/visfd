@@ -287,6 +287,20 @@ HandleBlobsNonmaxSuppression(Settings settings,
                      settings.score_lower_bound,
                      settings.score_upper_bound);
 
+  if (settings.auto_thresh_score &&
+      (settings.training_data_pos_crds.size() > 0) &&
+      (settings.training_data_neg_crds.size() > 0))
+  {
+    DiscardBlobsByScoreSupervised(crds,
+                                  diameters,
+                                  scores,
+                                  settings.training_data_pos_crds,
+                                  settings.training_data_neg_crds,
+                                  static_cast<float*>(nullptr),
+                                  static_cast<float*>(nullptr),
+                                  &cerr);
+  }
+
   cerr << " --- discarding blobs in file \n"
        << " \"" << settings.in_coords_file_name << "\" ---\n"
        << "\n";

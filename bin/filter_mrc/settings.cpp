@@ -109,6 +109,9 @@ Settings::Settings() {
   nonmax_min_radial_separation_ratio = 0.0;
   nonmax_max_volume_overlap_small = 1.0;
   nonmax_max_volume_overlap_large = 1.0;
+  auto_thresh_score = false;
+  training_data_pos_fname = "";
+  training_data_neg_fname = "";
 
   clusters_begin_at_maxima = false;
   watershed_boundary_label = 0.0;
@@ -938,37 +941,44 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-maxima-ratio")
 
 
-    // REMOVE THIS CRUFT:
-    //else if (vArgs[i] == "-score-upper-bound") {
-    //  try {
-    //    if ((i+1 >= vArgs.size()) ||
-    //        (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-    //      throw invalid_argument("");
-    //    score_upper_bound = stof(vArgs[i+1]);
-    //  }
-    //  catch (invalid_argument& exc) {
-    //    throw InputErr("Error: The " + vArgs[i] + 
-    //                   " argument must be followed by a number:\n"
-    //                   "       scores above this (usually negative) number will be ignored\n");
-    //  }
-    //  num_arguments_deleted = 2;
-    //}
-    //
-    //else if (vArgs[i] == "-score-lower-bound") {
-    //  try {
-    //    if ((i+1 >= vArgs.size()) ||
-    //        (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-    //      throw invalid_argument("");
-    //    score_lower_bound = stof(vArgs[i+1]);
-    //  }
-    //  catch (invalid_argument& exc) {
-    //    throw InputErr("Error: The " + vArgs[i] + 
-    //                   " argument must be followed by a number:\n"
-    //                   "       Scores below this number will be ignored.\n");
-    //  }
-    //  num_arguments_deleted = 2;
-    //}
+    else if (vArgs[i] == "-auto-thresh")
+    {
+      auto_thresh_score = true;
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        string list_of_attributes = vArgs[i+1];
+        if (list_of_attributes != "score")
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by \"score\"\n"
+                       "       (In the future, it may be followed by a list of attributes surrounded\n"
+                       "        in quotes.  But currently only the \"score\" attribute is supported.\n"
+                       "        Thresholds for these attributes will be determined automatically.)\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-auto-thresh")
 
+
+    else if (vArgs[i] == "-supervised")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") ||
+            (i+2 >= vArgs.size()) || (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        training_data_pos_fname = stof(vArgs[i+1]);
+        training_data_neg_fname = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by two file names:\n"
+                       "       FILE_POS.txt  FILE_NEG.txt\n"
+                       "       containing positive and negative training data, respectively.\n");
+      }
+      num_arguments_deleted = 3;
+    } //if (vArgs[i] == "-supervised")
 
 
     else if ((vArgs[i] == "-discard-blobs") ||
@@ -989,7 +999,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       filter_type = SPHERE_NONMAX_SUPPRESSION;
       num_arguments_deleted = 3;
-    } // if (vArgs[i] == "-discard-blobs")
+    } //if (vArgs[i] == "-discard-blobs")
 
 
 

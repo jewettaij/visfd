@@ -97,7 +97,7 @@ Note: All of these parameters make reasonable defaults for ribosome detection
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
       *Alternatively,* it can be determined automatically using the
-      ["*-auto-thresh*"](#-auto-thresh-file_accept.txt-file_reject.txt)
+      ["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accept.txt-file_reject.txt)
       argument.
 
 
@@ -949,7 +949,7 @@ score thresholds, so that they keep all of the blobs detected
 (no matter how small or insignificant).
 Then later, they will run **filter_mrc** again using *either* the
 [**-discard-blobs**](#-discard-blobs),
-[**-auto-thresh**](#-auto-thresh-file_accept.txt-file_reject.txt)
+["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accept.txt-file_reject.txt)
 argument,
 *or*
 the 
@@ -1615,7 +1615,7 @@ You must run the program with other arguments telling it
 which blobs you want to discard.
 Typically you would run *filter_mrc* together with the "**-discard-blobs**",
 **-maxima-threshold**, (or **-minima-threshold**, or
-**-auto-thresh**)
+**-auto-thresh score**)
 AND the
 **-radial-separation** (or **-max-volume-overlap**)
 (and possibly the **-mask** arguments)
@@ -1714,7 +1714,7 @@ is less than *ratio_max* times the blob with the highest score,
 
 
 
-### -auto-thresh file_accept.txt file_reject.txt
+### -auto-thresh score -supervised file_accept.txt file_reject.txt
 
 ***(WARNING: This feature does not yet work as of 2019-4-29.)***
 
@@ -1737,8 +1737,9 @@ Choosing blobs which are "edge-cases" is recommended.
 
 
 *(Note: This only makes sense in the context of discarding blobs.
-        The "-auto-thresh" argument will have no effect unless 
-        you are also using the "-discard-blobs" argument.)*
+        The "-auto-thresh score" argument will have no effect unless 
+        you are also using the "-supervised" and the
+        "-discard-blobs" arguments as well.)*
 
 *(Note: You must provide examples of both
         blobs that you want to keep and 

@@ -151,6 +151,32 @@ int main(int argc, char **argv) {
     if (! settings.sphere_decals_shell_thickness_is_ratio)
       settings.sphere_decals_shell_thickness /= voxel_width[0];
 
+    // now use the voxel_width (distance-to-voxel converter)
+    // to read in coordinates from various files:
+    if (settings.training_data_pos_fname != "") {
+      vector<vector<string> > vvWords;  // words on each line
+      vector<vector<float> > vvCoords; // replace each word with a number
+      ReadMulticolumnFile(settings.training_data_pos_fname, vvWords); //read the words
+      ConvertStringsToCoordinates(vvWords, //convert words to numbers
+                                  vvCoords, // store coordinates here
+                                  voxel_width); //convert to units of voxels
+      for (int i = 0; i < vvCoords.size(); i++) {
+        array<float, 3> xyz = {vvCoords[i][0], vvCoords[i][1], vvCoords[i][2]};
+        settings.training_data_pos_crds.push_back(xyz);
+      }
+    }
+    if (settings.training_data_neg_fname != "") {
+      vector<vector<string> > vvWords; // words on each line
+      vector<vector<float> > vvCoords; // replace each word with a number
+      ReadMulticolumnFile(settings.training_data_neg_fname, vvWords); //read the words
+      ConvertStringsToCoordinates(vvWords, //convert words to numbers
+                                  vvCoords, // store coordinates here
+                                  voxel_width); //convert to units of voxels
+      for (int i = 0; i < vvCoords.size(); i++) {
+        array<float, 3> xyz = {vvCoords[i][0], vvCoords[i][1], vvCoords[i][2]};
+        settings.training_data_neg_crds.push_back(xyz);
+      }
+    }
 
 
     // ---- mask ----

@@ -1150,9 +1150,8 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
 
   // _training_set_score[i] = score of the ith training datum
   // (if there is a blob at that location)
-  vector<Scalar> _training_set_scores =
-    vector<bool>(_Np + _Nn,
-                 -std::numeric_limits<Scalar>::infinity()); //<-impossible score
+  vector<Scalar> _training_set_scores(_Np + _Nn,
+                                      -std::numeric_limits<Scalar>::infinity()); //<-impossible score
 
 
   // _training_set_accepted = true or false depending on whether it is 
@@ -1333,7 +1332,7 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
   vector<Scalar> blob_scores_cpy;
 
   for (int i = 0; i < blob_crds.size(); i++) {
-    if ((blob_scores[i] >= threshold_lower_bound)
+    if ((blob_scores[i] >= threshold_lower_bound) &&
         (blob_scores[i] <= threshold_upper_bound))
     {
       blob_crds_cpy.push_back(blob_crds[i]);
