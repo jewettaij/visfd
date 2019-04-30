@@ -927,15 +927,15 @@ are needed before you achieve visually pleasing results.
 
 Details are provided below explaining how visualize these blobs
 (using the 
-["**-draw-spheres**"](#-draw-spheres-filename)
+[**-draw-spheres**](#-draw-spheres-filename)
  argument),
 as well as how to discard low-quality and overlapping blobs
 (using the 
-[-discard-blobs](#-discard-blobs),
-[-radial-separation](#Automatic-disposal-of-overlapping-blobs),
-[-max-volume-overlap](#Automatic-disposal-of-overlapping-blobs),
+[**-discard-blobs**](#-discard-blobs),
+[**-radial-separation**](#Automatic-disposal-of-overlapping-blobs),
+[**-max-volume-overlap**](#Automatic-disposal-of-overlapping-blobs),
 and
-[-max-volume-overlap-small](#Automatic-disposal-of-overlapping-blobs)
+[**-max-volume-overlap-small**](#Automatic-disposal-of-overlapping-blobs)
 arguments).
 
 
@@ -948,14 +948,15 @@ Typically, users will perform blob detection with the default (permissive)
 score thresholds, so that they keep all of the blobs detected
 (no matter how small or insignificant).
 Then later, they will run **filter_mrc** again using *either* the
-["*-auto-thresh*"](#-auto-thresh-file_accept.txt-file_reject.txt)
+[**-discard-blobs**](#-discard-blobs),
+[**-auto-thresh**](#-auto-thresh-file_accept.txt-file_reject.txt)
 argument,
 *or*
 the 
-["**-minima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
+[**-minima-threshold**](#Automatic-disposal-of-poor-scoring-blobs)
 (or 
-["**-maxima-threshold**"](#Automatic-disposal-of-poor-scoring-blobs)
-["**-draw-spheres**"](#-draw-spheres-filename)
+[**-maxima-threshold**](#Automatic-disposal-of-poor-scoring-blobs)
+[**-draw-spheres**](#-draw-spheres-filename)
 arguments
 (perhaps several times with different thresholds)
 ...to decide which of these blobs are worth keeping.
@@ -1710,13 +1711,21 @@ is less than *ratio_max* times the blob with the highest score,
         "-discard-blobs" argument.)*
 
 
-#### -auto-thresh file_accept.txt file_reject.txt
+
+
+
+### -auto-thresh file_accept.txt file_reject.txt
 
 ***(WARNING: This feature does not yet work as of 2019-4-29.)***
 
 As an alternative to specifying the threshold(s) manually,
 you can instead examples of blobs that you want to keep,
 and blobs you want to discard.
+The file format for both of these files is described 
+[here.](#-must-link-FILE)
+*(Note: You can obtain the contents of this file 
+  by clicking on objects of interest in IMOD.
+  COMMENT: THIS NEEDS ELABORATION 2019-4-29)*
 Blobs will be discarded if their score does not lie in the range
 of scores similar to the blobs you selected.
 This range is determined automatically.
@@ -1725,6 +1734,7 @@ which minimize the number of incorrectly classified blobs.
 Equal weight is given to false-positives and false-negatives.
 Choosing blobs which are "edge-cases" is recommended.
 (IE. blobs that would difficult to classify or are barely visible.)
+
 
 *(Note: This only makes sense in the context of discarding blobs.
         The "-auto-thresh" argument will have no effect unless 
