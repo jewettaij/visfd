@@ -233,7 +233,8 @@ HandleBlobRadialIntensity(Settings settings,
     }
 
 
-    float stddev_brightness = 0.0;
+    double ave_brightness = 0.0;
+    double stddev_brightness = 0.0;
     {
       int Rsphere = ceil(diameters[i]/2); //radius of the sphere (surrounding the current blob)
       int ixs = sphere_centers_i[0];
@@ -260,7 +261,7 @@ HandleBlobRadialIntensity(Settings settings,
           }
         }
       }
-      double ave = sum / n_vox;
+      ave_brightness = sum / n_vox;
       double sum_sq = 0.0;
       for (int jz = -Rsphere; jz <= Rsphere; jz++) {
         int izs_jz = izs + jz;
@@ -276,7 +277,7 @@ HandleBlobRadialIntensity(Settings settings,
               continue;
             if (mask.aaafI && (mask.aaafI[izs_jz][iys_jy][ixs_jx] == 0.0))
               continue;
-            sum_sq += SQR(tomo_in.aaafI[izs_jz][iys_jy][ixs_jx] - ave);
+            sum_sq += SQR(tomo_in.aaafI[izs_jz][iys_jy][ixs_jx]-ave_brightness);
           }
         }
       }
@@ -337,6 +338,7 @@ HandleBlobRadialIntensity(Settings settings,
                                 [ sphere_centers_i[1] ]
                                 [ sphere_centers_i[0] ]
          << " " << intensity_profiles[i][0]
+         << " " << ave_brightness
          << " " << stddev_brightness
          << " " << max_slope
          << " " << contrast_profile_min_max;
