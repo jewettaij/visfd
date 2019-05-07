@@ -297,7 +297,7 @@ argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
 using the
-["**-surface-orientations-file**"](#-surface-orientations-file PLY_FILE)
+["**-surface-orientations-file**"](#-surface-orientations-file-PLY_FILE)
 argument.
 
 
@@ -1720,14 +1720,18 @@ is less than *ratio_max* times the blob with the highest score,
 
 As an alternative to specifying the threshold(s) manually,
 you can instead examples of blobs that you want to keep,
-and blobs you want to discard.
+and blobs you want to discard. 
+*(Note: These arguments must be supplied together as shown.
+ The "score" argument is not a number, but litterally the word "score".
+ Eventually, it will be possible to supply a list of other criteria used
+ for classifying blobs, but as of 2019-5-07, only "score" is available.)*
+Blobs will be discarded if their score does not lie in the range
+of scores similar to the blobs you selected whose locations are listed on
+separate lines in the "file_accept.txt" and "file_reject.txt" arguments.
 The file format for both of these files is described 
 [here.](#-must-link-FILE)
-*(Note: You can obtain the contents of this file 
-  by clicking on objects of interest in IMOD.
-  COMMENT: THIS NEEDS ELABORATION 2019-4-29)*
-Blobs will be discarded if their score does not lie in the range
-of scores similar to the blobs you selected.
+*(Note: As explained in that link, you can obtain the contents of this file 
+        by clicking on objects of interest in IMOD.)*
 This range is determined automatically.
 The (upper-bound and lower-bound) thresholds will be chosen 
 which minimize the number of incorrectly classified blobs.
