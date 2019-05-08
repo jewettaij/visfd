@@ -12,6 +12,7 @@ using namespace std;
 #endif
 
 #include "err.hpp"  // defines InputErr exception class
+#include "file_io.hpp"
 #include "settings.hpp"
 
 
@@ -28,7 +29,7 @@ Settings::Settings() {
   use_mask_select = false;
   mask_out = 0.0;
   use_mask_out = true;
-  mask_rectangle_in_voxels = true;
+  is_mask_rectangle_in_voxels = true;
   mask_rectangle_xmin = 0;
   mask_rectangle_xmax = -1; // xmax < xmin disables the mask rectangle
   mask_rectangle_ymin = 0;
@@ -105,13 +106,15 @@ Settings::Settings() {
   score_bounds_are_ratios = false;
   sphere_diameters_lower_bound = -std::numeric_limits<float>::infinity();
   sphere_diameters_upper_bound = std::numeric_limits<float>::infinity();
+  training_data_pos_crds.clear();
+  training_data_neg_crds.clear();
+  is_training_data_pos_in_voxels = false;
+  is_training_data_neg_in_voxels = false;
   blob_width_multiplier = 1.0;
   nonmax_min_radial_separation_ratio = 0.0;
   nonmax_max_volume_overlap_small = 1.0;
   nonmax_max_volume_overlap_large = 1.0;
   auto_thresh_score = false;
-  training_data_pos_fname = "";
-  training_data_neg_fname = "";
 
   clusters_begin_at_maxima = false;
   watershed_boundary_label = 0.0;
@@ -134,8 +137,8 @@ Settings::Settings() {
   connect_threshold_vector_neighbor = M_SQRT1_2; //45 degree change maximum
   connect_threshold_tensor_saliency = M_SQRT1_2;
   connect_threshold_tensor_neighbor = M_SQRT1_2;
-  must_link_filename = "";
   must_link_constraints.clear();
+  is_must_link_constraints_in_voxels = false;
   select_cluster = 0;
 
   use_intensity_map = false;
@@ -213,6 +216,8 @@ Settings::ParseArgs(vector<string>& vArgs)
   bool exponents_set_by_user = false;
   bool delta_set_by_user = false;
   bool watershed_threshold_set_by_user = false;
+  string training_data_pos_fname = "";
+  string training_data_neg_fname = "";
   for (int i=1; i < vArgs.size(); ++i)
   {
 
@@ -279,7 +284,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+5] == "") || (vArgs[i+5][0] == '-') ||
             (vArgs[i+6] == "") || (vArgs[i+6][0] == '-'))
           throw invalid_argument("");
-        mask_rectangle_in_voxels = true;
+        is_mask_rectangle_in_voxels = true;
         mask_rectangle_xmin = stoi(vArgs[i+1]);
         mask_rectangle_xmax = stoi(vArgs[i+2]);
         mask_rectangle_ymin = stoi(vArgs[i+3]);
@@ -307,7 +312,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+5] == "") || (vArgs[i+5][0] == '-') ||
             (vArgs[i+6] == "") || (vArgs[i+6][0] == '-'))
           throw invalid_argument("");
-        mask_rectangle_in_voxels = false;
+        is_mask_rectangle_in_voxels = false;
         mask_rectangle_xmin = stof(vArgs[i+1]);
         mask_rectangle_xmax = stof(vArgs[i+2]);
         mask_rectangle_ymin = stof(vArgs[i+3]);
@@ -868,6 +873,71 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-blob")
 
 
+
+
+    else if ((vArgs[i] == "-discard-blobs") ||
+	     (vArgs[i] == "-blob-nonmax") ||
+             (vArgs[i] == "-blobs-nonmax")) {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+1] == vArgs[i+2]))
+          throw invalid_argument("");
+        in_coords_file_name = vArgs[i+1];
+        out_coords_file_name = vArgs[i+2];
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by two different file names\n");
+      }
+      filter_type = SPHERE_NONMAX_SUPPRESSION;
+      num_arguments_deleted = 3;
+    } //if (vArgs[i] == "-discard-blobs")
+
+
+
+    else if (vArgs[i] == "-auto-thresh")
+    {
+      auto_thresh_score = true;
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        string list_of_attributes = vArgs[i+1];
+        if (list_of_attributes != "score")
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by \"score\"\n"
+                       "       (In the future, it may be followed by a list of attributes surrounded\n"
+                       "        in quotes.  But currently only the \"score\" attribute is supported.\n"
+                       "        Thresholds for these attributes will be determined automatically.)\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-auto-thresh")
+
+
+    else if (vArgs[i] == "-supervised")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") ||
+            (i+2 >= vArgs.size()) || (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        training_data_pos_fname = vArgs[i+1];
+        training_data_neg_fname = vArgs[i+2];
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by two file names:\n"
+                       "       FILE_POS.txt  FILE_NEG.txt\n"
+                       "       containing positive and negative training data, respectively.\n");
+      }
+      num_arguments_deleted = 3;
+    } //if (vArgs[i] == "-supervised")
+
+
+
     else if ((vArgs[i] == "-minima-threshold") ||
              (vArgs[i] == "-score-upper-bound"))
     {
@@ -939,67 +1009,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-maxima-ratio")
-
-
-    else if (vArgs[i] == "-auto-thresh")
-    {
-      auto_thresh_score = true;
-      try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
-          throw invalid_argument("");
-        string list_of_attributes = vArgs[i+1];
-        if (list_of_attributes != "score")
-          throw invalid_argument("");
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by \"score\"\n"
-                       "       (In the future, it may be followed by a list of attributes surrounded\n"
-                       "        in quotes.  But currently only the \"score\" attribute is supported.\n"
-                       "        Thresholds for these attributes will be determined automatically.)\n");
-      }
-      num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-auto-thresh")
-
-
-    else if (vArgs[i] == "-supervised")
-    {
-      try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") ||
-            (i+2 >= vArgs.size()) || (vArgs[i+2] == ""))
-          throw invalid_argument("");
-        training_data_pos_fname = stof(vArgs[i+1]);
-        training_data_neg_fname = stof(vArgs[i+2]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by two file names:\n"
-                       "       FILE_POS.txt  FILE_NEG.txt\n"
-                       "       containing positive and negative training data, respectively.\n");
-      }
-      num_arguments_deleted = 3;
-    } //if (vArgs[i] == "-supervised")
-
-
-    else if ((vArgs[i] == "-discard-blobs") ||
-	     (vArgs[i] == "-blob-nonmax") ||
-             (vArgs[i] == "-blobs-nonmax")) {
-      try {
-        if ((i+2 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
-            (vArgs[i+1] == vArgs[i+2]))
-          throw invalid_argument("");
-        in_coords_file_name = vArgs[i+1];
-        out_coords_file_name = vArgs[i+2];
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by two different file names\n");
-      }
-      filter_type = SPHERE_NONMAX_SUPPRESSION;
-      num_arguments_deleted = 3;
-    } //if (vArgs[i] == "-discard-blobs")
 
 
 
@@ -2591,6 +2600,31 @@ Settings::ParseArgs(vector<string>& vArgs)
     //               "           (This may change in the future.  -andrew 2019-3-04)\n"
     //               "       You can use the \"-watershed\" argument instead.  (See documentation.)\n");
   }
+
+  // Now read various files which the user asked us to read
+  // and save the resulting information somewhere.
+
+  if (training_data_pos_fname != "")
+    // read a list of locations in the image from a file
+    // (positive training data for supervised learning)
+    is_training_data_pos_in_voxels =
+      ReadCoordinates(training_data_pos_fname,
+                      training_data_pos_crds,
+                      '#');
+  if (training_data_neg_fname != "")
+    // read a list of locations in the image from a file
+    // (negative training data for supervised learning)
+    is_training_data_neg_in_voxels =
+      ReadCoordinates(training_data_neg_fname,
+                      training_data_neg_crds,
+                      '#');
+
+  if (must_link_filename != "")
+    // read a list of locations that the user thinks should
+    // belong to the same cluster. (useful for clustering)
+    is_must_link_constraints_in_voxels =
+      ProcessLinkConstraints(must_link_filename,
+                             must_link_constraints);
 
 } // Settings::ParseArgs()
 

@@ -1719,31 +1719,32 @@ is less than *ratio_max* times the blob with the highest score,
 ***(WARNING: This feature does not yet work as of 2019-4-29.)***
 
 As an alternative to specifying the threshold(s) manually,
-you can instead examples of blobs that you want to keep,
+you can instead supply examples of blobs that you want to keep,
 and blobs you want to discard. 
-*(Note: These arguments must be supplied together as shown.
- The "score" argument is not a number, but litterally the word "score".
- Eventually, it will be possible to supply a list of other criteria used
- for classifying blobs, but as of 2019-5-07, only "score" is available.)*
-Blobs will be discarded if their score does not lie in the range
-of scores similar to the blobs you selected whose locations are listed on
-separate lines in the "file_accept.txt" and "file_reject.txt" arguments.
+Blobs will be discarded if their score does not lie in the range of
+scores similar to the blobs you selected.
+These blob locations are listed
+on separate lines in the "file_accept.txt" and "file_reject.txt" arguments.
 The file format for both of these files is described 
 [here.](#-must-link-FILE)
 *(Note: As explained in that link, you can obtain the contents of this file 
         by clicking on objects of interest in IMOD.)*
-This range is determined automatically.
+This range of allowed scores is determined automatically from these examples.
 The (upper-bound and lower-bound) thresholds will be chosen 
-which minimize the number of incorrectly classified blobs.
-Equal weight is given to false-positives and false-negatives.
+which minimize the number of incorrectly classified blobs. 
+Equal weight is given to false-positives and false-negatives,
+(so choose your examples accordingly).
 Choosing blobs which are "edge-cases" is recommended.
 (IE. blobs that would difficult to classify or are barely visible.)
 
 
-*(Note: This only makes sense in the context of discarding blobs.
-        The "-auto-thresh score" argument will have no effect unless 
+*(Note: These arguments must be supplied together as shown.
+        The "-auto-thresh" argument will have no effect unless 
         you are also using the "-supervised" and the
-        "-discard-blobs" arguments as well.)*
+        "-discard-blobs" arguments as well.
+        The "score" argument is not a number, but litterally the word "score".
+        Eventually, it will be possible to supply a list of other criteria used
+        for classifying blobs, but as of 2019-5-07, only "score" is available.)*
 
 *(Note: You must provide examples of both
         blobs that you want to keep and 

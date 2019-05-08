@@ -9,6 +9,7 @@
 using namespace std;
 #include <err_visfd.hpp>
 #include <mrc_simple.hpp>
+#include "err.hpp"
 #include "settings.hpp"
 
 
@@ -37,7 +38,8 @@ template<typename Entry>
 
 static void
 ReadMulticolumnFile(istream &f,  //!< the file to be read
-                    vector<vector<Entry> > &vvDest //!< store the results here
+                    vector<vector<Entry> > &vvDest, //!< store the results here
+                    char comment_char='#' //!<ignore text following this character ('\0' disables)
                     )
 {
   vvDest.clear();
@@ -45,6 +47,10 @@ ReadMulticolumnFile(istream &f,  //!< the file to be read
   size_t i_line = 1;
   while (getline(f, strLine))
   {
+    // ignore text after comments
+    size_t ic = strLine.find(comment_char);
+    if (ic != string::npos)
+      strLine = strLine.substr(0, ic);
     stringstream ssLine(strLine);
     vector<Entry> row;
     Entry x;
@@ -73,8 +79,9 @@ ReadMulticolumnFile(istream &f,  //!< the file to be read
 template<typename Entry>
 
 static void
-ReadMulticolumnFile(string file_name,  //!< the file to be read
-                    vector<vector<Entry> > &vvDest //!< store the results here
+ReadMulticolumnFile(string file_name,  //!< the name of the file to be read
+                    vector<vector<Entry> > &vvDest, //!< store the results here
+                    char comment_char='#' //!<ignore text following this character ('\0' disables)
                     )
 {
   fstream f;
@@ -82,7 +89,7 @@ ReadMulticolumnFile(string file_name,  //!< the file to be read
   if (! f)
     throw VisfdErr("Error: unable to open \""+
                     file_name +"\" for reading.\n");
-  ReadMulticolumnFile(f, vvDest);
+  ReadMulticolumnFile(f, vvDest, comment_char);
   f.close();
 }
 
@@ -91,42 +98,38 @@ ReadMulticolumnFile(string file_name,  //!< the file to be read
 /// @brief  Convert a vector-of-vectors of strings
 ///         (which typically represent the words on each line of a file)
 ///         with a vector-of-vectors of numbers.
-///         The texton each line might be expressed using using IMOD notation:
+///         The text on each line might be expressed using using IMOD notation:
 ///         "Pixel [91.3, 118.7, 231] = 134"
 ///         or using ordinary whitespace-delimited notation:
 ///         90.3 117.7 230.
-///         If it is expressed in IMOD notation, subtract 1, 
-///         but do not divide by the voxel_width.  (IMOD coordinates are in
-///         units of voxels, not physical distance, however indices start at 1).
-///         Otherwise, simply divide the numbers by the voxel width.
+///         If it is expressed in IMOD notation, subtract 1
+///         and return true (informing the caller we don't need to divide
+///         the coordinates later by the voxel_width).  Otherwise return false.
 
-template<typename Scalar, typename Coordinate>
+template<typename Coordinate>
 
-static void
+static bool
 ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< words on each line of a file
-                            vector<vector<Scalar> > &vvCoords, //!< convert these words to a matrix of numbers
-                            Coordinate *voxel_width, //!< scale factors.  Divide coordinates by these numbers
+                            vector<vector<Coordinate> > &vvCoords, //!< convert these words to a matrix of numbers
                             int num_columns = 3 //!< number of columns in the matrix (same for each row)
                             )
 {
-  assert(voxel_width);
-
   vvCoords.clear();
 
   bool is_output_from_imod = false;
   vector<vector<string> > vvWords = vvWords_orig;
-  vector<Scalar> linked_set;
+  vector<Coordinate> linked_set;
 
   for (size_t i = 0; i < vvWords.size(); i++)
   {
     if ((vvWords[i].size() > 0) && (vvWords[i][0] == "Pixel")) {
-      vvWords[i].erase(vvWords[i].begin());
+      vvWords[i].erase(vvWords[i].begin(), vvWords[i].begin() + 1);
       is_output_from_imod = true;
     }
-    vector<Scalar> coords_xyz;
+    vector<Coordinate> xyz;
 
     if (vvWords[i].size() == 0) {
-      vvCoords.push_back(vector<Scalar>(0));
+      vvCoords.push_back(vector<Coordinate>(0));
       continue;
     }
 
@@ -165,23 +168,72 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
       // The way we interpret the number depends on whether or not
       // we suspect the number was printed by IMOD, which uses
       // a somewhat unconventional coordinate system
-      Scalar x = stod(vvWords[i][d]);
+      Coordinate x = stod(vvWords[i][d]);
       if (is_output_from_imod)
         x = floor(x) - 1.0;
-      else
-        x = floor((x / voxel_width[d]) + 0.5);
-      // Finally, store the coordinate in "coords_xyz"
-      coords_xyz.push_back(x);
+
+      // Finally, store the coordinate in "xyz"
+      xyz.push_back(x);
 
     } //for (int d=0; d < vvWords[i].size(); d++)
 
-    vvCoords.push_back(coords_xyz);
+    vvCoords.push_back(xyz);
 
   } //for (size_t i = 0; i < vvWords.size(); i++)
 
   assert(vvCoords.size() == vvWords.size());
 
+
+  return is_output_from_imod;
+
 } // ConvertStringsToCoordinates()
+
+
+
+/// @brief  Read a file containing a list of coordinates.
+///         The text on each line might be expressed using using IMOD notation:
+///         "Pixel [91.3, 118.7, 231] = 134"
+///         or using ordinary whitespace-delimited notation:
+///         90.3 117.7 230.
+///         If it is expressed in IMOD notation, subtract 1, 
+///         but do not divide by the voxel_width.  (IMOD coordinates are in
+///         units of voxels, not physical distance, however indices start at 1).
+///         Otherwise, simply divide the numbers by the voxel width.
+
+template<typename Coordinate>
+bool
+ReadCoordinates(string filename,  //!< the name of the file to be read
+                vector<array<Coordinate, 3>> &vaCoords, //!< store the coordinates here
+                char comment_char='#' //!<ignore text following this character ('\0' disables)
+                )
+{
+  vector<vector<string> > vvWords;  // words on each line
+  vector<vector<Coordinate> > vvCoords; // replace each word with a number
+
+  ReadMulticolumnFile(filename, vvWords, comment_char);
+
+  for (size_t i = 0; i < vvWords.size(); i++) {
+    if (vvWords.size() == 0)
+      vvWords.erase(vvWords.begin()+i, vvWords.begin()+i+1);
+    else if (vvWords.size() < 3) {
+      stringstream err_msg;
+      err_msg << "Format error near line "<<i+1<<" of file \""+
+                     filename+"\"\n";
+      throw InputErr(err_msg.str());
+    }
+  }
+
+  bool is_in_voxels =
+    ConvertStringsToCoordinates(vvWords,   //convert words to numbers
+                                vvCoords); // store coordinates here
+
+  vaCoords.resize(vvCoords.size());
+  for (size_t i = 0; i < vvCoords.size(); i++) {
+    array<float, 3> xyz = {vvCoords[i][0], vvCoords[i][1], vvCoords[i][2]};
+    vaCoords[i] = xyz;
+  }
+  return is_in_voxels;
+} //ReadCoordinates()
 
 
 
@@ -455,21 +507,20 @@ WriteOrientedPointCloud(string pointcloud_file_name,
 /// @brief   Parse the list of voxel coordinates provided 
 ///          by the user to use in "link" constraints.
 
-template<typename Scalar, typename Coordinate>
-
-static void
+template<typename Coordinate>
+static bool
 ProcessLinkConstraints(string must_link_filename,
-                       vector<vector<array<Coordinate, 3> > > &must_link_constraints,
-                       Scalar voxel_width[3])
+                       vector<vector<array<Coordinate, 3> > > &must_link_constraints)
 {
   vector<vector<string> > vvWords;  // split file into lines and words
-  vector<vector<float> > vvCoords; // replace each word with a number
-  vector<array<int, 3> > linked_group;
+  vector<vector<Coordinate> > vvCoords; // replace each word with a number
+  vector<array<Coordinate, 3> > linked_group;
 
   ReadMulticolumnFile(must_link_filename, vvWords); //read the words
-  ConvertStringsToCoordinates(vvWords, //convert words to numbers
-                              vvCoords,
-                              voxel_width);
+
+  bool is_in_voxels = 
+    ConvertStringsToCoordinates(vvWords, //convert words to numbers
+                                vvCoords);
 
   // Now generate a vector of linked groups
   for (size_t i = 0; i < vvCoords.size(); i++) {
@@ -479,7 +530,7 @@ ProcessLinkConstraints(string must_link_filename,
       linked_group.clear();
     }
     else if (vvCoords[i].size() == 3) {
-      array<int, 3> voxel_location;
+      array<Coordinate, 3> voxel_location;
       for (int d = 0; d < 3; d++)
         voxel_location[d] = vvCoords[i][d];
       linked_group.push_back(voxel_location);

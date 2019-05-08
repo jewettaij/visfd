@@ -1180,16 +1180,16 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       ptrdiff_t FIRST_ITER = -1; // an impossible value used below
 
       //r_i_init = coordinates of most recent voxel selected by the user
-      array<Coordinate,3> r_i_init={-1,-1,-1};
+      array<int,3> r_i_init={-1,-1,-1};
       //r_i = coordinates of the voxel in aaaiDest[][][] nearest to r_i_init
-      array<Coordinate,3> r_i;
+      array<int,3> r_i;
       //basin_i = the ID number for the basin to which voxel r_i belongs
       ptrdiff_t basin_i = FIRST_ITER;
 
       //r_j_init, r_j, basin_j correspond to the PREVIOUSLY processed voxel
       ptrdiff_t basin_j = FIRST_ITER;
-      array<Coordinate,3> r_j_init={-1,-1,-1}; //an impossible value
-      array<Coordinate,3> r_j={-1,-1,-1};      //an impossible value
+      array<int,3> r_j_init={-1,-1,-1}; //an impossible value
+      array<int,3> r_j={-1,-1,-1};      //an impossible value
 
 
       // Loop over the voxels in each group 
@@ -1199,7 +1199,9 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
            pLocation != (*pMustLinkConstraints)[i_group].end();
            pLocation++)
       {
-        r_i_init = *pLocation;
+        r_i_init[0] = int(floor((*pLocation)[0]+0.5));
+        r_i_init[1] = int(floor((*pLocation)[1]+0.5));
+        r_i_init[2] = int(floor((*pLocation)[2]+0.5));
         if (*pReportProgress) {
           *pReportProgress << "  finding voxel nearest to (";
           for (int d = 0; d < 3; d++) {

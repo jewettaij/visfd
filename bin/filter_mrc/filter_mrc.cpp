@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
     // calculations considerably, so I just assume cube-shaped voxels:
     //assert((voxel_width[0] == voxel_width[1]) &&
     //       (voxel_width[1] == voxel_width[2]));
-    for (int ir = 0; ir < settings.blob_diameters.size(); ir++)
+    for (size_t ir = 0; ir < settings.blob_diameters.size(); ir++)
       settings.blob_diameters[ir] /= voxel_width[0];
 
     settings.sphere_decals_diameter /= voxel_width[0];
@@ -153,30 +153,21 @@ int main(int argc, char **argv) {
 
     // now use the voxel_width (distance-to-voxel converter)
     // to read in coordinates from various files:
-    if (settings.training_data_pos_fname != "") {
-      vector<vector<string> > vvWords;  // words on each line
-      vector<vector<float> > vvCoords; // replace each word with a number
-      ReadMulticolumnFile(settings.training_data_pos_fname, vvWords); //read the words
-      ConvertStringsToCoordinates(vvWords, //convert words to numbers
-                                  vvCoords, // store coordinates here
-                                  voxel_width); //convert to units of voxels
-      for (int i = 0; i < vvCoords.size(); i++) {
-        array<float, 3> xyz = {vvCoords[i][0], vvCoords[i][1], vvCoords[i][2]};
-        settings.training_data_pos_crds.push_back(xyz);
-      }
-    }
-    if (settings.training_data_neg_fname != "") {
-      vector<vector<string> > vvWords; // words on each line
-      vector<vector<float> > vvCoords; // replace each word with a number
-      ReadMulticolumnFile(settings.training_data_neg_fname, vvWords); //read the words
-      ConvertStringsToCoordinates(vvWords, //convert words to numbers
-                                  vvCoords, // store coordinates here
-                                  voxel_width); //convert to units of voxels
-      for (int i = 0; i < vvCoords.size(); i++) {
-        array<float, 3> xyz = {vvCoords[i][0], vvCoords[i][1], vvCoords[i][2]};
-        settings.training_data_neg_crds.push_back(xyz);
-      }
-    }
+    if (! settings.is_training_data_pos_in_voxels)
+      for (size_t i = 0; i < settings.training_data_pos_crds[i].size(); i++)
+        for (int d = 0; d < 3; d++)
+          settings.training_data_pos_crds[i][d] /= voxel_width[d];
+
+    if (! settings.is_training_data_neg_in_voxels)
+      for (size_t i = 0; i < settings.training_data_neg_crds[i].size(); i++)
+        for (int d = 0; d < 3; d++)
+          settings.training_data_neg_crds[i][d] /= voxel_width[d];
+
+    if (! settings.is_must_link_constraints_in_voxels)
+      for (size_t i = 0; i < settings.must_link_constraints.size(); i++)
+        for (size_t j = 0; j < settings.must_link_constraints[i].size(); j++)
+          for (int d = 0; d < 3; d++)
+            settings.must_link_constraints[i][j][d] /= voxel_width[d];
 
 
     // ---- mask ----
@@ -206,7 +197,7 @@ int main(int argc, char **argv) {
     else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
 
       mask = tomo_in; //allocate an array for an image the same size as tomo_in
-      if (! settings.mask_rectangle_in_voxels) {
+      if (! settings.is_mask_rectangle_in_voxels) {
         settings.mask_rectangle_xmin /= voxel_width[0];
         settings.mask_rectangle_xmax /= voxel_width[0];
         settings.mask_rectangle_ymin /= voxel_width[1];

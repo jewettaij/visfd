@@ -79,7 +79,7 @@ class Settings {
   int mask_select; // select only voxels from the input with this value
   bool use_mask_out; // should we specify the brightness of ignored voxels?
   int mask_out;//what brightness do we set these voxels?(to go in out_file_name)
-  bool mask_rectangle_in_voxels; // Is the mask-region a rectangular box?
+  bool is_mask_rectangle_in_voxels; // Is the mask-region a rectangular box?
   float mask_rectangle_xmin; // if so, what is the shape of that box?
   float mask_rectangle_xmax; // :
   float mask_rectangle_ymin;
@@ -210,7 +210,8 @@ class Settings {
   float connect_threshold_tensor_neighbor;
   size_t select_cluster;
   string must_link_filename;
-  vector<vector<array<int, 3> > > must_link_constraints;
+  vector<vector<array<float, 3> > > must_link_constraints;
+  bool is_must_link_constraints_in_voxels = false;
 
   // ---- parameters used by the ridge detector used for detecting surfaces ----
 
@@ -256,10 +257,10 @@ class Settings {
   float sphere_diameters_upper_bound;
 
   bool auto_thresh_score = false;
-  string training_data_pos_fname;
-  string training_data_neg_fname;
   vector<array<float, 3> > training_data_pos_crds;
   vector<array<float, 3> > training_data_neg_crds;
+  bool is_training_data_pos_in_voxels = false;
+  bool is_training_data_neg_in_voxels = false;
 
   // ---- parameters for detecting local minima and local maxima ----
 

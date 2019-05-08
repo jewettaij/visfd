@@ -20,6 +20,7 @@ using namespace visfd;
 #include <threshold.hpp>
 #include <mrc_simple.hpp>
 #include <random_gen.h>
+#include "err.hpp"
 #include "settings.hpp"
 #include "file_io.hpp"
 #include "filter3d_variants.hpp"
@@ -927,7 +928,7 @@ HandleWatershed(Settings settings,
   for (int d = 0; d < 3; d++)
     image_size[d] = tomo_in.header.nvoxels[d];
 
-  vector<array<int, 3> > extrema_crds;
+  vector<array<float, 3> > extrema_crds;
   vector<float> extrema_scores;
 
   // Create a temporary array to store the basin membership for each voxel.
@@ -988,24 +989,16 @@ HandleClusterConnected(Settings settings,
                        MrcSimple &mask,
                        float voxel_width[3])
 {
-  vector<vector<array<int, 3> > > *pMustLinkConstraints = nullptr;
+  vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
 
-  if (settings.must_link_filename != "") {
-    // Prepare the list of coordinates in the settings.must_link_constraints
-    // array beforehand so that it will be ready by the time we have to
-    // invoke ClusterConnected().
-    ProcessLinkConstraints(settings.must_link_filename,
-                           settings.must_link_constraints,
-                           voxel_width);
-    if (settings.must_link_constraints.size() > 0)
-      pMustLinkConstraints = &settings.must_link_constraints;
-  }
+  if (settings.must_link_constraints.size() > 0)
+    pMustLinkConstraints = &settings.must_link_constraints;
 
   int image_size[3];
   for (int d = 0; d < 3; d++)
     image_size[d] = tomo_in.header.nvoxels[d];
 
-  vector<array<int, 3> > cluster_centers;
+  vector<array<float, 3> > cluster_centers;
   vector<float> cluster_sizes;
   vector<float> cluster_saliencies;
 
@@ -1076,18 +1069,10 @@ HandleRidgeDetector(Settings settings,
 {
   cerr << "filter_type = surface ridge detector\n";
 
-  vector<vector<array<int, 3> > > *pMustLinkConstraints = nullptr;
-
-  if (settings.must_link_filename != "") {
-    // Prepare the list of coordinates in the settings.must_link_constraints
-    // array beforehand so that it will be ready by the time we have to
-    // invoke ClusterConnected().
-    ProcessLinkConstraints(settings.must_link_filename,
-                           settings.must_link_constraints,
-                           voxel_width);
-    if (settings.must_link_constraints.size() > 0)
-      pMustLinkConstraints = &settings.must_link_constraints;
-  }
+  vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
+  
+  if (settings.must_link_constraints.size() > 0)
+    pMustLinkConstraints = &settings.must_link_constraints;
 
   int image_size[3];
   for (int d = 0; d < 3; d++)
@@ -1424,7 +1409,7 @@ HandleRidgeDetector(Settings settings,
       }
     }
 
-    vector<array<int, 3> > cluster_centers;
+    vector<array<float, 3> > cluster_centers;
     vector<float> cluster_sizes;
     vector<float> cluster_saliencies;
 
