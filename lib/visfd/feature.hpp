@@ -1243,9 +1243,9 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
 
   // loop over training data
   for (size_t i=0; i < _Np + _Nn; i++) {
-    int ix = blob_crds[i][0];
-    int iy = blob_crds[i][1];
-    int iz = blob_crds[i][2];
+    int ix = _training_set_crds[i][0];
+    int iy = _training_set_crds[i][1];
+    int iz = _training_set_crds[i][2];
     ptrdiff_t which_blob = aaaiWhichBlob[iz][iy][ix];
     if (which_blob != UNOCCUPIED) {
       _training_set_scores[i] = blob_scores[which_blob];
@@ -1257,8 +1257,7 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
   // the blobs.  Store that data here:
   vector<array<Scalar,3> > training_set_crds;
   vector<bool> training_set_accepted;
-  vector<bool> training_set_scores;
-  vector<bool> training_indices;
+  vector<Scalar> training_set_scores;
 
   size_t Nn = 0;
   size_t Np = 0;
