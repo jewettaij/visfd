@@ -227,10 +227,12 @@ ReadCoordinates(string filename,  //!< the name of the file to be read
     ConvertStringsToCoordinates(vvWords,   //convert words to numbers
                                 vvCoords); // store coordinates here
 
-  vaCoords.resize(vvCoords.size());
+  vaCoords.clear();
   for (size_t i = 0; i < vvCoords.size(); i++) {
-    array<float, 3> xyz = {vvCoords[i][0], vvCoords[i][1], vvCoords[i][2]};
-    vaCoords[i] = xyz;
+    if (vvCoords[i].size() >= 3) {
+      array<float, 3> xyz = {vvCoords[i][0], vvCoords[i][1], vvCoords[i][2]};
+      vaCoords.push_back(xyz);
+    }
   }
   return is_in_voxels;
 } //ReadCoordinates()

@@ -1118,9 +1118,9 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
 template<typename Scalar>
 void
-ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob
-                          const vector<Scalar>& blob_diameters,  //!< diameger of each blob
-                          const vector<Scalar>& blob_scores, //!< priority of each blob
+ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing order)
+                          const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing order)
+                          const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing order)
                           const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
                           const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
                           Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
@@ -1165,23 +1165,91 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
   assert(_training_set_scores.size() == _Np + _Nn);
   assert(_training_set_accepted.size() == _Np + _Nn);
 
-  for (size_t i=0; i < _Np + _Nn; i++) {
-    // Note: There are faster ways to quickly locate nearby blobs, such as
-    //       creating an image (table) where each voxel contains an integer
-    //       indicating(pointing to) the closest blob within some cutoff radius.
-    //       If the current code is too slow, I can implement that optimization.
-    //       But I don't anticipate that users will want to invoke this with
-    //       thousands of training coordinates.
-    for (size_t j=0; j < blob_crds.size(); j++) {
-      Scalar rsq = DistanceSquared3(_training_set_crds[i], blob_crds[j]);
-      if (rsq <= SQR(blob_diameters[j] / 2.0)) {
-        // Since blobs can overlap, it's possible this location has already been
-        // visited by earlier blobs.  If so, pick the one with the higher score.
-        if(_training_set_scores[i] < blob_scores[j]) {
-          _training_set_scores[i] = blob_scores[j];
-          _training_set_blob_nearby[i] = true;
+  // The caller has supplied us with a list of locations within the image
+  // corresponding to where they believe certain blobs are located.
+  // We need to figure out which blobs they are referring to.
+  // One fast way to do that is to create a lookup table (aaaiWhichBlob).
+  // Assign each voxel to the blob that occupies it (if any).
+  // (If multiple overlapping blobs occupy this voxel, 
+  //  then give preference to the blob among them with the highest score.)
+  // Later we will use this lookup table to see which blob 
+  // each one of our training data voxel locations belongs to (if any).
+  if (pReportProgress)
+    *pReportProgress
+      << " -- Attempting to allocate space for one more image.       --\n"
+      << " -- (If this crashes your computer, find a computer with   --\n"
+      << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
+
+  // We did not ask the caller to supply the size of the image from which
+  // these blobs were discovered.  We don't have to know the exact size of
+  // the image, but we do need to create a lookup table large enough to
+  // store the blobs associated with each of the voxel locations in the
+  // training data.  So we use the maximum coordinates in this data as our
+  // "image_size" (ie. our lookup table size).
+  int image_size[3] = {0, 0, 0};
+  for (size_t i = 0; i < _training_set_crds.size(); i++) {
+    int ix = _training_set_crds[i][0];
+    int iy = _training_set_crds[i][1];
+    int iz = _training_set_crds[i][2];
+    for (int d = 0; d < 3; d++)
+      if (image_size[d] <= _training_set_crds[i][d])
+        image_size[d] = _training_set_crds[i][d] + 1;
+  }
+
+  // Now allocate the lookup table
+  ptrdiff_t ***aaaiWhichBlob;
+  ptrdiff_t *afWhichBlob;
+  Alloc3D(image_size,
+          &afWhichBlob,
+          &aaaiWhichBlob);
+  const ptrdiff_t UNOCCUPIED = -1;
+
+  // Initialize the lookup table:
+  for (int iz = 0; iz < image_size[2]; iz++)
+    for (int iy = 0; iy < image_size[1]; iy++)
+      for (int ix = 0; ix < image_size[0]; ix++)
+        aaaiWhichBlob[iz][iy][ix] = UNOCCUPIED;
+
+  // Loop over blobs and fill the lookup table (aaaiWhichBlob)
+  // Note: This only works if the blobs have already been sorted by score.
+  for (size_t i=0; i < blob_crds.size(); i++) {
+    int ix = blob_crds[i][0];
+    int iy = blob_crds[i][1];
+    int iz = blob_crds[i][2];
+    int R = ceil(blob_diameters[i]/2-0.5);
+    if (R < 0) R = 0;
+    int Rsqr = ceil(SQR(blob_diameters[i]/2)-0.5);
+    if (Rsqr < 0) Rsqr = 0;
+    for (int jz = -R; jz <= R; jz++) {
+      for (int jy = -R; jy <= R; jy++) {
+        for (int jx = -R; jx <= R; jx++) {
+          int rsqr = jx*jx + jy*jy + jz*jz;
+          if (rsqr > Rsqr)
+            continue;
+          else if ((ix+jx < 0) ||
+                   (ix+jx >= image_size[0]) ||
+                   (iy+jy < 0) ||
+                   (iy+jy >= image_size[1]) ||
+                   (iz+jz < 0) ||
+                   (iz+jz >= image_size[2]))
+            continue;
+          else
+            aaaiWhichBlob[iz+jz][iy+jy][ix+jx] = i;
         }
       }
+    }
+  } //for (size_t i=0; i < blob_crds.size(); i++)
+
+
+  // loop over training data
+  for (size_t i=0; i < _Np + _Nn; i++) {
+    int ix = blob_crds[i][0];
+    int iy = blob_crds[i][1];
+    int iz = blob_crds[i][2];
+    ptrdiff_t which_blob = aaaiWhichBlob[iz][iy][ix];
+    if (which_blob != UNOCCUPIED) {
+      _training_set_scores[i] = blob_scores[which_blob];
+      _training_set_blob_nearby[i] = true;
     }
   }
 
@@ -1307,16 +1375,26 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
   assert(blob_crds.size() == blob_diameters.size());
   assert(blob_crds.size() == blob_scores.size());
 
+  // Sort the blobs by score in increasing order
+  SortBlobs(blob_crds,
+            blob_diameters, 
+            blob_scores,
+            false,
+            pReportProgress);
+
   Scalar threshold_lower_bound;
   Scalar threshold_upper_bound;
+
+  // Find the range of scores [threshold_lower_bound, threshold_upper_bound]
+  // which minimizes the number of incorrectly classified blobs.
 
   ChooseBlobScoreThresholds(blob_crds,
                             blob_diameters,
                             blob_scores,
                             training_set_pos,
                             training_set_neg,
-                            &threshold_lower_bound,
-                            &threshold_upper_bound,
+                            &threshold_lower_bound, //<-store threshold here
+                            &threshold_upper_bound, //<-store threshold here
                             pReportProgress);
 
   if (pthreshold_lower_bound)
