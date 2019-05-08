@@ -154,12 +154,12 @@ int main(int argc, char **argv) {
     // now use the voxel_width (distance-to-voxel converter)
     // to read in coordinates from various files:
     if (! settings.is_training_data_pos_in_voxels)
-      for (size_t i = 0; i < settings.training_data_pos_crds[i].size(); i++)
+      for (size_t i = 0; i < settings.training_data_pos_crds.size(); i++)
         for (int d = 0; d < 3; d++)
           settings.training_data_pos_crds[i][d] /= voxel_width[d];
 
     if (! settings.is_training_data_neg_in_voxels)
-      for (size_t i = 0; i < settings.training_data_neg_crds[i].size(); i++)
+      for (size_t i = 0; i < settings.training_data_neg_crds.size(); i++)
         for (int d = 0; d < 3; d++)
           settings.training_data_neg_crds[i][d] /= voxel_width[d];
 
