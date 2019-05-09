@@ -253,12 +253,8 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
                    vector<Scalar> *pScores=nullptr, //!< store blob scores here (if !=nullptr)
                    Scalar distance_scale=1.0, //!< divide all distances and coordinates by this value
                    Scalar diameter_override=-1.0, //!< use this diameter (useful if no 4th column is present)
-                   Scalar diameter_factor=1.0, //!< multiply all diameters by this number
-                   Scalar diameter_lower_bound=-std::numeric_limits<float>::infinity(), //!< discard blobs smaller than this
-                   Scalar diameter_upper_bound=std::numeric_limits<float>::infinity(), //!< discard blobs bigger than this
                    Scalar score_default=0.0, //!< default "score" (if no 5th column is present)
-                   Scalar score_lower_bound=-std::numeric_limits<float>::infinity(), //!< discard blobs with scores below this
-                   Scalar score_upper_bound=std::numeric_limits<float>::infinity() //!< discard blobs with scores above this
+                   Scalar diameter_factor=1.0 //!< multiply all diameters in the file by this number
                    )
 {
   fstream coords_file;
@@ -297,13 +293,6 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
       if (ssLine)
         diameter = _diameter;
       custom_diameters = true;
-      if ((! ((diameter_lower_bound <= diameter) &&
-             (diameter <= diameter_upper_bound)))
-          &&
-          (diameter_lower_bound <=
-           diameter_upper_bound))
-        // If the diameter lies outside of the desired range, ignore this blob
-        continue; 
     }
 
     if (diameter < 0) { //If file does not contain a 4th column, or if < 0
@@ -324,11 +313,6 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
         score = _score;
     }
 
-    if (! ((score_lower_bound <= score) &&
-           (score <= score_upper_bound)))
-      // If the score is not sufficiently high (or low), skip this blob
-      continue; 
-
     if (pCrds)
       (*pCrds).push_back(ixiyiz);
     if (pDiameters)
@@ -337,7 +321,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
       (*pScores).push_back(score);
 
   } //while (coords_file) {...
-}
+} //ReadBlobCoordsFile()
 
 
 

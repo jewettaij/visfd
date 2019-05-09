@@ -249,8 +249,8 @@ BlobDog(int const image_size[3], //!< source image size
         //the following optional parameters are usually left with default values
         Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
         Scalar truncate_ratio=2.8,      //!< how many sigma before truncating?
-        Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (0 disables)
-        Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(),    //!< discard blobs with unremarkable scores (0 disables)
+        Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
+        Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(),    //!< discard blobs with unremarkable scores (disabled by default)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
         // optional arguments
         ostream *pReportProgress = nullptr, //!< optional: report progress to the user?

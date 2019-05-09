@@ -281,17 +281,25 @@ HandleBlobsNonmaxSuppression(Settings settings,
                      &scores,
                      voxel_width[0],
                      settings.sphere_decals_diameter,
-                     settings.sphere_decals_scale,
-                     settings.sphere_diameters_lower_bound,
-                     settings.sphere_diameters_upper_bound,
                      settings.sphere_decals_foreground,
-                     settings.score_lower_bound,
-                     settings.score_upper_bound);
+                     settings.sphere_decals_scale);
 
+
+
+  cerr << " --- discarding blobs in file \n"
+       << " \"" << settings.in_coords_file_name << "\" ---\n"
+       << "\n";
+
+
+  // Discard blobs based on score or size?
+
+  // First check whether the user supplied training data to help us choose:
   if (settings.auto_thresh_score &&
       (settings.training_data_pos_crds.size() > 0) &&
       (settings.training_data_neg_crds.size() > 0))
   {
+
+    cerr << "  discarding blobs based on score using training data" << endl;
     DiscardBlobsByScoreSupervised(crds,
                                   diameters,
                                   scores,
@@ -300,11 +308,45 @@ HandleBlobsNonmaxSuppression(Settings settings,
                                   static_cast<float*>(nullptr),
                                   static_cast<float*>(nullptr),
                                   &cerr);
-  }
 
-  cerr << " --- discarding blobs in file \n"
-       << " \"" << settings.in_coords_file_name << "\" ---\n"
-       << "\n";
+  }
+  else {
+
+    if ((settings.score_lower_bound !=
+         -std::numeric_limits<float>::infinity()) &&
+        (settings.score_upper_bound !=
+         std::numeric_limits<float>::infinity()))
+      cerr << "  discarding blobs based on score" << endl;
+    if ((settings.sphere_diameters_lower_bound !=
+         -std::numeric_limits<float>::infinity()) &&
+        (settings.sphere_diameters_upper_bound !=
+         std::numeric_limits<float>::infinity()))
+      cerr << "  discarding blobs based on size (diameter)" << endl;
+
+    // If the user did not supply training data, then perhaps they
+    // supplied minimum and maximum threshold scores and diameters
+    // for each blob.  If so, discard the blobs that lie outside this range.
+    vector<array<float,3> > crds_cpy;
+    vector<float> diameters_cpy;
+    vector<float> scores_cpy;
+    for (int i = 0; i < crds.size(); i++) {
+      if ((scores[i] >= settings.score_lower_bound) &&
+          (scores[i] <= settings.score_upper_bound) &&
+          (diameters[i] >= settings.sphere_diameters_lower_bound) &&
+          (diameters[i] >= settings.sphere_diameters_upper_bound))
+      {
+        crds_cpy.push_back(crds[i]);
+        diameters_cpy.push_back(diameters[i]);
+        scores_cpy.push_back(scores[i]);
+      }  
+    }
+    crds = crds_cpy;
+    diameters = diameters_cpy;
+    scores = scores_cpy;
+
+  } // else clause for "if (settings.auto_thresh_score && ..."
+
+
 
   if ((crds.size() > 0) && (mask.aaafI != nullptr)) {
     cerr << "  discarding blobs outside the mask" << endl;

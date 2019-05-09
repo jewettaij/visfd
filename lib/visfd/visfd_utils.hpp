@@ -207,18 +207,22 @@ FindNearestVoxel(int const image_size[3],             //!< #voxels in xyz
 
 template<typename Scalar>
 Scalar
-ChooseThreshold1D(vector<Scalar>& training_set_scores, //!< a list of scores in sorted order
-                  vector<bool>& training_set_accepted,//!< was this datum accepted or rejected (positive or negative)
+ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scores in sorted order
+                  const vector<bool>& training_set_accepted,//!< was this datum accepted or rejected (positive or negative)
                   bool threshold_is_lower_bound = true //!< should data with scores ABOVE the threshold be accepted? (or BELOW?)
                   )
 {
-  size_t N = training_set_scores.size();
+  ptrdiff_t N = training_set_scores.size();
   assert(N == training_set_accepted.size());
 
-  size_t Nn = 0;
-  size_t Np = 0;
-  for (size_t i = 0; i < N; i++) {
-    if (training_set_accepted[i])
+  // Create a local copy of the arrays that we can modify:
+  vector<Scalar> _training_set_scores = training_set_scores;
+  vector<bool> _training_set_accepted  = training_set_accepted;
+  
+  ptrdiff_t Nn = 0;
+  ptrdiff_t Np = 0;
+  for (ptrdiff_t i = 0; i < N; i++) {
+    if (_training_set_accepted[i])
       Np++;
     else
       Nn++;
@@ -230,9 +234,9 @@ ChooseThreshold1D(vector<Scalar>& training_set_scores, //!< a list of scores in 
     SGN = -1.0;
 
   // sort the training set according to their scores:
-  vector<tuple<Scalar, size_t> > score_index(N);
-  for (size_t i = 0; i < N; i++)
-    score_index[i] = make_tuple(training_set_scores[i], i);
+  vector<tuple<Scalar, ptrdiff_t> > score_index(N);
+  for (ptrdiff_t i = 0; i < N; i++)
+    score_index[i] = make_tuple(_training_set_scores[i], i);
   if (N > 0) {
     if (threshold_is_lower_bound)
       // then sort the list (of data according to scores) in increasing order
@@ -242,12 +246,12 @@ ChooseThreshold1D(vector<Scalar>& training_set_scores, //!< a list of scores in 
       // then sort the list (of data according to scores) in decreasing order
       sort(score_index.rbegin(),
            score_index.rend());
-    vector<size_t> permutation(N);
-    for (size_t i = 0; i < score_index.size(); i++)
+    vector<ptrdiff_t> permutation(N);
+    for (ptrdiff_t i = 0; i < score_index.size(); i++)
       permutation[i] = get<1>(score_index[i]);
     score_index.clear();
-    apply_permutation(permutation, training_set_scores);
-    apply_permutation(permutation, training_set_accepted);
+    apply_permutation(permutation, _training_set_scores);
+    apply_permutation(permutation, _training_set_accepted);
   }
 
   // The negative training data are assumed to have lower scores
@@ -265,32 +269,50 @@ ChooseThreshold1D(vector<Scalar>& training_set_scores, //!< a list of scores in 
   // We keep track of which thresholds corresponded to the mininum number of
   // mistakes.
 
-  size_t num_mistakes = Nn; // (see comment above)
-  size_t min_num_mistakes = Nn;
-  Scalar threshold;
-  for (int i = 0; i < N; i++) {
-    threshold = training_set_scores[i];
-    if (training_set_accepted[i] == false)
-      num_mistakes--;
-    else
-      num_mistakes++;
-    if (num_mistakes < min_num_mistakes)
-      min_num_mistakes = num_mistakes;
-    assert(num_mistakes <= std::max(Nn, Np));
-    i++;
-  }
+  ptrdiff_t min_num_mistakes;
+  if (threshold_is_lower_bound)
+    min_num_mistakes = Nn;  // (see comment above)
+  else
+    min_num_mistakes = Np;  // (see comment above)
 
-  // at what threshold value(s) was that same number of mistakes made?
-  vector<size_t> indices_min_mistakes;
   {
-    num_mistakes = Nn;
+    ptrdiff_t num_mistakes;
+    if (threshold_is_lower_bound)
+      num_mistakes = Nn;  // (see comment above)
+    else
+      num_mistakes = Np;  // (see comment above)
     int i = -1;
     while (i < N) {
       if (i >= 0) {
-        if (training_set_accepted[i] == false)
-          num_mistakes--;
-        else
+        if (_training_set_accepted[i])
           num_mistakes++;
+        else
+          num_mistakes--;
+      }
+      if (num_mistakes < min_num_mistakes)
+        min_num_mistakes = num_mistakes;
+      i++;
+    }
+  }
+
+  assert(min_num_mistakes <= std::max(Nn, Np));
+
+  // at what threshold value(s) was that same number of mistakes made?
+  vector<ptrdiff_t> indices_min_mistakes;
+
+  {
+    ptrdiff_t num_mistakes;
+    if (threshold_is_lower_bound)
+      num_mistakes = Nn;  // (see comment above)
+    else
+      num_mistakes = Np;  // (see comment above)
+    int i = -1;
+    while (i < N) {
+      if (i >= 0) {
+        if (_training_set_accepted[i])
+          num_mistakes++;
+        else
+          num_mistakes--;
       }
       if (num_mistakes == min_num_mistakes)
         indices_min_mistakes.push_back(i);
@@ -299,13 +321,14 @@ ChooseThreshold1D(vector<Scalar>& training_set_scores, //!< a list of scores in 
   }
   assert(indices_min_mistakes.size() > 0);
 
-  //choose the median index into this array of threshold values
-  size_t i_threshold = indices_min_mistakes[indices_min_mistakes.size() / 2];
+  Scalar threshold; // the threshold returned to the caller
 
   //then pick the corresponding nearby score 
-  threshold = training_set_scores[i_threshold];
+
+  //choose the median index into this array of threshold values
+  ptrdiff_t i_threshold = indices_min_mistakes[indices_min_mistakes.size()/2];
+
   if (i_threshold == -1) {
-    assert(num_mistakes == Nn);
     // ...then you get the minimum number of mistakes
     // if you set the threshold so that all of the training data is accepted.
     // This means the caller only provided examples of "positive" training data
@@ -314,22 +337,21 @@ ChooseThreshold1D(vector<Scalar>& training_set_scores, //!< a list of scores in 
     threshold = -SGN * std::numeric_limits<Scalar>::infinity();
   }
   else if (i_threshold == N-1) {
-    assert(min_num_mistakes == Np);
     // ...then you get the minimum number of mistakes
     // if you set the threshold so that all of the training data is rejected.
-    // This means the caller only provided examples of "negative" training data
-    // (ie. blobs which were rejected.)
+    // This means the caller only provided examples of "negative" training 
+    // data (ie. blobs which were rejected.)
     // Setting the threshold to infinity will reproduce this result.
     threshold = SGN * std::numeric_limits<Scalar>::infinity();
   }
   else {
     // Otherwise choose the threshold which minimizes the number of mistakes:
-    threshold = training_set_scores[i_threshold];
+    threshold = _training_set_scores[i_threshold];
     if (i_threshold < N-1) {
       // for a more robust estimate, 
       // choose the average of this score and the one above it
-      threshold = 0.5 * (training_set_scores[i_threshold] +
-                         training_set_scores[i_threshold+1]);
+      threshold = 0.5 * (_training_set_scores[i_threshold] +
+                         _training_set_scores[i_threshold+1]);
     }
   }
 
