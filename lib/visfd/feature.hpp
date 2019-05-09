@@ -1051,8 +1051,8 @@ template<typename Scalar>
 void
 DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                    // optional arguments:
-                   vector<Scalar> *pv_blob_diameters=nullptr,  //!< diameger of each blob
-                   vector<Scalar> *pv_blob_scores=nullptr, //!< priority of each blob
+                   vector<Scalar> &blob_diameters=nullptr,  //!< diameger of each blob
+                   vector<Scalar> &blob_scores=nullptr, //!< priority of each blob
                    Scalar const *const *const *aaafMask = nullptr, //!< if not nullptr then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
                    ostream *pReportProgress=nullptr)  //!< print progress to the user?
 
@@ -1081,10 +1081,8 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
     }
     else {
       blob_crds_cpy.push_back(blob_crds[i]);
-      if (pv_blob_diameters && (pv_blob_diameters->size() > 0))
-        blob_diameters_cpy.push_back((*pv_blob_diameters)[i]);
-      if (pv_blob_scores && (pv_blob_scores->size() > 0))
-        blob_scores_cpy.push_back((*pv_blob_scores)[i]);
+      blob_diameters_cpy.push_back(blob_diameters[i]);
+      blob_scores_cpy.push_back(blob_scores[i]);
     } 
   } //for (size_t i = 0; i < blob_crds.size(); i++)
 
@@ -1094,10 +1092,8 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
       << "  blobs lying outside the mask." << endl;
 
   blob_crds = blob_crds_cpy;
-  if (pv_blob_diameters)
-    *pv_blob_diameters = blob_diameters_cpy;
-  if (pv_blob_scores)
-    *pv_blob_scores = blob_scores_cpy;
+  blob_diameters = blob_diameters_cpy;
+  blob_scores = blob_scores_cpy;
 } // DiscardMaskedBlobs()
 
 

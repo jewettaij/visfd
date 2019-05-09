@@ -287,7 +287,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
   cerr << " --- discarding blobs in file \n"
-       << " \"" << settings.in_coords_file_name << "\" ---\n"
+       << "     \"" << settings.in_coords_file_name << "\" ---\n"
        << "\n";
 
 
@@ -351,8 +351,8 @@ HandleBlobsNonmaxSuppression(Settings settings,
   if ((crds.size() > 0) && (mask.aaafI != nullptr)) {
     cerr << "  discarding blobs outside the mask" << endl;
     DiscardMaskedBlobs(crds,
-                       &diameters,
-                       &scores,
+                       diameters,
+                       scores,
                        mask.aaafI);
   }
 
@@ -360,9 +360,8 @@ HandleBlobsNonmaxSuppression(Settings settings,
   DiscardOverlappingBlobs(crds,
                           diameters, 
                           scores,
-                          DO_NOT_SORT,
-                          //REMOVE THIS CRUFT
-                          //settings.find_extrema_occlusion_ratio,
+                          //DO_NOT_SORT,
+                          PRIORITIZE_HIGH_SCORES,
                           settings.nonmax_min_radial_separation_ratio,
                           settings.nonmax_max_volume_overlap_large,
                           settings.nonmax_max_volume_overlap_small,
@@ -847,14 +846,14 @@ HandleExtrema(Settings settings,
 
   if ((minima_crds_voxels.size() > 0) && (mask.aaafI != nullptr))
     DiscardMaskedBlobs(minima_crds_voxels,
-                       &minima_diameters,
-                       &minima_scores,
+                       minima_diameters,
+                       minima_scores,
                        mask.aaafI);
 
   if ((maxima_crds_voxels.size() > 0) && (mask.aaafI != nullptr))
     DiscardMaskedBlobs(maxima_crds_voxels,
-                       &maxima_diameters,
-                       &maxima_scores,
+                       maxima_diameters,
+                       maxima_scores,
                        mask.aaafI);
 
   if ((settings.nonmax_min_radial_separation_ratio > 0.0) ||
