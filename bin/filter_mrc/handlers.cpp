@@ -333,7 +333,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
       if ((scores[i] >= settings.score_lower_bound) &&
           (scores[i] <= settings.score_upper_bound) &&
           (diameters[i] >= settings.sphere_diameters_lower_bound) &&
-          (diameters[i] >= settings.sphere_diameters_upper_bound))
+          (diameters[i] <= settings.sphere_diameters_upper_bound))
       {
         crds_cpy.push_back(crds[i]);
         diameters_cpy.push_back(diameters[i]);
