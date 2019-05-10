@@ -28,7 +28,7 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.18.0");
+string g_version_string("0.18.1");
 string g_date_string("2018-5-10");
 
 
@@ -180,8 +180,16 @@ int main(int argc, char **argv) {
       WarnMRCSignedBytes(mask, settings.mask_file_name, cerr);
       if ((mask.header.nvoxels[0] != image_size[0]) ||
           (mask.header.nvoxels[1] != image_size[1]) ||
-          (mask.header.nvoxels[2] != image_size[2]))
-        throw VisfdErr("Error: The size of the mask image does not match the size of the input image.\n");
+          (mask.header.nvoxels[2] != image_size[2])) {
+        if ((image_size[0]!=0) && (image_size[1]!=0) && (image_size[2]!=0)) {
+          image_size[0] = mask.header.nvoxels[0];
+          image_size[1] = mask.header.nvoxels[1];
+          image_size[2] = mask.header.nvoxels[2];
+          tomo_in.Resize(image_size);
+        }
+        else
+          throw VisfdErr("Error: The size of the mask image does not match the size of the input image.\n");
+      }
       // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
       if (settings.use_mask_select) {
         for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
