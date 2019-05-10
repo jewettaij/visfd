@@ -361,7 +361,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
                           diameters, 
                           scores,
                           //DO_NOT_SORT,
-                          PRIORITIZE_HIGH_SCORES,
+                          PRIORITIZE_HIGH_MAGNITUDE_SCORES,
                           settings.nonmax_min_radial_separation_ratio,
                           settings.nonmax_max_volume_overlap_large,
                           settings.nonmax_max_volume_overlap_small,
@@ -562,7 +562,8 @@ HandleBlobDetector(Settings settings,
     SortBlobs(minima_crds,
               minima_diameters,
               minima_scores,
-              false);
+              false,
+              nullptr);
 
     fstream minima_file;
     minima_file.open(settings.blob_minima_file_name.c_str(), ios::out);
@@ -588,7 +589,8 @@ HandleBlobDetector(Settings settings,
     SortBlobs(maxima_crds,
               maxima_diameters,
               maxima_scores,
-              true);
+              true,
+              nullptr);
 
     fstream maxima_file;
     maxima_file.open(settings.blob_maxima_file_name.c_str(), ios::out);

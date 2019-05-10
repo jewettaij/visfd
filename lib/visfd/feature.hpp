@@ -713,6 +713,18 @@ BlobDogD(int const image_size[3], //!<source image size
 
 
 
+/// @brief these options tell "DiscardOverlappingBlobs" how to give
+/// priority to different blobs based on their score (ie, minima or maxima?)
+typedef enum eSortBlobCriteria {
+  DO_NOT_SORT,
+  PRIORITIZE_HIGH_SCORES,
+  PRIORITIZE_LOW_SCORES,
+  PRIORITIZE_HIGH_MAGNITUDE_SCORES,
+  PRIORITIZE_LOW_MAGNITUDE_SCORES
+} SortBlobCriteria;
+
+
+
 /// @brief sort blobs by their scores
 
 template<typename Scalar1, typename Scalar2, typename Scalar3>
@@ -721,7 +733,9 @@ void
 SortBlobs(vector<array<Scalar1,3> >& blob_crds, //!< x,y,z of each blob's center
           vector<Scalar2>& blob_diameters,  //!< the width of each blob
           vector<Scalar3>& blob_scores,  //!< the score for each blob
-          bool descending_order = true, //!<sort scores in ascending or descending order?
+          bool descending_order = true,
+          bool ignore_score_sign = true,
+          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
           ostream *pReportProgress = nullptr //!< optional: report progress to the user?
           )
 { 
@@ -729,28 +743,39 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds, //!< x,y,z of each blob's center
   assert(n_blobs == blob_diameters.size());
   assert(n_blobs == blob_scores.size());
   vector<tuple<Scalar3, size_t> > score_index(n_blobs);
-  for (size_t i = 0; i < n_blobs; i++)
-    score_index[i] = make_tuple(blob_scores[i], i);
-
-  if (n_blobs > 0) {
-    if (pReportProgress)
-      *pReportProgress << "-- Sorting blobs according to their scores... ";
-    if (descending_order)
-      sort(score_index.rbegin(),
-           score_index.rend());
-    else
-      sort(score_index.begin(),
-           score_index.end());
-    vector<size_t> permutation(n_blobs);
-    for (size_t i = 0; i < score_index.size(); i++)
-      permutation[i] = get<1>(score_index[i]);
-    score_index.clear();
-    apply_permutation(permutation, blob_crds);
-    apply_permutation(permutation, blob_diameters);
-    apply_permutation(permutation, blob_scores);
-    if (pReportProgress)
-      *pReportProgress << "done --" << endl;
+  for (size_t i = 0; i < n_blobs; i++) {
+    if (ignore_score_sign)
+      score_index[i] = make_tuple(std::fabs(blob_scores[i]), i);
+    else:
+      score_index[i] = make_tuple(blob_scores[i], i);
   }
+
+  if (n_blobs == 0)
+    return;
+
+  if (pReportProgress)
+    *pReportProgress << "-- Sorting blobs according to their scores... ";
+  if (descending_order)
+    sort(score_index.rbegin(),
+         score_index.rend());
+  else
+    sort(score_index.begin(),
+         score_index.end());
+
+  vector<size_t> permutation(n_blobs);
+  for (size_t i = 0; i < score_index.size(); i++)
+    permutation[i] = get<1>(score_index[i]);
+
+  if (pPermutation != nullptr)
+    *pPermutation = permutation;
+
+  score_index.clear();
+  apply_permutation(permutation, blob_crds);
+  apply_permutation(permutation, blob_diameters);
+  apply_permutation(permutation, blob_scores);
+  if (pReportProgress)
+    *pReportProgress << "done --" << endl;
+
 } //SortBlobs()
 
 
@@ -788,15 +813,6 @@ Scalar CalcSphereVolOverlap(Scalar rij,//!<the distance between the spheres' cen
 }
 
 
-
-
-/// @brief these options tell "DiscardOverlappingBlobs" how to give
-/// priority to different blobs based on their score (ie, minima or maxima?)
-typedef enum eSortBlobCriteria {
-  DO_NOT_SORT,
-  PRIORITIZE_HIGH_SCORES,
-  PRIORITIZE_LOW_SCORES
-} SortBlobCriteria;
 
 
 
@@ -842,13 +858,40 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
               blob_diameters, 
               blob_scores,
               true,
+              false,
+              nullptr,
               pReportProgress);
   else if (sort_blob_criteria == PRIORITIZE_LOW_SCORES)
     SortBlobs(blob_crds,
               blob_diameters, 
               blob_scores,
               false,
+              false,
+              nullptr,
               pReportProgress);
+  else {
+    vector<Scalar> blob_scores_abs(blob_scores.size());
+    for (size_t i = 0; i < blob_scores_abs.size(); i++)
+      blob_scores_abs[i] = std::fabs(blob_scores[i]);
+    vector<size_t> permutation(blob_scores.size());
+    if (sort_blob_criteria == PRIORITIZE_HIGH_MAGNITUDE_SCORES)
+      SortBlobs(blob_crds,
+                blob_diameters, 
+                blob_scores_abs,
+                true,
+                true,
+                &permutation,
+                pReportProgress);
+    else if (sort_blob_criteria == PRIORITIZE_LOW_MAGNITUDE_SCORES)
+      SortBlobs(blob_crds,
+                blob_diameters, 
+                blob_scores_abs,
+                true,
+                true,
+                &permutation,
+                pReportProgress);
+    apply_permutation(permutation, blob_scores);
+  }
 
 
   if (pReportProgress)
@@ -1375,6 +1418,7 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
             blob_diameters, 
             blob_scores,
             false,
+            nullptr,
             pReportProgress);
 
   Scalar threshold_lower_bound;
