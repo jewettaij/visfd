@@ -61,12 +61,12 @@ Note: The computation time will be roughly proportional to the image size
 
 ### Example 2
 
-Detect all dark blobs ("minima") between 200 and 280 Angstroms in width.
+Detect all dark blobs ("minima") between 190 and 300 Angstroms in width.
 This corresponds (approximately) to objects which are the size of ribosomes.
 
 ```
 filter_mrc -in tomogram.rec \
-  -blob minima tomogram_blobs.txt 200.0 280.0 1.01
+  -blob minima tomogram_blobs.txt 190.0 300.0 1.01
 
 # Now discard the faint, noisy, or overlapping blobs.
 
@@ -1715,8 +1715,6 @@ is less than *ratio_max* times the blob with the highest score,
 
 
 ### -auto-thresh score -supervised file_accept.txt file_reject.txt
-
-***(WARNING: This feature does not yet work as of 2019-4-29.)***
 
 As an alternative to specifying the threshold(s) manually,
 you can instead supply examples of blobs that you want to keep,
