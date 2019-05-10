@@ -305,6 +305,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
                                   scores,
                                   settings.training_data_pos_crds,
                                   settings.training_data_neg_crds,
+                                  PRIORITIZE_HIGH_MAGNITUDE_SCORES,
                                   static_cast<float*>(nullptr),
                                   static_cast<float*>(nullptr),
                                   &cerr);
@@ -563,6 +564,7 @@ HandleBlobDetector(Settings settings,
               minima_diameters,
               minima_scores,
               false,
+              false,
               nullptr);
 
     fstream minima_file;
@@ -590,6 +592,7 @@ HandleBlobDetector(Settings settings,
               maxima_diameters,
               maxima_scores,
               true,
+              false,
               nullptr);
 
     fstream maxima_file;

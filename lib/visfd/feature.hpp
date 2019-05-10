@@ -746,7 +746,7 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds, //!< x,y,z of each blob's center
   for (size_t i = 0; i < n_blobs; i++) {
     if (ignore_score_sign)
       score_index[i] = make_tuple(std::fabs(blob_scores[i]), i);
-    else:
+    else
       score_index[i] = make_tuple(blob_scores[i], i);
   }
 
@@ -869,29 +869,22 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
               false,
               nullptr,
               pReportProgress);
-  else {
-    vector<Scalar> blob_scores_abs(blob_scores.size());
-    for (size_t i = 0; i < blob_scores_abs.size(); i++)
-      blob_scores_abs[i] = std::fabs(blob_scores[i]);
-    vector<size_t> permutation(blob_scores.size());
-    if (sort_blob_criteria == PRIORITIZE_HIGH_MAGNITUDE_SCORES)
-      SortBlobs(blob_crds,
-                blob_diameters, 
-                blob_scores_abs,
-                true,
-                true,
-                &permutation,
-                pReportProgress);
-    else if (sort_blob_criteria == PRIORITIZE_LOW_MAGNITUDE_SCORES)
-      SortBlobs(blob_crds,
-                blob_diameters, 
-                blob_scores_abs,
-                true,
-                true,
-                &permutation,
-                pReportProgress);
-    apply_permutation(permutation, blob_scores);
-  }
+  else if (sort_blob_criteria == PRIORITIZE_HIGH_MAGNITUDE_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              true,
+              true,
+              nullptr,
+              pReportProgress);
+  else if (sort_blob_criteria == PRIORITIZE_LOW_MAGNITUDE_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              false,
+              true,
+              nullptr,
+              pReportProgress);
 
 
   if (pReportProgress)
@@ -1405,6 +1398,7 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
                               vector<Scalar>& blob_scores, //!< priority of each blob
                               const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
                               const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
+                              SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
                               Scalar *pthreshold_lower_bound = nullptr, //!< optional: return threshold to the caller
                               Scalar *pthreshold_upper_bound = nullptr, //!< optional: return threshold to the caller
                               ostream *pReportProgress = nullptr //!< report progress back to the user?
@@ -1414,12 +1408,38 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
   assert(blob_crds.size() == blob_scores.size());
 
   // Sort the blobs by score in increasing order
-  SortBlobs(blob_crds,
-            blob_diameters, 
-            blob_scores,
-            false,
-            nullptr,
-            pReportProgress);
+  if (sort_blob_criteria == PRIORITIZE_HIGH_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              false,
+              false,
+              nullptr,
+              pReportProgress);
+  else if (sort_blob_criteria == PRIORITIZE_LOW_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              true,
+              false,
+              nullptr,
+              pReportProgress);
+  else if (sort_blob_criteria == PRIORITIZE_HIGH_MAGNITUDE_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              false,
+              true,
+              nullptr,
+              pReportProgress);
+  else if (sort_blob_criteria == PRIORITIZE_LOW_MAGNITUDE_SCORES)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              true,
+              true,
+              nullptr,
+              pReportProgress);
 
   Scalar threshold_lower_bound;
   Scalar threshold_upper_bound;
