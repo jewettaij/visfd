@@ -102,7 +102,12 @@ DrawSpheres(int const image_size[3], //!< image size
     score_ave += (*pVoxelIntensitiesForeground)[i];
   if ((*pVoxelIntensitiesForeground).size() > 0)
     score_ave /= (*pVoxelIntensitiesForeground).size();
-  double voxel_intensity_foreground_ave = score_ave;
+  double score_rms = 0.0;
+  for (int i = 0; i < (*pVoxelIntensitiesForeground).size(); i++)
+    score_rms += SQR((*pVoxelIntensitiesForeground)[i]);
+  if ((*pVoxelIntensitiesForeground).size() > 0)
+    score_rms = sqrt(score_rms / (*pVoxelIntensitiesForeground).size());
+  double voxel_intensity_foreground_rms = score_rms;
 
   // The spherical shells will have brightnesses chosen according to their
   // scores. Rescale the tomogram intensities so that they are approximately
@@ -115,7 +120,7 @@ DrawSpheres(int const image_size[3], //!< image size
           aaafDest[iz][iy][ix] =
             ((aaafBackground[iz][iy][ix] - background_ave) / background_stddev)
             *
-            voxel_intensity_foreground_ave
+            voxel_intensity_foreground_rms
             *
             voxel_intensity_background_rescale;
         else

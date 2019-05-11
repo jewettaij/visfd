@@ -75,11 +75,11 @@ filter_mrc -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
   -radial-separation 0.8 \
   -mask cytoplasmic_volume.mrc   # <- optional
 
-# Finally, display the remaining blobs we want to keep:
+# Finally, create an image showing the remaining blobs we want to keep:
 
 filter_mrc -in tomogram.rec \
   -out tomogram_ribosomes.rec \
-  -draw-spheres tomogram_ribosomes.txt
+  -draw-hollow-spheres tomogram_ribosomes.txt
 ```
 
 Note: The
@@ -1548,6 +1548,8 @@ centered around *x0* with standard deviation σ.
 ## Annotation of detected objects in an image
 
 ## -draw-spheres filename
+## -draw-hollow-spheres filename
+
 
 The "**-draw-spheres**" argument does not perform a filtering operation
 on the original image.
@@ -1555,8 +1557,11 @@ Instead it reads a text file containing between 3 and 5 columns (eg "filename")
 indicating the location, size, and brightness of a series of points in space.
 After reading that file, a new image will be created
 (the same size as the input image)
-with each blob represented (by default) by a hollow spherical shell
-that surrounds the point of interest.
+with each blob represented (by default) by a solid sphere centered
+at the points of interest.
+(The "**-draw-hollow-spheres**" argument behaves similarly,
+ however it draws hollow spherical shells instead of solid spheres,
+ and it superimposes them upon the original image.)
 
 Each line in the file corresponds to a different sphere.
 The first three numbers on each line are assumed to store the x,y, and z

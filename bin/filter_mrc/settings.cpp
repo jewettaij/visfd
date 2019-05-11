@@ -92,13 +92,13 @@ Settings::Settings() {
   sphere_decals_diameter = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
-  sphere_decals_background_scale = 0.333; //default dimming of original image to emphasize spheres
+  sphere_decals_background_scale = 0.0; //default dimming of original image to emphasize spheres
   sphere_decals_foreground_use_score = true;
   //sphere_decals_background_use_orig = true;
   sphere_decals_foreground_norm = false;
   sphere_decals_scale = 1.0;
   //sphere_decals_shell_thickness = -1.0;
-  sphere_decals_shell_thickness = 0.05;
+  sphere_decals_shell_thickness = 1.0;
   sphere_decals_shell_thickness_is_ratio = true;
   sphere_decals_shell_thickness_min = 1.0;
   score_lower_bound = -std::numeric_limits<float>::infinity();
@@ -213,11 +213,14 @@ void Settings::ConvertArgvToVectorOfStrings(int argc,
 void
 Settings::ParseArgs(vector<string>& vArgs)
 {
-  bool exponents_set_by_user = false;
-  bool delta_set_by_user = false;
-  bool watershed_threshold_set_by_user = false;
   string training_data_pos_fname = "";
   string training_data_neg_fname = "";
+  bool user_set_thickness_manually = false;
+  bool user_set_background_scale_manually = false;
+  bool user_set_exponents_manually = false;
+  bool user_set_delta_manually = false;
+  bool user_set_watershed_threshold_manually = false;
+
   for (int i=1; i < vArgs.size(); ++i)
   {
 
@@ -834,7 +837,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         // (Actually, I make sure it is no larger than 1/3 this difference.)
         //if (((growth_ratio-1.0)/3 < delta_sigma_over_sigma)
         //    &&
-        //    (! delta_set_by_user))
+        //    (! user_set_delta_manually))
         //  delta_sigma_over_sigma = (growth_ratio-1.0)/3;
 
         blob_width_multiplier = 1.0;
@@ -1054,7 +1057,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         delta_sigma_over_sigma = stof(vArgs[i+1]);
-        delta_set_by_user = true;
+        user_set_delta_manually = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1078,7 +1081,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         #ifndef DISABLE_TEMPLATE_MATCHING
         template_background_exponent = n_exp;
         #endif
-        exponents_set_by_user = true;
+        user_set_exponents_manually = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1100,7 +1103,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         #ifndef DISABLE_TEMPLATE_MATCHING
         template_background_exponent = n_exp;
         #endif
-        exponents_set_by_user = true;
+        user_set_exponents_manually = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1640,6 +1643,28 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+    else if (vArgs[i] == "-draw-hollow-spheres") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        filter_type = SPHERE_DECALS;
+        in_coords_file_name = vArgs[i+1];
+        if (! user_set_thickness_manually) {
+          sphere_decals_shell_thickness = 0.05;
+          sphere_decals_shell_thickness_is_ratio = true;
+          sphere_decals_shell_thickness_min = 1.0;
+        }
+        if (! user_set_background_scale_manually) {
+          sphere_decals_background_scale = 0.2; //default dimming of original image to emphasize the spheres
+        }
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a file name\n");
+      }
+      num_arguments_deleted = 2;
+    }
 
     else if ((vArgs[i] == "-diameters") ||
              (vArgs[i] == "-diameter") ||
@@ -1707,6 +1732,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         sphere_decals_shell_thickness_is_ratio = true;
         sphere_decals_shell_thickness     = stof(vArgs[i+1]);
+        user_set_thickness_manually = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1726,6 +1752,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         sphere_decals_shell_thickness_min = stof(vArgs[i+1]);
+        user_set_thickness_manually = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1745,6 +1772,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         sphere_decals_shell_thickness = stof(vArgs[i+1]);
         sphere_decals_shell_thickness_is_ratio = false;
+        user_set_thickness_manually = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1790,6 +1818,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         sphere_decals_background_scale = stof(vArgs[i+1]);
+        user_set_background_scale_manually = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1843,12 +1872,12 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         if ((vArgs[i+1] == "min") || (vArgs[i+1] == "minima")) {
           clusters_begin_at_maxima = false;
-          if (! watershed_threshold_set_by_user)
+          if (! user_set_watershed_threshold_manually)
             watershed_threshold = std::numeric_limits<float>::infinity();
         }
         else if ((vArgs[i+1] == "max") || (vArgs[i+1] == "maxima")) {
           clusters_begin_at_maxima = true;
-          if (! watershed_threshold_set_by_user)
+          if (! user_set_watershed_threshold_manually)
             watershed_threshold = -std::numeric_limits<float>::infinity();
         }
         else
@@ -1872,7 +1901,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        watershed_threshold_set_by_user = true;
+        user_set_watershed_threshold_manually = true;
         watershed_threshold = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
@@ -2475,7 +2504,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   //  // Hence we can save a great deal of time by doing this compared to
   //  // using a more general filter function which would force us to perform
   //  // the full 3-D convolution.
-  //  if (exponents_set_by_user) {
+  //  if (user_set_exponents_manually) {
   //    filter_type = GGAUSS;
   //    if (m_exp == 2.0) {
   //      filter_type = GAUSS; // <-- use fast seperable Gaussians
@@ -2483,7 +2512,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   //      width_a[1] /= sqrt(2.0);  //  exp(-0.5*(r/width_a)^2) instead of
   //      width_a[2] /= sqrt(2.0);  //  exp(-(r/width_a)^2)
   //    } //if (m_exp == 2.0)
-  //  } //if (exponents_set_by_user)
+  //  } //if (user_set_exponents_manually)
   //} //if ((filter_type == GAUSS) || (filter_type == GGAUSS))
 
 
@@ -2496,7 +2525,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   //  // Hence we can save a great deal of time by doing this compared to
   //  // using a more general filter function which would force us to perform
   //  // the full 3-D convolution.
-  //  if (exponents_set_by_user) {
+  //  if (user_set_exponents_manually) {
   //    filter_type = DOGG;
   //    if ((m_exp == 2.0) && (n_exp == 2.0)) {
   //      filter_type = DOG; // <-- use fast seperable Gaussians
@@ -2510,7 +2539,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   //    } //if ((m_exp == 2.0) && (n_exp == 2.0))
   //    else
   //      filter_type = DOGG;
-  //  } //if (exponents_set_by_user) {
+  //  } //if (user_set_exponents_manually) {
   //} //if ((filter_type == DOG) || (filter_type == DOGG))
 
 
@@ -2522,7 +2551,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   //  // Hence we can save a great deal of time by doing this compared to
   //  // using a more general filter function which would force us to perform
   //  // the full 3-D convolution.
-  //  if (exponents_set_by_user) {
+  //  if (user_set_exponents_manually) {
   //    filter_type = TEMPLATE_GGAUSS;
   //    if ((m_exp == 2.0) && (n_exp == 2.0)) {
   //      filter_type = TEMPLATE_GAUSS; // <-- use fast Gaussians instead of DOGG which is slow
@@ -2539,7 +2568,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   //    } //if ((m_exp == 2.0) && (n_exp == 2.0))
   //    else
   //      filter_type = TEMPLATE_GGAUSS;
-  //  } //if (exponents_set_by_user) {
+  //  } //if (user_set_exponents_manually) {
   //} //if ((filter_type == DOG) || (filter_type == DOGG))
 
 
