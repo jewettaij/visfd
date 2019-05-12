@@ -72,6 +72,7 @@ class Settings {
   //      (shared by all filter types)
   
   string in_file_name; // name of the image file we want to read
+  int in_set_image_size[3];//image size (if the user did not supply a file name)
   string out_file_name; // name of the image file we want to create
   // Mask parameters are used to select (ignore) voxels from the original image.
   string mask_file_name; // name of an image file used for masking

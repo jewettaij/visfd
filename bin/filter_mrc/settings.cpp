@@ -20,6 +20,9 @@ using namespace std;
 Settings::Settings() {
   // Default settings
   in_file_name = "";
+  in_set_image_size[0] = 0;
+  in_set_image_size[1] = 0;
+  in_set_image_size[2] = 0;
   invert_output = false;
   out_file_name = "";
   rescale_min_max_in = false;
@@ -237,6 +240,24 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     } // if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
 
+    else if (vArgs[i] == "-image-size")
+    {
+      try {
+        if ((i+3 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
+          throw invalid_argument("");
+        in_set_image_size[0] = stoi(vArgs[i+1]);
+        in_set_image_size[1] = stoi(vArgs[i+2]);
+        in_set_image_size[2] = stoi(vArgs[i+3]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by 6 integers.\n");
+      }
+      num_arguments_deleted = 4;
+    } // if (vArgs[i] == "-mask-rect")
 
     else if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
     {
@@ -2469,11 +2490,19 @@ Settings::ParseArgs(vector<string>& vArgs)
   // ----------
 
   if ((in_file_name.size() == 0) &&
+      ((in_set_image_size[0] == 0) ||
+       (in_set_image_size[1] == 0) ||
+       (in_set_image_size[2] == 0))
+      &&
       (filter_type != SPHERE_NONMAX_SUPPRESSION))
   {
-    throw InputErr("Error: You must specify the name of the tomogram you want to read\n"
-                   "       using the \"-in SOURCE_FILE\" argument\n"
-                   "       (These files usually end in \".mrc\" or \".rec\" .)\n");
+    throw InputErr("Error: Unknown image size.\n"
+                   "       You can either specify the name of the image file you want to read\n"
+                   "       using the \"-in SOURCE_FILE\" argument, ...\n"
+                   "         (these files usually end in \".mrc\" or \".rec\")\n"
+                   "       Alternatively you can start with a blank image using the\n"
+                   "       \"-image-size nx ny nz\" argument.  Either way, you must\n"
+                   "       indicate the size of the image that you want to create or analyze.\n");
   }
   if ((out_file_name.size() == 0) &&
       ((!

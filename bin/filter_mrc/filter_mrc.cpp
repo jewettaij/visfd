@@ -29,7 +29,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.18.1");
-string g_date_string("2018-5-10");
+string g_date_string("2018-5-11");
 
 
 
@@ -69,6 +69,12 @@ int main(int argc, char **argv) {
       // (Note: You can also use "tomo_in.Read(cin);" or "cin >> tomo;")
       tomo_in.PrintStats(cerr);      //Optional (display the tomogram size & format)
       WarnMRCSignedBytes(tomo_in, settings.in_file_name, cerr);
+    }
+    else if ((settings.in_set_image_size[0] > 0) &&
+             (settings.in_set_image_size[1] > 0) &&
+             (settings.in_set_image_size[2] > 0))
+    {
+      tomo_in.Resize(settings.in_set_image_size);
     }
 
 
