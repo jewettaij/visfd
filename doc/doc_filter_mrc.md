@@ -149,7 +149,10 @@ The user must specify the name of the tomogram they wish to process using the
 ```
    -in SOURCE_FILE.rec
 ```
-(Note: Files may also end in ".mrc")
+(Note: Files may also end in ".mrc".
+ *Alternatively, the user can start with a blank image*
+ by specifying the "**-image-size nx ny nz**" argument.
+ This is useful in cases where it does not make sense to read an image file.)
 
 Users must specify the name of the new tomogram
 (created by applying the filter to the original tomogram)

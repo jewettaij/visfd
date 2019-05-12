@@ -56,7 +56,14 @@ void MrcSimple::Alloc() {
   Alloc3D(header.nvoxels,
           &afI,
           &aaafI);
-}
+  for (int iz = 0; iz < header.nvoxels[2]; iz++) {
+    for (int iy = 0; iy < header.nvoxels[1]; iy++) {
+      for (int ix = 0; ix < header.nvoxels[0]; ix++) {
+        aaafI[iz][iy][ix] = 0.0;
+      }
+    }
+  }
+} // Alloc()
 
 
 
