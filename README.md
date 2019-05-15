@@ -37,6 +37,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 features of the **visfd** library.
 It was intended to be used for
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
+[surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
 filament (curve) detection (*available soon*),
 and 
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
@@ -188,6 +189,10 @@ Some programs
 require python, along with the
 "numpy", "matplotlib", and "mrcfile" modules.
 (installable via "pip")
+
+*Automatic membrane surface closure* (a.k.a. surface reconstruction) currently
+requires "**PoissonRecon**" (an external program) which you can download
+[here](https://github.com/mkazhdan/PoissonRecon).
 
 ## License
 

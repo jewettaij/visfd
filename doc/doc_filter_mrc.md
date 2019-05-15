@@ -119,13 +119,22 @@ filter_mrc -in tomogram.rec \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
 Note: This will generate an oriented point cloud file
-("largest_membrane_pointcloud.ply") which can be imported into meshlab
-for further processing.  Alternatively, you can try using "PoissonRecon" to
-(attempt to) close the holes in the surface:
+("largest_membrane_pointcloud.ply").
+You can use
+[*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon)
+to close the holes in the surface due to the missing wedge:
 ```
 PoissonRecon --in largest_membrane_pointcloud.ply \
-  --out largest_membrane.ply --depth 8
+  --out largest_membrane.ply --depth 12 --scale 2.0
 ```
+The resulting *(hopefully)* closed surface (eg. "largest_membrane.ply")
+can be visualized in [*meshlab*](http://www.meshlab.net) and later voxelized.
+(That is, turned in to a segmented 3D image showing the cytoplasmic volume,
+ for example.  This new image could then be used as a mask for future
+ image processing, allowing you to segment the contents of the cell
+ or segment concentric compartments inside larger compartments.
+ *Unfortunately, this voxelization feature has not been implemented yet here,
+  but there are plenty of free voxelizers online. -Andrew 2019-5-14*)
 
 Note: All of these parameters make reasonably good defaults for membrane
       detection except the
@@ -137,6 +146,9 @@ Note: All of these parameters make reasonably good defaults for membrane
       ["**-must-link**"](#-must-link-FILE)
       argument to manually force connections between
       disconnected regions. (See below.)
+
+Note: If the resulting surface is *not closed*,
+      then try increasing the "--scale" parameter.
 
 
 
