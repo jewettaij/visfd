@@ -39,8 +39,8 @@ It was intended to be used for
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 [surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
 filament (curve) detection (*available soon*),
-and 
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
+and 
 [watershed segmentation](https://imagej.net/Classic_Watershed)
 with non-max suppression.
 A list of detected objects can be sorted, clustered, and saved to a text file.
