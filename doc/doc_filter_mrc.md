@@ -134,7 +134,8 @@ can be visualized in [*meshlab*](http://www.meshlab.net) and later voxelized.
  image processing, allowing you to segment the contents of the cell
  or segment concentric compartments inside larger compartments.
  *Unfortunately this voxelization feature has not been implemented here yet.
-  Until then, there are plenty of free voxelizers online. -Andrew 2019-5-14*)
+  Until then, there are plenty of free mesh voxelizers online.
+  -Andrew 2019-5-14*)
 
 Note: All of these parameters make reasonably good defaults for membrane
       detection except the
