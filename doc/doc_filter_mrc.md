@@ -748,12 +748,14 @@ an image showing which voxels belong to each minima or maxima.
 *Note:* By default, local minima and maxima which lie on the boundaries
 of the image (or on the boundary of the mask region), are considered.
 To ignore these extrema (ie, to consider only voxels which are surrounded
-by other voxels) use the "**-ignore-boundary-extrema-**" argument.
+by other voxels) use the "**-ignore-boundary-extrema**" argument.
 
 ##### -neighbor-connectivity nc
 
 *Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
-are considered by default.
+surrounding the voxel are considered by default.
+The "*nc*" parameter represents the maximum squared distance a voxel can
+be from the center voxel in order for it to be considered a "neighbor".
 (You can use the **-neighbor-connectivity nc** argument to skip
  3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
  This may increase the number of spurious local minima and maxima discovered.)

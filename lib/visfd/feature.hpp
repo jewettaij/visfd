@@ -222,11 +222,18 @@ FindExtrema(int const image_size[3],            //!< size of input image array
 
 
 
-/// @brief Find all scale-invariant blobs in the image as a function of sigma
-///        regardless of overlap.  (Blobs with poor scores can be discarded)
+/// @brief Find all scale-invariant blobs in the image as a function of Gaussian
+///        width (ie. the "sigma" parameter), regardless of overlap.  (A blob's
+///        "sigma" parameter represents the optimal width of the Gaussian blur
+///        that, when applied to the image, maximizes this blob's visibility.)
 ///
 /// Algorithm described in:
 ///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
+///
+/// @note  The interpretation of the "sigma" parameter is not always straight-
+///        forward.  An alternate version of this function exists ("BlobDogD()")
+///        which approximates each blob with a solid sphere, and associates the
+///        blob with the diameter of that sphere instead of its "sigma" value.
 ///
 /// @note  This function can find BOTH minima and maxima without additional cost
 ///        (corresponding to dark blobs on a light background
@@ -252,7 +259,6 @@ BlobDog(int const image_size[3], //!< source image size
         Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(),    //!< discard blobs with unremarkable scores (disabled by default)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
-        // optional arguments
         ostream *pReportProgress = nullptr, //!< optional: report progress to the user?
         Scalar ****aaaafI = nullptr, //!<optional: preallocated memory for filtered images (indexable)
         Scalar **aafI = nullptr      //!<optional: preallocated memory for filtered images (contiguous)
@@ -631,10 +637,12 @@ BlobDog(int const image_size[3], //!< source image size
 
 
 
-/// @brief Find all scale-invariant blobs in the image as a function of diameter
-///        regardless of overlap.  (Blobs with poor scores can be discarded.)
-///        This version of the function refers to blobs by their diameters
-///        (which is much more convenient than keeping track of their "sigmas").
+/// @brief Find all scale-invariant blobs in the image as a function of their
+///        (effective) diameters.  For conenience, each blob's diameter is 
+///        reported instead of its "sigma" parameter.  Diameter is easy
+///        to interpret.  (For comparison a blob's "sigma" parameter
+///        represents the optimal width of the Gaussian blur that, when
+//         applied to the image maximizes this blob's visibility.)
 ///
 /// Algorithm described in:
 ///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
