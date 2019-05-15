@@ -492,6 +492,9 @@ WriteOrientedPointCloud(string pointcloud_file_name,
 
 /// @brief   Parse the list of voxel coordinates provided 
 ///          by the user to use in "link" constraints.
+/// @return  whether or not the coordinates are in units of voxels.
+///          (If not, they will need to be converted to these units later
+///           by dividing by the physical width represented by each voxel.)
 
 template<typename Coordinate>
 static bool
@@ -554,6 +557,8 @@ ProcessLinkConstraints(string must_link_filename,
       throw VisfdErr(err_msg.str());
     }
   }
+
+  return is_in_voxels;
 
 } //ProcessLinkConstraints()
 

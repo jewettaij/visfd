@@ -71,7 +71,11 @@ DrawSpheres(int const image_size[3], //!< image size
   }
   if (pShellThicknesses == nullptr) {
     // if empty, then fill the vector with the default value
-    shell_thicknesses.resize(centers.size(), 1.0);
+    shell_thicknesses.resize(pDiameters->size());
+    for (size_t i = 0; i < pDiameters->size(); i++)
+      // By default, make each sphere a solid sphere by
+      // setting the shell's thickness equal to the sphere's radius.
+      shell_thicknesses[i] = (*pDiameters)[i] / 2;
     pShellThicknesses = &shell_thicknesses;
   }
   if (pVoxelIntensitiesForeground == nullptr) {
