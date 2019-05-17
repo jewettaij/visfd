@@ -1310,7 +1310,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             //    FOR NOW, ASSUME PAIRS OF CONNECTED SURFACES ARE NEARBY
             //    AND ARE ALWAYS POINTING IN THE SAME DIRECTION:
 
-            polarity_match = true;
+            polarity_match = (DotProduct3(n_i, n_j) > 0);
 
             // LATER ONCE I FIX THIS BUG, I SHOULD STILL PROVIDE A WAY FOR THE
             // USER TO OVERRIDE polarity_match IN THE INNEVITABLE EVENT THAT MY
