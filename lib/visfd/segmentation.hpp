@@ -1286,11 +1286,11 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             // then consider the two planes to be facing the same direction
             // and part of the same portion of the curve.
             Scalar theta0 = M_PI/4;  // (45 degrees)
-            theta_ni_rij = asin(abs(ni_dot_rij));
-            theta_nj_rij = asin(abs(nj_dot_rij));
+            Scalar theta_ni_rij = asin(abs(ni_dot_rij));
+            Scalar theta_nj_rij = asin(abs(nj_dot_rij));
             if (*pReportProgress) {
               *pReportProgress << "(theta_ni_rij == "
-                               << theta_ni_rij*180.0/M_PI <<
+                               << theta_ni_rij*180.0/M_PI
                                << ", theta_nj_rij == "
                                << theta_nj_rij*180.0/M_PI << ")\n";
             }
