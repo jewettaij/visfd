@@ -18,6 +18,7 @@
 using namespace std;
 #include <err_visfd.hpp> // defines the "VisfdErr" exception type
 #include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
+#include <lin3_utils.hpp>     // defines "Normalize3()"
 #include <visfd_utils.hpp>    // defines invert_permutation(), AveArray(), ...
 #include <alloc2d.hpp>    // defines Alloc2D() and Dealloc2D()
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
@@ -1227,7 +1228,17 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             *pReportProgress << r_i[d];
             if (d+1 != 3) *pReportProgress << ",";
           }
-          *pReportProgress << "), normal=(";
+          *pReportProgress << ")";
+          if (aaaafVectorStandardized) {
+            *pReportProgress << ", normal=(";
+            for (int d = 0; d < 3; d++) {
+              aaaafVectorStandardized[r_i[2]][r_i[1]][r_i[0]][d];
+              *pReportProgress << aaaafVectorStandardized[r_i[2]][r_i[1]][r_i[0]][d];
+              if (d+1 != 3) *pReportProgress << ",";
+            }
+            *pReportProgress << ")";
+          }
+          *pReportProgress << "\n";
         }
 
         if ((r_i[0] == -1) && (r_i[1] == -1) && (r_i[2] == -1))
@@ -1271,15 +1282,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               n_j[d] = aaaafVectorStandardized[r_j[2]][r_j[1]][r_j[0]][d];
               r_ij[d] = r_i[d] - r_j[d];
             }
-
-            if (*pReportProgress) {
-              for (int d = 0; d < 3; d++) {
-                *pReportProgress << n_i[d];
-                if (d+1 != 3) *pReportProgress << ",";
-              }
-              *pReportProgress << ")\n";
-            }
-
+            Normalize3(r_ij);
             Scalar ni_dot_rij = DotProduct3(n_i, r_ij);
             Scalar nj_dot_rij = DotProduct3(n_j, r_ij);
             // If each plane is at an angle less than 45 degrees from r_ij
@@ -1289,7 +1292,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             Scalar theta_ni_rij = asin(abs(ni_dot_rij));
             Scalar theta_nj_rij = asin(abs(nj_dot_rij));
             if (*pReportProgress) {
-              *pReportProgress << "(theta_ni_rij == "
+              *pReportProgress << "    (theta_ni_rij == "
                                << theta_ni_rij*180.0/M_PI
                                << ", theta_nj_rij == "
                                << theta_nj_rij*180.0/M_PI << ")\n";
@@ -1305,17 +1308,16 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               polarity_match = (ni_dot_rij * nj_dot_rij <= 0);
             }
 
-            // ****** The code above is buggy!       -Andrew 2019-5-16 ******
-            // ****** DEADLINE TODAY.  FUDGE IT NOW!  FIX LATER!!  ******
-            //    FOR NOW, ASSUME PAIRS OF CONNECTED SURFACES ARE NEARBY
-            //    AND ARE ALWAYS POINTING IN THE SAME DIRECTION:
-
-            polarity_match = (DotProduct3(n_i, n_j) > 0);
-
-            // LATER ONCE I FIX THIS BUG, I SHOULD STILL PROVIDE A WAY FOR THE
-            // USER TO OVERRIDE polarity_match IN THE INNEVITABLE EVENT THAT MY
-            // CODE EVENTUALLY SCREWS UP WHILE GUESSING SURFACE POLARITY.  (IT'S
-            // NEVER GOING TO BE ABLE TO INFER THIS FLAWLESSLY IN ALL CASES.)
+            // Confusing code:
+            // We only flip the polarity of the basins from the deleted cluster
+            // if the basin2polarity[basin_i] & basin2polarity[basin_j] entries
+            // are NOT consistent with "polarity_match", which we observed
+            // directly (for example by calculating the dot products of the
+            // surface normals at these two locations r_i and r_j).
+            
+            bool flip_polarity = (polarity_match !=
+                                  (basin2polarity[basin_i] ==
+                                   basin2polarity[basin_j]));
 
             #endif //#ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
 
@@ -1332,7 +1334,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               if (aaaafVector && aaaafVectorStandardized &&
                   (! consider_dot_product_sign))
               {
-                if (! polarity_match)
+                if (flip_polarity)
                   basin2polarity[basin_id] *= -1.0;
               }
               #endif

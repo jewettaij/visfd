@@ -155,6 +155,22 @@ static inline void Normalize3(Scalar a[3]) {
 }
 
 template <typename Scalar>
+static inline void Normalize3(array<Scalar, 3>& a) {
+  Scalar L_inv = Length3(a);
+  if (L_inv > 0.0) {
+    L_inv = 1.0 / L_inv;
+    for (int d=0; d<3; d++)
+      a[d] *= L_inv;
+  }
+  else {
+    a[0] = 1.0;
+    a[1] = 0.0;
+    a[2] = 0.0;
+  }
+}
+
+
+template <typename Scalar>
 static inline void MatProduct3(const Scalar A[3][3],
                                const Scalar B[3][3],
                                Scalar dest[3][3]) {
