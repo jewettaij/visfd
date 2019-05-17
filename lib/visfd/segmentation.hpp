@@ -1205,10 +1205,10 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
         if (*pReportProgress) {
           *pReportProgress << "  finding voxel nearest to (";
           for (int d = 0; d < 3; d++) {
-            *pReportProgress << r_j_init[d];
-            if (d+1 == 3) *pReportProgress << ",";
+            *pReportProgress << r_i_init[d];
+            if (d+1 != 3) *pReportProgress << ",";
           }
-          *pReportProgress << ")\n";
+          *pReportProgress << ") -> (";
         }
 
         set<Label> ignore_these_voxel_types;
@@ -1221,6 +1221,14 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                          aaafMask,
                          ignore_these_voxel_types, // skip over these voxels
                          true); //invert selection (skip over them)
+
+        if (*pReportProgress) {
+          for (int d = 0; d < 3; d++) {
+            *pReportProgress << r_i[d];
+            if (d+1 != 3) *pReportProgress << ",";
+          }
+          *pReportProgress << "), normal=(";
+        }
 
         if ((r_i[0] == -1) && (r_i[1] == -1) && (r_i[2] == -1))
           throw VisfdErr("Error: No voxels clustered. Empty image. Your cluster criteria are too strict.\n"
@@ -1263,25 +1271,53 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
               n_j[d] = aaaafVectorStandardized[r_j[2]][r_j[1]][r_j[0]][d];
               r_ij[d] = r_i[d] - r_j[d];
             }
+
+            if (*pReportProgress) {
+              for (int d = 0; d < 3; d++) {
+                *pReportProgress << n_i[d];
+                if (d+1 != 3) *pReportProgress << ",";
+              }
+              *pReportProgress << ")\n";
+            }
+
             Scalar ni_dot_rij = DotProduct3(n_i, r_ij);
             Scalar nj_dot_rij = DotProduct3(n_j, r_ij);
             // If each plane is at an angle less than 45 degrees from r_ij
             // then consider the two planes to be facing the same direction
             // and part of the same portion of the curve.
             Scalar theta0 = M_PI/4;  // (45 degrees)
-            if ((abs(ni_dot_rij) < sin(theta0)) &&
-                (abs(nj_dot_rij) < sin(theta0)))
+            theta_ni_rij = asin(abs(ni_dot_rij));
+            theta_nj_rij = asin(abs(nj_dot_rij));
+            if (*pReportProgress) {
+              *pReportProgress << "(theta_ni_rij == "
+                               << theta_ni_rij*180.0/M_PI <<
+                               << ", theta_nj_rij == "
+                               << theta_nj_rij*180.0/M_PI << ")\n";
+            }
+            if ((theta_ni_rij < theta0) &&
+                (theta_nj_rij < theta0))
             {
               polarity_match = (DotProduct3(n_i, n_j) > 0);
             }
             else {
               // otherwise, the two planes are probably facing the opposite
               // direction.  In that case, use the following criteria:
-              polarity_match = true;
-              if (ni_dot_rij * nj_dot_rij > 0)
-                polarity_match = false;
+              polarity_match = (ni_dot_rij * nj_dot_rij <= 0);
             }
-            #endif
+
+            // ****** The code above is buggy!       -Andrew 2019-5-16 ******
+            // ****** DEADLINE TODAY.  FUDGE IT NOW!  FIX LATER!!  ******
+            //    FOR NOW, ASSUME PAIRS OF CONNECTED SURFACES ARE NEARBY
+            //    AND ARE ALWAYS POINTING IN THE SAME DIRECTION:
+
+            polarity_match = true;
+
+            // LATER ONCE I FIX THIS BUG, I SHOULD STILL PROVIDE A WAY FOR THE
+            // USER TO OVERRIDE polarity_match IN THE INNEVITABLE EVENT THAT MY
+            // CODE EVENTUALLY SCREWS UP WHILE GUESSING SURFACE POLARITY.  (IT'S
+            // NEVER GOING TO BE ABLE TO INFER THIS FLAWLESSLY IN ALL CASES.)
+
+            #endif //#ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
 
             // copy the basins from the deleted cluster into the merged cluster
             for (auto p = cluster2basins[deleted_cluster_id].begin();

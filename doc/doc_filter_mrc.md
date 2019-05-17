@@ -115,7 +115,7 @@ filter_mrc -in tomogram.rec \
   -out membranes_tv_clusters.rec \
   -surface minima 60.0 -surface-best 0.08 \
   -surface-tv 5.0 -surface-tv-angle-exponent 4 \
-  -connect 1.0e+09 -cts 0.707 -ctn 0.707 -cvn 0.707 -cvs 0.707 \
+  -connect 1.0e+09 -cvn 0.707 -cvs 0.707 -cts 0.707 -ctn 0.707 \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
 Note: This will generate an oriented point cloud file
