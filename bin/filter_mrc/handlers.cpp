@@ -709,14 +709,14 @@ HandleThresholds(Settings settings,
                                      tomo_out.aaafI,
                                      mask.aaafI);
 
-    settings.out_threshold_01_a = ave_intensity +
-      settings.out_threshold_01_a * stddev_intensity;
-    settings.out_threshold_01_b = ave_intensity +
-      settings.out_threshold_01_b * stddev_intensity;
+    settings.in_threshold_01_a = ave_intensity +
+      settings.in_threshold_01_a * stddev_intensity;
+    settings.in_threshold_01_b = ave_intensity +
+      settings.in_threshold_01_b * stddev_intensity;
     cerr << "ave="<< ave_intensity <<", stddev="<<stddev_intensity << endl;
     cerr << "  Clipping intensities between ["
-         << settings.out_threshold_01_a << ", "
-         << settings.out_threshold_01_b << "]" << endl;
+         << settings.in_threshold_01_a << ", "
+         << settings.in_threshold_01_b << "]" << endl;
   }
   for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
     for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
@@ -733,30 +733,30 @@ HandleThresholds(Settings settings,
                                       settings.out_thresh_a_value,
                                       settings.out_thresh_b_value);
         else if (! settings.use_dual_thresholds) {
-          if (settings.out_threshold_01_a == settings.out_threshold_01_b)
+          if (settings.in_threshold_01_a == settings.in_threshold_01_b)
             tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >
-                                           settings.out_threshold_01_a)
-                                          ? 1.0
-                                          : 0.0);
+                                           settings.in_threshold_01_a)
+                                          ? settings.out_thresh_b_value
+                                          : settings.out_thresh_a_value);
           else
             tomo_out.aaafI[iz][iy][ix] =
               Threshold2(tomo_out.aaafI[iz][iy][ix],
-                         settings.out_threshold_01_a,
-                         settings.out_threshold_01_b,
+                         settings.in_threshold_01_a,
+                         settings.in_threshold_01_b,
                          (settings.out_thresh2_use_clipping
-                          ? settings.out_threshold_01_a
+                          ? settings.in_threshold_01_a
                           : settings.out_thresh_a_value),
                          (settings.out_thresh2_use_clipping
-                          ? settings.out_threshold_01_b
+                          ? settings.in_threshold_01_b
                           : settings.out_thresh_b_value));
         }
         else
           tomo_out.aaafI[iz][iy][ix] =
             Threshold4(tomo_out.aaafI[iz][iy][ix],
-                       settings.out_threshold_01_a,
-                       settings.out_threshold_01_b,
-                       settings.out_threshold_10_a,
-                       settings.out_threshold_10_b,
+                       settings.in_threshold_01_a,
+                       settings.in_threshold_01_b,
+                       settings.in_threshold_10_a,
+                       settings.in_threshold_10_b,
                        settings.out_thresh_a_value,
                        settings.out_thresh_b_value);
       }

@@ -220,7 +220,7 @@ The ["**-rescale**"](#-rescale-m-b)
 filter allows you to shift (offset) and rescale voxel brightnesses arbitrarily.
 The
 ["**-thresh**"](#-thresh-threshold),
-["**-thresh-range**"](#-thresh-range-range_a-range_b)
+["**-thresh-interval**"](#-thresh-interval-in_a-in_b)
 ["**-thresh2**"](#-thresh2-thresh_a-thresh_b),
 ["**-thresh4**"](#-thresh4-thresh01_a-thresh01_b-thresh10_a-thresh10_b), 
 and
@@ -1307,19 +1307,6 @@ Afterwards *new_intensity=m\*old_intensity+b*.
 ```
 
 
-### -rescale01 outA outB
-
-If you use the **-rescale01** argument, then the final voxel intensity
-will be scaled linearly so that a voxel brightness of 0 and 1 will
-become *outA* and *outB*, respectively.
-(This is useful when combined with the
- "*-thresh*"
- "*-thresh-range*"
- "*-thresh2*"
- "*-thresh4*"
- arguments.
- This argument is equivalent to "*-rescale m outA*", where *m*=*outB-outA*.)
-
 
 ### -rescale-min-max outA outB
 
@@ -1433,17 +1420,17 @@ results in:
        It displays the range of voxel intensities in an image.*
 
 
-*Note: You can use the "-rescale01 outA outB" argument to scale the
+*Note: You can use the "-thresh-range outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
 
 
-### -thresh-range range_a range_b
-Select a range of voxels whose intensities fall within
-the range from *range_a* to *range_b*.
+### -thresh-interval in_a in_b
+Select a range of voxels whose intensities fall
+within the range from *in_a* to *in_b*.
 Each voxel's new intensity will be a function of its former intensity.
-If the range_a < range_b, then the thresholding function will be:
+If the in_a < in_b, then the thresholding function will be:
 
 ```
          output
@@ -1455,14 +1442,14 @@ If the range_a < range_b, then the thresholding function will be:
 (usually 1) |             |                   |
             |             |                   |
    outA  -->|_____________|                   |________________\ input
-(usually 0)             range_a             range_b            / intensity
+(usually 0)              in_a                in_b              / intensity
 ```
 
-*Note: You can use the "-rescale01 outA outB" argument to scale the
+*Note: You can use the "-thresh-range outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).
        (It is not necessary for outA < outB.)*
 
-*Note: This command is equivalent to "-thresh4 range_a range_a range_b range_b"*
+*Note: This command is equivalent to "-thresh4 in_a in_a in_b in_b"*
 
 
 
@@ -1499,7 +1486,7 @@ with a smooth ramp between *thresh_a* and *thresh_b*:
        can be useful.
        It displays the range of voxel intensities in an image.*
 
-*Note: You can use the "-rescale01 outA outB" argument to scale the
+*Note: You can use the "-thresh-range outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
@@ -1534,7 +1521,7 @@ between 0 and 1 according to the following function:
        It displays the range of voxel intensities in an image.*
 
 
-*Note: You can use the "-rescale01 outA outB" argument to scale the
+*Note: You can use the "-thresh-range outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
@@ -1557,7 +1544,7 @@ centered around *x0* with standard deviation σ.
 (usually 0)                          x0                          intensity
 ```
 
-*Note: You can use the "-rescale01 outA outB" argument to scale the
+*Note: You can use the "-thresh-range outA outB" argument to scale the
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 

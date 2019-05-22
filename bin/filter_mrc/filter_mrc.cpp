@@ -28,8 +28,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.19.2");
-string g_date_string("2018-5-17");
+string g_version_string("0.19.3");
+string g_date_string("2018-5-22");
 
 
 
@@ -238,10 +238,12 @@ int main(int argc, char **argv) {
 
     } //else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
 
-    if (settings.rescale_min_max_in)
+    if (settings.rescale_min_max_in) {
       tomo_in.Rescale01(mask.aaafI,
-                        settings.out_thresh_a_value,
-                        settings.out_thresh_b_value);
+                        settings.in_rescale_min,
+                        settings.in_rescale_max);
+      tomo_in.FindMinMaxMean();
+    }
 
     // ---- make an array that will store the new tomogram we will create ----
 
@@ -485,10 +487,11 @@ int main(int argc, char **argv) {
 
     // --- Rescale so that the lowest, highest voxels have density 0 and 1? ---
 
-    if (settings.rescale_min_max_out)
+    if (settings.rescale_min_max_out) {
       tomo_out.Rescale01(mask.aaafI,
-                         settings.out_thresh_a_value,
-                         settings.out_thresh_b_value);
+                         settings.out_rescale_min,
+                         settings.out_rescale_max);
+    }
 
     tomo_out.FindMinMaxMean();
 

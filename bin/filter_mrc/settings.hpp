@@ -176,13 +176,19 @@ class Settings {
   bool use_intensity_map;
   bool rescale_min_max_in;
   bool rescale_min_max_out;
+  float in_rescale_min;
+  float in_rescale_max;
+  float out_rescale_min;
+  float out_rescale_max;
+  bool rescale01_in;
+  bool rescale01_out;
   bool invert_output;
 
   bool  use_dual_thresholds;
-  float out_threshold_01_a;
-  float out_threshold_01_b;
-  float out_threshold_10_a;
-  float out_threshold_10_b;
+  float in_threshold_01_a;
+  float in_threshold_01_b;
+  float in_threshold_10_a;
+  float in_threshold_10_b;
   bool  out_thresh2_use_clipping;
   bool  out_thresh2_use_clipping_sigma;
   float out_thresh_a_value;

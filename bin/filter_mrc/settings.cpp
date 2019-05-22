@@ -25,8 +25,6 @@ Settings::Settings() {
   in_set_image_size[2] = 0;
   invert_output = false;
   out_file_name = "";
-  rescale_min_max_in = false;
-  rescale_min_max_out = false;
   mask_file_name = "";
   mask_select = 1;
   use_mask_select = false;
@@ -146,13 +144,19 @@ Settings::Settings() {
 
   use_intensity_map = false;
   use_dual_thresholds = false;
-  out_threshold_01_a = 0.0;
-  out_threshold_01_b = 0.0;
-  out_threshold_10_a = 0.0;
-  out_threshold_10_b = 0.0;
+  in_threshold_01_a = 0.0;
+  in_threshold_01_b = 0.0;
+  in_threshold_10_a = 0.0;
+  in_threshold_10_b = 0.0;
   out_thresh2_use_clipping = false;
   out_thresh_a_value = 0.0;
   out_thresh_b_value = 1.0;
+  rescale_min_max_in = false;
+  rescale_min_max_out = false;
+  in_rescale_min = 0.0;
+  in_rescale_max = 1.0;
+  out_rescale_min = 0.0;
+  out_rescale_max = 1.0;
   use_rescale_multiply = false;
   out_rescale_multiply = 1.0;
   out_rescale_offset = 0.0;
@@ -1213,15 +1217,13 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-rescale")
 
 
-    else if (vArgs[i] == "-rescale01")
+    else if (vArgs[i] == "-thresh-range")
     {
-      rescale_min_max_out = false;
       try {
         if ((i+2 >= vArgs.size()) ||
             (vArgs[i+1] == "") ||
             (vArgs[i+2] == ""))
           throw invalid_argument("");
-
         out_thresh_a_value = stof(vArgs[i+1]);
         out_thresh_b_value = stof(vArgs[i+2]);
       }
@@ -1232,7 +1234,8 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "  (the desired minimum and maximum voxel intensity values for the final image)\n");
       }
       num_arguments_deleted = 3;
-    } // if (vArgs[i] == "-rescale-min-max")
+    } // if (vArgs[i] == "-outab")
+
 
 
     else if (vArgs[i] == "-rescale-min-max")
@@ -1242,9 +1245,9 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") ||
             (vArgs[i+2] == ""))
           throw invalid_argument("");
-
-        out_thresh_a_value = stof(vArgs[i+1]);
-        out_thresh_b_value = stof(vArgs[i+2]);
+        rescale_min_max_out = true;
+        out_rescale_max = stof(vArgs[i+1]);
+        out_rescale_min = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1252,7 +1255,6 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " outA  outB\n"
                        "  (the desired minimum and maximum voxel intensity values for the final image)\n");
       }
-      rescale_min_max_out = true;
       num_arguments_deleted = 3;
     } // if (vArgs[i] == "-rescale-min-max")
 
@@ -1260,8 +1262,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if ((vArgs[i] == "-no-rescale") || (vArgs[i] == "-norescale"))
     {
       rescale_min_max_out = false;
-      out_threshold_01_a = 1.0;
-      out_threshold_01_b = 1.0;
+      in_threshold_01_a = 1.0;
+      in_threshold_01_b = 1.0;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-norescale")
 
@@ -1279,8 +1281,8 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         use_intensity_map = true;
         use_dual_thresholds = false;
-        out_threshold_01_a = stof(vArgs[i+1]);
-        out_threshold_01_b = out_threshold_01_a;
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = in_threshold_01_a;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1296,8 +1298,8 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         use_intensity_map = true;
         use_dual_thresholds = false;
-        out_threshold_01_a = stof(vArgs[i+1]);
-        out_threshold_01_b = stof(vArgs[i+2]);
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+2]);
         out_thresh2_use_clipping = false;
       }
       catch (invalid_argument& exc) {
@@ -1315,8 +1317,8 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         use_intensity_map = true;
         use_dual_thresholds = false;
-        out_threshold_01_a = stof(vArgs[i+1]);
-        out_threshold_01_b = stof(vArgs[i+2]);
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+2]);
         out_thresh2_use_clipping = true;
         if (vArgs[i] == "-cl")
           out_thresh2_use_clipping_sigma = true;
@@ -1337,16 +1339,16 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         use_intensity_map = true;
         use_dual_thresholds = true;
-        out_threshold_01_a = stof(vArgs[i+1]);
-        out_threshold_01_b = stof(vArgs[i+2]);
-        out_threshold_10_a = stof(vArgs[i+3]);
-        out_threshold_10_b = stof(vArgs[i+4]);
-        bool all_increasing = ((out_threshold_01_a <= out_threshold_01_b) &&
-                               (out_threshold_01_b <= out_threshold_10_a) &&
-                               (out_threshold_10_a <= out_threshold_10_b));
-        bool all_decreasing = ((out_threshold_01_a >= out_threshold_01_b) &&
-                               (out_threshold_01_b >= out_threshold_10_a) &&
-                               (out_threshold_10_a >= out_threshold_10_b));
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+2]);
+        in_threshold_10_a = stof(vArgs[i+3]);
+        in_threshold_10_b = stof(vArgs[i+4]);
+        bool all_increasing = ((in_threshold_01_a <= in_threshold_01_b) &&
+                               (in_threshold_01_b <= in_threshold_10_a) &&
+                               (in_threshold_10_a <= in_threshold_10_b));
+        bool all_decreasing = ((in_threshold_01_a >= in_threshold_01_b) &&
+                               (in_threshold_01_b >= in_threshold_10_a) &&
+                               (in_threshold_10_a >= in_threshold_10_b));
         if (! (all_increasing || all_decreasing))
           throw invalid_argument("");
       }
@@ -1359,15 +1361,15 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-thresh-range") {
+    else if (vArgs[i] == "-thresh-interval") {
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
         use_dual_thresholds = true;
-        out_threshold_01_a = stof(vArgs[i+1]);
-        out_threshold_01_b = stof(vArgs[i+1]);
-        out_threshold_10_a = stof(vArgs[i+2]);
-        out_threshold_10_b = stof(vArgs[i+2]);
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+1]);
+        in_threshold_10_a = stof(vArgs[i+2]);
+        in_threshold_10_b = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1458,7 +1460,6 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = r;
         template_background_radius[1] = r;
         template_background_radius[2] = r;
-        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1497,7 +1498,6 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = stof(vArgs[i+4]);
         template_background_radius[1] = stof(vArgs[i+5]);
         template_background_radius[2] = stof(vArgs[i+6]);
-        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1530,7 +1530,6 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = stof(vArgs[i+1]);
         template_background_radius[1] = stof(vArgs[i+2]);
         template_background_radius[2] = stof(vArgs[i+3]);
-        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1561,7 +1560,6 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[0] = stof(vArgs[i+1]);
         template_background_radius[1] = template_background_radius[0];
         template_background_radius[2] = template_background_radius[0];
-        //rescale_min_max_out = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -2398,7 +2396,6 @@ Settings::ParseArgs(vector<string>& vArgs)
     //  template_background_radius[1] = r;
     //  template_background_radius[2] = r;
     //  template_background_exponent = stof(vArgs[i+4]);
-    //  rescale_min_max_out = false;
     //  num_arguments_deleted = 5;
     //  #else
     //  throw InputErr("Error: The " + vArgs[i] + 
