@@ -20,6 +20,10 @@ using namespace visfd;
 #include <threshold.hpp>
 #include <mrc_simple.hpp>
 #include <random_gen.h>
+#include <feature.hpp>
+#include <segmentation.hpp>
+#include <clustering.hpp>
+#include <draw.hpp>
 #include "err.hpp"
 #include "settings.hpp"
 #include "file_io.hpp"
@@ -1436,8 +1440,8 @@ HandleRidgeDetector(Settings settings,
 
   if (settings.cluster_connected_voxels)
   {
-    tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.)
-                        //  allocate a new 3D array to store the saliency)
+    tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.  I
+                        // should allocate a new 3D array to store the saliency)
 
     // Copy the principal eigenvector of tmp_tensor into aaaafDirection
     for(int iz=0; iz < image_size[2]; iz++) {

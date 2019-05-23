@@ -1,5 +1,9 @@
 #include <visfd.hpp>
 using namespace visfd;
+#include <feature.hpp>
+#include <segmentation.hpp>
+#include <clustering.hpp>
+#include <draw.hpp>
 #include "filter3d_variants.hpp"
 #include "feature_variants.hpp"
 #include "file_io.hpp"
