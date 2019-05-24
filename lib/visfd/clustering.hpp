@@ -1000,7 +1000,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
   #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
   if (aaaafVector && aaaafVectorStandardized &&
-    (! consider_dot_product_sign))
+      (! consider_dot_product_sign))
   {
     // Now, finally incorporate the data we stored in basin2polarity[] into
     // aaaafVectorStandardized.
@@ -1290,7 +1290,7 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
             continue;
           if (aaaiDest[iz][iy][ix] == UNDEFINED)
             continue;
-          assert((0<aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<=n_clusters));
+          assert((0<=aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<n_clusters));
           long cluster_id = aaaiDest[iz][iy][ix];
           clusters_visited[cluster_id] = true;
         }
