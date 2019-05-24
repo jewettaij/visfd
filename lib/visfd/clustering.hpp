@@ -129,12 +129,12 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
                  Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
                  bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
                  VectorContainer const *const *const *aaaafVector=nullptr,
-                 Scalar threshold_vector_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and vector are ignored (=-1.001 disables)
-                 Scalar threshold_vector_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible vectors are ignored (=-1.001 disables)
+                 Scalar threshold_vector_saliency=-std::numeric_limits<Scalar>::infinity(),    //!< voxels with incompatible saliency and vector are ignored (numbers below -1 disable this feature)
+                 Scalar threshold_vector_neighbor=-std::numeric_limits<Scalar>::infinity(),    //!< neighboring voxels with incompatible vectors are ignored (numbers below -1 disable this feature)
                  bool consider_dot_product_sign = true,        //!< does the sign of the dot product matter?  If not, compare abs(DotProduct()) with threshold_vector variables
                  TensorContainer const *const *const *aaaafSymmetricTensor=nullptr,
-                 Scalar threshold_tensor_saliency=M_SQRT1_2,    //!< voxels with incompatible saliency and tensor are ignored (=-1.1 disables)
-                 Scalar threshold_tensor_neighbor=M_SQRT1_2,    //!< neighboring voxels with incompatible tensors are ignored (=-1.1 disables)
+                 Scalar threshold_tensor_saliency=-std::numeric_limits<Scalar>::infinity(),    //!< voxels with incompatible saliency and tensor are ignored (numbers below -1 disable this feature)
+                 Scalar threshold_tensor_neighbor=-std::numeric_limits<Scalar>::infinity(),    //!< neighboring voxels with incompatible tensors are ignored (numbers below -1 disable this feature)
                  bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
                  vector<array<Coordinate, 3> > *pv_cluster_maxima=nullptr, //!< optional: the location of saliency minima or maxima which seeded each cluster
