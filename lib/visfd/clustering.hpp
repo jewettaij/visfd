@@ -1278,6 +1278,36 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   } // if (aaafVoxelWeights != nullptr)
 
 
+  #ifndef NDEBUG
+  {
+    vector<bool> clusters_visited(n_clusters, false);
+
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            // as before: ignore voxels excluded by the mask
+            continue;
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            continue;
+          assert((0<aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<=n_clusters));
+          long cluster_id = aaaiDest[iz][iy][ix];
+          clusters_visited[cluster_id] = true;
+        }
+      }
+    }
+    // Check to make sure that every cluster in the list
+    // has at least one voxel associated with it.
+    for (int i=0; i < n_clusters; i++)
+      assert(clusters_visited[i] == true);
+    // NOTE: THIS ASSERTION COULD FAIL even if the program is working when 
+    //       the image is large and contains millions of clusters.
+    //       This is because aaaiDest[iz][iy][ix] is of type "Label" which
+    //       is usually "float", and single-precision floats cannot represent
+    //       integers above 1e+06 (I forget the exact number.)
+  }
+  #endif // #ifndef NDEBUG
+
 
   // Now, deal with voxels which are "undefined"
   // voxels to have a high instead of a low value.
@@ -1309,36 +1339,6 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       }
     }
   }
-
-  #ifndef NDEBUG
-  {
-    vector<bool> clusters_visited(n_clusters, false);
-
-    for (int iz=0; iz<image_size[2]; iz++) {
-      for (int iy=0; iy<image_size[1]; iy++) {
-        for (int ix=0; ix<image_size[0]; ix++) {
-          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
-            // as before: ignore voxels excluded by the mask
-            continue;
-          if (aaaiDest[iz][iy][ix] == UNDEFINED)
-            continue;
-          assert((0<aaaiDest[iz][iy][ix]) && (aaaiDest[iz][iy][ix]<=n_basins));
-          long cluster_id = aaaiDest[iz][iy][ix] - 1;
-          clusters_visited[cluster_id] = true;
-        }
-      }
-    }
-    // Check to make sure that every cluster in the list
-    // has at least one voxel associated with it.
-    for (int i=0; i < n_clusters; i++)
-      assert(clusters_visited[i] == true);
-    // NOTE: THIS ASSERTION COULD FAIL even if the program is working when 
-    //       the image is large and contains millions of clusters.
-    //       This is because aaaiDest[iz][iy][ix] is of type "Label" which
-    //       is usually "float", and single-precision floats cannot represent
-    //       integers above 1e+06 (I forget the exact number.)
-  }
-  #endif // #ifndef NDEBUG
 
   delete [] neighbors;
 
