@@ -10,10 +10,10 @@ This is a C++ template library for 3D image processing
 ("[visfd.hpp](./lib/visfd/)")
 as well as reading & writing image files using the the MRC file format
 ("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
-It is also a collection of stand-alone programs 
+It is also a collection of stand-alone programs
 which use this library
-(including "[filter_mrc](./doc/doc_filter_mrc.md)", 
- "[combine_mrc](./doc/doc_combine_mrc.md)", 
+(including "[filter_mrc](./doc/doc_filter_mrc.md)",
+ "[combine_mrc](./doc/doc_combine_mrc.md)",
  and
  "[pval_mrc](./doc/doc_pval_mrc.md)").
 They are documented [here](./doc).
@@ -40,7 +40,7 @@ It was intended to be used for
 [surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
 filament (curve) detection (*available soon*),
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
-and 
+and
 [watershed segmentation](https://imagej.net/Classic_Watershed)
 with non-max suppression.
 A list of detected objects can be sorted, clustered, and saved to a text file.
@@ -49,25 +49,25 @@ A list of detected objects can be sorted, clustered, and saved to a text file.
 low-pass, high-pass,
 thresholding,
 brightness inversions,
-fluctuations, 
+fluctuations,
 [generalized Gaussian blur](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
 [DoG](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
-and 
+and
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf)
 filters.)*
 
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).
 The source code for the filters used by this program
-is located 
+is located
 [here](./lib/visfd/).
 This program currently only supports the .mrc/.rec image file format.
 
 
 ## combine_mrc
-**combine_mrc** is a program for combining two volumetric images (i.e. tomograms, both of identical size) into one image/tomogram, using a combination of addition, multiplication, and thresholding operations.  These features can be used perform binary operations between two images (which are similar to "**and**", "**or**", and "**not**" operations.)
+**combine_mrc** is a program for combining two volumetric images (i.e. tomograms, both of identical size) into one image/tomogram, using a combination of addition, subtraction, multiplication, division, and thresholding operations.  These features can be used perform binary operations between two images (which are similar to "**and**", "**or**", and "**not**" operations.)
 Documentation for this program is located
 [here](./doc/doc_combine_mrc.md).
 
@@ -76,7 +76,7 @@ Documentation for this program is located
 histogram of voxel intensities contained in an MRC file.
 It can be useful when deciding what thresholds to use
 with in the "**filter_mrc**" and "**combine_mrc**" programs.
-Voxels and regions in the image can be excluded from consideration 
+Voxels and regions in the image can be excluded from consideration
 by using the "-mask" and "-mask-select" arguments.
 This software requires the *matplotlib* and *mrcfile* python modules
 (both of which can be installed using pip).
