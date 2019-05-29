@@ -1342,15 +1342,100 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
     *pReportProgress
       << "  examining training data to determine optimal thresholds\n";
 
-  Scalar threshold_lower_bound =
-    ChooseThreshold1D(training_set_scores,
-                      training_set_accepted,
-                      true);
+  Scalar threshold_lower_bound = -1.0;
+  Scalar threshold_upper_bound = -1.0;
 
-  Scalar threshold_upper_bound =
-    ChooseThreshold1D(training_set_scores,
-                      training_set_accepted,
-                      false);
+  {
+    // Choose the upper and lower bounds
+    // I assumed that the accepted results lie BETWEEN
+    //    thresh_lower_bound  and  thresh_upper_bound
+    // (This might be a bad assumption.  It could be the inverse of this.)
+    // Another issue:
+    //Sometimes if we choose the lower bound first, we get the wrong upper bound
+    //Sometimes if we choose the upper bound first, we get the wrong lower bound
+    // However one of these two ways of doing it will give us the optimal
+    // upper AND lower bounds.  So we try both ways, and pick whichever
+    // way minimizes the number of mistakes.
+    // (Sorry if this is confusing and not clear.)
+    size_t num_mistakes_lower_bound_first = 0;
+    Scalar choose_threshold_lower_bound_first;
+    Scalar choose_threshold_upper_bound_second;
+    {
+      // choose the lower bound first:
+      choose_threshold_lower_bound_first =
+        ChooseThreshold1D(training_set_scores,
+                          training_set_accepted,
+                          true);
+      vector<bool> training_set_accepted_remaining;
+      vector<Scalar> training_set_scores_remaining;
+      for (size_t i = 0; i < N; i++) {
+        if (training_set_scores[i] >= choose_threshold_lower_bound_first) {
+          training_set_scores_remaining.push_back(training_set_scores[i]);
+          training_set_accepted_remaining.push_back(training_set_accepted[i]);
+        }
+      }
+      choose_threshold_upper_bound_second =
+        ChooseThreshold1D(training_set_scores_remaining,
+                          training_set_accepted_remaining,
+                          false);
+      for (size_t i = 0; i < N; i++) {
+        if ((training_set_scores[i] >= choose_threshold_lower_bound_first) &&
+            (training_set_scores[i] <= choose_threshold_upper_bound_second))
+        {
+          if (! training_set_accepted[i])
+            num_mistakes_lower_bound_first++;
+        }
+        else {
+          if (training_set_accepted[i])
+            num_mistakes_lower_bound_first++;
+        }
+      }
+    }
+
+    size_t num_mistakes_upper_bound_first = 0;
+    Scalar choose_threshold_upper_bound_first;
+    Scalar choose_threshold_lower_bound_second;
+    {
+      // choose the upper bound first:
+      choose_threshold_upper_bound_first =
+        ChooseThreshold1D(training_set_scores,
+                          training_set_accepted,
+                          false);
+      vector<bool> training_set_accepted_remaining;
+      vector<Scalar> training_set_scores_remaining;
+      for (size_t i = 0; i < N; i++) {
+        if (training_set_scores[i] <= choose_threshold_upper_bound_first) {
+          training_set_scores_remaining.push_back(training_set_scores[i]);
+          training_set_accepted_remaining.push_back(training_set_accepted[i]);
+        }
+      }
+      choose_threshold_lower_bound_second =
+        ChooseThreshold1D(training_set_scores_remaining,
+                          training_set_accepted_remaining,
+                          true);
+      for (size_t i = 0; i < N; i++) {
+        if ((training_set_scores[i] >= choose_threshold_lower_bound_second) &&
+            (training_set_scores[i] <= choose_threshold_upper_bound_first))
+        {
+          if (! training_set_accepted[i])
+            num_mistakes_lower_bound_first++;
+        }
+        else {
+          if (training_set_accepted[i])
+            num_mistakes_upper_bound_first++;
+        }
+      }
+    }
+
+    if (num_mistakes_lower_bound_first <= num_mistakes_upper_bound_first) {
+      threshold_lower_bound = choose_threshold_lower_bound_first;
+      threshold_upper_bound = choose_threshold_upper_bound_second;
+    }
+    else {
+      threshold_lower_bound = choose_threshold_lower_bound_second;
+      threshold_upper_bound = choose_threshold_upper_bound_first;
+    }
+  }
 
   if (pthreshold_lower_bound)
     *pthreshold_lower_bound = threshold_lower_bound;

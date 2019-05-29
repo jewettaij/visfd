@@ -82,7 +82,6 @@ HandleGauss(Settings settings,
                  true,
                  &cerr);
 
-      
   cerr << " Filter Used:\n"
     " h(x,y,z)   = A*exp(-0.5*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^))\n"
     " ... where  A = " << A << "\n" 
@@ -310,8 +309,8 @@ HandleBlobsNonmaxSuppression(Settings settings,
                                   settings.training_data_pos_crds,
                                   settings.training_data_neg_crds,
                                   PRIORITIZE_HIGH_MAGNITUDE_SCORES,
-                                  static_cast<float*>(nullptr),
-                                  static_cast<float*>(nullptr),
+                                  &settings.score_lower_bound,
+                                  &settings.score_upper_bound,
                                   &cerr);
 
   }
@@ -343,7 +342,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
         crds_cpy.push_back(crds[i]);
         diameters_cpy.push_back(diameters[i]);
         scores_cpy.push_back(scores[i]);
-      }  
+      }
     }
     crds = crds_cpy;
     diameters = diameters_cpy;
