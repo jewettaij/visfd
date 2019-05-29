@@ -1357,7 +1357,7 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
     // upper AND lower bounds.  So we try both ways, and pick whichever
     // way minimizes the number of mistakes.
     // (Sorry if this is confusing and not clear.)
-    size_t num_mistakes_lower_bound_first = 0;
+    size_t num_mistakes_lower_bound_first;
     Scalar choose_threshold_lower_bound_first;
     Scalar choose_threshold_upper_bound_second;
     {
@@ -1378,21 +1378,16 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
         ChooseThreshold1D(training_set_scores_remaining,
                           training_set_accepted_remaining,
                           false);
+      num_mistakes_lower_bound_first = 0;
       for (size_t i = 0; i < N; i++) {
-        if ((training_set_scores[i] >= choose_threshold_lower_bound_first) &&
-            (training_set_scores[i] <= choose_threshold_upper_bound_second))
-        {
-          if (! training_set_accepted[i])
-            num_mistakes_lower_bound_first++;
-        }
-        else {
-          if (training_set_accepted[i])
-            num_mistakes_lower_bound_first++;
-        }
+        if (training_set_accepted[i] !=
+            ((training_set_scores[i] >= choose_threshold_lower_bound_first) &&
+             (training_set_scores[i] <= choose_threshold_upper_bound_second)))
+          num_mistakes_lower_bound_first++;
       }
     }
 
-    size_t num_mistakes_upper_bound_first = 0;
+    size_t num_mistakes_upper_bound_first;
     Scalar choose_threshold_upper_bound_first;
     Scalar choose_threshold_lower_bound_second;
     {
@@ -1413,17 +1408,12 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
         ChooseThreshold1D(training_set_scores_remaining,
                           training_set_accepted_remaining,
                           true);
+      num_mistakes_upper_bound_first = 0;
       for (size_t i = 0; i < N; i++) {
-        if ((training_set_scores[i] >= choose_threshold_lower_bound_second) &&
-            (training_set_scores[i] <= choose_threshold_upper_bound_first))
-        {
-          if (! training_set_accepted[i])
-            num_mistakes_lower_bound_first++;
-        }
-        else {
-          if (training_set_accepted[i])
-            num_mistakes_upper_bound_first++;
-        }
+        if (training_set_accepted[i] !=
+            ((training_set_scores[i] >= choose_threshold_lower_bound_second) &&
+             (training_set_scores[i] <= choose_threshold_upper_bound_first)))
+          num_mistakes_upper_bound_first++;
       }
     }
 
