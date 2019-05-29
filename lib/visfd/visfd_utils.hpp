@@ -296,10 +296,7 @@ ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scor
 
   {
     ptrdiff_t num_mistakes;
-    if (threshold_is_lower_bound)
-      num_mistakes = Nn;  // (see comment above)
-    else
-      num_mistakes = Np;  // (see comment above)
+    num_mistakes = Nn;
     int i = -1;
     while (i < N) {
       if (i >= 0) {
