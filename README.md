@@ -198,3 +198,8 @@ requires "**PoissonRecon**" (an external program) which you can download
 
 These programs are available under the terms of the open-source 3-clause BSD
 license.  (See "[LICENSE.md](./LICENSE.md)")
+
+## Funding
+
+The VISFD project is funded by NIH grant R01GM120604.
+
