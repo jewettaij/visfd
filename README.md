@@ -201,5 +201,5 @@ license.  (See "[LICENSE.md](./LICENSE.md)")
 
 ## Funding
 
-The VISFD project is funded by NIH grant R01GM120604.
+VISFD is funded by NIH grant R01GM120604.
 
