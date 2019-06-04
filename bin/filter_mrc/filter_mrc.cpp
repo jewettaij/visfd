@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
         "directions so that all 3 voxel widths agree.\n"
         "Alternatively, use the \"-w WIDTH\" argument to specify the same voxel width for\n"
         "all 3 directions.  (For example \"-w "<<voxel_width[0]<<"\")\n";
-      throw VisfdErr(err_msg.str().c_str());
+      throw VisfdErr(err_msg.str());
     }
 
     settings.surface_tv_sigma /= voxel_width[0];

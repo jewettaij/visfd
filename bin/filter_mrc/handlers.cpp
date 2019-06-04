@@ -375,7 +375,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
   if (settings.out_coords_file_name != "") {
     fstream out_coords_file;
-    out_coords_file.open(settings.out_coords_file_name.c_str(), ios::out);
+    out_coords_file.open(settings.out_coords_file_name, ios::out);
     for (size_t i=0; i < crds.size(); i++) {
       out_coords_file << crds[i][0]*voxel_width[0] << " "
                       << crds[i][1]*voxel_width[1] << " "
@@ -571,7 +571,7 @@ HandleBlobDetector(Settings settings,
               nullptr);
 
     fstream minima_file;
-    minima_file.open(settings.blob_minima_file_name.c_str(), ios::out);
+    minima_file.open(settings.blob_minima_file_name, ios::out);
     if (! minima_file)
       throw VisfdErr("Error: unable to open \""+ settings.blob_minima_file_name +"\" for reading.\n");
     for (int i=0; i < minima_crds_voxels.size(); i++) {
@@ -599,7 +599,7 @@ HandleBlobDetector(Settings settings,
               nullptr);
 
     fstream maxima_file;
-    maxima_file.open(settings.blob_maxima_file_name.c_str(), ios::out);
+    maxima_file.open(settings.blob_maxima_file_name, ios::out);
     if (! maxima_file)
       throw VisfdErr("Error: unable to open \""+ settings.blob_maxima_file_name +"\" for reading.\n");
     for (int i=0; i < maxima_crds_voxels.size(); i++) {
@@ -906,7 +906,7 @@ HandleExtrema(Settings settings,
   //                                  settings.out_file_name.length()-4);
   if ((minima_crds_voxels.size()) > 0 && settings.find_minima) {
     fstream minima_file;
-    minima_file.open(settings.find_minima_file_name.c_str(), ios::out);
+    minima_file.open(settings.find_minima_file_name, ios::out);
     if (! minima_file)
       throw VisfdErr("Error: unable to open \""+ settings.find_minima_file_name +"\" for reading.\n");
     for (int i=0; i < minima_crds_voxels.size(); i++)
@@ -919,7 +919,7 @@ HandleExtrema(Settings settings,
   }
   if ((maxima_crds_voxels.size() > 0) && settings.find_maxima) {
     fstream coords_file;
-    coords_file.open(settings.find_maxima_file_name.c_str(), ios::out);
+    coords_file.open(settings.find_maxima_file_name, ios::out);
     if (! coords_file)
       throw VisfdErr("Error: unable to open \""+ settings.find_maxima_file_name +"\" for reading.\n");
     for (int i=0; i < maxima_crds_voxels.size(); i++)

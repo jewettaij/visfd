@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     string in_file_name(argv[1]);
     cerr << "Reading tomogram \""<<in_file_name<<"\"" << endl;
     fstream mrc_file;
-    mrc_file.open(in_file_name.c_str(), ios::binary | ios::in);
+    mrc_file.open(in_file_name, ios::binary | ios::in);
     if (! mrc_file) 
       throw InputErr("Error: unable to open \"" + in_file_name + "\" for reading.\n");
     MrcHeader header;

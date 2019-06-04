@@ -175,7 +175,7 @@ void MrcSimple::Read(string in_file_name,
                      float ***aaafMask) {
   Int len_in_file_name = in_file_name.size();
   fstream mrc_file;
-  mrc_file.open(in_file_name.c_str(), ios::binary | ios::in);
+  mrc_file.open(in_file_name, ios::binary | ios::in);
   if (! mrc_file) 
     throw MrcfileErr("Error: unable to open \""+ in_file_name +"\" for reading.\n");
   // Try to infer signed-vs-unsigned integers from the file name:
@@ -347,7 +347,7 @@ void MrcSimple::ReadArray(istream& mrc_file,
 
 void MrcSimple::Write(string out_file_name) {
   fstream mrc_file;
-  mrc_file.open(out_file_name.c_str(), ios::binary | ios::out);
+  mrc_file.open(out_file_name, ios::binary | ios::out);
   if (! mrc_file) 
     throw MrcfileErr("Error: unable to open \""+ out_file_name+"\" for writing.\n");
   Write(mrc_file);  // You can also use "mrc_file << tomo;"

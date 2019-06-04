@@ -207,11 +207,11 @@ HandleBlobRadialIntensity(Settings settings,
 
     stringstream intensity_vs_r_file_name_ss;
     intensity_vs_r_file_name_ss
-      << settings.blob_profiles_file_name_base.c_str()
+      << settings.blob_profiles_file_name_base
       << "_" << i+1 << ".txt";
     cerr << "  creating \"" << intensity_vs_r_file_name_ss.str() << "\"" << endl;
     fstream f;
-    f.open(intensity_vs_r_file_name_ss.str().c_str(), ios::out);
+    f.open(intensity_vs_r_file_name_ss.str(), ios::out);
     if (! f)
       throw VisfdErr("Error: unable to open \""+
                      intensity_vs_r_file_name_ss.str()+"\" for writing.\n");
@@ -1345,7 +1345,7 @@ HandleDistanceToPoints(Settings settings,
                        float voxel_width[3])
 {
   fstream coords_file;
-  coords_file.open(settings.in_coords_file_name.c_str(), ios::in);
+  coords_file.open(settings.in_coords_file_name, ios::in);
   if (! coords_file)
     throw VisfdErr("Error: unable to open \""+
                    settings.in_coords_file_name +"\" for reading.\n");

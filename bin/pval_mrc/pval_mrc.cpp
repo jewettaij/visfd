@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
           for (int ix = 0; ix < tomo_in.header.nvoxels[0]; ix++)
             tomo_in.aaafI[iz][iy][ix] = 0.0;
       fstream coords_file;
-      coords_file.open(settings.in_coords_file_name.c_str(), ios::in);
+      coords_file.open(settings.in_coords_file_name, ios::in);
       if (! coords_file)
         throw InputErr("Error: unable to open \""+
                        settings.in_coords_file_name +"\" for reading.\n");

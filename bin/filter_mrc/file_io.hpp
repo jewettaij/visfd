@@ -63,7 +63,7 @@ ReadMulticolumnFile(istream &f,  //!< the file to be read
       stringstream err_msg;
       err_msg << "Error: File read error (invalid entry?) on line: "
               << i_line << "\n";
-      throw VisfdErr(err_msg.str().c_str());
+      throw VisfdErr(err_msg.str());
     }
     vvDest.push_back(row);
     i_line++;
@@ -85,7 +85,7 @@ ReadMulticolumnFile(string file_name,  //!< the name of the file to be read
                     )
 {
   fstream f;
-  f.open(file_name.c_str(), ios::in);
+  f.open(file_name, ios::in);
   if (! f)
     throw VisfdErr("Error: unable to open \""+
                     file_name +"\" for reading.\n");
@@ -162,7 +162,7 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
         stringstream err_msg;
         err_msg << "Error: File read error (invalid entry?) on line: "
                 << i+1 << "\n";
-        throw VisfdErr(err_msg.str().c_str());
+        throw VisfdErr(err_msg.str());
       }
 
       // The way we interpret the number depends on whether or not
@@ -258,7 +258,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
                    )
 {
   fstream coords_file;
-  coords_file.open(in_coords_file_name.c_str(), ios::in);
+  coords_file.open(in_coords_file_name, ios::in);
   if (! coords_file)
     throw VisfdErr("Error: unable to open \""+
                    in_coords_file_name +"\" for reading.\n");
@@ -337,7 +337,7 @@ WriteOrientedPointCloudPLY(string filename,
   
   size_t n = coords.size();
   fstream ply_file;
-  ply_file.open(filename.c_str(), ios::out);
+  ply_file.open(filename, ios::out);
   ply_file <<
     "ply\n"
     "format ascii 1.0\n"
@@ -372,7 +372,7 @@ WriteOrientedPointCloudOBJ(string filename,
   
   size_t n = coords.size();
   fstream obj_file;
-  obj_file.open(filename.c_str(), ios::out);
+  obj_file.open(filename, ios::out);
   obj_file << "# WaveFront *.obj file created by visfd\n";
   obj_file << "\n"
            << "g obj1_\n"
@@ -407,7 +407,7 @@ WriteOrientedPointCloudBNPTS(string filename,
                  "Please contact the developer.");
   size_t n = coords.size();
   fstream bnpts_file;
-  bnpts_file.open(filename.c_str(), ios::out | ios::binary);
+  bnpts_file.open(filename, ios::out | ios::binary);
   for (size_t i=0; i < n; i++) {
     float xyz[3];           //(convert from "Scalar" to float)
     xyz[0] = coords[i][0];  //(convert from "Scalar" to float)
