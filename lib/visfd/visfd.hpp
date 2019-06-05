@@ -9,10 +9,12 @@
 
 // higher level functions and classes are defined here:
 
-#include <feature.hpp>        // simple feature detectors (blob, surface,...)
-#include <segmentation.hpp>   // common segmentation and cluster operations
-#include <draw.hpp>           // functions for drawing and annotation
-#include <filter3d.hpp>       // common 3D filters
+#include <feature.hpp>       // simple feature detectors (blob, surface,...)
+#include <segmentation.hpp>  // functions used for segmentation (eg Watershed)
+#include <clustering.hpp>    // functions for clustering nearby voxels (a first
+                             // step to separate different objects in an image)
+#include <draw.hpp>          // functions for drawing and annotation
+#include <filter3d.hpp>      // common 3D filters
 
 
 // lower level functions and classes (upon which files above depend):
