@@ -10,7 +10,6 @@ using namespace std;
 #include "settings.hpp"
 
 
-// (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)
 
 
 
@@ -152,16 +151,16 @@ int main(int argc, char **argv) {
 
     // ---- thresholding and masking: ----
     
-    if (settings.in2_use_thresholds) {
+    if (settings.out_use_thresholds) {
       cerr << "thresholding the output tomogram...\n"
            << "  (Keeping the brightness of the voxels in the final tomogram between 0 1)\n" << endl;
-      for (int iz=0; iz<tomo2.header.nvoxels[2]; iz++) {
-	for (int iy=0; iy<tomo2.header.nvoxels[1]; iy++) {
-	  for (int ix=0; ix<tomo2.header.nvoxels[0]; ix++) {
+      for (int iz=0; iz<out_tomo.header.nvoxels[2]; iz++) {
+	for (int iy=0; iy<out_tomo.header.nvoxels[1]; iy++) {
+	  for (int ix=0; ix<out_tomo.header.nvoxels[0]; ix++) {
             if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0))
               continue;
-	    tomo2.aaafI[iz][iy][ix] =
-	      Threshold4(tomo2.aaafI[iz][iy][ix],
+	    out_tomo.aaafI[iz][iy][ix] =
+	      Threshold4(2-out_tomo.aaafI[iz][iy][ix],
 			 settings.out_threshold_01_a,
 			 settings.out_threshold_01_b,
 			 settings.out_threshold_10_a,
