@@ -36,7 +36,7 @@ voxels or regions from consideration.
 The contributions from remaining voxels are normalized, so that objects located
 within narrow confined spaces can be detected accurately and without penalty.)
 Masks can also be used to give some voxels more consideration
-than others during the bluring (filtering) process.  (A.K.A. "weighting".)
+than others during the blurring (filtering) process.  (A.K.A. "weighting".)
 You can use a mask to to apply a filter to an image
 whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
@@ -188,7 +188,7 @@ to images at different magnifications.
 
 Consequently, this program needs to know the physical width of each voxel.
 By default it will attempt to infer that from the MRC file
-*(which are typically stored in units **Angstroms**, not **nm**)*.
+*(which are typically stored in units of Angstroms, not nm)*.
 If you have a more accurate estimate of the voxel width,
 you can specify it using the "**-w**" argument:
 ```
@@ -204,7 +204,7 @@ will allow you to enter distance parameters in units of voxels.
  a ~10% difference between the voxel width stored in the
  MRC file, and the voxel width stored at the
  corresponding entry in the tomography database.
- The later is more accurate.)
+ The later is more accurate.)*
 
 
 
@@ -357,7 +357,7 @@ Tensor-voting (using the *-surface-tv* argument)
 can be used to remove these spurious detected peaks
 and improve the signal-to-noise ratio.
 
-*(Techincal details: This will generate an output image whose brightness equals
+*(Technical details: This will generate an output image whose brightness equals
 Ngamma_norm = λ1^2 - λ2^2,
 where λ1, abd λ2 are the largest and second-largest eigenvalues of the
 hessian matrix, multiplied by σ^2 [in units of voxels].
@@ -387,7 +387,7 @@ because it can be a very expensive computation.
         It enables refinement of existing results from the -surface filter.
         This argument is ignored unless the -surface argument is also used.)*
 
-*(Techincal details: The width of the Gaussian used in the radial-decay
+*(Technical details: The width of the Gaussian used in the radial-decay
                      function used in tensor voting has a width of
                      σ_tv = σ_ratio ⨉ σ,
                      where "σ" is the bluring used in the ridge detection
@@ -402,7 +402,9 @@ in incompatible directions.  It is 4 be default.
 
 ### -surface-threshold threshold
 
-This will discard voxels whose saliency (after ridge detection)
+This will discard voxels whose
+[saliency](https://en.wikipedia.org/wiki/Saliency_map)
+(ie. membrane-ness after ridge detection)
 falls below *threshold*.
 This will make subsequent steps in the calculation
 **(such as tensor voting)** faster.
@@ -419,9 +421,10 @@ argument, because no intermediate visualization step is required.
 
 ### -surface-best fraction
 
-This will discard voxels whose saliency
-(ie "membrane-ness" after ridge detection)
-is not in the top *fraction* of voxels in the image
+The vast majority of voxels in an image do not resemble the feature you are searching for (ie membranes).  The "-surface-best" argument will discard all but the most salient voxels in the image.  It discards voxels from future consideration
+unless their
+[saliency](https://en.wikipedia.org/wiki/Saliency_map)
+is in the top *fraction* of all of the voxel saliencies from the entire image
 (excluding masked voxels, if applicable).
 This will significantly reduce the computation needed
 for any subsequent steps in the calculation
@@ -429,10 +432,7 @@ for any subsequent steps in the calculation
 by a factor which is roughly proportional to this number.
 The *fraction* parameter should lie in the range from 0 to 1.
 (Using *0.1* is a conservative choice, but you can often get away
- with using lower values.)
-
-If the resulting membranes stored in the "membrane_tv.rec" file
-are missing or are incomplete, then increase this number and try again.
+ with using lower values.  If the resulting surfaces are incomplete, it may help to increase this number and try again.)
 
 
 ### -connect threshold
@@ -467,7 +467,7 @@ argument is used together with the
 argument,*
 (which is typically used for membrane detection), then it means that additional,
 *more stringent* criteria will be used to distinguish nearby thin, curved
-membrane-like objects from eachother.
+membrane-like objects from each other.
 In particular, surfaces are assumed to be moderately smooth.
 This means that adjacent voxels with radically different orientations
 will never be grouped together.
@@ -512,7 +512,7 @@ argument
 [example](#Example-1)).
 Open the file created during that step
 (eg. "membranes_tv.rec") in IMOD.
-Find a place in the image where the saliency (brightnees)
+Find a place in this image where the saliency (brightness)
 of the membrane you are interested in is weak.
 Click on voxels located near the weakest point (a.k.a. "junction point",
 or "saddle point") between two different bright blobs
@@ -629,7 +629,7 @@ such as "Pixel" and "=...".  This text will be ignored.)
 
 ####  Example 2: *must-link* coordinates in units of *physical distance*
 
-If no paranthesis are used, then it is assumed
+If no parenthesis are used, then it is assumed
 that the coordinates are in physical distance units (eg Angstroms).
 ```
 379.68 1923.71 1822.46
@@ -681,18 +681,16 @@ The *-cts*, *-ctn*, *-cvs*, *-cvn* arguments determine how similar the
 orientations of each voxel must be in order for a pair of neighboring voxels
 to be merged into the same cluster (ie. the same membrane or same filament).
 
-**Most of the time, *-cts*, *-ctn*, *-cvs*, *-cvn* arguments can be omitted,**
-since the default arguments (0.707) work well.
+Threshold values in the range from -1 to 1 are supported.
 
-Threshold values in the range from 0 to 1 are supported.
-A *-threshold* value of 0.707 ≈ cos(45°) and corresonds to a
+A *-threshold* value of 0.707 ≈ cos(45°) and corresponds to a
 45 degree difference between orientations of neighboring voxels.
 In that case, neighboring voxels pointing in directions which
 differ by more than 45°
 will be assigned to different clusters (membranes).
-This is the default behavior.  (-andrew 2019-3-04)
+(The default value, -1, disables this feature.)
 
-The difference in meaning between these 4 arguments will be ellaborated on
+The difference in meaning between these 4 arguments will be elaborated on
 in the future.  For now it is safe to set them all equal to the same value,
 or omit them entirely since the default value of 0.707 works well in most cases
 (-andrew 2019-3-04).
@@ -715,23 +713,22 @@ or
   -find-maxima  filename
 ```
 The **-find-minima** and **-find-maxima** arguments will
-create a file containing the locations of the local minima or maxima
-of the voxel brightnesses within the image, respectively.
-A "minima" is defined as one or more neighboring voxels
-of identical brightness, surrounded by neighbors of higher brightness.
+create a file containing the locations of the where the voxel brightness is either a local minima or maxima, respectively.
+A "minima" is defined as one or more connected voxels
+(of identical brightness), surrounded on all sides by neighbors of higher brightness.
 (See below for details about which voxels are considered *"neighbors"*.)
 
 This will generate a text file indicating the location of the minima.
 This file is a 5-column ascii text file.
 Each file is a 5-column ascii text file with the following format:
 ```
-x1 y1 z1 num_voxels1 brightness1
-x2 y2 z2 num_voxels2 brightness2
+x1 y1 z1 numVoxels1 brightness1
+x2 y2 z2 numVoxels2 brightness2
  :  :  :   :     :
-xM yM zM num_voxelsM brightnessM
+xM yM zM numVoxelsM brightnessM
 ```
 The x,y,z coordinates of each minima or maxima are in the first 3 columns,
-followed by the number of voxels in the maxima or minimaa (which is usually 1), and finally
+followed by the number of voxels in the maxima or minima (which is usually 1), and finally
 it's "score" (which is the brightness of the voxel at that location).
 *(This format is nearly identical to the format used by the
   "-blob",  "-blobr",  "-blobd" and "-draw-spheres" arguments.)*
@@ -883,7 +880,7 @@ These blobs can be visualized using the "**-draw-spheres**" argument
 #### Blob types
 
 The first argument indicates the **type** blob that the user wants to detect.
-(The **type** is the 1st argument following the "-blob" arument.)
+(The **type** is the 1st argument following the "-blob" argument.)
 It must be one of the following choices:
 
 |   type   | meaning |
@@ -984,7 +981,7 @@ arguments
 
 
 
-## Morphology
+## Segmentation
 
 ### -watershed type
 
@@ -1030,7 +1027,7 @@ are considered by default.
  3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
  This may increase the number of spurious basins discovered.)
 
-*Note:* Oversegmentation can be reduced by performing a Gaussian blur
+*Note:* Over-segmentation can be reduced by performing a Gaussian blur
 on the image to remove small, insignificant local minima beforehand.
 (This algorithm is usually only applied to images that have been smoothed
 or filtered in advance to prevent oversegmentaion.)
@@ -1582,7 +1579,7 @@ the sphere (in physical units, not voxels).
 If the file contains a 5th column, it is assumed to represent the brightness
 of that sphere.
 (This can be overridden using the "**-foreground brightness**" argument.)
-Incidentally, the format of this file matches the formmat of the text file
+Incidentally, the format of this file matches the format of the text file
 generated during blob detection (using the "**-blob**" argument).
 
 The thickness of the shell can be controlled using the
@@ -1752,7 +1749,7 @@ Choosing blobs which are "edge-cases" is recommended.
         The "-auto-thresh" argument will have no effect unless
         you are also using the "-supervised" and the
         "-discard-blobs" arguments as well.
-        The "score" argument is not a number, but litterally the word "score".
+        The "score" argument is not a number, but literally the word "score".
         Eventually, it will be possible to supply a list of other criteria used
         for classifying blobs, but as of 2019-5-07, only "score" is available.)*
 

@@ -117,7 +117,7 @@ Documentation for this program is located
 Program names, command line arguments, file names, and function names
 (in the API) may all change in the future.
 Automated testing was added,
-however as of 2019-2-27, some commits still (temporarilly) break everything.
+however as of 2019-2-27, some commits still (temporarily) break everything.
 (...because I'm too lazy to use branch & merge.
  This usually gets fixed within 24 hours.
  If the build is failing, choose a previous commit.)
@@ -152,7 +152,7 @@ Otherwise, if you are using an older version of windows, try installing
 
 ## Apple Mac:
 
-*WARNING: The following proceedure has not been tested.
+*WARNING: The following procedure has not been tested.
  If you have a mac, please test this and let me know if it worked
  (or if something else worked).
  -andrew 2019-3-08*
@@ -177,9 +177,10 @@ If this doesn't work and you are desperate, you can try this instead:
 
 ## Requirements:
 
-**8GB** or higher is required.
+**8GB** of RAM or higher is required.
 (For membrane detection,
- your RAM must exceed 11x the size of the tomogram that you are analyzing.)
+ your RAM must exceed 11x the size of the tomogram that you are analyzing.
+ You can reduce the memory needed by cropping your tomogram.)
 
 The CLANG compiler is strongly recommended.
 ([The clustering feature does not yet work with GCC.](https://github.com/jewettaij/visfd/issues/2))
@@ -202,4 +203,3 @@ license.  (See "[LICENSE.md](./LICENSE.md)")
 ## Funding
 
 VISFD is funded by NIH grant R01GM120604.
-

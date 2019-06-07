@@ -7,7 +7,7 @@
 #ifndef _VISFD_HPP
 #define _VISFD_HPP
 
-// higher level functions and classes are defined here:
+// higher level functions and classes are defined in these header files:
 
 #include <feature.hpp>       // simple feature detectors (blob, surface,...)
 #include <segmentation.hpp>  // functions used for segmentation (eg Watershed)
@@ -18,7 +18,6 @@
 
 
 // lower level functions and classes (upon which files above depend):
-
 
 #include <err_visfd.hpp>      // defines the "VisfdErr" exception type
 #include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
