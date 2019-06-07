@@ -403,7 +403,7 @@ in incompatible directions.  It is 4 be default.
 ### -surface-threshold threshold
 
 This will discard voxels whose
-[saliency](https://en.wikipedia.org/wiki/Saliency_map)
+[saliency](https://www.pyimagesearch.com/2018/07/16/opencv-saliency-detection)
 (ie. membrane-ness after ridge detection)
 falls below *threshold*.
 This will make subsequent steps in the calculation
@@ -423,7 +423,7 @@ argument, because no intermediate visualization step is required.
 
 The vast majority of voxels in an image do not resemble the feature you are searching for (ie membranes).  The "-surface-best" argument will discard all but the most salient voxels in the image.  It discards voxels from future consideration
 unless their
-[saliency](https://en.wikipedia.org/wiki/Saliency_map)
+[saliency](https://www.pyimagesearch.com/2018/07/16/opencv-saliency-detection)
 is in the top *fraction* of all of the voxel saliencies from the entire image
 (excluding masked voxels, if applicable).
 This will significantly reduce the computation needed
