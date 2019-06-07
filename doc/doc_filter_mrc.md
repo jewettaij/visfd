@@ -1585,8 +1585,13 @@ generated during blob detection (using the "**-blob**" argument).
 The thickness of the shell can be controlled using the
 "**-spheres-shell-ratio ratio**" argument.
 Setting the "ratio" to 1 results in a solid rather than hollow sphere.
-(The default shell thickness is 0.08.
- The minimum width of the shell is 1 voxel wide.)
+Setting it to 0.1 results in a spherical shell thickess
+equal to 1/10th the radius of the sphere.
+(To insure that the spherical shell remains always visible,
+ the minimum shell thickness will never be less than 1 voxel wide, by default.
+ However you can customize the minimum thickness
+ using the "**-sphere-shell-thickness-min width**" argument.  In this case,
+ the *width* argument should be in voxels, not in physical distance units.)
 
 By default, these spherical shells will be superimposed upon the
 original image (whose voxel's brightness will be shifted and scaled

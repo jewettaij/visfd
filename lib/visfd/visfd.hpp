@@ -11,8 +11,8 @@
 
 #include <feature.hpp>       // simple feature detectors (blob, surface,...)
 #include <segmentation.hpp>  // functions used for segmentation (eg Watershed)
-#include <clustering.hpp>    // functions for clustering nearby voxels (a first
-                             // step to separate different objects in an image)
+#include <clustering.hpp>    // functions for clustering nearby voxels (useful
+                             // to separate different objects in an image)
 #include <draw.hpp>          // functions for drawing and annotation
 #include <filter3d.hpp>      // common 3D filters
 
