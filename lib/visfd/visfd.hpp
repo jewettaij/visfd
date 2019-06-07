@@ -17,7 +17,7 @@
 #include <filter3d.hpp>      // common 3D filters
 
 
-// lower level functions and classes (upon which files above depend):
+// lower level functions and classes (upon which the files above depend):
 
 #include <err_visfd.hpp>      // defines the "VisfdErr" exception type
 #include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
