@@ -74,7 +74,7 @@ public:
 
   /// @brief  Read an .MRC/.REC file
   void Read(string mrc_file_name,  //!<name of the file
-            bool rescale=false,     //!<Optional: rescale densities from 0 to 1?
+            bool rescale=false,     //!<Optional: rescale brightnesses from 0 to 1?
             float ***aaafMask=nullptr//!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
             );
 
@@ -83,7 +83,7 @@ public:
 
   /// @brief  Read an .MRC/.REC file
   void Read(istream& mrc_file,      //!< Read an .MRC/.REC file (input stream)
-            bool rescale=false,      //!<Optional: rescale densities from 0 to 1?
+            bool rescale=false,      //!<Optional: rescale brightnesses from 0 to 1?
 	    float ***aaafMask=nullptr  //!<Optional: ignore zero-valued voxels in the aaafMask[][][] array
             );
   void Write(ostream& mrc_file); //Write an .MRC/.REC file (output stream)
@@ -91,28 +91,30 @@ public:
 
 
 
-  // @brief Read all density values from the tomogram and
+  // @brief Read all brightness values from the tomogram and
   //  determine header.dmin,dmax,dmean
   //  The optional pmask argument allows you to indicate
   //  voxels who you want to exclude fron consideration.
   //  We want different versions of the same tomogram to be directly comparable,
   //  even if they were saved using different formats ("modes").
-  //  So we rescale them by dividing their densities values by the 
-  //  magnitude of the range of densities which are allowed in the file.
+  //  So we rescale them by dividing their brightnesses values by the 
+  //  magnitude of the range of brightnesses which are allowed in the file.
   //  If an optional pmask argument is provided, then voxels in the mask
   //  containing zeros 0 are ignored and are not rescaled.
   void FindMinMaxMean(float ***aaafMask=nullptr); 
 
-  /// @brief  linearly rescale the voxel intensities in the image so that the
-  ///         new voxel intensities range from outA to outB
+  /// @brief shift and rescale the voxel intensities in the image so that the
+  ///        minimum and maximum voxel intensities are now outA to outB.
   void Rescale01(float ***aaafMask,
                  float outA=0.0,
                  float outB=1.0);
 
   /// @brief Sometimes we want to make the "white" voxels look black,
   /// and the black voxels look white.
-  /// The Invert() will change the density of every voxel using:
-  ///   new_density = (ave_density - old_density)
+  /// The Invert() will change the brightness of every voxel using:
+  ///   new_brightness = (2*ave_brightness - old_brightness)
+  /// This will replice bright voxels with dark ones while preserving the
+  /// average and standard deviation of brightness values in the original image.
   void Invert(float ***aaafMask=nullptr); 
 
   /// @brief  Print information about the tomogram size and format

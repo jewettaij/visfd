@@ -1608,7 +1608,7 @@ The average *brightness* and *contrast* of these background voxels
 is controlled by the "**-background brightness**", and the
 "**-background-scale ratio**" arguments, respectively.
 (Using "**-background-scale 0**" makes this background image invisible.
- The default scale ratio is 0.333.)
+ The default scale *ratio* is 0.1666667.)
 
 When displayed in IMOD,
 blobs with good scores typically appear as black or white spheres,

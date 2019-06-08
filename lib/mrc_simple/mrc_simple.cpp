@@ -358,7 +358,7 @@ void MrcSimple::Write(string out_file_name) {
 void MrcSimple::Write(ostream& mrc_file) {
   // First, write the MRC file header:
   //header.Write(mrc_file); <-- OOPS, that does not work.  Commenting out.
-  // Note that any changes made to the tomogram density data will effect the
+  // Note that any changes made to the tomogram brightness data will effect the
   // header. So we make a copy of the original header and modify it accordingly:
   // As of 2015-4-16, regardless of the original header, I save the list
   // of numbers in "float" format.  This means I must change mrc.mode.
@@ -368,7 +368,7 @@ void MrcSimple::Write(ostream& mrc_file) {
   new_header.mode = MrcHeader::MRC_MODE_FLOAT;
   new_header.Write(mrc_file);
 
-  // Finally, write the array of densities:
+  // Finally, write the array of brightnesses:
   WriteArray(mrc_file);
 
 } //MrcSimple::Write(ostream& mrc_file) const
@@ -389,7 +389,7 @@ void MrcSimple::WriteArray(ostream& mrc_file) const {
 
 
 void MrcSimple::FindMinMaxMean(float ***aaafMask) {
-  double density_total = 0.0;
+  double brightness_total = 0.0;
   double dmin = 0.0;  //impossible initial value
   double dmax = -1.0; //impossible initial value
   long long nvoxels_kept = 0;
@@ -398,7 +398,7 @@ void MrcSimple::FindMinMaxMean(float ***aaafMask) {
       for(Int ix=0; ix<header.nvoxels[0]; ix++) {
         if (aaafMask && (aaafMask[iz][iy][ix] == 0))
           continue; //if a mask is supplied, ignore voxels when mask=0
-        density_total += aaafI[iz][iy][ix];
+        brightness_total += aaafI[iz][iy][ix];
         if (dmin > dmax) {
           dmin = aaafI[iz][iy][ix];
           dmax = aaafI[iz][iy][ix];
@@ -415,7 +415,7 @@ void MrcSimple::FindMinMaxMean(float ***aaafMask) {
   }
   header.dmin = dmin;
   header.dmax = dmax;
-  header.dmean = density_total  /  nvoxels_kept;
+  header.dmean = brightness_total  /  nvoxels_kept;
 }
 
 

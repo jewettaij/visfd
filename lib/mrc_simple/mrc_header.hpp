@@ -33,7 +33,7 @@ public:
   Int nvoxels[3];  // How many voxels are in the tomogram? (in x,y,z direction)
                    // (total number = nvoxels[0]*nvoxels[1]*nvoxels[2])
 
-  Int mode; // Format of the numbers representing the density at each voxel 
+  Int mode; // Format of the numbers representing the brightness at each voxel 
             // location in the array (as stored in an MRC/REC file):
   const static Int  MRC_MODE_UNDEFINED     = -1;
   const static Int  MRC_MODE_BYTE          = 0;
@@ -43,8 +43,8 @@ public:
   const static Int  MRC_MODE_COMPLEX_FLOAT = 4;  // (IGNORED as of 2015-4-16)
   const static Int  MRC_MODE_USHORT        = 6;
   const static Int  MRC_MODE_RGB           = 16; // (IGNORED as of 2015-4-16)
-            // Note: This is only useful when reading or writing MRC files.
-            // (Internally, densities are represented using arrays of floats.)
+           // Note: This is only useful when reading or writing MRC files.
+           // (Internally, brightnesses are represented using arrays of floats.)
 
 
   // ----- (The "nstart" and "mvoxels" entries are not useful for us, but -----

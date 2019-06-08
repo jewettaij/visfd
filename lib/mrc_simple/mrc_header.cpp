@@ -127,9 +127,9 @@ void MrcHeader::Read(istream& mrc_file) {
   mapCRS[2] = *(reinterpret_cast<Int*>(header_data)+18);
 
 
-  // 20    DMIN     minimum density value
-  // 21    DMAX     maximum density value
-  // 22    DMEAN    mean density value
+  // 20    DMIN     minimum brightness value
+  // 21    DMAX     maximum brightness value
+  // 22    DMEAN    mean brightness value
   //mrc_file.read((char*)&(dmin), sizeof(float));
   //mrc_file.read((char*)&(dmax), sizeof(float));
   //mrc_file.read((char*)&(dmean), sizeof(float));
@@ -246,9 +246,9 @@ void MrcHeader::Write(ostream& mrc_file) const {
   mrc_file.write((char*)&(mapCRS[1]), sizeof(Int));
   mrc_file.write((char*)&(mapCRS[2]), sizeof(Int));
 
-  // 20    DMIN     minimum density value
-  // 21    DMAX     maximum density value
-  // 22    DMEAN    mean density value
+  // 20    DMIN     minimum brightness value
+  // 21    DMAX     maximum brightness value
+  // 22    DMEAN    mean brightness value
   mrc_file.write((char*)&(dmin), sizeof(float));
   mrc_file.write((char*)&(dmax), sizeof(float));
   mrc_file.write((char*)&(dmean), sizeof(float));

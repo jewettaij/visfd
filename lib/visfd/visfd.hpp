@@ -10,7 +10,7 @@
 // higher level functions and classes are defined in these header files:
 
 #include <feature.hpp>       // simple feature detectors (blob, surface,...)
-#include <segmentation.hpp>  // functions used for segmentation (eg Watershed)
+#include <segmentation.hpp>  // functions used for segmentation (eg watershed)
 #include <clustering.hpp>    // functions for clustering nearby voxels (useful
                              // to separate different objects in an image)
 #include <draw.hpp>          // functions for drawing and annotation
