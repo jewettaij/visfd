@@ -1748,8 +1748,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-spheres-shell-ratio") ||
-             (vArgs[i] == "-sphere-shell-ratio")) {
+    else if ((vArgs[i] == "-sphere-shell-ratio") ||
+             (vArgs[i] == "-spheres-shell-ratio")) {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))

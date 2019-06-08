@@ -1583,15 +1583,23 @@ Incidentally, the format of this file matches the format of the text file
 generated during blob detection (using the "**-blob**" argument).
 
 The thickness of the shell can be controlled using the
-"**-spheres-shell-ratio ratio**" argument.
-Setting the "ratio" to 1 results in a solid rather than hollow sphere.
+"**-sphere-shell-thickness thickness**" or
+"**-sphere-shell-ratio ratio**" arguments. 
+In the first example, the *thickness* of the sphere is the same for all spheres,
+regardless of sphere size.  In that case, the *thickness* argument should
+be specified in physical distance units
+(*or* in voxels, if you are using the "*-w 1*" argument). 
+On the other hand, if you use the "**-spheres-shell-ratio ratio**" argument,
+the thickness is expressed as a ratio, relative to the radius of the sphere. 
+(Larger spheres will have thicker shells.) 
+Setting the "ratio" to 1 results in a solid rather than hollow sphere. 
 Setting it to 0.1 results in a spherical shell thickess
-equal to 1/10th the radius of the sphere.
-(To insure that the spherical shell remains always visible,
- the minimum shell thickness will never be less than 1 voxel wide, by default.
+equal to 1/10th the radius of the sphere. 
+(To insure that the spherical shell always remains visible,
+ the minimum shell thickness will never be less than 1 voxel wide, by default. 
  However you can customize the minimum thickness
- using the "**-sphere-shell-thickness-min width**" argument.  In this case,
- the *width* argument should be in voxels, not in physical distance units.)
+ using the "**-sphere-shell-thickness-min thickness**" argument.  In this case,
+ the *thickness* argument should be in voxels, not in physical distance units.)
 
 By default, these spherical shells will be superimposed upon the
 original image (whose voxel's brightness will be shifted and scaled
