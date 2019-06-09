@@ -564,53 +564,53 @@ BlobDog(int const image_size[3], //!< source image size
     if (pReportProgress)
       *pReportProgress
         << " Discarding poor scoring blobs...\n"
-        << " (If this is taking a while, just keep all the blobs, \n"
-        << "  and discard the poor-scoring blobs later on.)\n"
         << endl;
 
     if (use_threshold_ratios) {
       minima_threshold *= global_min_score;
       maxima_threshold *= global_max_score;
     }
+
     // Now that we know what the true global minima and maxima are,
     // go back and discard maxima whose scores are not higher than
     // maxima_threshold * global_max_score.
     // (Do the same for local minima as well.)
-    int i;
-    i = 0;
-    while (i < minima_scores.size()) {
-      assert(minima_scores[i] < 0.0);
-      if (minima_scores[i] >= minima_threshold) {
-        // delete this blob
-        // WARNING: This might be a slow operation if there are millions of blobs
-        // Perhaps I should create a temporary array and copy the results.
-        pva_minima_crds->erase(pva_minima_crds->begin() + i,
-                               pva_minima_crds->begin() + i + 1);
-        pv_minima_sigma->erase(pv_minima_sigma->begin() + i,
-                               pv_minima_sigma->begin() + i + 1);
-        pv_minima_scores->erase(pv_minima_scores->begin() + i,
-                                pv_minima_scores->begin() + i + 1);
+
+    { // throw away the poor-scoring minima
+      assert(pva_minima_crds && pv_minima_sigma && pv_minima_scores);
+      vector<array<Scalar,3> > minima_crds_cpy;
+      vector<Scalar> minima_sigma_cpy;
+      vector<Scalar> minima_scores_cpy;
+      for (int i = 0; i < minima_scores.size(); i++) {
+        assert(minima_scores[i] < 0.0);
+        if (minima_scores[i] <= minima_threshold) {
+          minima_crds_cpy.push_back((*pva_minima_crds)[i]);
+          minima_sigma_cpy.push_back((*pv_minima_sigma)[i]);
+          minima_scores_cpy.push_back((*pv_minima_scores)[i]);
+        }
       }
-      else
-        i++;
-    }
-    i = 0;
-    while (i < maxima_scores.size()) {
-      assert(maxima_scores[i] > 0.0);
-      if (maxima_scores[i] <= maxima_threshold) {
-        // delete this blob
-        // WARNING: This might be a slow operation if there are millions of blobs
-        // Perhaps I should create a temporary array and copy the results.
-        pva_maxima_crds->erase(pva_maxima_crds->begin() + i,
-                               pva_maxima_crds->begin() + i + 1);
-        pv_maxima_sigma->erase(pv_maxima_sigma->begin() + i,
-                               pv_maxima_sigma->begin() + i + 1);
-        pv_maxima_scores->erase(pv_maxima_scores->begin() + i,
-                                pv_maxima_scores->begin() + i + 1);
+      *pva_minima_crds = minima_crds_cpy;
+      *pv_minima_sigma = minima_sigma_cpy;
+      *pv_minima_scores = minima_scores_cpy;
+    } // throw away the poor-scoring minima
+
+    { // throw away the poor-scoring maxima
+      assert(pva_maxima_crds && pv_maxima_sigma && pv_maxima_scores);
+      vector<array<Scalar,3> > maxima_crds_cpy;
+      vector<Scalar> maxima_sigma_cpy;
+      vector<Scalar> maxima_scores_cpy;
+      for (int i = 0; i < maxima_scores.size(); i++) {
+        assert(maxima_scores[i] < 0.0);
+        if (maxima_scores[i] >= maxima_threshold) {
+          maxima_crds_cpy.push_back((*pva_maxima_crds)[i]);
+          maxima_sigma_cpy.push_back((*pv_maxima_sigma)[i]);
+          maxima_scores_cpy.push_back((*pv_maxima_scores)[i]);
+        }
       }
-      else
-        i++;
-    }
+      *pva_maxima_crds = maxima_crds_cpy;
+      *pv_maxima_sigma = maxima_sigma_cpy;
+      *pv_maxima_scores = maxima_scores_cpy;
+    } // throw away the poor-scoring maxima
 
     if (pReportProgress)
       *pReportProgress << " ...done.\n" << endl;

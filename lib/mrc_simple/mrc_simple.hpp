@@ -115,6 +115,7 @@ public:
   ///   new_brightness = (2*ave_brightness - old_brightness)
   /// This will replice bright voxels with dark ones while preserving the
   /// average and standard deviation of brightness values in the original image.
+  /// (However it does not gaurantee that the new brightnesses will be positive)
   void Invert(float ***aaafMask=nullptr); 
 
   /// @brief  Print information about the tomogram size and format
