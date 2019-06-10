@@ -27,10 +27,10 @@ using namespace std;
 #include "handlers_unsupported.hpp"
 
 
-string g_program_name("filter_mrc");
-string g_version_string("0.19.5");
-string g_date_string("2018-5-29");
 
+string g_program_name("filter_mrc");
+string g_version_string("0.19.6");
+string g_date_string("2019-6-10");
 
 
 
