@@ -113,8 +113,8 @@ Settings::Settings() {
   is_training_data_neg_in_voxels = false;
   blob_width_multiplier = 1.0;
   nonmax_min_radial_separation_ratio = 0.0;
-  nonmax_max_volume_overlap_small = 1.0;
-  nonmax_max_volume_overlap_large = 1.0;
+  nonmax_max_volume_overlap_small = std::numeric_limits<float>::infinity();
+  nonmax_max_volume_overlap_large = std::numeric_limits<float>::infinity();
   auto_thresh_score = false;
 
   clusters_begin_at_maxima = false;

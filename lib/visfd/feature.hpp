@@ -795,10 +795,10 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds, //!< x,y,z of each blob's center
 
 template<typename Scalar>
 
-Scalar CalcSphereVolOverlap(Scalar rij,//!<the distance between the spheres' centers
-                            Scalar Ri, //!< the radius of sphere i
-                            Scalar Rj  //!< the radius of sphere j
-                            )
+Scalar CalcSphereOverlap(Scalar rij,//!<the distance between the spheres' centers
+                         Scalar Ri, //!< the radius of sphere i
+                         Scalar Rj  //!< the radius of sphere j
+                         )
 {
   // WLOG, assume Ri <= Rj.  Insure that below
   if (Ri > Rj) {
@@ -815,8 +815,8 @@ Scalar CalcSphereVolOverlap(Scalar rij,//!<the distance between the spheres' cen
   Scalar xi = 0.5 * (1.0/rij) * (rij*rij + Ri*Ri - Rj*Rj);
   Scalar xj = 0.5 * (1.0/rij) * (rij*rij + Rj*Rj - Ri*Ri);
   Scalar volume_overlap =
-    (M_PI/3)*( Ri*Ri*Ri * (1 + SQR(xi/Ri)) * (1 - (xi/Ri)) +
-               Rj*Rj*Rj * (1 + SQR(xj/Rj)) * (1 - (xj/Rj)) );
+    (M_PI/3)*( Ri*Ri*Ri * (2 - (xi/Ri) * (3 - SQR(xi/Ri))) +
+               Rj*Rj*Rj * (2 - (xj/Rj) * (3 - SQR(xj/Rj))) );
   return volume_overlap;
 }
 
@@ -844,8 +844,8 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
                         vector<Scalar>& blob_scores, //!< priority of each blob
                         SortBlobCriteria sort_blob_criteria, //!< give priority to high or low scoring blobs?
                         Scalar min_radial_separation_ratio, //!< discard blobs if closer than this (ratio of sum of radii)
-                        Scalar max_volume_overlap_large, //!< discard blobs which overlap too much with the large blob
-                        Scalar max_volume_overlap_small, //!< discard blobs which overlap too much with the small blob
+                        Scalar max_volume_overlap_large=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the large blob (disabled by default; 1.0 would also do this)
+                        Scalar max_volume_overlap_small=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the small blob (disabled by default; 1.0 would also do this)
                         ostream *pReportProgress = nullptr, //!< report progress back to the user?
                         int scale=6 //!<occupancy_table_size shrunk by this much
                                     //!<relative to source (necessary to reduce memory usage)
@@ -1002,21 +1002,11 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
             Scalar ky = blob_crds[k][1];
             Scalar kz = blob_crds[k][2];
             Scalar rik = sqrt((ix-kx)*(ix-kx)+(iy-ky)*(iy-ky)+(iz-kz)*(iz-kz));
-            Scalar vol_overlap = CalcSphereVolOverlap(rik,
-                                                      blob_diameters[i]/2,
-                                                      blob_diameters[k]/2);
             Scalar ri = blob_diameters[i]/2;
             Scalar rk = blob_diameters[k]/2;
+            Scalar vol_overlap = CalcSphereOverlap(rik, ri, rk);
             if (rik < (ri + rk) * min_radial_separation_ratio) {
               discard = true;
-              // REMOVE THIS CRUFT:
-              ////  for debugging:
-              //if (pReportProgress)
-              //  *pReportProgress << "discarding blob ("
-              //                   << ix << "," << iy << "," << iz
-              //                   << "): rik=" << rik
-              //                   << ", ri=" << ri
-              //                   << ", rk=" << rk << "\n";
             }
             Scalar vi = (4*M_PI/3)*(ri*ri*ri);
             Scalar vk = (4*M_PI/3)*(rk*rk*rk);
@@ -1030,7 +1020,6 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
                 (vol_overlap / v_large > max_volume_overlap_large)) {
               discard = true;
               // REMOVE THIS CRUFT:
-              ////  for debugging:
               //if (pReportProgress)
               //  *pReportProgress << "discarding blob ("
               //                   << ix << "," << iy << "," << iz
@@ -1043,15 +1032,15 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
       }
     }
     if (discard) {
-      //  commenting out:  using erase() is too slow for large blob lists
-      //  (with millions of entries)
-      //blob_crds.erase(blob_crds.begin() + i);
-      //blob_diameters.erase(blob_diameters.begin() + i);
-      //blob_scores.erase(blob_scores.begin() + i);
-      //  instead don't add an entry to the list copy
+      // then don't add an entry to the list of blobs
       continue;
     }
     else {
+      // then add an entry to the list of blobs (stored in the following arrays)
+      blob_crds_cpy.push_back(blob_crds[i]);
+      blob_diameters_cpy.push_back(blob_diameters[i]);
+      blob_scores_cpy.push_back(blob_scores[i]);
+      // mark the pixels within blob i as occupied by blob i
       for(int Jz = -Reff; Jz <= Reff && (! discard); Jz++) {
         for(int Jy = -Reff; Jy <= Reff && (! discard); Jy++) {
           for(int Jx = -Reff; Jx <= Reff && (! discard); Jx++) {
@@ -1066,11 +1055,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
           }
         }
       }
-
-      blob_crds_cpy.push_back(blob_crds[i]);
-      blob_diameters_cpy.push_back(blob_diameters[i]);
-      blob_scores_cpy.push_back(blob_scores[i]);
-    }
+    } //else clause to "if (discard)"
 
   } //for (size_t i = 0; i < blob_crds.size(); i++)
 
