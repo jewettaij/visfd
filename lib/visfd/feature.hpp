@@ -581,9 +581,9 @@ BlobDog(int const image_size[3], //!< source image size
       vector<array<Scalar,3> > minima_crds_cpy;
       vector<Scalar> minima_sigma_cpy;
       vector<Scalar> minima_scores_cpy;
-      for (int i = 0; i < minima_scores.size(); i++) {
-        assert(minima_scores[i] < 0.0);
-        if (minima_scores[i] <= minima_threshold) {
+      for (int i = 0; i < pv_minima_scores->size(); i++) {
+        assert((*pv_minima_scores)[i] < 0.0);
+        if ((*pv_minima_scores)[i] <= minima_threshold) {
           minima_crds_cpy.push_back((*pva_minima_crds)[i]);
           minima_sigma_cpy.push_back((*pv_minima_sigma)[i]);
           minima_scores_cpy.push_back((*pv_minima_scores)[i]);
@@ -599,9 +599,9 @@ BlobDog(int const image_size[3], //!< source image size
       vector<array<Scalar,3> > maxima_crds_cpy;
       vector<Scalar> maxima_sigma_cpy;
       vector<Scalar> maxima_scores_cpy;
-      for (int i = 0; i < maxima_scores.size(); i++) {
-        assert(maxima_scores[i] < 0.0);
-        if (maxima_scores[i] >= maxima_threshold) {
+      for (int i = 0; i < pv_maxima_scores->size(); i++) {
+        assert((*pv_maxima_scores)[i] > 0.0);
+        if ((*pv_maxima_scores)[i] >= maxima_threshold) {
           maxima_crds_cpy.push_back((*pva_maxima_crds)[i]);
           maxima_sigma_cpy.push_back((*pv_maxima_sigma)[i]);
           maxima_scores_cpy.push_back((*pv_maxima_scores)[i]);
