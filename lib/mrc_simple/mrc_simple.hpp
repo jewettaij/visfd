@@ -55,11 +55,11 @@ public:
 
   float *afI;           ///< pointer to a (contiguous) 1-D array containing 
                         ///< the entire tomogram. The data at x,y,z is located
-                        ///<   at  afI[ix + iy*sizez + iz*sizex*sizey]
+                        ///<   at  afI[ix + iy*sizex + iz*sizex*sizey]
 
   float ***aaafI;       ///< Useful if you prefer to use 3-index notation:
                         ///<    aafI[iz][iy][ix] =
-                        ///<     afI[ix + iy*sizez + iz*sizex*sizey]
+                        ///<     afI[ix + iy*sizex + iz*sizex*sizey]
 private:
 
   /// @brief  Allocate memory for the tomogram (image).

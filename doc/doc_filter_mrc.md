@@ -1741,8 +1741,9 @@ is less than *ratio_max* times the blob with the highest score,
 As an alternative to specifying the threshold(s) manually,
 you can instead supply examples of blobs that you want to keep,
 and blobs you want to discard.
-Blobs will be discarded if their score does not lie in the range of
-scores similar to the blobs you selected.
+Blobs will be discarded if their "score" is not sufficiently high.
+(Equivalently, they will be discarded if they are not sufficiently
+ bright or dark compared to their surroundings.)
 These blob locations are listed
 on separate lines in the "file_accept.txt" and "file_reject.txt" arguments.
 The file format for both of these files is described
