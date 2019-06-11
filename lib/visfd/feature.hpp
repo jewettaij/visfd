@@ -257,7 +257,7 @@ BlobDog(int const image_size[3], //!< source image size
         Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
         Scalar truncate_ratio=2.8,      //!< how many sigma before truncating?
         Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
-        Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(),    //!< discard blobs with unremarkable scores (disabled by default)
+        Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
         ostream *pReportProgress = nullptr, //!< optional: report progress to the user?
         Scalar ****aaaafI = nullptr, //!<optional: preallocated memory for filtered images (indexable)
@@ -1130,22 +1130,38 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
 
 
-// @brief  This function calculates a range of score values
-//         (a lower bound and upper bound)
+// @brief  This function calculates a threshold score
+//         (either a lower bound and upper bound)
 //         which maximizes the accuracy of training data provided by the caller.
 //         (It minimizes the number of times that either the positive training
 //          set has a score outside this range, and the negative training set
 //          has scores inside this range.  Equal weight is given to to
 //          either false positives or false negatives.)
+//         THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
+//
+// @note:  It is assumed that the blobs have been previously sorted in order
+//         of increasing priority.
+// @note:  This function was intended to be used when it is possible to use
+//         a single score threshold to distinguish good blobs from bad ones.
+//         It was not not intended to be used if there is a narrow interval
+//         of good scores.  (IE having both an upper and a lower bound.)
+//         Although this function calculates both upper and lower bounds
+//         for the score and returns them to the caller, ...
+//            (*pthreshold_lower_bound and *pthreshold_lower_bound)
+//         ...usually, only one of them is set to a meaningful value.
+//         The other threshold should be set to either -infinity or +infinity.
+//         If this is not the case, then your training data does not
+//         fit the assumptions used by this function, and you should
+//         discard the results.
 // @return This function does not return anything.
 //         The two thresholds are returned to the caller using the 
 //         pthreshold_lower_bound and pthreshold_upper_bound arguments.
 
 template<typename Scalar>
-void
-ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing order)
-                          const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing order)
-                          const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing order)
+static void
+ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
+                          const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
+                          const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
                           const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
                           const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
                           Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
@@ -1235,8 +1251,8 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
       for (int ix = 0; ix < image_size[0]; ix++)
         aaaiWhichBlob[iz][iy][ix] = UNOCCUPIED;
 
-  // Loop over blobs and fill the lookup table (aaaiWhichBlob)
-  // Note: This only works if the blobs have already been sorted by score.
+  // Loop over blobs and fill the lookup table (aaaiWhichBlob)  (Note: This
+  // only works if the blobs have already been sorted in increasing priority.)
   for (size_t i=0; i < blob_crds.size(); i++) {
     int ix = blob_crds[i][0];
     int iy = blob_crds[i][1];
@@ -1451,13 +1467,17 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
 
 
 // @brief  This function calculates a range of score values
-//         (a lower bound and upper bound)
+//         (either a lower bound or an upper bound)
 //         which maximizes the accuracy of training data provided by the caller.
 //         (It minimizes the number of times that either the positive training
 //          set has a score outside this range, and the negative training set
 //          has scores inside this range.  Equal weight is given to to
 //          either false positives or false negatives.)
 //         Blobs with scores outside this range will be discarded.
+// @note:  This function was intended to be used when it is possible to use
+//         a single score threshold to distinguish good blobs from bad ones.
+//         It was not not intended to be used if there is a narrow interval
+//         of good scores.  (IE having both an upper and a lower bound.)
 
 template<typename Scalar>
 void
@@ -1475,7 +1495,7 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
   assert(blob_crds.size() == blob_diameters.size());
   assert(blob_crds.size() == blob_scores.size());
 
-  // Sort the blobs by score in increasing order
+  // Sort the blobs by score in order of increasing priority
   if (sort_blob_criteria == PRIORITIZE_HIGH_SCORES)
     SortBlobs(blob_crds,
               blob_diameters, 
