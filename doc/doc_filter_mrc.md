@@ -1751,7 +1751,7 @@ The file format for both of these files is described
 *(Note: As explained in that link, you can obtain the contents of this file
         by clicking on objects of interest in IMOD.)*
 This range of allowed scores is determined automatically from these examples.
-The (upper-bound and lower-bound) thresholds will be chosen
+The (upper-bound or lower-bound) threshold will be chosen
 which minimize the number of incorrectly classified blobs.
 Equal weight is given to false-positives and false-negatives,
 (so choose your examples accordingly).
