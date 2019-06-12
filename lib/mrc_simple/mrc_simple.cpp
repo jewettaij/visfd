@@ -120,7 +120,14 @@ void MrcSimple::Read(istream& mrc_file,
       "         This program has not been tested carefully on these kinds\n"
       "         of files.  Any calculated results will be written to a file\n"
       "         in row-major order, but the file's header entries may be\n"
-      "         incorrect.  Use with caution.  Please report bugs.\n"
+      "         incorrect.  (Use with caution.)\n"
+      "SUGGESTION: It is strongly recommended that you convert this file\n"
+      "         into a modern standards-compliant MRC/REC file before proceding.\n"
+      "         You can do this using \"newstack\".  Try running it this way:\n"
+      "            newstack -mode 2 -in YOUR_FILE.mrc -out NEW_FILE.mrc\n"
+      "         (The \"newstack\" program is distributed with IMOD.  It requires\n"
+      "          a terminal.  If a terminal is unavailable, then as an alternative,\n"
+      "          you can try reading the file in IMOD and writing it out again.)\n"
       "--------------------------------------------------------------------\n"
       "--------------------------------------------------------------------\n";
     // If the image data is not stored row-major format (header.mapCRS[]),

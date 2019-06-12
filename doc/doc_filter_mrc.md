@@ -1773,8 +1773,8 @@ Choosing blobs which are "edge-cases" is recommended.
         These example blobs must already be present
         within the list of blobs that you have provided
         to the "-discard-blobs" argument.
-        If you are using a mask,
-        then these examples should also lie within the mask.)*
+        If you are using a mask, then blobs whose centers lie outside
+        the mask will be ignored.)*
 
 
 

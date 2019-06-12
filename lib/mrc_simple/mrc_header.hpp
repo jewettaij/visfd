@@ -120,8 +120,8 @@ public:
     cellA[1] = 0.0; 
     cellA[2] = 0.0;
     dmin = 0.0;   //impossible values
-    dmax = -1.0;  //impossible values
-    dmean = -1.0;
+    dmax = 0.0;  //impossible values
+    dmean = 0.0;
     mode = MRC_MODE_UNDEFINED;
     cellB[0] = 90.0; 
     cellB[1] = 90.0; 
@@ -129,12 +129,12 @@ public:
     mvoxels[0] = 0; 
     mvoxels[1] = 0;
     mvoxels[2] = 0;
-    origin[0] = -1;
-    origin[1] = -1;
-    origin[2] = -1;
-    nstart[0] = -1;
-    nstart[1] = -1;
-    nstart[2] = -1;
+    origin[0] = 0;
+    origin[1] = 0;
+    origin[2] = 0;
+    nstart[0] = 0;
+    nstart[1] = 0;
+    nstart[2] = 0;
     use_signed_bytes = true;
   }
 };

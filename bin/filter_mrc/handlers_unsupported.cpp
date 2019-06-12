@@ -241,6 +241,9 @@ HandleBlobRadialIntensity(Settings settings,
     double stddev_brightness = 0.0;
     {
       int Rsphere = ceil(diameters[i]/2); //radius of the sphere (surrounding the current blob)
+      #ifdef INTENSITY_PROFILE_RADIUS
+      Rsphere = INTENSITY_PROFILE_RADIUS;
+      #endif
       int ixs = sphere_centers_i[0];
       int iys = sphere_centers_i[1];
       int izs = sphere_centers_i[2];
