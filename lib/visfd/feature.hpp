@@ -1041,6 +1041,137 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
 
 
+/// @brief Choose upper or lower score thresholds which maximize
+///        the number of correctly classified blobs.
+///        In this variant of the function, the positive and negative training
+///        data are saved in separate arrays.
+///
+/// @note  For details, see the other version of this function.
+
+template<typename Scalar>
+void
+
+ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
+                          const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
+                          const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
+                          const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
+                          const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
+                          Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
+                          Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
+                          SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
+                          ostream *pReportProgress = nullptr //!< report progress back to the user?
+                          )
+{
+  assert(blob_crds.size() == blob_diameters.size());
+  assert(blob_crds.size() == blob_scores.size());
+
+  size_t Nn = training_set_neg.size();
+  size_t Np = training_set_pos.size();
+
+  // Figure out which training_data coordinates lie sufficiently close
+  // to one of the blobs to be counted.  Ignore the others.
+  // While doing this, also figure out the score of each training datum.
+  // (This is the score of the blob that is nearby, if applicable.)
+
+  // Concatinate all of the training data together.
+  vector<array<Scalar,3> > training_set_crds = training_set_pos;
+  training_set_crds.insert(training_set_crds.end(),
+                           training_set_neg.begin(),
+                           training_set_neg.end());
+
+  // training_set_accepted = true or false depending on whether it is 
+  //                      part of the positive (accepted) training set,
+  //                      or the negative (rejected) training set
+  vector<bool> training_set_accepted =  vector<bool>(Np + Nn, true);
+  for (size_t i = Np; i < Np + Nn; i++)
+    training_set_accepted[i] = false;                              
+
+  _ChooseBlobScoreThresholds(blob_crds,
+                             blob_diameters,
+                             blob_scores,
+                             training_set_crds,
+                             training_set_accepted,
+                             pthreshold_lower_bound,
+                             pthreshold_upper_bound,
+                             sort_blob_criteria,
+                             pReportProgress);
+
+} //ChooseBlobScoreThresholds()
+
+
+
+
+
+/// @brief Choose upper or lower score thresholds which maximize
+///        the number of correctly classified blobs.
+///
+/// @note  In this variant of the function, the positive and negative training
+///        data are saved in separate arrays.
+///
+/// @note  This version of function works with multiple
+///        independent training sets.  (That is, training sets corresponding
+///        to independent sets of overlapping blob_crds, blob_diameters, ...
+///        In practice, these different training sets and blob lists are taken
+///        from different images.  The size of the following arguments should
+///        equal this number of images:   blob_crds, blob_diameters,
+///        blob_scores, training_set_crds, training_set_accepted
+///
+/// @note  For details, see the other version of this function.
+
+template<typename Scalar>
+void
+ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
+                               const vector<vector<Scalar> >& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
+                               const vector<vector<Scalar> >& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
+                               const vector<vector<array<Scalar,3> > >& training_set_pos, //!< locations of blob-like things 
+                               const vector<vector<array<Scalar,3> > >& training_set_neg, //!< locations of blob-like things
+                               Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
+                               Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
+                               SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
+                               ostream *pReportProgress = nullptr //!< report progress back to the user?
+                               )
+{
+  int Nsets = training_set_pos.size();
+  assert(Nsets == training_set_neg.size());
+  assert(Nsets == blob_crds.size());
+  assert(Nsets == blob_diameters.size());
+  assert(Nsets == blob_scores.size());
+
+  vector<vector<array<Scalar,3> > > training_set_crds(Nsets);
+  vector<vector<bool> > training_set_accepted(Nsets);
+
+  // Loop over all of the different training sets:
+  for (int I = 0; I < Nsets; I++) {
+
+    // Concatinate the positive and negative training data together.
+    training_set_crds[I] = training_set_pos[I];
+    training_set_crds[I].insert(training_set_crds[I].end(),
+                                training_set_neg[I].begin(),
+                                training_set_neg[I].end());
+    size_t Np = training_set_pos[I].size();
+    size_t Nn = training_set_neg[I].size();
+    // training_set_accepted = true or false depending on whether it is 
+    //                      part of the positive (accepted) training set,
+    //                      or the negative (rejected) training set
+    training_set_accepted[I] =  vector<bool>(Np + Nn, true);
+    for (size_t j = Np; j < Np + Nn; j++)
+      training_set_accepted[I][j] = false;
+  }
+
+  _ChooseBlobScoreThresholdsMulti(blob_crds,
+                                  blob_diameters,
+                                  blob_scores,
+                                  training_set_crds,
+                                  training_set_accepted,
+                                  pthreshold_lower_bound,
+                                  pthreshold_upper_bound,
+                                  sort_blob_criteria,
+                                  pReportProgress);
+
+} //ChooseBlobScoreThresholdsMulti()
+
+
+
 
 /// @brief  This function discards blobs according to their scores.
 ///         It does this by comparing the scores of these blobs with 
@@ -1073,15 +1204,15 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
   // Find the range of scores [threshold_lower_bound, threshold_upper_bound]
   // which minimizes the number of incorrectly classified blobs.
 
-  _ChooseBlobScoreThresholds(blob_crds,
-                             blob_diameters,
-                             blob_scores,
-                             training_set_pos,
-                             training_set_neg,
-                             &threshold_lower_bound, //<-store threshold here
-                             &threshold_upper_bound, //<-store threshold here
-                             sort_blob_criteria,
-                             pReportProgress);
+  ChooseBlobScoreThresholds(blob_crds,
+                            blob_diameters,
+                            blob_scores,
+                            training_set_pos,
+                            training_set_neg,
+                            &threshold_lower_bound, //<-store threshold here
+                            &threshold_upper_bound, //<-store threshold here
+                            sort_blob_criteria,
+                            pReportProgress);
 
   if (pthreshold_lower_bound)
     *pthreshold_lower_bound = threshold_lower_bound;
