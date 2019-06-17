@@ -18,12 +18,12 @@
 using namespace std;
 #include <err_visfd.hpp> // defines the "VisfdErr" exception type
 #include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
-#include <visfd_utils.hpp>    // defines invert_permutation(), AveArray(), ...
+#include <visfd_utils.hpp>    // defines invert_permutation(), SortBlobs(), FindSpheres() ...
 #include <alloc2d.hpp>    // defines Alloc2D() and Dealloc2D()
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
 #include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable())
 #include <filter3d.hpp>   // defines common 3D image filters
-#include <do_not_use_feature.hpp> // defines _FindExtrema()
+#include <feature_implementation.hpp>
 
 
 
@@ -721,74 +721,6 @@ BlobDogD(int const image_size[3], //!<source image size
 
 
 
-/// @brief these options tell "DiscardOverlappingBlobs" how to give
-/// priority to different blobs based on their score (ie, minima or maxima?)
-typedef enum eSortBlobCriteria {
-  DO_NOT_SORT,
-  PRIORITIZE_HIGH_SCORES,
-  PRIORITIZE_LOW_SCORES,
-  PRIORITIZE_HIGH_MAGNITUDE_SCORES,
-  PRIORITIZE_LOW_MAGNITUDE_SCORES
-} SortBlobCriteria;
-
-
-
-/// @brief sort blobs by their scores
-
-template<typename Scalar1, typename Scalar2, typename Scalar3>
-
-void
-SortBlobs(vector<array<Scalar1,3> >& blob_crds, //!< x,y,z of each blob's center
-          vector<Scalar2>& blob_diameters,  //!< the width of each blob
-          vector<Scalar3>& blob_scores,  //!< the score for each blob
-          bool descending_order = true,
-          bool ignore_score_sign = true,
-          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
-          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
-          )
-{ 
-  size_t n_blobs = blob_crds.size();
-  assert(n_blobs == blob_diameters.size());
-  assert(n_blobs == blob_scores.size());
-  vector<tuple<Scalar3, size_t> > score_index(n_blobs);
-  for (size_t i = 0; i < n_blobs; i++) {
-    if (ignore_score_sign)
-      score_index[i] = make_tuple(std::fabs(blob_scores[i]), i);
-    else
-      score_index[i] = make_tuple(blob_scores[i], i);
-  }
-
-  if (n_blobs == 0)
-    return;
-
-  if (pReportProgress)
-    *pReportProgress << "-- Sorting blobs according to their scores... ";
-  if (descending_order)
-    sort(score_index.rbegin(),
-         score_index.rend());
-  else
-    sort(score_index.begin(),
-         score_index.end());
-
-  vector<size_t> permutation(n_blobs);
-  for (size_t i = 0; i < score_index.size(); i++)
-    permutation[i] = get<1>(score_index[i]);
-
-  if (pPermutation != nullptr)
-    *pPermutation = permutation;
-
-  score_index.clear();
-  apply_permutation(permutation, blob_crds);
-  apply_permutation(permutation, blob_diameters);
-  apply_permutation(permutation, blob_scores);
-  if (pReportProgress)
-    *pReportProgress << "done --" << endl;
-
-} //SortBlobs()
-
-
-
-
 
 /// @brief  Calculate the volume of overlap between two spheres of radius 
 ///         Ri and Rj separated by a distance of rij.
@@ -833,8 +765,15 @@ Scalar CalcSphereOverlap(Scalar rij,//!<the distance between the spheres' center
 ///   OR because the overlapping volume exceeds the volume of the smaller sphere
 ///   (after multiplication by max_volume_overlap_small)
 ///
-///   In this function, the width of each blob is located in an array storing
-///   their diameters (instead of their corresponding "sigma" values).
+/// @note
+///   The "sort_blob_criteria" argument can be set to one of these choices:
+///     PRIORITIZE_HIGH_SCORES
+///     PRIORITIZE_LOW_SCORES
+///     PRIORITIZE_HIGH_MAGNITUDE_SCORES
+///     PRIORITIZE_LOW_MAGNITUDE_SCORES
+///   (As of 2019-6-15, "SortBlobCriteria" is defined in "visfd_utils.hpp")
+
+#include <feature_implementation.hpp> // defines _FindExtrema()
 
 template<typename Scalar>
 
@@ -842,10 +781,10 @@ void
 DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
                         vector<Scalar>& blob_diameters,  //!< diameger of each blob
                         vector<Scalar>& blob_scores, //!< priority of each blob
-                        SortBlobCriteria sort_blob_criteria, //!< give priority to high or low scoring blobs?
                         Scalar min_radial_separation_ratio, //!< discard blobs if closer than this (ratio of sum of radii)
                         Scalar max_volume_overlap_large=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the large blob (disabled by default; 1.0 would also do this)
                         Scalar max_volume_overlap_small=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the small blob (disabled by default; 1.0 would also do this)
+                        SortBlobCriteria sort_blob_criteria=PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs? (See explanation above)
                         ostream *pReportProgress = nullptr, //!< report progress back to the user?
                         int scale=6 //!<occupancy_table_size shrunk by this much
                                     //!<relative to source (necessary to reduce memory usage)
@@ -861,39 +800,13 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   //    came before it (which score better).
   // 3) If there is an overlap, delete it from the list.
 
-  if (sort_blob_criteria == PRIORITIZE_HIGH_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              true,
-              false,
-              nullptr,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_LOW_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              false,
-              false,
-              nullptr,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_HIGH_MAGNITUDE_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              true,
-              true,
-              nullptr,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_LOW_MAGNITUDE_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              false,
-              true,
-              nullptr,
-              pReportProgress);
-
+  SortBlobs(blob_crds,
+            blob_diameters, 
+            blob_scores,
+            sort_blob_criteria,
+            false,
+            nullptr,
+            pReportProgress);
 
   if (pReportProgress)
     *pReportProgress
@@ -1129,18 +1042,14 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
 
 
-// @brief  This function calculates a range of score values
-//         (either a lower bound or an upper bound)
-//         which maximizes the accuracy of training data provided by the caller.
-//         (It minimizes the number of times that either the positive training
-//          set has a score outside this range, and the negative training set
-//          has scores inside this range.  Equal weight is given to to
-//          either false positives or false negatives.)
-//         Blobs with scores outside this range will be discarded.
-// @note:  This function was intended to be used when it is possible to use
-//         a single score threshold to distinguish good blobs from bad ones.
-//         It was not not intended to be used if there is a narrow interval
-//         of good scores.  (IE having both an upper and a lower bound.)
+/// @brief  This function discards blobs according to their scores.
+///         It does this by comparing the scores of these blobs with 
+///         the scores of blobs provided by the caller which were either
+///         accepted or rejected (training_set_pos or training_set_neg).
+/// @note:  This function was intended to be used when it is possible to use
+///         a single score threshold to distinguish good blobs from bad ones.
+///         (It was not not intended to be used when the blobs you are looking
+///          for have scores which lie within one or more narrow intervals.)
 
 template<typename Scalar>
 void
@@ -1158,40 +1067,6 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
   assert(blob_crds.size() == blob_diameters.size());
   assert(blob_crds.size() == blob_scores.size());
 
-  // Sort the blobs by score in order of increasing priority
-  if (sort_blob_criteria == PRIORITIZE_HIGH_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              false,
-              false,
-              nullptr,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_LOW_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              true,
-              false,
-              nullptr,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_HIGH_MAGNITUDE_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              false,
-              true,
-              nullptr,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_LOW_MAGNITUDE_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              true,
-              true,
-              nullptr,
-              pReportProgress);
-
   Scalar threshold_lower_bound;
   Scalar threshold_upper_bound;
 
@@ -1205,6 +1080,7 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
                              training_set_neg,
                              &threshold_lower_bound, //<-store threshold here
                              &threshold_upper_bound, //<-store threshold here
+                             sort_blob_criteria,
                              pReportProgress);
 
   if (pthreshold_lower_bound)

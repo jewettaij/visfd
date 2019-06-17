@@ -364,11 +364,10 @@ HandleBlobsNonmaxSuppression(Settings settings,
   DiscardOverlappingBlobs(crds,
                           diameters, 
                           scores,
-                          //DO_NOT_SORT,
-                          PRIORITIZE_HIGH_MAGNITUDE_SCORES,
                           settings.nonmax_min_radial_separation_ratio,
                           settings.nonmax_max_volume_overlap_large,
                           settings.nonmax_max_volume_overlap_small,
+                          PRIORITIZE_HIGH_MAGNITUDE_SCORES,
                           &cerr);
 
   cerr << " " << crds.size() << " blobs remaining" << endl;
@@ -566,7 +565,7 @@ HandleBlobDetector(Settings settings,
     SortBlobs(minima_crds,
               minima_diameters,
               minima_scores,
-              false,
+              true,
               false,
               nullptr);
 
@@ -594,7 +593,7 @@ HandleBlobDetector(Settings settings,
     SortBlobs(maxima_crds,
               maxima_diameters,
               maxima_scores,
-              true,
+              false,
               false,
               nullptr);
 
@@ -868,31 +867,26 @@ HandleExtrema(Settings settings,
       (settings.nonmax_max_volume_overlap_large < 1.0) ||
       (settings.nonmax_max_volume_overlap_small < 1.0)) {
     if ((settings.sphere_decals_diameter > 0) &&
-        //(settings.find_extrema_occlusion_ratio > 0.0)) {
         (settings.nonmax_min_radial_separation_ratio > 0.0)) {
       DiscardOverlappingBlobs(minima_crds_voxels,
                               minima_diameters, 
                               minima_scores,
-                              PRIORITIZE_LOW_SCORES,
-                              //settings.find_extrema_occlusion_ratio,
                               settings.nonmax_min_radial_separation_ratio,
                               settings.nonmax_max_volume_overlap_large,
                               settings.nonmax_max_volume_overlap_small,
+                              PRIORITIZE_LOW_SCORES,
                               &cerr);
     }
 
     if ((settings.sphere_decals_diameter > 0) &&
-        //(settings.find_extrema_occlusion_ratio > 0.0)) {
         (settings.nonmax_min_radial_separation_ratio > 0.0)) {
       DiscardOverlappingBlobs(maxima_crds_voxels,
                               maxima_diameters, 
                               maxima_scores,
-                              PRIORITIZE_HIGH_SCORES,
-                              //REMOVE THIS CRUFT
-                              //settings.find_extrema_occlusion_ratio,
                               settings.nonmax_min_radial_separation_ratio,
                               settings.nonmax_max_volume_overlap_large,
                               settings.nonmax_max_volume_overlap_small,
+                              PRIORITIZE_HIGH_SCORES,
                               &cerr);
     }
 

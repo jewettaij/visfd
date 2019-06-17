@@ -127,10 +127,10 @@ BlobDogNM(int const image_size[3], //!<source image size
   DiscardOverlappingBlobs(*pva_minima_crds,
                           *pv_minima_diameters,
                           *pv_minima_scores,
-                          PRIORITIZE_LOW_SCORES,
                           sep_ratio_thresh,
                           nonmax_max_overlap_large,
                           nonmax_max_overlap_small,
+                          PRIORITIZE_LOW_SCORES,
                           pReportProgress);
 
   if (pReportProgress)
@@ -140,10 +140,10 @@ BlobDogNM(int const image_size[3], //!<source image size
   DiscardOverlappingBlobs(*pva_maxima_crds,
                           *pv_maxima_diameters,
                           *pv_maxima_scores,
-                          PRIORITIZE_HIGH_SCORES,
                           sep_ratio_thresh,
                           nonmax_max_overlap_large,
                           nonmax_max_overlap_small,
+                          PRIORITIZE_HIGH_SCORES,
                           pReportProgress);
 
 } //BlobDogNM()
