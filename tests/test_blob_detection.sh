@@ -42,7 +42,7 @@ test_blob_detection() {
     
     assertTrue "visualization failed: number of non-zero voxels != number of blobs" "[ $NBLOBS_IN_LIST -eq $NBLOBS_IN_IMAGE ]"
 
-    rm -rf test_blob_detect_dog_0_500.rec test_blob_detect_dog_0_500_cl_-1.3_1.3.rec test_blobs*.txt test_blob_detect_results.rec
+    rm -rf test_blob_detect_dog_0_500.rec test_blob_detect_dog_0_500_cl_-1.3_1.3.rec test_blobs*.txt test_blob_detect_results.rec deleteme*
 
   cd ../
 }

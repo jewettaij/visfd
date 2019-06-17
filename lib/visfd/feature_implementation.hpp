@@ -701,16 +701,16 @@ _ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locat
 
   {
     // Choose the upper and lower bounds
-    // I assumed that the accepted results lie BETWEEN
+    // I assumed that the accepted results lie between
     //    thresh_lower_bound  and  thresh_upper_bound
     // (This might be a bad assumption.  It could be the inverse of this.)
     // Another issue:
     //Sometimes if we choose the lower bound first, we get the wrong upper bound
     //Sometimes if we choose the upper bound first, we get the wrong lower bound
-    // However one of these two ways of doing it will give us the optimal
-    // upper AND lower bounds.  So we try both ways, and pick whichever
-    // way minimizes the number of mistakes.
-    // (Sorry if this is confusing and not clear.)
+    //So we try both ways, and pick which way minimizes the number of mistakes.
+    //(Note: This still might not give us both optimal upper and lower bounds.
+    //       However if either lower_bound = -infinity OR upper_bound = infinity
+    //       this will give us the optimal threshold for the other boundary.)
     size_t num_mistakes_lower_bound_first;
     Scalar choose_threshold_lower_bound_first;
     Scalar choose_threshold_upper_bound_second;
