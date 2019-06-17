@@ -433,10 +433,10 @@ FindSpheres(const vector<array<Scalar,3> >& crds, //!< locations of blob-like th
 template<typename Scalar, typename Integer>
 static void
 _FindBlobScores(const vector<array<Scalar,3> >& crds, //!< locations of blob-like things we are looking for
-                vector<Scalar>& scores, //!< stores which sphere contains that position (beginning at 1), or 0 if none
+                vector<Scalar>& scores, //!< stores the score of the blob (sphere) contains that position
                 vector<Integer>& sphere_ids, //!< which blob (sphere) contains this position?
                 const vector<array<Scalar,3> >& blob_crds, //!< location of the center of each spherical blob (sorted in order of increasing priority)
-                const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted in increasing priority)
+                const vector<Scalar>& blob_diameters,  //!< diameter of each blob
                 const vector<Scalar>& blob_scores, //!< "score" of each blob (a number)
                 SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
                 ostream *pReportProgress = nullptr //!< report progress back to the user?

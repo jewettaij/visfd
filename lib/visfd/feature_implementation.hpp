@@ -624,6 +624,165 @@ _ComplainIfTrainingDataEmpty(Integer Nn, Integer Np) {
 
 
 
+
+/// @brief find either an upper or a lower bound for a list
+///        of 1-D features (scores).
+///        (Although both upper and lower bounds are calculated, 
+///         only one of them should have a non-infinite value.
+///         Otherwise your data is not one-sided.)
+///
+/// @return This function returns void.
+///         Assuming they are not nullptr, the results are stored in:
+///           *pthreshold_lower_bound
+///           *pthreshold_uppwer_bound
+///
+/// @note THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
+
+template<typename Scalar>
+
+static void
+_ChooseThresholdInterval(const vector<Scalar>& training_set_scores, //!< a 1-D feature describing each training data
+                         const vector<bool>& training_set_accepted, //!< classify each training data as "accepted" (true) or "rejected" (false)
+                         Scalar *pthreshold_lower_bound = nullptr,  //!< return threshold to the caller (if not nullptr)
+                         Scalar *pthreshold_upper_bound = nullptr,  //!< return threshold to the caller (if not nullptr)
+                         ostream *pReportProgress = nullptr //!< report progress back to the user?
+                         )
+{
+  size_t N = training_set_scores.size();
+  assert(N == training_set_accepted.size());
+
+  Scalar threshold_lower_bound = -1.0;
+  Scalar threshold_upper_bound = -1.0;
+
+  { // calculate threshold_lower_bound, threshold_upper_bound
+
+    // Choose the upper and lower bounds
+    // I assumed that the accepted results lie between
+    //    thresh_lower_bound  and  thresh_upper_bound
+    // (This might be a bad assumption.  It could be the inverse of this.)
+    // Another issue:
+    //Sometimes if we choose the lower bound first, we get the wrong upper bound
+    //Sometimes if we choose the upper bound first, we get the wrong lower bound
+    //So we try both ways, and pick which way minimizes the number of mistakes.
+    //(Note: This still might not give us both optimal upper and lower bounds.
+    //       However if either lower_bound = -infinity OR upper_bound = infinity
+    //       this will give us the optimal threshold for the other boundary.)
+    size_t num_mistakes_lower_bound_first;
+    Scalar choose_threshold_lower_bound_first;
+    Scalar choose_threshold_upper_bound_second;
+    {
+      // choose the lower bound first:
+      choose_threshold_lower_bound_first =
+        ChooseThreshold1D(training_set_scores,
+                          training_set_accepted,
+                          true);
+      vector<bool> training_set_accepted_remaining;
+      vector<Scalar> training_set_scores_remaining;
+      for (size_t i = 0; i < N; i++) {
+        if (training_set_scores[i] >= choose_threshold_lower_bound_first) {
+          training_set_scores_remaining.push_back(training_set_scores[i]);
+          training_set_accepted_remaining.push_back(training_set_accepted[i]);
+        }
+      }
+      choose_threshold_upper_bound_second =
+        ChooseThreshold1D(training_set_scores_remaining,
+                          training_set_accepted_remaining,
+                          false);
+      num_mistakes_lower_bound_first = 0;
+      for (size_t i = 0; i < N; i++) {
+        if (training_set_accepted[i] !=
+            ((training_set_scores[i] >= choose_threshold_lower_bound_first) &&
+             (training_set_scores[i] <= choose_threshold_upper_bound_second)))
+          num_mistakes_lower_bound_first++;
+      }
+    } // calculate choose_threshold_lower_bound_first, choose_threshold_upper_bound_second
+
+    size_t num_mistakes_upper_bound_first;
+    Scalar choose_threshold_upper_bound_first;
+    Scalar choose_threshold_lower_bound_second;
+    {
+      // choose the upper bound first:
+      choose_threshold_upper_bound_first =
+        ChooseThreshold1D(training_set_scores,
+                          training_set_accepted,
+                          false);
+      vector<bool> training_set_accepted_remaining;
+      vector<Scalar> training_set_scores_remaining;
+      for (size_t i = 0; i < N; i++) {
+        if (training_set_scores[i] <= choose_threshold_upper_bound_first) {
+          training_set_scores_remaining.push_back(training_set_scores[i]);
+          training_set_accepted_remaining.push_back(training_set_accepted[i]);
+        }
+      }
+      choose_threshold_lower_bound_second =
+        ChooseThreshold1D(training_set_scores_remaining,
+                          training_set_accepted_remaining,
+                          true);
+      num_mistakes_upper_bound_first = 0;
+      for (size_t i = 0; i < N; i++) {
+        if (training_set_accepted[i] !=
+            ((training_set_scores[i] >= choose_threshold_lower_bound_second) &&
+             (training_set_scores[i] <= choose_threshold_upper_bound_first)))
+          num_mistakes_upper_bound_first++;
+      }
+    } // calculate choose_threshold_upper_bound_first, choose_threshold_lower_bound_second
+
+    if (num_mistakes_lower_bound_first <= num_mistakes_upper_bound_first) {
+      threshold_lower_bound = choose_threshold_lower_bound_first;
+      threshold_upper_bound = choose_threshold_upper_bound_second;
+    }
+    else {
+      threshold_lower_bound = choose_threshold_lower_bound_second;
+      threshold_upper_bound = choose_threshold_upper_bound_first;
+    }
+  } // calculate threshold_lower_bound, threshold_upper_bound
+
+  if (pthreshold_lower_bound)
+    *pthreshold_lower_bound = threshold_lower_bound;
+  if (pthreshold_upper_bound)
+    *pthreshold_upper_bound = threshold_upper_bound;
+
+  if (pReportProgress) {
+    *pReportProgress
+      << "  threshold lower bound: " << threshold_lower_bound << "\n"
+      << "  threshold upper bound: " << threshold_upper_bound << "\n";
+    // Optional: Also report the number of mistakes to the user
+    size_t num_false_negatives = 0;
+    size_t num_false_positives = 0;
+    for (size_t i=0; i < N; i++) {
+      if ((training_set_scores[i] >= threshold_lower_bound) &&
+          (training_set_scores[i] <= threshold_upper_bound)) {
+        if (! training_set_accepted[i])
+          num_false_positives++;
+      }
+      else {
+        if (training_set_accepted[i])
+          num_false_negatives++;
+      }
+    }
+
+    size_t Nn = 0;
+    size_t Np = 0;
+    for (size_t i=0; i < N; i++) {
+      if (training_set_accepted[i])
+        Np++;
+      else
+        Nn++;
+    }
+    *pReportProgress
+      << "  number of false positives: " << num_false_positives
+      << " (out of " << Np << " positives)\n"
+      << "  number of false negatives: " << num_false_negatives
+      << " (out of " << Nn << " negatives)\n"
+      << endl;
+  } //if (pReportProgress)
+
+} //_ChooseThresholdInterval()
+
+
+
+
+
 /// @brief  This function calculates a threshold score above which (or below
 ///         which) the training data is usually accepted (or rejected).
 ///         The threshold is chosen to maximize the accuracy of training
@@ -632,7 +791,6 @@ _ComplainIfTrainingDataEmpty(Integer Nn, Integer Np) {
 ///          set has a score outside this range, and the negative training set
 ///          has scores inside this range.  Equal weight is given to to
 ///          either false positives or false negatives.)
-///         THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 ///
 /// @note:  This function was intended to be used when it is possible to use
 ///         a single score threshold to distinguish good blobs from bad ones.
@@ -646,6 +804,9 @@ _ComplainIfTrainingDataEmpty(Integer Nn, Integer Np) {
 ///         If this is not the case, then your training data does not
 ///         fit the assumptions used by this function, and you should
 ///         discard the results.
+///
+/// @note   THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
+///
 /// @return This function does not return anything.
 ///         The two thresholds are returned to the caller using the 
 ///         pthreshold_lower_bound and pthreshold_upper_bound arguments.
@@ -696,131 +857,12 @@ _ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locat
     *pReportProgress
       << "  examining training data to determine optimal thresholds\n";
 
-  Scalar threshold_lower_bound = -1.0;
-  Scalar threshold_upper_bound = -1.0;
-
-  {
-    // Choose the upper and lower bounds
-    // I assumed that the accepted results lie between
-    //    thresh_lower_bound  and  thresh_upper_bound
-    // (This might be a bad assumption.  It could be the inverse of this.)
-    // Another issue:
-    //Sometimes if we choose the lower bound first, we get the wrong upper bound
-    //Sometimes if we choose the upper bound first, we get the wrong lower bound
-    //So we try both ways, and pick which way minimizes the number of mistakes.
-    //(Note: This still might not give us both optimal upper and lower bounds.
-    //       However if either lower_bound = -infinity OR upper_bound = infinity
-    //       this will give us the optimal threshold for the other boundary.)
-    size_t num_mistakes_lower_bound_first;
-    Scalar choose_threshold_lower_bound_first;
-    Scalar choose_threshold_upper_bound_second;
-    {
-      // choose the lower bound first:
-      choose_threshold_lower_bound_first =
-        ChooseThreshold1D(final_training_set_scores,
-                          final_training_set_accepted,
-                          true);
-      vector<bool> training_set_accepted_remaining;
-      vector<Scalar> training_set_scores_remaining;
-      for (size_t i = 0; i < N; i++) {
-        if (final_training_set_scores[i] >= choose_threshold_lower_bound_first) {
-          training_set_scores_remaining.push_back(final_training_set_scores[i]);
-          training_set_accepted_remaining.push_back(final_training_set_accepted[i]);
-        }
-      }
-      choose_threshold_upper_bound_second =
-        ChooseThreshold1D(training_set_scores_remaining,
-                          training_set_accepted_remaining,
-                          false);
-      num_mistakes_lower_bound_first = 0;
-      for (size_t i = 0; i < N; i++) {
-        if (final_training_set_accepted[i] !=
-            ((final_training_set_scores[i] >= choose_threshold_lower_bound_first) &&
-             (final_training_set_scores[i] <= choose_threshold_upper_bound_second)))
-          num_mistakes_lower_bound_first++;
-      }
-    }
-
-    size_t num_mistakes_upper_bound_first;
-    Scalar choose_threshold_upper_bound_first;
-    Scalar choose_threshold_lower_bound_second;
-    {
-      // choose the upper bound first:
-      choose_threshold_upper_bound_first =
-        ChooseThreshold1D(final_training_set_scores,
-                          final_training_set_accepted,
-                          false);
-      vector<bool> training_set_accepted_remaining;
-      vector<Scalar> training_set_scores_remaining;
-      for (size_t i = 0; i < N; i++) {
-        if (final_training_set_scores[i] <= choose_threshold_upper_bound_first) {
-          training_set_scores_remaining.push_back(final_training_set_scores[i]);
-          training_set_accepted_remaining.push_back(final_training_set_accepted[i]);
-        }
-      }
-      choose_threshold_lower_bound_second =
-        ChooseThreshold1D(training_set_scores_remaining,
-                          training_set_accepted_remaining,
-                          true);
-      num_mistakes_upper_bound_first = 0;
-      for (size_t i = 0; i < N; i++) {
-        if (final_training_set_accepted[i] !=
-            ((final_training_set_scores[i] >= choose_threshold_lower_bound_second) &&
-             (final_training_set_scores[i] <= choose_threshold_upper_bound_first)))
-          num_mistakes_upper_bound_first++;
-      }
-    }
-
-    if (num_mistakes_lower_bound_first <= num_mistakes_upper_bound_first) {
-      threshold_lower_bound = choose_threshold_lower_bound_first;
-      threshold_upper_bound = choose_threshold_upper_bound_second;
-    }
-    else {
-      threshold_lower_bound = choose_threshold_lower_bound_second;
-      threshold_upper_bound = choose_threshold_upper_bound_first;
-    }
-  }
-
-  if (pthreshold_lower_bound)
-    *pthreshold_lower_bound = threshold_lower_bound;
-  if (pthreshold_upper_bound)
-    *pthreshold_upper_bound = threshold_upper_bound;
-
-  if (pReportProgress) {
-    *pReportProgress
-      << "  threshold lower bound: " << threshold_lower_bound << "\n"
-      << "  threshold upper bound: " << threshold_upper_bound << "\n";
-    // Optional: Also report the number of mistakes to the user
-    size_t num_false_negatives = 0;
-    size_t num_false_positives = 0;
-    for (size_t i=0; i < N; i++) {
-      if ((final_training_set_scores[i] >= threshold_lower_bound) &&
-          (final_training_set_scores[i] <= threshold_upper_bound)) {
-        if (! final_training_set_accepted[i])
-          num_false_positives++;
-      }
-      else {
-        if (final_training_set_accepted[i])
-          num_false_negatives++;
-      }
-    }
-
-    size_t Nn = 0;
-    size_t Np = 0;
-    for (size_t i=0; i < N; i++) {
-      if (final_training_set_accepted[i])
-        Np++;
-      else
-        Nn++;
-    }
-    *pReportProgress
-      << "  number of false positives: " << num_false_positives
-      << " (out of " << Np << " positives)\n"
-      << "  number of false negatives: " << num_false_negatives
-      << " (out of " << Nn << " negatives)\n"
-      << endl;
-  }
-
+  _ChooseThresholdInterval(final_training_set_scores,
+                           final_training_set_accepted,
+                           pthreshold_lower_bound,
+                           pthreshold_upper_bound,
+                           pReportProgress);
+                             
 } //_ChooseBlobScoreThresholds()
 
 

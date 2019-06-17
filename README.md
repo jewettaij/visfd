@@ -180,7 +180,8 @@ If this doesn't work and you are desperate, you can try this instead:
 **8GB** of RAM or higher is required.
 (For membrane detection,
  your RAM must exceed 11x the size of the tomogram that you are analyzing.
- You can reduce the memory needed by cropping your tomogram.)
+ You can reduce the memory needed and computation time dramatically
+ by cropping your tomogram.)
 
 The CLANG compiler is strongly recommended.
 ([The clustering feature does not yet work with GCC.](https://github.com/jewettaij/visfd/issues/2))
