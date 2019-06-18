@@ -169,6 +169,18 @@ int main(int argc, char **argv) {
         for (int d = 0; d < 3; d++)
           settings.training_data_neg_crds[i][d] /= voxel_width[d];
 
+    for (int I=0; I < settings.multi_is_training_data_pos_in_voxels.size(); I++)
+      if (! settings.multi_is_training_data_pos_in_voxels[I])
+        for (size_t i = 0; i < settings.training_data_pos_crds.size(); i++)
+          for (int d = 0; d < 3; d++)
+            settings.multi_training_data_pos_crds[I][i][d] /= voxel_width[d];
+
+    for (int I=0; I < settings.multi_is_training_data_neg_in_voxels.size(); I++)
+      if (! settings.multi_is_training_data_neg_in_voxels[I])
+        for (size_t i = 0; i < settings.training_data_neg_crds.size(); i++)
+          for (int d = 0; d < 3; d++)
+            settings.multi_training_data_neg_crds[I][i][d] /= voxel_width[d];
+
     if (! settings.is_must_link_constraints_in_voxels)
       for (size_t i = 0; i < settings.must_link_constraints.size(); i++)
         for (size_t j = 0; j < settings.must_link_constraints[i].size(); j++)
@@ -435,6 +447,11 @@ int main(int argc, char **argv) {
                                    diameters,
                                    scores);
 
+    }
+
+    else if (settings.filter_type = settings.SPHERE_NONMAX_SUPERVISED_MULTI) {
+      HandleBlobScoreSupervisedMulti(settings,
+                                     voxel_width);
     }
 
     else {

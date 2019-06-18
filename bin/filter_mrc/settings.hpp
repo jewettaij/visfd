@@ -53,6 +53,7 @@ class Settings {
     CLUSTER_CONNECTED,       // Similar to Watershed segmentation
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
+    SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
     DISTANCE_TO_POINTS, //voxel intensity = distance to nearest object
     SPHERE_DECALS,   //voxel intensity = 1 if within R from the nearest object
     BLOB_RADIAL_INTENSITY // Report intensity-vs-radius for each blob
@@ -266,8 +267,17 @@ class Settings {
   bool auto_thresh_score = false;
   vector<array<float, 3> > training_data_pos_crds;
   vector<array<float, 3> > training_data_neg_crds;
+
+  // training data for a single images
   bool is_training_data_pos_in_voxels = false;
   bool is_training_data_neg_in_voxels = false;
+
+  // training data in multiple independent files (for multiple images)
+  vector<string> multi_in_coords_file_names;
+  vector<bool> multi_is_training_data_pos_in_voxels;
+  vector<bool> multi_is_training_data_neg_in_voxels;
+  vector<vector<array<float, 3> > > multi_training_data_pos_crds;
+  vector<vector<array<float, 3> > > multi_training_data_neg_crds;
 
   // ---- parameters for detecting local minima and local maxima ----
 

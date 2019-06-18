@@ -95,5 +95,4 @@ HandleDistanceToPoints(Settings settings,
                        float voxel_width[3]);
 
 
-
 #endif //#ifndef _UNSUPPORTED_HPP

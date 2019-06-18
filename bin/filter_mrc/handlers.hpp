@@ -132,4 +132,10 @@ HandleRidgeDetector(Settings settings,
 
 
 
+void
+HandleBlobScoreSupervisedMulti(Settings settings,
+                               float voxel_width[3]);
+
+
+
 #endif //#ifndef _HANDLERS_H

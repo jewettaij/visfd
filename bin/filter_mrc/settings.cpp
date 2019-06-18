@@ -224,13 +224,18 @@ void Settings::ConvertArgvToVectorOfStrings(int argc,
 void
 Settings::ParseArgs(vector<string>& vArgs)
 {
-  string training_data_pos_fname = "";
-  string training_data_neg_fname = "";
   bool user_set_thickness_manually = false;
   bool user_set_background_scale_manually = false;
   bool user_set_exponents_manually = false;
   bool user_set_delta_manually = false;
   bool user_set_watershed_threshold_manually = false;
+
+  // training data for a single images
+  string training_data_pos_fname = "";
+  string training_data_neg_fname = "";
+  // training data in multiple independent files (for multiple images)
+  vector<string> multi_training_data_neg_fnames;
+  vector<string> multi_training_data_pos_fnames;
 
   for (int i=1; i < vArgs.size(); ++i)
   {
@@ -968,6 +973,69 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 3;
     } //if (vArgs[i] == "-supervised")
 
+
+    else if (vArgs[i] == "-supervised-multi")
+    {
+      filter_type = SPHERE_NONMAX_SUPERVISED_MULTI;
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") ||
+            (i+2 >= vArgs.size()) || (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        string fname = vArgs[i+1];
+
+        { //Read multi_training_data_meta_fname
+          fstream f;
+          f.open(fname, ios::in);
+          const char comment_char = '#';
+          string strLine;
+          size_t i_line = 1;
+          while (getline(f, strLine))
+          {
+            // ignore text after comments
+            size_t ic = strLine.find(comment_char);
+            if (ic != string::npos)
+              strLine = strLine.substr(0, ic);
+            stringstream ssLine(strLine);
+            vector<string> tokens;
+            string x;
+            try {
+              while (ssLine >> x) {
+                tokens.push_back(x);
+              }
+            } // try {
+            catch ( ... ) {
+              stringstream err_msg;
+              err_msg << "Error: Read error (invalid entry?) in file:\n"
+                      << "       \"" << fname << "\", line: " << i_line << "\n";
+              throw VisfdErr(err_msg.str());
+            }
+            if (tokens.size() == 0)
+              continue;
+            else if (tokens.size() != 3) {
+              stringstream err_msg;
+              err_msg << "Error: Format error in file:\n"
+                      << "       \"" << fname << "\", line: " << i_line << "\n"
+                      << "\n"
+                      << "       Expected 3 file names for every line in this file:\n"
+                      << "\n"
+                      << "       training_pos_file  training_neg_file  blob_info_file\n";
+              throw VisfdErr(err_msg.str());
+            }
+            multi_in_coords_file_names.push_back(tokens[0]);
+            multi_training_data_pos_fnames.push_back(tokens[1]);
+            multi_training_data_neg_fnames.push_back(tokens[2]);
+          } //while (getline(f, strLine))
+          f.close();
+        } //Read multi_training_data_meta_fname
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by two file names:\n"
+                       "       FILE_POS.txt  FILE_NEG.txt\n"
+                       "       containing positive and negative training data, respectively.\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-supervised-multi")
 
 
     else if ((vArgs[i] == "-minima-threshold") ||
@@ -2661,6 +2729,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //               "       You can use the \"-watershed\" argument instead.  (See documentation.)\n");
   }
 
+
   // Now read various files which the user asked us to read
   // and save the resulting information somewhere.
 
@@ -2679,6 +2748,32 @@ Settings::ParseArgs(vector<string>& vArgs)
                       training_data_neg_crds,
                       '#');
 
+  // If there are multiple independent training set data files, read them too
+  if ((multi_training_data_pos_fnames.size() > 0) ||
+      (multi_training_data_neg_fnames.size() > 0))
+  {
+    int Nsets = multi_training_data_pos_fnames.size();
+    assert(Nsets == multi_training_data_neg_fnames.size());
+
+    for (int I = 0; I < multi_training_data_pos_fnames.size(); ++I) {
+      // read a list of locations in the image from a file
+      // (positive training data for supervised learning)
+      multi_is_training_data_pos_in_voxels[I] =
+        ReadCoordinates(multi_training_data_pos_fnames[I],
+                        multi_training_data_pos_crds[I],
+                        '#');
+    }
+    for (int I = 0; I < multi_training_data_neg_fnames.size(); ++I) {
+      // read a list of locations in the image from a file
+      // (negative training data for supervised learning)
+      multi_is_training_data_neg_in_voxels[I] =
+        ReadCoordinates(multi_training_data_neg_fnames[I],
+                        multi_training_data_neg_crds[I],
+                        '#');
+    }
+  } //if ((multi_training_data_pos_fnames.size() > 0) || ...
+
+
   if (must_link_filename != "")
     // read a list of locations that the user thinks should
     // belong to the same cluster. (useful for clustering)
@@ -2687,6 +2782,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                              must_link_constraints);
 
 } // Settings::ParseArgs()
+
 
 
 

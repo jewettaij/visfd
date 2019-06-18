@@ -1041,12 +1041,19 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 
 
 
-/// @brief Choose upper or lower score thresholds which maximize
-///        the number of correctly classified blobs.
-///        In this variant of the function, the positive and negative training
+/// @brief find either an upper or a lower bound for a list
+///        of 1-D features (scores).
+///        (Although both upper and lower bounds are calculated, 
+///         only one of them should have a non-infinite value.
+///         Otherwise your data is not one-sided.)
+///
+/// @note  In this variant of the function, the positive and negative training
 ///        data are saved in separate arrays.
 ///
-/// @note  For details, see the other version of this function.
+/// @return This function returns void.
+///         Assuming they are not nullptr, the results are stored in:
+///           *pthreshold_lower_bound
+///           *pthreshold_uppwer_bound
 
 template<typename Scalar>
 void
@@ -1102,11 +1109,11 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
 
 
 
-/// @brief Choose upper or lower score thresholds which maximize
-///        the number of correctly classified blobs.
-///
-/// @note  In this variant of the function, the positive and negative training
-///        data are saved in separate arrays.
+/// @brief find either an upper or a lower bound for a list
+///        of 1-D features (scores).
+///        (Although both upper and lower bounds are calculated, 
+///         only one of them should have a non-infinite value.
+///         Otherwise your data is not one-sided.)
 ///
 /// @note  This version of function works with multiple
 ///        independent training sets.  (That is, training sets corresponding
@@ -1116,7 +1123,13 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
 ///        equal this number of images:   blob_crds, blob_diameters,
 ///        blob_scores, training_set_crds, training_set_accepted
 ///
-/// @note  For details, see the other version of this function.
+/// @note  In this variant of the function, the positive and negative training
+///        data are saved in separate arrays.
+///
+/// @return This function returns void.
+///         Assuming they are not nullptr, the results are stored in:
+///           *pthreshold_lower_bound
+///           *pthreshold_uppwer_bound
 
 template<typename Scalar>
 void

@@ -178,6 +178,7 @@ HandleBlobRadialIntensity(Settings settings,
                      &scores,
                      voxel_width[0],
                      settings.sphere_decals_diameter,
+                     settings.sphere_decals_foreground,
                      settings.sphere_decals_scale);
 
   vector<vector<float> > intensity_profiles; //!< store the intensity profiles here
@@ -1411,7 +1412,6 @@ HandleDistanceToPoints(Settings settings,
     }
   }
 } //HandleDistanceToPoints()
-
 
 
 
