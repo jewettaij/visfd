@@ -27,7 +27,7 @@ test_blob_detection() {
 
     # Create an image with each blob represented by a single voxel of
     # brightness 1 surrounded by other voxels of brightness 0
-    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -out test_blob_detect_results.rec -spheres test_blobs_sep_${SEP}_thresh_${THRESH}.txt -sphere-shell-ratio 0.1 -sphere-background 0 -sphere-foreground 1 -sphere-radii 0
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect_dog_0_500_cl_-1.3_1.3.rec -out test_blob_detect_results.rec -draw-spheres test_blobs_sep_${SEP}_thresh_${THRESH}.txt -sphere-shell-ratio 0.1 -sphere-background 0 -sphere-foreground 1 -sphere-radii 0
 
     # Note:
     # To superimpose the spheres onto the original image, get rid of these args:
@@ -42,9 +42,15 @@ test_blob_detection() {
     
     assertTrue "visualization failed: number of non-zero voxels != number of blobs" "[ $NBLOBS_IN_LIST -eq $NBLOBS_IN_IMAGE ]"
 
+    # Test supervised learning of blob threshold parameter (single image)
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -discard-blobs test_blobs.txt test_blobs_sep_${SEP}_SUPERVISED.txt -auto-thresh score -supervised test_supervised_pos.txt test_supervised_neg.txt
+
+    # Test supervised learning of blob threshold parameter (multiple images)
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -auto-thresh score -supervised-multi test_supervised_multi.txt
+
     rm -rf test_blob_detect_dog_0_500.rec test_blob_detect_dog_0_500_cl_-1.3_1.3.rec test_blobs*.txt test_blob_detect_results.rec deleteme*
 
-  cd ../
+    cd ../
 }
 
 . shunit2/shunit2

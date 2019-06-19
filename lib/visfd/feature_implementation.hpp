@@ -31,7 +31,6 @@ namespace visfd {
 
 
 
-
 /// @brief  The following function finds EITHER local minima OR local maxima
 ///         in an image.
 ///
@@ -641,15 +640,15 @@ _ComplainIfTrainingDataEmpty(Integer Nn, Integer Np) {
 template<typename Scalar>
 
 static void
-_ChooseThresholdInterval(const vector<Scalar>& training_set_scores, //!< a 1-D feature describing each training data
-                         const vector<bool>& training_set_accepted, //!< classify each training data as "accepted" (true) or "rejected" (false)
+_ChooseThresholdInterval(const vector<Scalar>& training_scores, //!< a 1-D feature describing each training data
+                         const vector<bool>& training_accepted, //!< classify each training data as "accepted" (true) or "rejected" (false)
                          Scalar *pthreshold_lower_bound = nullptr,  //!< return threshold to the caller (if not nullptr)
                          Scalar *pthreshold_upper_bound = nullptr,  //!< return threshold to the caller (if not nullptr)
                          ostream *pReportProgress = nullptr //!< report progress back to the user?
                          )
 {
-  size_t N = training_set_scores.size();
-  assert(N == training_set_accepted.size());
+  size_t N = training_scores.size();
+  assert(N == training_accepted.size());
 
   Scalar threshold_lower_bound = -1.0;
   Scalar threshold_upper_bound = -1.0;
@@ -665,7 +664,7 @@ _ChooseThresholdInterval(const vector<Scalar>& training_set_scores, //!< a 1-D f
     //Sometimes if we choose the upper bound first, we get the wrong lower bound
     //So we try both ways, and pick which way minimizes the number of mistakes.
     //(Note: This still might not give us both optimal upper and lower bounds.
-    //       However if either lower_bound = -infinity OR upper_bound = infinity
+    //       However if either lower_bound=-infinity OR upper_bound=infinity,
     //       this will give us the optimal threshold for the other boundary.)
     size_t num_mistakes_lower_bound_first;
     Scalar choose_threshold_lower_bound_first;
@@ -673,26 +672,26 @@ _ChooseThresholdInterval(const vector<Scalar>& training_set_scores, //!< a 1-D f
     {
       // choose the lower bound first:
       choose_threshold_lower_bound_first =
-        ChooseThreshold1D(training_set_scores,
-                          training_set_accepted,
+        ChooseThreshold1D(training_scores,
+                          training_accepted,
                           true);
-      vector<bool> training_set_accepted_remaining;
-      vector<Scalar> training_set_scores_remaining;
+      vector<bool> training_accepted_remaining;
+      vector<Scalar> training_scores_remaining;
       for (size_t i = 0; i < N; i++) {
-        if (training_set_scores[i] >= choose_threshold_lower_bound_first) {
-          training_set_scores_remaining.push_back(training_set_scores[i]);
-          training_set_accepted_remaining.push_back(training_set_accepted[i]);
+        if (training_scores[i] >= choose_threshold_lower_bound_first) {
+          training_scores_remaining.push_back(training_scores[i]);
+          training_accepted_remaining.push_back(training_accepted[i]);
         }
       }
       choose_threshold_upper_bound_second =
-        ChooseThreshold1D(training_set_scores_remaining,
-                          training_set_accepted_remaining,
+        ChooseThreshold1D(training_scores_remaining,
+                          training_accepted_remaining,
                           false);
       num_mistakes_lower_bound_first = 0;
       for (size_t i = 0; i < N; i++) {
-        if (training_set_accepted[i] !=
-            ((training_set_scores[i] >= choose_threshold_lower_bound_first) &&
-             (training_set_scores[i] <= choose_threshold_upper_bound_second)))
+        if (training_accepted[i] !=
+            ((training_scores[i] >= choose_threshold_lower_bound_first) &&
+             (training_scores[i] <= choose_threshold_upper_bound_second)))
           num_mistakes_lower_bound_first++;
       }
     } // calculate choose_threshold_lower_bound_first, choose_threshold_upper_bound_second
@@ -703,26 +702,26 @@ _ChooseThresholdInterval(const vector<Scalar>& training_set_scores, //!< a 1-D f
     {
       // choose the upper bound first:
       choose_threshold_upper_bound_first =
-        ChooseThreshold1D(training_set_scores,
-                          training_set_accepted,
+        ChooseThreshold1D(training_scores,
+                          training_accepted,
                           false);
-      vector<bool> training_set_accepted_remaining;
-      vector<Scalar> training_set_scores_remaining;
+      vector<bool> training_accepted_remaining;
+      vector<Scalar> training_scores_remaining;
       for (size_t i = 0; i < N; i++) {
-        if (training_set_scores[i] <= choose_threshold_upper_bound_first) {
-          training_set_scores_remaining.push_back(training_set_scores[i]);
-          training_set_accepted_remaining.push_back(training_set_accepted[i]);
+        if (training_scores[i] <= choose_threshold_upper_bound_first) {
+          training_scores_remaining.push_back(training_scores[i]);
+          training_accepted_remaining.push_back(training_accepted[i]);
         }
       }
       choose_threshold_lower_bound_second =
-        ChooseThreshold1D(training_set_scores_remaining,
-                          training_set_accepted_remaining,
+        ChooseThreshold1D(training_scores_remaining,
+                          training_accepted_remaining,
                           true);
       num_mistakes_upper_bound_first = 0;
       for (size_t i = 0; i < N; i++) {
-        if (training_set_accepted[i] !=
-            ((training_set_scores[i] >= choose_threshold_lower_bound_second) &&
-             (training_set_scores[i] <= choose_threshold_upper_bound_first)))
+        if (training_accepted[i] !=
+            ((training_scores[i] >= choose_threshold_lower_bound_second) &&
+             (training_scores[i] <= choose_threshold_upper_bound_first)))
           num_mistakes_upper_bound_first++;
       }
     } // calculate choose_threshold_upper_bound_first, choose_threshold_lower_bound_second
@@ -750,13 +749,13 @@ _ChooseThresholdInterval(const vector<Scalar>& training_set_scores, //!< a 1-D f
     size_t num_false_negatives = 0;
     size_t num_false_positives = 0;
     for (size_t i=0; i < N; i++) {
-      if ((training_set_scores[i] >= threshold_lower_bound) &&
-          (training_set_scores[i] <= threshold_upper_bound)) {
-        if (! training_set_accepted[i])
+      if ((training_scores[i] >= threshold_lower_bound) &&
+          (training_scores[i] <= threshold_upper_bound)) {
+        if (! training_accepted[i])
           num_false_positives++;
       }
       else {
-        if (training_set_accepted[i])
+        if (training_accepted[i])
           num_false_negatives++;
       }
     }
@@ -764,7 +763,7 @@ _ChooseThresholdInterval(const vector<Scalar>& training_set_scores, //!< a 1-D f
     size_t Nn = 0;
     size_t Np = 0;
     for (size_t i=0; i < N; i++) {
-      if (training_set_accepted[i])
+      if (training_accepted[i])
         Np++;
       else
         Nn++;
@@ -816,37 +815,37 @@ static void
 _ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
                            const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
                            const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
-                           const vector<array<Scalar,3> >& training_set_crds, //!< locations of blob-like things
-                           const vector<bool>& training_set_accepted, //!< classify each blob as "accepted" (true) or "rejected" (false)
+                           const vector<array<Scalar,3> >& training_crds, //!< locations of blob-like things
+                           const vector<bool>& training_accepted, //!< classify each blob as "accepted" (true) or "rejected" (false)
                            Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
                            Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
                            SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
                            ostream *pReportProgress = nullptr //!< report progress back to the user?
                            )
 {
-  vector<array<Scalar,3> > final_training_set_crds;
-  vector<bool> final_training_set_accepted;
-  vector<Scalar> final_training_set_scores;
+  vector<array<Scalar,3> > final_training_crds;
+  vector<bool> final_training_accepted;
+  vector<Scalar> final_training_scores;
 
-  FindBlobScores(training_set_crds,
-                 training_set_accepted,
-                 final_training_set_crds,
-                 final_training_set_accepted,
-                 final_training_set_scores,
+  FindBlobScores(training_crds,
+                 training_accepted,
+                 final_training_crds,
+                 final_training_accepted,
+                 final_training_scores,
                  blob_crds,
                  blob_diameters,
                  blob_scores,
                  sort_blob_criteria,
                  pReportProgress);
-  size_t N = final_training_set_crds.size();
-  assert(N == final_training_set_scores.size());
-  assert(N == final_training_set_accepted.size());
+  size_t N = final_training_crds.size();
+  assert(N == final_training_scores.size());
+  assert(N == final_training_accepted.size());
 
   // make sure that both positive and negative training data sets are non-empty
   size_t Nn = 0;
   size_t Np = 0;
   for (size_t i=0; i < N; i++) {
-    if (final_training_set_accepted[i])
+    if (final_training_accepted[i])
       Np++;
     else
       Nn++;
@@ -857,8 +856,8 @@ _ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locat
     *pReportProgress
       << "  examining training data to determine optimal thresholds\n";
 
-  _ChooseThresholdInterval(final_training_set_scores,
-                           final_training_set_accepted,
+  _ChooseThresholdInterval(final_training_scores,
+                           final_training_accepted,
                            pthreshold_lower_bound,
                            pthreshold_upper_bound,
                            pReportProgress);
@@ -874,7 +873,7 @@ _ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locat
 ///         In practice, these different training sets and blob lists are taken
 ///         from different images.  The size of the following arguments should
 ///         equal this number of images:   blob_crds, blob_diameters,
-///         blob_scores, training_set_crds, training_set_accepted
+///         blob_scores, training_crds, training_accepted
 ///
 /// @note   THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
@@ -883,23 +882,23 @@ static void
 _ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
                                 const vector<vector<Scalar> >& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
                                 const vector<vector<Scalar> >& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
-                                const vector<vector<array<Scalar,3> > >& training_set_crds, //!< locations of blob-like things
-                                const vector<vector<bool> >& training_set_accepted, //!< classify each blob as "accepted" (true) or "rejected" (false)
+                                const vector<vector<array<Scalar,3> > >& training_crds, //!< locations of blob-like things
+                                const vector<vector<bool> >& training_accepted, //!< classify each blob as "accepted" (true) or "rejected" (false)
                                 Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
                                 Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
                                 SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
                                 ostream *pReportProgress = nullptr //!< report progress back to the user?
                                 )
 {
-  int Nsets = training_set_crds.size();
-  assert(Nsets == training_set_accepted.size());
+  int Nsets = training_crds.size();
+  assert(Nsets == training_accepted.size());
   assert(Nsets == blob_crds.size());
   assert(Nsets == blob_diameters.size());
   assert(Nsets == blob_scores.size());
 
-  vector<array<Scalar,3> > final_training_set_crds;
-  vector<bool> final_training_set_accepted;
-  vector<Scalar> final_training_set_scores;
+  vector<array<Scalar,3> > final_training_crds;
+  vector<bool> final_training_accepted;
+  vector<Scalar> final_training_scores;
 
   // Loop over all of the different training sets:
   for (int I = 0; I < Nsets; I++) {
@@ -907,14 +906,14 @@ _ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_cr
     assert(blob_crds[I].size() == blob_diameters[I].size());
     assert(blob_crds[I].size() == blob_scores[I].size());
 
-    vector<array<Scalar,3> > training_set_crds_I;
-    vector<bool> training_set_accepted_I;
-    vector<Scalar> training_set_scores_I;
-    FindBlobScores(training_set_crds[I],
-                   training_set_accepted[I],
-                   training_set_crds_I,
-                   training_set_accepted_I,
-                   training_set_scores_I,
+    vector<array<Scalar,3> > training_crds_I;
+    vector<bool> training_accepted_I;
+    vector<Scalar> training_scores_I;
+    FindBlobScores(training_crds[I],
+                   training_accepted[I],
+                   training_crds_I,
+                   training_accepted_I,
+                   training_scores_I,
                    blob_crds[I],
                    blob_diameters[I],
                    blob_scores[I],
@@ -922,27 +921,27 @@ _ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_cr
                    pReportProgress);
 
     // Concatinate all of the training data together.
-    final_training_set_crds.insert(final_training_set_crds.end(),
-                                   training_set_crds_I.begin(),
-                                   training_set_crds_I.end());
-    final_training_set_accepted.insert(final_training_set_accepted.end(),
-                                       training_set_accepted_I.begin(),
-                                       training_set_accepted_I.end());
-    final_training_set_scores.insert(final_training_set_scores.end(),
-                                     training_set_scores_I.begin(),
-                                     training_set_scores_I.end());
+    final_training_crds.insert(final_training_crds.end(),
+                               training_crds_I.begin(),
+                               training_crds_I.end());
+    final_training_accepted.insert(final_training_accepted.end(),
+                                   training_accepted_I.begin(),
+                                   training_accepted_I.end());
+    final_training_scores.insert(final_training_scores.end(),
+                                 training_scores_I.begin(),
+                                 training_scores_I.end());
 
   } //for (int I = 0; I < Nsets; I++)
 
-  size_t N = final_training_set_crds.size();
-  assert(N == final_training_set_scores.size());
-  assert(N == final_training_set_accepted.size());
+  size_t N = final_training_crds.size();
+  assert(N == final_training_scores.size());
+  assert(N == final_training_accepted.size());
 
   // make sure that both positive and negative training data sets are non-empty
   size_t Nn = 0;
   size_t Np = 0;
   for (size_t i=0; i < N; i++) {
-    if (final_training_set_accepted[i])
+    if (final_training_accepted[i])
       Np++;
     else
       Nn++;
@@ -953,8 +952,8 @@ _ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_cr
     *pReportProgress
       << "  examining training data to determine optimal thresholds\n";
 
-  _ChooseThresholdInterval(final_training_set_scores,
-                           final_training_set_accepted,
+  _ChooseThresholdInterval(final_training_scores,
+                           final_training_accepted,
                            pthreshold_lower_bound,
                            pthreshold_upper_bound,
                            pReportProgress);

@@ -2579,6 +2579,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         ((filter_type == NONE) ||
          (filter_type == BLOB) ||
          (filter_type == SPHERE_NONMAX_SUPPRESSION) ||
+         (filter_type == SPHERE_NONMAX_SUPERVISED_MULTI) ||
          (filter_type == BLOB_RADIAL_INTENSITY)))
        ||
        use_intensity_map ||
@@ -2752,6 +2753,20 @@ Settings::ParseArgs(vector<string>& vArgs)
   if ((multi_training_data_pos_fnames.size() > 0) ||
       (multi_training_data_neg_fnames.size() > 0))
   {
+    if ((in_coords_file_name != "") &&
+        (out_coords_file_name != ""))
+        throw InputErr("Error: This program is too stupid to automatically discard blobs from multiple\n"
+                       "       images in a single invocation.  For this reason,\n"
+                       "       you may not use the \"-supervised-multi\" argument simultaneously with\n"
+                       "       any other arguments which also perform nonmax-suppression of blobs\n"
+                       "       (such as \"-discard-blobs\").  In particular, you must make sure that\n"
+                       "       any overlapping blobs in any of in the reference lists of blobs\n"
+                       "       (in the 3rd column of the file supplied to \"-supervised-multi\")\n"
+                       "       must be removed in advance (for example by using \"-discard-blobs\"\n"
+                       "       together \"-radial-separation\", or \"-max-volume-overlap\", and\n"
+                       "       \"-max-volume-overlap-small\").  This must be done separately\n"
+                       "       on each of these lists of blobs beforehand.\n");
+
     int Nsets = multi_training_data_pos_fnames.size();
     assert(Nsets == multi_training_data_neg_fnames.size());
 

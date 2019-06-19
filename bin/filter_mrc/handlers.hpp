@@ -63,6 +63,13 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
 
+
+void
+HandleBlobScoreSupervisedMulti(Settings settings,
+                               float voxel_width[3]);
+
+
+
 void
 HandleDrawSpheres(Settings settings,
                   MrcSimple &tomo_in,
@@ -129,13 +136,6 @@ HandleRidgeDetector(Settings settings,
                     MrcSimple &tomo_out,
                     MrcSimple &mask,
                     float voxel_width[3]);
-
-
-
-void
-HandleBlobScoreSupervisedMulti(Settings settings,
-                               float voxel_width[3]);
-
 
 
 #endif //#ifndef _HANDLERS_H

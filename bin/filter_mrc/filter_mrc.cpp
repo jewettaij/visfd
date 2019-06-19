@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.19.7");
-string g_date_string("2019-6-11");
+string g_date_string("2019-6-18");
 
 
 
@@ -450,6 +450,7 @@ int main(int argc, char **argv) {
     }
 
     else if (settings.filter_type = settings.SPHERE_NONMAX_SUPERVISED_MULTI) {
+
       HandleBlobScoreSupervisedMulti(settings,
                                      voxel_width);
     }

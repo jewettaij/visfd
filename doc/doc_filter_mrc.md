@@ -128,7 +128,11 @@ PoissonRecon --in largest_membrane_pointcloud.ply \
   --out largest_membrane.ply --depth 12 --scale 2.0
 ```
 The resulting *(hopefully)* closed surface (eg. "largest_membrane.ply")
-can be visualized in [*meshlab*](http://www.meshlab.net) and later voxelized.
+can be visualized in [*meshlab*](http://www.meshlab.net),
+smoothed
+(for example,
+ by iteratively using "Filters"->"Smoothing"->"HC Laplacian Smooth"),
+and later voxelized.
 (That is, turned in to a segmented 3D image showing the cytoplasmic volume,
  for example.  This new image could then be used as a mask for future
  image processing, allowing you to segment the contents of the cell
@@ -588,6 +592,9 @@ Considering the following text file:
 (141.083 83.0833 62)
 (123.833 133.333 64)
 ```
+*(Note: You* ***must include spaces*** between each coordinate, 
+        even if commas are also present.)*
+
 This example describes two *different* connected objects
 (separated by a blank line).
 For each of these objects, all of the voxels connected to the

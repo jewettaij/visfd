@@ -389,6 +389,51 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
 
+
+
+
+
+void
+HandleBlobScoreSupervisedMulti(Settings settings,
+                               float voxel_width[3])
+{
+  float threshold_lower_bound;
+  float threshold_upper_bound;
+
+  vector<vector<array<float,3> > > blob_crds_multi;
+  vector<vector<float> > blob_diameters_multi;
+  vector<vector<float> > blob_scores_multi;
+
+  for (int I = 0; I < settings.multi_in_coords_file_names.size(); ++I) {
+    ReadBlobCoordsFile(settings.multi_in_coords_file_names[I],
+                       &blob_crds_multi[I],
+                       &blob_diameters_multi[I],
+                       &blob_scores_multi[I],
+                       voxel_width[0],
+                       settings.sphere_decals_diameter,
+                       settings.sphere_decals_foreground,
+                       settings.sphere_decals_scale);
+  }
+
+  int Nsets = blob_crds_multi.size();
+  assert(Nsets == blob_diameters_multi.size());
+  assert(Nsets == blob_scores_multi.size());
+  assert(Nsets == settings.multi_training_data_pos_crds.size());
+  assert(Nsets == settings.multi_training_data_neg_crds.size());
+
+  ChooseBlobScoreThresholdsMulti(blob_crds_multi,
+                                 blob_diameters_multi,
+                                 blob_scores_multi,
+                                 settings.multi_training_data_pos_crds,
+                                 settings.multi_training_data_neg_crds,
+                                 &threshold_lower_bound,
+                                 &threshold_upper_bound,
+                                 PRIORITIZE_HIGH_MAGNITUDE_SCORES,
+                                 &cerr);
+
+} //HandleBlobScoreSupervisedMulti()
+
+
   
 
 void
@@ -1564,47 +1609,3 @@ HandleRidgeDetector(Settings settings,
             &(aaaafGradient));
 
 } //HandleRidgeDetector()
-
-
-
-
-
-void
-HandleBlobScoreSupervisedMulti(Settings settings,
-                               float voxel_width[3])
-{
-  float threshold_lower_bound;
-  float threshold_upper_bound;
-
-  vector<vector<array<float,3> > > blob_crds_multi;
-  vector<vector<float> > blob_diameters_multi;
-  vector<vector<float> > blob_scores_multi;
-
-  for (int I = 0; I < settings.multi_in_coords_file_names.size(); ++I) {
-    ReadBlobCoordsFile(settings.multi_in_coords_file_names[I],
-                       &blob_crds_multi[I],
-                       &blob_diameters_multi[I],
-                       &blob_scores_multi[I],
-                       voxel_width[0],
-                       settings.sphere_decals_diameter,
-                       settings.sphere_decals_foreground,
-                       settings.sphere_decals_scale);
-  }
-
-  int Nsets = blob_crds_multi.size();
-  assert(Nsets == blob_diameters_multi.size());
-  assert(Nsets == blob_scores_multi.size());
-  assert(Nsets == settings.multi_training_data_pos_crds.size());
-  assert(Nsets == settings.multi_training_data_neg_crds.size());
-
-  ChooseBlobScoreThresholdsMulti(blob_crds_multi,
-                                 blob_diameters_multi,
-                                 blob_scores_multi,
-                                 settings.multi_training_data_pos_crds,
-                                 settings.multi_training_data_neg_crds,
-                                 &threshold_lower_bound,
-                                 &threshold_upper_bound,
-                                 PRIORITIZE_HIGH_MAGNITUDE_SCORES,
-                                 &cerr);
-
-} //HandleBlobScoreSupervisedMulti()

@@ -481,18 +481,18 @@ _FindBlobScores(const vector<array<Scalar,3> >& crds, //!< locations of blob-lik
 ///         It also throws an exception if the remaining training data is empty.
 /// @return This function has no return value.
 ///         The results are stored in:
-///           out_training_set_crds,
-///           out_training_set_accepted,
-///           out_training_set_scores
+///           out_training_crds,
+///           out_training_accepted,
+///           out_training_scores
 
 template<typename Scalar>
 static void
 
-FindBlobScores(const vector<array<Scalar,3> >& in_training_set_crds, //!< locations of blob-like things in training set
-               const vector<bool>& in_training_set_accepted, //!< classify each blob-like thing as "accepted" (true) or "rejected" (false)
-               vector<array<Scalar,3> >& out_training_set_crds, //!< same as in_training_set_crds after discarding entries too far away from any existing blobs
-               vector<bool>& out_training_set_accepted, //!< same as in_training_set_accepted after discarding entries too far away from any existing blobs
-               vector<Scalar>& out_training_set_scores, //!< store the scores of the remaining blob-like things here
+FindBlobScores(const vector<array<Scalar,3> >& in_training_crds, //!< locations of blob-like things in training set
+               const vector<bool>& in_training_accepted, //!< classify each blob-like thing as "accepted" (true) or "rejected" (false)
+               vector<array<Scalar,3> >& out_training_crds, //!< same as in_training_crds after discarding entries too far away from any existing blobs
+               vector<bool>& out_training_accepted, //!< same as in_training_accepted after discarding entries too far away from any existing blobs
+               vector<Scalar>& out_training_scores, //!< store the scores of the remaining blob-like things here
                const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
                const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
                const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
@@ -501,43 +501,43 @@ FindBlobScores(const vector<array<Scalar,3> >& in_training_set_crds, //!< locati
                )
 {
   // Figure out the score for each blob:
-  //   in_training_set_crds[i] == position of ith training set data
-  //   in_training_set_which_blob[i] == which blob contains this position?
-  //   in_training_set_score[i] = score of this blob
+  //   in_training_crds[i] == position of ith training set data
+  //   in_training_which_blob[i] == which blob contains this position?
+  //   in_training_score[i] = score of this blob
 
-  vector<size_t> in_training_set_which_blob; // which blob (sphere) contains this position?
-  vector<Scalar> in_training_set_scores; // what is the score of that blob?
+  vector<size_t> in_training_which_blob; // which blob (sphere) contains this position?
+  vector<Scalar> in_training_scores; // what is the score of that blob?
 
-  _FindBlobScores(in_training_set_crds,
-                  in_training_set_scores,
-                  in_training_set_which_blob,
+  _FindBlobScores(in_training_crds,
+                  in_training_scores,
+                  in_training_which_blob,
                   blob_crds,
                   blob_diameters,
                   blob_scores,
                   sort_blob_criteria,
                   pReportProgress);
 
-  size_t _N = in_training_set_crds.size();
-  assert(_N == in_training_set_scores.size());
-  assert(_N == in_training_set_accepted.size());
+  size_t _N = in_training_crds.size();
+  assert(_N == in_training_scores.size());
+  assert(_N == in_training_accepted.size());
 
 
   // Discard training data that was not suffiently close to one of the blobs.
   // Store the remaining training set data in the following variables:
   const size_t UNOCCUPIED = 0;
   for (size_t i=0; i < _N; i++) {
-    if (in_training_set_which_blob[i] != UNOCCUPIED) {
-      out_training_set_crds.push_back(in_training_set_crds[i]);
-      out_training_set_scores.push_back(in_training_set_scores[i]);
-      out_training_set_accepted.push_back(in_training_set_accepted[i]);
+    if (in_training_which_blob[i] != UNOCCUPIED) {
+      out_training_crds.push_back(in_training_crds[i]);
+      out_training_scores.push_back(in_training_scores[i]);
+      out_training_accepted.push_back(in_training_accepted[i]);
     }
   }
 
   // N = the number of training data left after discarding datum which
   //     do not lie within any blobs.  (not within any blob radii)
-  size_t N = out_training_set_crds.size();
-  assert(N == out_training_set_scores.size());
-  assert(N == out_training_set_accepted.size());
+  size_t N = out_training_crds.size();
+  assert(N == out_training_scores.size());
+  assert(N == out_training_accepted.size());
 
 } //FindBlobScores()
 
@@ -554,22 +554,22 @@ FindBlobScores(const vector<array<Scalar,3> >& in_training_set_crds, //!< locati
 
 template<typename Scalar>
 Scalar
-ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scores in sorted order
-                  const vector<bool>& training_set_accepted,//!< was this datum accepted or rejected (positive or negative)
+ChooseThreshold1D(const vector<Scalar>& training_scores, //!< a list of scores in sorted order
+                  const vector<bool>& training_accepted,//!< was this datum accepted or rejected (positive or negative)
                   bool threshold_is_lower_bound = true //!< should data with scores ABOVE the threshold be accepted? (or BELOW?)
                   )
 {
-  ptrdiff_t N = training_set_scores.size();
-  assert(N == training_set_accepted.size());
+  ptrdiff_t N = training_scores.size();
+  assert(N == training_accepted.size());
 
   // Create a local copy of the arrays that we can modify:
-  vector<Scalar> _training_set_scores = training_set_scores;
-  vector<bool> _training_set_accepted  = training_set_accepted;
+  vector<Scalar> training_scores_sorted = training_scores;
+  vector<bool> training_accepted_sorted  = training_accepted;
   
   ptrdiff_t Nn = 0;
   ptrdiff_t Np = 0;
   for (ptrdiff_t i = 0; i < N; i++) {
-    if (_training_set_accepted[i])
+    if (training_accepted_sorted[i])
       Np++;
     else
       Nn++;
@@ -583,7 +583,7 @@ ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scor
   // sort the training set according to their scores:
   vector<tuple<Scalar, ptrdiff_t> > score_index(N);
   for (ptrdiff_t i = 0; i < N; i++)
-    score_index[i] = make_tuple(_training_set_scores[i], i);
+    score_index[i] = make_tuple(training_scores_sorted[i], i);
   if (N > 0) {
     if (threshold_is_lower_bound)
       // then sort the list (of data according to scores) in increasing order
@@ -597,8 +597,8 @@ ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scor
     for (ptrdiff_t i = 0; i < score_index.size(); i++)
       permutation[i] = get<1>(score_index[i]);
     score_index.clear();
-    apply_permutation(permutation, _training_set_scores);
-    apply_permutation(permutation, _training_set_accepted);
+    apply_permutation(permutation, training_scores_sorted);
+    apply_permutation(permutation, training_accepted_sorted);
   }
 
   // The negative training data are assumed to have lower scores
@@ -609,7 +609,7 @@ ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scor
   // because if we set the threshold there, every one of them will be
   // predicted to be positive, when in fact they are negative.
   // (Similarly, if the threshold is set above the highest scores,
-  // then the number of mistakes is Np, the number of positive traing data.)
+  //  then the number of mistakes is Np, the number of positive traing data.)
 
   // In the loop below, we start with a threshold below the minimum score, and
   // increase the threshold until we exceed the maximum score.
@@ -625,7 +625,7 @@ ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scor
     int i = -1;
     while (i < N) {
       if (i >= 0) {
-        if (_training_set_accepted[i])
+        if (training_accepted_sorted[i])
           num_mistakes++;
         else
           num_mistakes--;
@@ -647,7 +647,7 @@ ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scor
     int i = -1;
     while (i < N) {
       if (i >= 0) {
-        if (_training_set_accepted[i])
+        if (training_accepted_sorted[i])
           num_mistakes++;
         else
           num_mistakes--;
@@ -684,12 +684,12 @@ ChooseThreshold1D(const vector<Scalar>& training_set_scores, //!< a list of scor
   }
   else {
     // Otherwise choose the threshold which minimizes the number of mistakes:
-    threshold = _training_set_scores[i_threshold];
+    threshold = training_scores_sorted[i_threshold];
     if (i_threshold < N-1) {
       // for a more robust estimate, 
       // choose the average of this score and the one above it
-      threshold = 0.5 * (_training_set_scores[i_threshold] +
-                         _training_set_scores[i_threshold+1]);
+      threshold = 0.5 * (training_scores_sorted[i_threshold] +
+                         training_scores_sorted[i_threshold+1]);
     }
   }
 
