@@ -1784,6 +1784,68 @@ Choosing blobs which are "edge-cases" is recommended.
         the mask will be ignored.)*
 
 
+### -auto-thresh score -supervised-multi list_of_files.txt
+
+*(WARNING: This is experimental code as of 2019-6-19.)*
+
+The "*-supervised-multi*" argument is a variant of "*-supervised*"
+which allows you to use multiple training sets taken from multiple different
+images, each of which has a separate list of blobs.
+
+This program will consider the blobs at these locations, 
+and calculate a range of scores which encloses
+the positive training data with as few errors as possible.
+The result is printed to the standard-error.
+Here is an example of the output:
+```
+  threshold lower bound: -inf
+  threshold upper bound: -131.016
+```
+#### File format details:
+
+The file supplied to this argument (eg, "list_of_files.txt"),
+should be a 3-column text file containing file names.
+Each line of this file contains the names of 3 other files containing 
+information about a particular image.
+
+Suppose you have collected training data from 7 different images.
+Example ("list_of_files.txt"):
+
+```
+training_pos_1.txt  training_crds_neg_1.txt  blob_info_1.txt
+training_pos_2.txt  training_crds_neg_2.txt  blob_info_2.txt
+training_pos_3.txt  training_crds_neg_3.txt  blob_info_3.txt
+             :                        :                :
+training_pos_7.txt  training_crds_neg_7.txt  blob_info_7.txt
+```
+The first two files, *("training_pos_1.txt", "training_crds_neg_1.txt")*,
+contain positive and negative training data corresponding to objects of
+interest from that image (image#1).
+(The format of these files is explained earlier in the documentation 
+for the "-supervised" argument.)
+The third file listed on that line contains a list of blobs that were 
+detected in the image
+(by running this program on that image separately using the 
+ ["**-blob**"](#Blob-detection) argument).
+
+*NOTE: This list of blobs (eg, contained in "blob_info_1.txt")
+must not contain overlapping blobs, or blobs that lie
+outside the mask.*  (You can delete these blobs afterward they are detected
+by running this program again separately on the list you generated earlier,
+using the
+["-discard-blobs"](#-discard-blobs),
+["-radial-separation"](#Automatic-disposal-of-overlapping-blobs),
+or
+["-max-volume-overlap"](#Automatic-disposal-of-overlapping-blobs),
+and/or
+["-max-volume-overlap-small"](#Automatic-disposal-of-overlapping-blobs)
+and
+["-mask"](#-mask-MRC_FILE)
+arguments.)
+***All*** of this must be done separately for each of the N images you want to 
+simultaneously analyze (7 in this example), ***before*** you attempt to use
+this program with the "-supervised-multi" argument.
+
 
 ### -blob-intensity-vs-radius center_type blobs_file.txt base_name
 
