@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.19.7");
-string g_date_string("2019-6-18");
+string g_version_string("0.19.8");
+string g_date_string("2019-6-19");
 
 
 
