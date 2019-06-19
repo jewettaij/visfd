@@ -78,7 +78,7 @@ test_blob_detection() {
     # Since we used the same input files we did before for a single image
     # (duplicated twice), we should expect to get the same threshold
 
-    assertTrue "-supervised-multi failed: threshold not consistent" "[ $THRESH_SUPERVISED_MULTI != $THRESH_SUPERVISED_SINGLE ]"
+    assertTrue "-supervised-multi failed: threshold not consistent" "[ $THRESH_SUPERVISED_MULTI == $THRESH_SUPERVISED_SINGLE ]"
 
     # cleanup
 
