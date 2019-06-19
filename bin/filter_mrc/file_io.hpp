@@ -213,12 +213,12 @@ ReadCoordinates(string filename,  //!< the name of the file to be read
   ReadMulticolumnFile(filename, vvWords, comment_char);
 
   for (size_t i = 0; i < vvWords.size(); i++) {
-    if (vvWords.size() == 0)
+    if (vvWords[i].size() == 0)
       vvWords.erase(vvWords.begin()+i, vvWords.begin()+i+1);
-    else if (vvWords.size() < 3) {
+    else if (vvWords[i].size() < 3) {
       stringstream err_msg;
-      err_msg << "Format error near line "<<i+1<<" of file \""+
-                     filename+"\"\n";
+      err_msg << "Format error near line "<<i+1<<" of file \""
+              << filename+"\"\n";
       throw InputErr(err_msg.str());
     }
   }

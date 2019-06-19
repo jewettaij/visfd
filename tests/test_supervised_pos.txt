@@ -1,0 +1,7 @@
+# example training data (coordinates are in voxels, starting at 1, not 0)
+(13 21 16)    # <- spaces are optional
+(1, 1, 1)     # <- should be ignored (does not belong to any blobs)
+(22, 32, 27)  # <- should be ignored (lies outside the mask)
+
+#(14, 6, 16)   # commenting out.  sometimes I include this blob in this file.
+

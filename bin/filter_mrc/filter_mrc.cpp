@@ -159,27 +159,27 @@ int main(int argc, char **argv) {
 
     // now use the voxel_width (distance-to-voxel converter)
     // to read in coordinates from various files:
-    if (! settings.is_training_data_pos_in_voxels)
-      for (size_t i = 0; i < settings.training_data_pos_crds.size(); i++)
+    if (! settings.is_training_pos_in_voxels)
+      for (size_t i = 0; i < settings.training_pos_crds.size(); i++)
         for (int d = 0; d < 3; d++)
-          settings.training_data_pos_crds[i][d] /= voxel_width[d];
+          settings.training_pos_crds[i][d] /= voxel_width[d];
 
-    if (! settings.is_training_data_neg_in_voxels)
-      for (size_t i = 0; i < settings.training_data_neg_crds.size(); i++)
+    if (! settings.is_training_neg_in_voxels)
+      for (size_t i = 0; i < settings.training_neg_crds.size(); i++)
         for (int d = 0; d < 3; d++)
-          settings.training_data_neg_crds[i][d] /= voxel_width[d];
+          settings.training_neg_crds[i][d] /= voxel_width[d];
 
-    for (int I=0; I < settings.multi_is_training_data_pos_in_voxels.size(); I++)
-      if (! settings.multi_is_training_data_pos_in_voxels[I])
-        for (size_t i = 0; i < settings.training_data_pos_crds.size(); i++)
+    for (int I=0; I < settings.multi_is_training_pos_in_voxels.size(); I++)
+      if (! settings.multi_is_training_pos_in_voxels[I])
+        for (size_t i = 0; i < settings.training_pos_crds.size(); i++)
           for (int d = 0; d < 3; d++)
-            settings.multi_training_data_pos_crds[I][i][d] /= voxel_width[d];
+            settings.multi_training_pos_crds[I][i][d] /= voxel_width[d];
 
-    for (int I=0; I < settings.multi_is_training_data_neg_in_voxels.size(); I++)
-      if (! settings.multi_is_training_data_neg_in_voxels[I])
-        for (size_t i = 0; i < settings.training_data_neg_crds.size(); i++)
+    for (int I=0; I < settings.multi_is_training_neg_in_voxels.size(); I++)
+      if (! settings.multi_is_training_neg_in_voxels[I])
+        for (size_t i = 0; i < settings.training_neg_crds.size(); i++)
           for (int d = 0; d < 3; d++)
-            settings.multi_training_data_neg_crds[I][i][d] /= voxel_width[d];
+            settings.multi_training_neg_crds[I][i][d] /= voxel_width[d];
 
     if (! settings.is_must_link_constraints_in_voxels)
       for (size_t i = 0; i < settings.must_link_constraints.size(); i++)

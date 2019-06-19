@@ -107,10 +107,10 @@ Settings::Settings() {
   score_bounds_are_ratios = false;
   sphere_diameters_lower_bound = -std::numeric_limits<float>::infinity();
   sphere_diameters_upper_bound = std::numeric_limits<float>::infinity();
-  training_data_pos_crds.clear();
-  training_data_neg_crds.clear();
-  is_training_data_pos_in_voxels = false;
-  is_training_data_neg_in_voxels = false;
+  training_pos_crds.clear();
+  training_neg_crds.clear();
+  is_training_pos_in_voxels = false;
+  is_training_neg_in_voxels = false;
   blob_width_multiplier = 1.0;
   nonmax_min_radial_separation_ratio = 0.0;
   nonmax_max_volume_overlap_small = std::numeric_limits<float>::infinity();
@@ -231,11 +231,11 @@ Settings::ParseArgs(vector<string>& vArgs)
   bool user_set_watershed_threshold_manually = false;
 
   // training data for a single images
-  string training_data_pos_fname = "";
-  string training_data_neg_fname = "";
+  string training_pos_fname = "";
+  string training_neg_fname = "";
   // training data in multiple independent files (for multiple images)
-  vector<string> multi_training_data_neg_fnames;
-  vector<string> multi_training_data_pos_fnames;
+  vector<string> multi_training_neg_fnames;
+  vector<string> multi_training_pos_fnames;
 
   for (int i=1; i < vArgs.size(); ++i)
   {
@@ -961,8 +961,8 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") ||
             (i+2 >= vArgs.size()) || (vArgs[i+2] == ""))
           throw invalid_argument("");
-        training_data_pos_fname = vArgs[i+1];
-        training_data_neg_fname = vArgs[i+2];
+        training_pos_fname = vArgs[i+1];
+        training_neg_fname = vArgs[i+2];
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -978,12 +978,11 @@ Settings::ParseArgs(vector<string>& vArgs)
     {
       filter_type = SPHERE_NONMAX_SUPERVISED_MULTI;
       try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") ||
-            (i+2 >= vArgs.size()) || (vArgs[i+2] == ""))
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         string fname = vArgs[i+1];
 
-        { //Read multi_training_data_meta_fname
+        { //Read multi_training_meta_fname
           fstream f;
           f.open(fname, ios::in);
           const char comment_char = '#';
@@ -1016,25 +1015,36 @@ Settings::ParseArgs(vector<string>& vArgs)
               err_msg << "Error: Format error in file:\n"
                       << "       \"" << fname << "\", line: " << i_line << "\n"
                       << "\n"
-                      << "       Expected 3 file names for every line in this file:\n"
+                      << "       Expected 3 file names in every line in this file:\n"
                       << "\n"
-                      << "       training_pos_file  training_neg_file  blob_info_file\n";
+                      << "       training_pos_file  training_neg_file  blob_info_list.txt\n";
               throw VisfdErr(err_msg.str());
             }
-            multi_in_coords_file_names.push_back(tokens[0]);
-            multi_training_data_pos_fnames.push_back(tokens[1]);
-            multi_training_data_neg_fnames.push_back(tokens[2]);
+            multi_training_pos_fnames.push_back(tokens[0]);
+            multi_training_neg_fnames.push_back(tokens[1]);
+            multi_in_coords_file_names.push_back(tokens[2]);
           } //while (getline(f, strLine))
           f.close();
-        } //Read multi_training_data_meta_fname
+        } //Read multi_training_meta_fname
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by two file names:\n"
-                       "       FILE_POS.txt  FILE_NEG.txt\n"
-                       "       containing positive and negative training data, respectively.\n");
+                       " argument must be followed a file name. Example: FILE_TRAINING_SETS.txt\n"
+                       "\n"
+                       "File format details:\n"
+                       " This should be a 3-column text file containing file names.  Example:\n"
+                       "   training_pos_1.txt  training_crds_neg_1.txt  blob_info_1.txt\n"
+                       "   training_pos_2.txt  training_crds_neg_2.txt  blob_info_2.txt\n"
+                       "   training_pos_3.txt  training_crds_neg_3.txt  blob_info_3.txt\n"
+                       "                :                        :                :\n"
+                       "   training_pos_N.txt  training_crds_neg_N.txt  blob_info_N.txt\n"
+                       "\n"
+                       " containing positive and negative training data, and a list of detected blobs\n"
+                       " for each of the N images you want to simultaneously analyze.\n");
       }
+
       num_arguments_deleted = 2;
+
     } //if (vArgs[i] == "-supervised-multi")
 
 
@@ -2734,59 +2744,74 @@ Settings::ParseArgs(vector<string>& vArgs)
   // Now read various files which the user asked us to read
   // and save the resulting information somewhere.
 
-  if (training_data_pos_fname != "")
+  if (training_pos_fname != "")
     // read a list of locations in the image from a file
     // (positive training data for supervised learning)
-    is_training_data_pos_in_voxels =
-      ReadCoordinates(training_data_pos_fname,
-                      training_data_pos_crds,
+    is_training_pos_in_voxels =
+      ReadCoordinates(training_pos_fname,
+                      training_pos_crds,
                       '#');
-  if (training_data_neg_fname != "")
+  if (training_neg_fname != "")
     // read a list of locations in the image from a file
     // (negative training data for supervised learning)
-    is_training_data_neg_in_voxels =
-      ReadCoordinates(training_data_neg_fname,
-                      training_data_neg_crds,
+    is_training_neg_in_voxels =
+      ReadCoordinates(training_neg_fname,
+                      training_neg_crds,
                       '#');
 
   // If there are multiple independent training set data files, read them too
-  if ((multi_training_data_pos_fnames.size() > 0) ||
-      (multi_training_data_neg_fnames.size() > 0))
+  if ((multi_training_pos_fnames.size() > 0) ||
+      (multi_training_neg_fnames.size() > 0))
   {
     if ((in_coords_file_name != "") &&
         (out_coords_file_name != ""))
-        throw InputErr("Error: This program is too stupid to automatically discard blobs from multiple\n"
-                       "       images in a single invocation.  For this reason,\n"
-                       "       you may not use the \"-supervised-multi\" argument simultaneously with\n"
-                       "       any other arguments which also perform nonmax-suppression of blobs\n"
-                       "       (such as \"-discard-blobs\").  In particular, you must make sure that\n"
-                       "       any overlapping blobs in any of in the reference lists of blobs\n"
-                       "       (in the 3rd column of the file supplied to \"-supervised-multi\")\n"
-                       "       must be removed in advance (for example by using \"-discard-blobs\"\n"
-                       "       together \"-radial-separation\", or \"-max-volume-overlap\", and\n"
-                       "       \"-max-volume-overlap-small\").  This must be done separately\n"
-                       "       on each of these lists of blobs beforehand.\n");
+      throw InputErr("Error: This program is too stupid to automatically discard blobs from multiple\n"
+                     "       images in a single invocation.  For this reason,\n"
+                     "       you may not use the \"-supervised-multi\" argument simultaneously with\n"
+                     "       any other arguments which also perform nonmax-suppression of blobs\n"
+                     "       (such as \"-discard-blobs\").  In particular, you must make sure that\n"
+                     "       any overlapping blobs in any of the reference lists of blobs must be\n"
+                     "       removed in advance.  (These blobs are contained in the files referred\n"
+                     "       to in the 3rd column of the file supplied to \"-supervised-multi\".\n"
 
-    int Nsets = multi_training_data_pos_fnames.size();
-    assert(Nsets == multi_training_data_neg_fnames.size());
+                     "       They can be removed by using this program with\"-discard-blobs\"\n"
+                     "       together with \"-radial-separation\", or \"-max-volume-overlap\", and/or\n"
+                     "       \"-max-volume-overlap-small\".  This must be done separately\n"
+                     "       for each of those files in the 3rd column.)\n");
+    if (mask_file_name != "")
+      throw InputErr("Error: You may not use the \"-supervised-multi\" argument simultaneously with\n"
+                     "       the \"-mask\" argument.  If you wish to ignore blobs which lie outside\n"
+                     "       the mask, then you must delete the corresponding lines from the\n"
+                     "       blob lists beforehand.  (These are stored in the files indicated\n"
+                     "       by the 3rd column of the file supplied to \"-supervised-multi\"\n"
+                     "       You can do this by running this program using the \"-discard-blobs\"\n"
+                     "       together with the \"-mask\" argument.  This must be done separately\n"
+                     
+                     "       on each of these lists of blobs beforehand.)\n");
 
-    for (int I = 0; I < multi_training_data_pos_fnames.size(); ++I) {
+
+    int Nsets = multi_training_pos_fnames.size();
+    multi_training_pos_crds.resize(Nsets);
+    multi_is_training_pos_in_voxels.resize(Nsets);
+    for (int I = 0; I < multi_training_pos_fnames.size(); ++I) {
       // read a list of locations in the image from a file
       // (positive training data for supervised learning)
-      multi_is_training_data_pos_in_voxels[I] =
-        ReadCoordinates(multi_training_data_pos_fnames[I],
-                        multi_training_data_pos_crds[I],
+      multi_is_training_pos_in_voxels[I] =
+        ReadCoordinates(multi_training_pos_fnames[I],
+                        multi_training_pos_crds[I],
                         '#');
     }
-    for (int I = 0; I < multi_training_data_neg_fnames.size(); ++I) {
+    multi_training_neg_crds.resize(Nsets);
+    multi_is_training_neg_in_voxels.resize(Nsets);
+    for (int I = 0; I < multi_training_neg_fnames.size(); ++I) {
       // read a list of locations in the image from a file
       // (negative training data for supervised learning)
-      multi_is_training_data_neg_in_voxels[I] =
-        ReadCoordinates(multi_training_data_neg_fnames[I],
-                        multi_training_data_neg_crds[I],
+      multi_is_training_neg_in_voxels[I] =
+        ReadCoordinates(multi_training_neg_fnames[I],
+                        multi_training_neg_crds[I],
                         '#');
     }
-  } //if ((multi_training_data_pos_fnames.size() > 0) || ...
+  } //if ((multi_training_pos_fnames.size() > 0) || ...
 
 
   if (must_link_filename != "")

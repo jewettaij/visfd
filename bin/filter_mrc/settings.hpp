@@ -265,19 +265,19 @@ class Settings {
   float sphere_diameters_upper_bound;
 
   bool auto_thresh_score = false;
-  vector<array<float, 3> > training_data_pos_crds;
-  vector<array<float, 3> > training_data_neg_crds;
+  vector<array<float, 3> > training_pos_crds;
+  vector<array<float, 3> > training_neg_crds;
 
   // training data for a single images
-  bool is_training_data_pos_in_voxels = false;
-  bool is_training_data_neg_in_voxels = false;
+  bool is_training_pos_in_voxels = false;
+  bool is_training_neg_in_voxels = false;
 
   // training data in multiple independent files (for multiple images)
   vector<string> multi_in_coords_file_names;
-  vector<bool> multi_is_training_data_pos_in_voxels;
-  vector<bool> multi_is_training_data_neg_in_voxels;
-  vector<vector<array<float, 3> > > multi_training_data_pos_crds;
-  vector<vector<array<float, 3> > > multi_training_data_neg_crds;
+  vector<bool> multi_is_training_pos_in_voxels;
+  vector<bool> multi_is_training_neg_in_voxels;
+  vector<vector<array<float, 3> > > multi_training_pos_crds;
+  vector<vector<array<float, 3> > > multi_training_neg_crds;
 
   // ---- parameters for detecting local minima and local maxima ----
 

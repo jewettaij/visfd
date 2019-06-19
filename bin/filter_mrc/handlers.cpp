@@ -296,26 +296,17 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
   // Discard blobs based on score or size?
 
-  // First check whether the user supplied training data to help us choose:
-  if (settings.auto_thresh_score &&
-      (settings.training_data_pos_crds.size() > 0) &&
-      (settings.training_data_neg_crds.size() > 0))
+  if (((settings.score_lower_bound !=
+        -std::numeric_limits<float>::infinity()) &&
+       (settings.score_upper_bound !=
+        std::numeric_limits<float>::infinity()))
+      ||
+      ((settings.sphere_diameters_lower_bound !=
+        -std::numeric_limits<float>::infinity()) &&
+       (settings.sphere_diameters_upper_bound !=
+        std::numeric_limits<float>::infinity())))
   {
-
-    cerr << "  discarding blobs based on score using training data" << endl;
-    DiscardBlobsByScoreSupervised(crds,
-                                  diameters,
-                                  scores,
-                                  settings.training_data_pos_crds,
-                                  settings.training_data_neg_crds,
-                                  PRIORITIZE_HIGH_MAGNITUDE_SCORES,
-                                  &settings.score_lower_bound,
-                                  &settings.score_upper_bound,
-                                  &cerr);
-
-  }
-  else {
-
+    // report to the user
     if ((settings.score_lower_bound !=
          -std::numeric_limits<float>::infinity()) &&
         (settings.score_upper_bound !=
@@ -327,9 +318,9 @@ HandleBlobsNonmaxSuppression(Settings settings,
          std::numeric_limits<float>::infinity()))
       cerr << "  discarding blobs based on size (diameter)" << endl;
 
-    // If the user did not supply training data, then perhaps they
-    // supplied minimum and maximum threshold scores and diameters
-    // for each blob.  If so, discard the blobs that lie outside this range.
+    // If the user supplied explicit minimum and maximum threshold scores or
+    // diameters for blobs, discard the blobs that lie outside this range.
+
     vector<array<float,3> > crds_cpy;
     vector<float> diameters_cpy;
     vector<float> scores_cpy;
@@ -351,7 +342,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
   } // else clause for "if (settings.auto_thresh_score && ..."
 
 
-
+  // Discard blobs outside the mask?
   if ((crds.size() > 0) && (mask.aaafI != nullptr)) {
     cerr << "  discarding blobs outside the mask" << endl;
     DiscardMaskedBlobs(crds,
@@ -360,6 +351,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
                        mask.aaafI);
   }
 
+  // Discard overlapping blobs?
   cerr << "  discarding overlapping blobs" << endl;
   DiscardOverlappingBlobs(crds,
                           diameters, 
@@ -372,6 +364,27 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
   cerr << " " << crds.size() << " blobs remaining" << endl;
 
+  // Finally, use supervised learning to discard the remaining blobs?
+  // (Always do this AFTER discarding overlapping blobs.)
+  if (settings.auto_thresh_score &&
+      (settings.training_pos_crds.size() > 0) &&
+      (settings.training_neg_crds.size() > 0))
+  {
+
+    cerr << "  discarding blobs based on score using training data" << endl;
+    DiscardBlobsByScoreSupervised(crds,
+                                  diameters,
+                                  scores,
+                                  settings.training_pos_crds,
+                                  settings.training_neg_crds,
+                                  PRIORITIZE_HIGH_MAGNITUDE_SCORES,
+                                  &settings.score_lower_bound,
+                                  &settings.score_upper_bound,
+                                  &cerr);
+
+  }
+
+  // Write out the remaining blobs to a file:
   if (settings.out_coords_file_name != "") {
     fstream out_coords_file;
     out_coords_file.open(settings.out_coords_file_name, ios::out);
@@ -400,9 +413,11 @@ HandleBlobScoreSupervisedMulti(Settings settings,
   float threshold_lower_bound;
   float threshold_upper_bound;
 
-  vector<vector<array<float,3> > > blob_crds_multi;
-  vector<vector<float> > blob_diameters_multi;
-  vector<vector<float> > blob_scores_multi;
+  int Nsets = settings.multi_in_coords_file_names.size();
+
+  vector<vector<array<float,3> > > blob_crds_multi(Nsets);
+  vector<vector<float> > blob_diameters_multi(Nsets);
+  vector<vector<float> > blob_scores_multi(Nsets);
 
   for (int I = 0; I < settings.multi_in_coords_file_names.size(); ++I) {
     ReadBlobCoordsFile(settings.multi_in_coords_file_names[I],
@@ -415,17 +430,17 @@ HandleBlobScoreSupervisedMulti(Settings settings,
                        settings.sphere_decals_scale);
   }
 
-  int Nsets = blob_crds_multi.size();
+  assert(Nsets == blob_crds_multi.size());
   assert(Nsets == blob_diameters_multi.size());
   assert(Nsets == blob_scores_multi.size());
-  assert(Nsets == settings.multi_training_data_pos_crds.size());
-  assert(Nsets == settings.multi_training_data_neg_crds.size());
+  assert(Nsets == settings.multi_training_pos_crds.size());
+  assert(Nsets == settings.multi_training_neg_crds.size());
 
   ChooseBlobScoreThresholdsMulti(blob_crds_multi,
                                  blob_diameters_multi,
                                  blob_scores_multi,
-                                 settings.multi_training_data_pos_crds,
-                                 settings.multi_training_data_neg_crds,
+                                 settings.multi_training_pos_crds,
+                                 settings.multi_training_neg_crds,
                                  &threshold_lower_bound,
                                  &threshold_upper_bound,
                                  PRIORITIZE_HIGH_MAGNITUDE_SCORES,

@@ -27,6 +27,7 @@ test_blob_detection() {
 
     # Create an image with each blob represented by a single voxel of
     # brightness 1 surrounded by other voxels of brightness 0
+
     ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect_dog_0_500_cl_-1.3_1.3.rec -out test_blob_detect_results.rec -draw-spheres test_blobs_sep_${SEP}_thresh_${THRESH}.txt -sphere-shell-ratio 0.1 -sphere-background 0 -sphere-foreground 1 -sphere-radii 0
 
     # Note:
@@ -43,12 +44,45 @@ test_blob_detection() {
     assertTrue "visualization failed: number of non-zero voxels != number of blobs" "[ $NBLOBS_IN_LIST -eq $NBLOBS_IN_IMAGE ]"
 
     # Test supervised learning of blob threshold parameter (single image)
-    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -discard-blobs test_blobs.txt test_blobs_sep_${SEP}_SUPERVISED.txt -auto-thresh score -supervised test_supervised_pos.txt test_supervised_neg.txt
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -discard-blobs test_blobs.txt test_blobs_sep_${SEP}_SUPERVISED.txt -blob-separation ${SEP} -auto-thresh score -supervised test_supervised_pos.txt test_supervised_neg.txt >& test_log_e.txt
+
+    assertTrue "visualization failed.  File test_blobs_sep_${SEP}_SUPERVISED.txt was not created" "[ -s test_blobs_sep_${SEP}_SUPERVISED.txt ]"
+
+    NBLOBS_SUPERVISED_SINGLE=`wc test_blobs_sep_${SEP}_SUPERVISED.txt | awk '{print $1}'`
+
+    assertTrue "supervised-learning failed: number of remaining blobs == 0" "[ $NBLOBS_SUPERVISED_SINGLE -gt 0 ]"
+
+    THRESH_SUPERVISED_SINGLE=`grep 'threshold upper bound:' < test_log_e.txt | awk '{print $4}'`
+
+    assertTrue "-supervised failed: threshold not found" "[ -n $THRESH_SUPERVISED_SINGLE ]"
+
+    assertTrue "-supervised failed: threshold is non-sensical" "[ $THRESH_SUPERVISED_SINGLE != inf ]"
+
+    assertTrue "-supervised failed: threshold is non-sensical" "[ $THRESH_SUPERVISED_SINGLE != -inf ]"
 
     # Test supervised learning of blob threshold parameter (multiple images)
-    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -auto-thresh score -supervised-multi test_supervised_multi.txt
 
-    rm -rf test_blob_detect_dog_0_500.rec test_blob_detect_dog_0_500_cl_-1.3_1.3.rec test_blobs*.txt test_blob_detect_results.rec deleteme*
+    # set up the input files
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -discard-blobs test_blobs.txt test_blobs_sep_${SEP}.txt -blob-separation ${SEP}
+
+    echo "test_supervised_pos.txt test_supervised_neg.txt test_blobs_sep_${SEP}.txt" > test_supervised_multi.txt
+    echo "test_supervised_pos.txt test_supervised_neg.txt test_blobs_sep_${SEP}.txt" >> test_supervised_multi.txt
+    
+    # run the learning algorithm to choose the threshold
+    ../bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detect.rec -auto-thresh score -supervised-multi test_supervised_multi.txt >& test_log_e.txt
+
+    THRESH_SUPERVISED_MULTI=`grep 'threshold upper bound:' < test_log_e.txt | awk '{print $4}'`
+
+    assertTrue "-supervised-multi failed: threshold not found" "[ -n $THRESH_SUPERVISED_MULTI ]"
+
+    # Since we used the same input files we did before for a single image
+    # (duplicated twice), we should expect to get the same threshold
+
+    assertTrue "-supervised-multi failed: threshold not consistent" "[ $THRESH_SUPERVISED_MULTI != $THRESH_SUPERVISED_SINGLE ]"
+
+    # cleanup
+
+    rm -rf test_blob_detect_dog_0_500.rec test_blob_detect_dog_0_500_cl_-1.3_1.3.rec test_blobs*.txt test_blob_detect_results.rec test_supervised_multi.txt test_log_e.txt deleteme*
 
     cd ../
 }
