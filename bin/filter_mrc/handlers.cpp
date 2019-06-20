@@ -297,12 +297,12 @@ HandleBlobsNonmaxSuppression(Settings settings,
   // Discard blobs based on score or size?
 
   if (((settings.score_lower_bound !=
-        -std::numeric_limits<float>::infinity()) &&
+        -std::numeric_limits<float>::infinity()) ||
        (settings.score_upper_bound !=
         std::numeric_limits<float>::infinity()))
       ||
       ((settings.sphere_diameters_lower_bound !=
-        -std::numeric_limits<float>::infinity()) &&
+        -std::numeric_limits<float>::infinity()) ||
        (settings.sphere_diameters_upper_bound !=
         std::numeric_limits<float>::infinity())))
   {
