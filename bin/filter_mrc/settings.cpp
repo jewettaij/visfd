@@ -270,7 +270,7 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by 6 integers.\n");
       }
       num_arguments_deleted = 4;
-    } // if (vArgs[i] == "-mask-rect")
+    } // if (vArgs[i] == "-image-size")
 
     else if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
     {
