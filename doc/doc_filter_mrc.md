@@ -1759,8 +1759,10 @@ is less than *ratio_max* times the blob with the highest score,
 ### -auto-thresh score -supervised file_accept.txt file_reject.txt
 
 As an alternative to specifying the threshold(s) manually,
+(using the "-minima-threshold" or "-maxima-threshold" arguments),
 you can instead supply examples of blobs that you want to keep,
-and blobs you want to discard.
+and blobs you want to discard 
+(using the "-auto-thresh" and "-supervised" arguments).
 
 *(Note: To use these arguments, the image must be associated 
  with a list of blobs that was detected by previously running 
@@ -1808,13 +1810,14 @@ Choosing blobs which are "edge-cases" is recommended.
 
 ### -auto-thresh score -supervised-multi list_of_files.txt
 
-*(WARNING: This experimental feature is difficult to use as of 2019-6-19.)*
+*(WARNING: This is an experimental feature as of 2019-6-19.
+           It has not been tested carefully, and may be difficult to use.)*
 
 The "*-supervised-multi*" argument is a variant of "*-supervised*"
 which allows you to use multiple training sets 
 associated with multiple different images.
 
-*(Each of those images must be associated with a list of blobs 
+*(Note: Each of those images must be associated with a list of blobs 
   that were detected by previously running this program
   with the "-blob" argument on that image.)*
 
