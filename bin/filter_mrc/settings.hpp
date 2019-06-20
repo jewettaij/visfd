@@ -75,6 +75,7 @@ class Settings {
   string in_file_name; // name of the image file we want to read
   int in_set_image_size[3];//image size (if the user did not supply a file name)
   string out_file_name; // name of the image file we want to create
+  bool out_file_overwrite; // allow out_file_name to equal in_file_name?
   // Mask parameters are used to select (ignore) voxels from the original image.
   string mask_file_name; // name of an image file used for masking
   bool use_mask_select; // do we select voxels with a specific value?

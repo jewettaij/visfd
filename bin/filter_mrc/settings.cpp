@@ -25,6 +25,7 @@ Settings::Settings() {
   in_set_image_size[2] = 0;
   invert_output = false;
   out_file_name = "";
+  out_file_overwrite = false;
   mask_file_name = "";
   mask_select = 1;
   use_mask_select = false;
@@ -272,6 +273,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 4;
     } // if (vArgs[i] == "-image-size")
 
+
     else if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -282,7 +284,17 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
 
     } // if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
+   
+    else if (vArgs[i] == "-out-force")
+    {
+      if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        throw InputErr("Error: The " + vArgs[i] + 
+                       " argument must be followed by a file name.\n");
+      out_file_name = vArgs[i+1];
+      out_file_overwrite = true;
+      num_arguments_deleted = 2;
 
+    } // if (vArgs[i] == "-out-force")
 
     else if (vArgs[i] == "-mask")
     {
@@ -331,7 +343,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
-                       " argument must be followed by 6 integers.\n");
+                       " argument must be followed by (nonnegative) 6 integers.\n");
       }
       num_arguments_deleted = 7;
     } // if (vArgs[i] == "-mask-rect")
@@ -2599,9 +2611,13 @@ Settings::ParseArgs(vector<string>& vArgs)
                    "       using the \"-out DESTINATION_FILE\" argument\n"
                    "       (These files usually end in \".mrc\" or \".rec\" .)\n");
   }
-  if ((out_file_name == in_file_name) && (out_file_name.size() != 0))
+  if ((out_file_name == in_file_name) && (out_file_name.size() != 0) &&
+      (! out_file_overwrite))
   {
-    throw InputErr("Error: Input and Output files cannot be the same.\n");
+    throw InputErr("Error: Input and Output image files cannot be the same.  (The purpose of this\n"
+                   "       error is to prevent erasing your original source image by accident.)\n"
+                   "\n"
+                   "       To override this, use \"-out-force\" instead of \"-out\".\n");
   }
 
 
