@@ -449,7 +449,7 @@ int main(int argc, char **argv) {
 
     }
 
-    else if (settings.filter_type = settings.SPHERE_NONMAX_SUPERVISED_MULTI) {
+    else if (settings.filter_type == settings.SPHERE_NONMAX_SUPERVISED_MULTI) {
 
       HandleBlobScoreSupervisedMulti(settings,
                                      voxel_width);
