@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.19.9");
-string g_date_string("2019-6-20");
+string g_date_string("2019-6-21");
 
 
 
@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
 
     // ---- make an array that will store the new tomogram we will create ----
 
-    cerr << "allocating space for new tomogram..." << endl;
+    cerr << "allocating space for new 3D image..." << endl;
     MrcSimple tomo_out = tomo_in; //this will take care of allocating the array
 
     if ((voxel_width[0] <= 0.0) ||

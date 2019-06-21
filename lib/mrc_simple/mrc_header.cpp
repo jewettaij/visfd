@@ -288,7 +288,7 @@ void MrcHeader::PrintStats(ostream& out) {
   //out << "  mrc file physical dimensions ("<< cellA[0] << "," << cellA[1] << "," << cellA[2] << ")" << endl;
   out << "    voxel size in file header: "
       << cellA[0]/nvoxels[0] << " x " 
-      << cellA[1]/nvoxels[1] << " xx " 
+      << cellA[1]/nvoxels[1] << " x " 
       << cellA[2]/nvoxels[2] << "" << endl;
   out << "    table axis order: "
       << mapCRS[0] << " " 

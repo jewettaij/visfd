@@ -372,6 +372,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
   {
 
     cerr << "  discarding blobs based on score using training data" << endl;
+
     DiscardBlobsByScoreSupervised(crds,
                                   diameters,
                                   scores,
@@ -382,6 +383,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
                                   &settings.score_upper_bound,
                                   &cerr);
 
+    cerr << " " << crds.size() << " blobs remaining" << endl;
   }
 
   // Write out the remaining blobs to a file:

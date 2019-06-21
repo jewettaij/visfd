@@ -285,7 +285,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     } // if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
    
-    else if (vArgs[i] == "-out-force")
+    else if ((vArgs[i] == "-outf") || (vArgs[i] == "-out-force"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
         throw InputErr("Error: The " + vArgs[i] + 
@@ -294,7 +294,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       out_file_overwrite = true;
       num_arguments_deleted = 2;
 
-    } // if (vArgs[i] == "-out-force")
+    } // if (vArgs[i] == "-outf")
 
     else if (vArgs[i] == "-mask")
     {
@@ -2617,7 +2617,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     throw InputErr("Error: Input and Output image files cannot be the same.  (The purpose of this\n"
                    "       error is to prevent erasing your original source image by accident.)\n"
                    "\n"
-                   "       To override this, use \"-out-force\" instead of \"-out\".\n");
+                   "       To override this, use \"-outf\" instead of \"-out\".\n");
   }
 
 

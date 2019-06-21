@@ -770,9 +770,9 @@ _ChooseThresholdInterval(const vector<Scalar>& training_scores, //!< a 1-D featu
     }
     *pReportProgress
       << "  number of false positives: " << num_false_positives
-      << " (out of " << Np << " positives)\n"
-      << "  number of false negatives: " << num_false_negatives
       << " (out of " << Nn << " negatives)\n"
+      << "  number of false negatives: " << num_false_negatives
+      << " (out of " << Np << " positives)\n"
       << endl;
   } //if (pReportProgress)
 
