@@ -352,24 +352,35 @@ HandleBlobRadialIntensity(Settings settings,
     double peak_width = 0.0;
     {
       if (intensity_profiles[i].size() > 0) {
-        int i_width = 0;
-        for (int ip = 0; ip < intensity_profiles[i].size(); ip++)
-          if (intensity_profiles[i] <= ave_brightness)
-            i_width = i;
-        if (i_width == 0)
-          r_peak_Width = 0.0;
-        else {
-          // interpolate between i_width-1 and i_width to find the
-          // distance where the brightness-vs-i intersects "ave_brightness"
-          double x = 0.0;
-          // solve this equation for x:
-          //(1-x)*intensity_profiles[i-1]+x*intensity_profiles[i]=ave_brightness
-          // solution -->
-          x = ((ave_brightness - intensity_profiles[i-1])
-               /
-               (intensity_profiles[i] - intensity_profiles[i-1]));
-          peak_width = (i_width-1)*(1.0-x) + i_width*x;
+        int i_steepest_slope = 0;
+        double steepest_slope = 0.0;
+        for (int j = 1; j < intensit_profiles[i].size(); j++) {
+          slope = intensity_profiles[i][j] - intensity_profiles[i][j-1];
+          if (slope < steepest_slope) {
+            steepest_slope = slope;
+            i_steepest_slope = j;
+          }
         }
+        peak_width = i_steepest_slope+0.5;
+        // REMOVE THIS CRUFT:
+        //int i_width = 0;
+        //for (int ip = 0; ip < intensity_profiles[i].size(); ip++)
+        //  if (intensity_profiles[i] <= ave_brightness)
+        //    i_width = i;
+        //if (i_width == 0)
+        //  peak_width = 0.0;
+        //else {
+        //  // interpolate between i_width-1 and i_width to find the
+        //  // distance where the brightness-vs-i intersects "ave_brightness"
+        //  double x = 0.0;
+        //  // solve this equation for x:
+        //  //(1-x)*intensity_profiles[i-1]+x*intensity_profiles[i]=ave_brightness
+        //  // solution -->
+        //  x = ((ave_brightness - intensity_profiles[i-1])
+        //       /
+        //       (intensity_profiles[i] - intensity_profiles[i-1]));
+        //  peak_width = (i_width-1)*(1.0-x) + i_width*x;
+        //}
       }
     }
     cout << sphere_centers[i][0]<<" "<<sphere_centers[i][1]<<" "<<sphere_centers[i][2]
