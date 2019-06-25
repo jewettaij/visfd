@@ -179,12 +179,9 @@ class TV3D_ACO : public TV3D<Scalar,Integer,VectorContainer,TensorContainer>
           int ix_jx = ix + jx;
 
           // ignore voxels which lie outside the accessible portion of the image
-          if (((iz_jz < 0) || (image_size[2] <= iz_jz))
-              ||
-              ((iy_jy < 0) || (image_size[1] <= iy_jy))
-              ||
-              ((ix_jx < 0) || (image_size[0] <= ix_jx))
-              ||
+          if (((iz_jz < 0) || (image_size[2] <= iz_jz)) ||
+              ((iy_jy < 0) || (image_size[1] <= iy_jy)) ||
+              ((ix_jx < 0) || (image_size[0] <= ix_jx)) ||
               (aaafMask && (aaafMask[iz_jz][iy_jy][ix_jx] == 0.0)))
           {
             prob_neigh[j] = 0.0;
@@ -518,9 +515,9 @@ BlobIntensityProfile(int const image_size[3], //!< image size
           int ixs_jx = ixs + jx;
           if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
             continue;
-          if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
-                 (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
-                 (0 <= izs_jz) && (izs_jz <= image_size[2])))
+          if (((izs_jz < 0) || (image_size[2] <= izs_jz)) ||
+              ((iys_jy < 0) || (image_size[1] <= iys_jy)) ||
+              ((ixs_jx < 0) || (image_size[0] <= ixs_jx)))
             continue;
           if (aaafMask && (aaafMask[izs_jz][iys_jy][ixs_jx] == 0.0))
             continue;
@@ -566,9 +563,9 @@ BlobIntensityProfile(int const image_size[3], //!< image size
         int ix0_jx = ix0 + jx;
         if ((jx*jx + jy*jy + jz*jz) > Rsearch*Rsearch)
           continue;
-        if (! ((0 <= ix0_jx) && (ix0_jx <= image_size[0]) &&
-               (0 <= iy0_jy) && (iy0_jy <= image_size[1]) &&
-               (0 <= iz0_jz) && (iz0_jz <= image_size[2])))
+        if (((iz0_jz < 0) || (image_size[2] <= iz0_jz)) ||
+            ((iy0_jy < 0) || (image_size[1] <= iy0_jy)) ||
+            ((ix0_jx < 0) || (image_size[0] <= ix0_jx)))
           continue;
         if (aaafMask && (aaafMask[iz0_jz][iy0_jy][ix0_jx] == 0.0))
           continue;

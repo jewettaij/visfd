@@ -204,11 +204,17 @@ HandleBlobRadialIntensity(Settings settings,
 
     int blob_effective_center[3];
 
+    float diameter = diameters[i];
+
+    #ifdef INTENSITY_PROFILE_RADIUS
+    diameter = 2*INTENSITY_PROFILE_RADIUS;
+    #endif
+
     BlobIntensityProfile(image_size,
                          tomo_in.aaafI,
                          mask.aaafI,
                          sphere_centers[i],
-                         diameters[i],
+                         diameter,
                          settings.blob_profiles_center_criteria,
                          intensity_profiles[i],
                          blob_effective_center);
@@ -249,9 +255,6 @@ HandleBlobRadialIntensity(Settings settings,
     double stddev_brightness = 0.0;
     {
       int Rsphere = ceil(diameters[i]/2); //radius of the sphere (surrounding the current blob)
-      #ifdef INTENSITY_PROFILE_RADIUS
-      Rsphere = INTENSITY_PROFILE_RADIUS;
-      #endif
       int ixs = sphere_centers_i[0];
       int iys = sphere_centers_i[1];
       int izs = sphere_centers_i[2];
@@ -303,27 +306,36 @@ HandleBlobRadialIntensity(Settings settings,
     } // calculate "stddev_brightness"
 
 
-    int n_mask_values = 0;
+    // Calculate the distance of this blob (blob i) to
+    // every type of object in the image.
+    // Here, the mask image is assumed to store a segmentation of the image.
+    // Every voxel in the mask image is an integer (a "label") indicating
+    // to what (kind of) object that voxel belongs.
+    // How many types of different objects are there in the image?
+    size_t n_labels = 0;
     if (mask.aaafI) {
-      mask.FindMinMaxMean();
-      n_mask_values = static_cast<int>(floor(mask.header.dmax + 0.5)) + 1;
-      if (n_mask_values > 100)
-        n_mask_values = 100;
+      mask.FindMinMaxMean(); //stores the maximum brightness voxel in "dmax"
+      n_labels = static_cast<int>(floor(mask.header.dmax + 0.5)) + 1;
+      if (n_labels > 1000000) //HACK to make sure we don't overflow memory
+        n_labels = 1000000;
     }
-    vector<float> min_dist_sq(n_mask_values,
-                              std::numeric_limits<float>::infinity());    
+    vector<float> min_dist_sq(n_labels,
+                              std::numeric_limits<float>::infinity());
+    // Now find the distance of blob i (sphere_centers_i) to each label type.
+    // (I was too lazy to bother using an efficient algorithm here. 
+    //  For most applications this is fast enough.)
     for (int iz = 0; iz < image_size[2]; iz++) {
       for (int iy = 0; iy < image_size[1]; iy++) {
         for (int ix = 0; ix < image_size[0]; ix++) {
           if (! mask.aaafI)
             continue;
-          int mask_val = static_cast<int>(floor(mask.aaafI[iz][iy][ix] + 0.5));
-          if (mask_val < n_mask_values) {
+          int label = static_cast<int>(floor(mask.aaafI[iz][iy][ix] + 0.5));
+          if (label < n_labels) {
             float dist_sq = (SQR(ix-sphere_centers_i[0]) +
                              SQR(iy-sphere_centers_i[1]) +
                              SQR(iz-sphere_centers_i[2]));
-            if ((min_dist_sq[mask_val] < 0.0) || (dist_sq < min_dist_sq[mask_val]))
-              min_dist_sq[mask_val] = dist_sq;
+            if ((min_dist_sq[label] < 0.0) || (dist_sq < min_dist_sq[label]))
+              min_dist_sq[label] = dist_sq;
           }
         }
       }
@@ -339,10 +351,11 @@ HandleBlobRadialIntensity(Settings settings,
 
     // calculate the minimum and maximum values of intensity-vs-r
     double contrast_profile_min_max = 0.0;
+    double profile_min = ave_brightness;
+    double profile_max = ave_brightness;
     {
       if (intensity_profiles[i].size() > 0) {
-        double profile_max = intensity_profiles[i][0];
-        double profile_min;
+        profile_max = intensity_profiles[i][0];
         for (int ip = 0; ip < intensity_profiles[i].size(); ip++) {
           if ((ip==0) || (intensity_profiles[i][ip] < profile_min))
             profile_min = intensity_profiles[i][ip];
@@ -359,35 +372,57 @@ HandleBlobRadialIntensity(Settings settings,
     double peak_width = 0.0;
     {
       if (intensity_profiles[i].size() > 0) {
-        int i_steepest_slope = 0;
-        double steepest_slope = 0.0;
-        for (int j = 1; j < intensity_profiles[i].size(); j++) {
-          double slope = intensity_profiles[i][j] - intensity_profiles[i][j-1];
-          if (slope < steepest_slope) {
-            steepest_slope = slope;
-            i_steepest_slope = j;
+        // REMOVE THIS CRUFT:
+        //int i_steepest_slope = 0;
+        //double steepest_slope = 0.0;
+        //for (int j = 1; j < intensity_profiles[i].size(); j++) {
+        //  double slope = intensity_profiles[i][j]-intensity_profiles[i][j-1];
+        //  if (slope < steepest_slope) {
+        //    steepest_slope = slope;
+        //    i_steepest_slope = j;
+        //  }
+        //}
+        //peak_width = i_steepest_slope+0.5;
+
+        // COMMENTING OUT:
+        //The width of the peak is the radius where the brightness decays
+        //to the average brightness surrounding the peak.
+        //float peak_width_threshold = ave_brightness;
+
+        //The width of the peak is the radius where the brightness decays below
+        //a value equal to half way between the brightness of the peak
+        //(profile_max) and the minimum of the profile curve (profile_min).
+
+        float peak_width_threshold = 0.5*(profile_max + profile_min);
+        int i_width = 0;
+
+        for (int ip = 0; ip < intensity_profiles[i].size(); ip++) {
+          if (intensity_profiles[i][ip] <= peak_width_threshold) {
+            i_width = ip;
+            break;
           }
         }
-        peak_width = i_steepest_slope+0.5;
-        // REMOVE THIS CRUFT:
-        //int i_width = 0;
-        //for (int ip = 0; ip < intensity_profiles[i].size(); ip++)
-        //  if (intensity_profiles[i] <= ave_brightness)
-        //    i_width = i;
-        //if (i_width == 0)
-        //  peak_width = 0.0;
-        //else {
-        //  // interpolate between i_width-1 and i_width to find the
-        //  // distance where the brightness-vs-i intersects "ave_brightness"
-        //  double x = 0.0;
-        //  // solve this equation for x:
-        //  //(1-x)*intensity_profiles[i-1]+x*intensity_profiles[i]=ave_brightness
-        //  // solution -->
-        //  x = ((ave_brightness - intensity_profiles[i-1])
-        //       /
-        //       (intensity_profiles[i] - intensity_profiles[i-1]));
-        //  peak_width = (i_width-1)*(1.0-x) + i_width*x;
-        //}
+        if (i_width == 0)
+          peak_width = 0.0;
+        else {
+          // interpolate between i_width-1 and i_width to find the
+          // distance where the brightness-vs-i intersects "peak_width_threshold"
+          double x = 0.0;
+          // "x" is the fraction of the distance between i_width-1 and i_width
+          // where the linear interpolation of the curve passes through the
+          // "peak_width_threshold".  Solving this equation for x:
+          //   (1-x) * intensity_profiles[i][i_width-1] +
+          //     x   * intensity_profiles[i][i_width]
+          //   = peak_width_threshold
+          // solution -->
+          x = ((peak_width_threshold -
+                intensity_profiles[i][i_width-1])
+               /
+               (intensity_profiles[i][i_width] -
+                intensity_profiles[i][i_width-1]));
+          // peak_width is the "x" weighted average of i_width-1 and i_width
+          peak_width = (i_width-1)*(1.0-x) + i_width*x;
+        }
       }
     }
     cout << sphere_centers[i][0]<<" "<<sphere_centers[i][1]<<" "<<sphere_centers[i][2]
@@ -402,11 +437,11 @@ HandleBlobRadialIntensity(Settings settings,
          << " " << blob_effective_center[0]<<" "<<blob_effective_center[1]<<" "<<blob_effective_center[2]
          << "\n";
 
-    // Now print the distance to various 
-    for (int im = 0; im < n_mask_values; im++) {
-      cout << " " << ((min_dist_sq[im]!=std::numeric_limits<float>::infinity())
+    // Now print the distance to various labelled objects in the mask image
+    for (int il = 0; il < n_labels; il++) {
+      cout << " " << ((min_dist_sq[il]!=std::numeric_limits<float>::infinity())
                       ?
-                      (sqrt(min_dist_sq[im]) - diameters[i]/2)*voxel_width[0]
+                      (sqrt(min_dist_sq[il]) - diameters[i]/2)*voxel_width[0]
                       :
                       std::numeric_limits<float>::infinity());
       // note: sqrt(inf) should equal inf, but results are compiler dependent.
