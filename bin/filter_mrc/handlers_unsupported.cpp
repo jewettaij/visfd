@@ -181,7 +181,11 @@ HandleBlobRadialIntensity(Settings settings,
                      settings.sphere_decals_foreground,
                      settings.sphere_decals_scale);
 
-  vector<vector<float> > intensity_profiles; //!< store the intensity profiles here
+  size_t Nblobs = sphere_centers.size();
+  assert(Nblobs == diameters.size());
+  assert(Nblobs == scores.size());
+
+  vector<vector<float> > intensity_profiles(Nblobs); //!< store the intensity profiles here
 
   int image_size[3];
   for (int d = 0; d < 3; d++)
@@ -395,7 +399,7 @@ HandleBlobRadialIntensity(Settings settings,
          << " " << peak_width
          << " " << max_slope
          << " " << contrast_profile_min_max
-         << blob_effective_center[0]<<" "<<blob_effective_center[1]<<" "<<blob_effective_center[2]
+         << " " << blob_effective_center[0]<<" "<<blob_effective_center[1]<<" "<<blob_effective_center[2]
          << "\n";
 
     // Now print the distance to various 
