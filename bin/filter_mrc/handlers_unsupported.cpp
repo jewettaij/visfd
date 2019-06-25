@@ -434,8 +434,7 @@ HandleBlobRadialIntensity(Settings settings,
          << " " << peak_width
          << " " << max_slope
          << " " << contrast_profile_min_max
-         << " " << blob_effective_center[0]<<" "<<blob_effective_center[1]<<" "<<blob_effective_center[2]
-         << "\n";
+         << " " << blob_effective_center[0]<<" "<<blob_effective_center[1]<<" "<<blob_effective_center[2];
 
     // Now print the distance to various labelled objects in the mask image
     for (int il = 0; il < n_labels; il++) {
