@@ -268,9 +268,9 @@ HandleBlobRadialIntensity(Settings settings,
             int ixs_jx = ixs + jx;
             if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
               continue;
-            if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
-                   (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
-                   (0 <= izs_jz) && (izs_jz <= image_size[2])))
+            if (! ((0 <= ixs_jx) && (ixs_jx < image_size[0]) &&
+                   (0 <= iys_jy) && (iys_jy < image_size[1]) &&
+                   (0 <= izs_jz) && (izs_jz < image_size[2])))
               continue;
             if (mask.aaafI && (mask.aaafI[izs_jz][iys_jy][ixs_jx] == 0.0))
               continue;
@@ -289,9 +289,9 @@ HandleBlobRadialIntensity(Settings settings,
             int ixs_jx = ixs + jx;
             if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
               continue;
-            if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
-                   (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
-                   (0 <= izs_jz) && (izs_jz <= image_size[2])))
+            if (! ((0 <= ixs_jx) && (ixs_jx < image_size[0]) &&
+                   (0 <= iys_jy) && (iys_jy < image_size[1]) &&
+                   (0 <= izs_jz) && (izs_jz < image_size[2])))
               continue;
             if (mask.aaafI && (mask.aaafI[izs_jz][iys_jy][ixs_jx] == 0.0))
               continue;
