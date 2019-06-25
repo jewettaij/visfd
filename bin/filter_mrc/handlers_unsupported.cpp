@@ -196,15 +196,18 @@ HandleBlobRadialIntensity(Settings settings,
   cerr << "  creating intensity-vs-radius profiles for "
        << sphere_centers.size() << " blobs.\n" << endl;
 
-  BlobIntensityProfiles(image_size,
-                        tomo_in.aaafI,
-                        mask.aaafI,
-                        sphere_centers,
-                        diameters,
-                        settings.blob_profiles_center_criteria,
-                        intensity_profiles);
-
   for (size_t i = 0; i < intensity_profiles.size(); i++) {
+
+    int blob_effective_center[3];
+
+    BlobIntensityProfile(image_size,
+                         tomo_in.aaafI,
+                         mask.aaafI,
+                         sphere_centers[i],
+                         diameters[i],
+                         settings.blob_profiles_center_criteria,
+                         intensity_profiles[i],
+                         blob_effective_center);
 
     stringstream intensity_vs_r_file_name_ss;
     intensity_vs_r_file_name_ss
@@ -226,7 +229,7 @@ HandleBlobRadialIntensity(Settings settings,
 
     // CRUFT ALERT!!  REMOVE THIS CRUFT IN THE #ifdef BELOW:
     // (This was something temporary for a side project we
-    //  we working on in 2019-3.)
+    //  were working on in 2019-6.)
     #ifdef ENABLE_MEASURE_DISTANCE_TO_BOUNDARY
 
     int image_size[3];
@@ -354,8 +357,8 @@ HandleBlobRadialIntensity(Settings settings,
       if (intensity_profiles[i].size() > 0) {
         int i_steepest_slope = 0;
         double steepest_slope = 0.0;
-        for (int j = 1; j < intensit_profiles[i].size(); j++) {
-          slope = intensity_profiles[i][j] - intensity_profiles[i][j-1];
+        for (int j = 1; j < intensity_profiles[i].size(); j++) {
+          double slope = intensity_profiles[i][j] - intensity_profiles[i][j-1];
           if (slope < steepest_slope) {
             steepest_slope = slope;
             i_steepest_slope = j;
@@ -386,15 +389,15 @@ HandleBlobRadialIntensity(Settings settings,
     cout << sphere_centers[i][0]<<" "<<sphere_centers[i][1]<<" "<<sphere_centers[i][2]
          << " " << diameters[i]
          << " " << scores[i]
-         << " " << tomo_in.aaafI[ sphere_centers_i[2] ]
-                                [ sphere_centers_i[1] ]
-                                [ sphere_centers_i[0] ]
-         << " " << intensity_profiles[i][0]  // <--brightest voxel's brightness
          << " " << ave_brightness
          << " " << stddev_brightness
+         << " " << intensity_profiles[i][0]  // <--brightest voxel's brightness
+         << " " << peak_width
          << " " << max_slope
          << " " << contrast_profile_min_max
-         << " " << peak_width;
+         << blob_effective_center[0]<<" "<<blob_effective_center[1]<<" "<<blob_effective_center[2]
+         << "\n";
+
     // Now print the distance to various 
     for (int im = 0; im < n_mask_values; im++) {
       cout << " " << ((min_dist_sq[im]!=std::numeric_limits<float>::infinity())

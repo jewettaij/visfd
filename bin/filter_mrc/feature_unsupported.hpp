@@ -477,11 +477,136 @@ typedef enum eBlobCenterCriteria {
 
 
 
+/// @brief  Create a plot of intensity vs. radius.
+///         (It's not clear this is of general use to people, so I will keep
+///          this function out of the main library for now.  -andrew 2019-3-22)
+
+template<typename Scalar>
+void
+BlobIntensityProfile(int const image_size[3], //!< image size
+                     Scalar const *const *const *aaafSource,   //!< ignore voxels where mask==0
+                     Scalar const *const *const *aaafMask,   //!< ignore voxels where mask==0
+                     array<Scalar,3> sphere_center, //!< coordinates for the center of each sphere (blob)
+                     Scalar diameter,         //!< diameter of each sphere (in voxels)
+                     BlobCenterCriteria center_criteria,
+                     vector<Scalar> &intensity_profile, //!< store the intensity profile here
+                     int *blob_effective_center = nullptr //!< optional: a pointer to an C-style array of 3 ints which will store the position of the voxel used as the "center"
+                     )
+{
+  assert(image_size);
+  assert(aaafSource);
+  int Rsphere = ceil(diameter/2); //radius of the sphere (surrounding the current blob)
+  int ixs = floor(sphere_center[0] + 0.5); //voxel coordinates of the
+  int iys = floor(sphere_center[1] + 0.5); //center of the current blob's
+  int izs = floor(sphere_center[2] + 0.5); //bounding sphere
+  int ix0;  // coordinates of the "center" of each blob.  (Note: Depending
+  int iy0;  // on "center_criteria", the "center" of the blob might not be 
+  int iz0;  // located at the center of the sphere that encloses it.)
+  if (center_criteria == BlobCenterCriteria::CENTER) {
+    ix0 = ixs;
+    iy0 = iys;
+    iz0 = izs;
+  }
+  else {
+    bool first_iter = true;
+    Scalar extrema_val = 0.0;
+    for (int jz = -Rsphere; jz <= Rsphere; jz++) {
+      int izs_jz = izs + jz;
+      for (int jy = -Rsphere; jy <= Rsphere; jy++) {
+        int iys_jy = iys + jy;
+        for (int jx = -Rsphere; jx <= Rsphere; jx++) {
+          int ixs_jx = ixs + jx;
+          if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
+            continue;
+          if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
+                 (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
+                 (0 <= izs_jz) && (izs_jz <= image_size[2])))
+            continue;
+          if (aaafMask && (aaafMask[izs_jz][iys_jy][ixs_jx] == 0.0))
+            continue;
+          if (first_iter
+              ||
+              ((center_criteria == BlobCenterCriteria::MAXIMA) && 
+               (aaafSource[izs_jz][iys_jy][ixs_jx] > extrema_val))
+              ||
+              ((center_criteria == BlobCenterCriteria::MINIMA) && 
+               (aaafSource[izs_jz][iys_jy][ixs_jx] < extrema_val)))
+          {
+            ix0 = ixs_jx;
+            iy0 = iys_jy;
+            iz0 = izs_jz;
+            extrema_val = aaafSource[izs_jz][iys_jy][ixs_jx];
+            first_iter = false;
+          }
+        }
+      }
+    }
+  } //else clause for "if (center_criteria == BlobCenterCriteria::CENTER)"
+
+
+  if (blob_effective_center) {
+    blob_effective_center[0] = ix0;
+    blob_effective_center[1] = iy0;
+    blob_effective_center[2] = iz0;
+  }      
+
+  int Rsearch = ceil(Rsphere + 
+                     sqrt(SQR(ix0-ixs) + SQR(iy0-iys) + SQR(iz0-izs)));
+      
+  intensity_profile.resize(Rsearch+1);
+
+  vector<Scalar> numerators(Rsearch+1, 0.0);
+  vector<Scalar> denominators(Rsearch+1, 0.0);
+
+  for (int jz = -Rsearch; jz <= Rsearch; jz++) {
+    int iz0_jz = iz0 + jz;
+    for (int jy = -Rsearch; jy <= Rsearch; jy++) {
+      int iy0_jy = iy0 + jy;
+      for (int jx = -Rsearch; jx <= Rsearch; jx++) {
+        int ix0_jx = ix0 + jx;
+        if ((jx*jx + jy*jy + jz*jz) > Rsearch*Rsearch)
+          continue;
+        if (! ((0 <= ix0_jx) && (ix0_jx <= image_size[0]) &&
+               (0 <= iy0_jy) && (iy0_jy <= image_size[1]) &&
+               (0 <= iz0_jz) && (iz0_jz <= image_size[2])))
+          continue;
+        if (aaafMask && (aaafMask[iz0_jz][iy0_jy][ix0_jx] == 0.0))
+          continue;
+        // Does this voxel lie within the sphere?
+        //    (sphere is centered at ixc, iyc, izc, and has radius Rsphere)
+        int Jx = jx + ix0 - ixs;
+        int Jy = jy + iy0 - iys;
+        int Jz = jz + iz0 - izs;
+        int Jr = static_cast<int>(floor(sqrt(Jx*Jx + Jy*Jy + Jz*Jz) + 0.5));
+        if (Jr > Rsphere)
+          continue; //// If not, ignore it.
+        int jr = static_cast<int>(floor(sqrt(jx*jx + jy*jy + jz*jz) + 0.5));
+        // Consider all remaining voxels
+        numerators[jr] += aaafSource[iz0_jz][iy0_jy][ix0_jx];
+        denominators[jr] += 1.0;
+      } //for (int jx = -Rsearch; jx <= Rsearch; jx++)
+    } //for (int jy = -Rsearch; jy <= Rsearch; jy++)
+  } //for (int jz = -Rsearch; jz <= Rsearch; jz++)
+  for (int ir = 0; ir <= Rsearch; ir++) {
+    if (denominators[ir] == 0.0) {
+      intensity_profile.resize(ir);
+      break;
+    }
+    intensity_profile[ir] = numerators[ir] / denominators[ir];
+  }
+
+  assert(image_size);
+  assert(aaafSource);
+} // BlobIntensityProfile()
+
+
+
 /// @brief  Create a plot of intensity vs. radius for each blob.
 ///         (It's not clear this is of general use to people, so I will keep
 ///          this function out of the main library for now.  -andrew 2019-3-22)
 
 template<typename Scalar>
+
 void
 BlobIntensityProfiles(int const image_size[3], //!< image size
                       Scalar const *const *const *aaafSource,   //!< ignore voxels where mask==0
@@ -492,105 +617,16 @@ BlobIntensityProfiles(int const image_size[3], //!< image size
                       vector<vector<Scalar> > &intensity_profiles //!< store the intensity profiles here
                       )
 {
-  assert(image_size);
-  assert(aaafSource);
-
   size_t N = sphere_centers.size();
   intensity_profiles.resize(N);
   for (size_t i = 0; i < N; i++) {
-    int Rsphere = ceil(diameters[i]/2); //radius of the sphere (surrounding the current blob)
-    int ixs = floor(sphere_centers[i][0] + 0.5); //voxel coordinates of the
-    int iys = floor(sphere_centers[i][1] + 0.5); //center of the current blob's
-    int izs = floor(sphere_centers[i][2] + 0.5); //bounding sphere
-    int ix0;  // coordinates of the "center" of each blob.  (Note: Depending
-    int iy0;  // on "center_criteria", the "center" of the blob might not be 
-    int iz0;  // located at the center of the sphere that encloses it.)
-    if (center_criteria == BlobCenterCriteria::CENTER) {
-      ix0 = ixs;
-      iy0 = iys;
-      iz0 = izs;
-    }
-    else {
-      bool first_iter = true;
-      Scalar extrema_val = 0.0;
-      for (int jz = -Rsphere; jz <= Rsphere; jz++) {
-        int izs_jz = izs + jz;
-        for (int jy = -Rsphere; jy <= Rsphere; jy++) {
-          int iys_jy = iys + jy;
-          for (int jx = -Rsphere; jx <= Rsphere; jx++) {
-            int ixs_jx = ixs + jx;
-            if ((jx*jx + jy*jy + jz*jz) > Rsphere*Rsphere)
-              continue;
-            if (! ((0 <= ixs_jx) && (ixs_jx <= image_size[0]) &&
-                   (0 <= iys_jy) && (iys_jy <= image_size[1]) &&
-                   (0 <= izs_jz) && (izs_jz <= image_size[2])))
-              continue;
-            if (aaafMask && (aaafMask[izs_jz][iys_jy][ixs_jx] == 0.0))
-              continue;
-            if (first_iter
-                ||
-                ((center_criteria == BlobCenterCriteria::MAXIMA) && 
-                 (aaafSource[izs_jz][iys_jy][ixs_jx] > extrema_val))
-                ||
-                ((center_criteria == BlobCenterCriteria::MINIMA) && 
-                 (aaafSource[izs_jz][iys_jy][ixs_jx] < extrema_val)))
-            {
-              ix0 = ixs_jx;
-              iy0 = iys_jy;
-              iz0 = izs_jz;
-              extrema_val = aaafSource[izs_jz][iys_jy][ixs_jx];
-              first_iter = false;
-            }
-          }
-        }
-      }
-    } //else clause for "if (center_criteria == BlobCenterCriteria::CENTER)"
-
-    
-    int Rsearch = ceil(Rsphere + 
-                       sqrt(SQR(ix0-ixs) + SQR(iy0-iys) + SQR(iz0-izs)));
-      
-    intensity_profiles[i].resize(Rsearch+1);
-
-    vector<Scalar> numerators(Rsearch+1, 0.0);
-    vector<Scalar> denominators(Rsearch+1, 0.0);
-
-    for (int jz = -Rsearch; jz <= Rsearch; jz++) {
-      int iz0_jz = iz0 + jz;
-      for (int jy = -Rsearch; jy <= Rsearch; jy++) {
-        int iy0_jy = iy0 + jy;
-        for (int jx = -Rsearch; jx <= Rsearch; jx++) {
-          int ix0_jx = ix0 + jx;
-          if ((jx*jx + jy*jy + jz*jz) > Rsearch*Rsearch)
-            continue;
-          if (! ((0 <= ix0_jx) && (ix0_jx <= image_size[0]) &&
-                 (0 <= iy0_jy) && (iy0_jy <= image_size[1]) &&
-                 (0 <= iz0_jz) && (iz0_jz <= image_size[2])))
-            continue;
-          if (aaafMask && (aaafMask[iz0_jz][iy0_jy][ix0_jx] == 0.0))
-            continue;
-          // Does this voxel lie within the sphere?
-          //    (sphere is centered at ixc, iyc, izc, and has radius Rsphere)
-          int Jx = jx + ix0 - ixs;
-          int Jy = jy + iy0 - iys;
-          int Jz = jz + iz0 - izs;
-          int Jr = static_cast<int>(floor(sqrt(Jx*Jx + Jy*Jy + Jz*Jz) + 0.5));
-          if (Jr > Rsphere)
-            continue; //// If not, ignore it.
-          int jr = static_cast<int>(floor(sqrt(jx*jx + jy*jy + jz*jz) + 0.5));
-          // Consider all remaining voxels
-          numerators[jr] += aaafSource[iz0_jz][iy0_jy][ix0_jx];
-          denominators[jr] += 1.0;
-        } //for (int jx = -Rsearch; jx <= Rsearch; jx++)
-      } //for (int jy = -Rsearch; jy <= Rsearch; jy++)
-    } //for (int jz = -Rsearch; jz <= Rsearch; jz++)
-    for (int ir = 0; ir <= Rsearch; ir++) {
-      if (denominators[ir] == 0.0) {
-        intensity_profiles[i].resize(ir);
-        break;
-      }
-      intensity_profiles[i][ir] = numerators[ir] / denominators[ir];
-    }
+    BlobIntensityProfile(image_size,
+                         aaafSource,
+                         aaafMask,
+                         sphere_centers[i],
+                         diameters[i],
+                         center_criteria,
+                         intensity_profiles[i]);
   } //for (size_t i = 0; i < N; i++)
 } //BlobIntensityProfiles()
 
