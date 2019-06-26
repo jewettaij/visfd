@@ -204,8 +204,9 @@ HandleBlobRadialIntensity(Settings settings,
 
     int blob_effective_center[3];
 
+    float radius_profile_width;
     #ifdef INTENSITY_PROFILE_RADIUS
-    float radius_profile_width = INTENSITY_PROFILE_RADIUS;
+    radius_profile_width = INTENSITY_PROFILE_RADIUS;
     #endif
 
     BlobIntensityProfile(image_size,

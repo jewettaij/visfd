@@ -578,7 +578,7 @@ BlobIntensityProfile(int const image_size[3], //!< image size
         int Jy = jy + iy0 - iys;
         int Jz = jz + iz0 - izs;
         int Jr = static_cast<int>(floor(sqrt(Jx*Jx + Jy*Jy + Jz*Jz) + 0.5));
-        if (Jr > Rsphere)
+        if (Jr > Rprofile)
           continue; //// If not, ignore it.
         int jr = static_cast<int>(floor(sqrt(jx*jx + jy*jy + jz*jz) + 0.5));
         // Consider all remaining voxels
