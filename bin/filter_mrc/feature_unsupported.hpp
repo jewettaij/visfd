@@ -484,9 +484,10 @@ BlobIntensityProfile(int const image_size[3], //!< image size
                      Scalar const *const *const *aaafSource,   //!< ignore voxels where mask==0
                      Scalar const *const *const *aaafMask,   //!< ignore voxels where mask==0
                      array<Scalar,3> sphere_center, //!< coordinates for the center of each sphere (blob)
-                     Scalar diameter,         //!< diameter of each sphere (in voxels)
+                     Scalar diameter,
                      BlobCenterCriteria center_criteria,
                      vector<Scalar> &intensity_profile, //!< store the intensity profile here
+                     Scalar radius_profile_width = -1.0, //!< optional: force the profile curve to be at least this wide
                      int *blob_effective_center = nullptr //!< optional: a pointer to an C-style array of 3 ints which will store the position of the voxel used as the "center"
                      )
 {
@@ -547,21 +548,23 @@ BlobIntensityProfile(int const image_size[3], //!< image size
     blob_effective_center[2] = iz0;
   }      
 
-  int Rsearch = ceil(Rsphere + 
+  int Rprofile = ceil(Rsphere + 
                      sqrt(SQR(ix0-ixs) + SQR(iy0-iys) + SQR(iz0-izs)));
-      
-  intensity_profile.resize(Rsearch+1);
+  if (Rprofile < radius_profile_width)
+    Rprofile = floor(radius_profile_width+0.5);
 
-  vector<Scalar> numerators(Rsearch+1, 0.0);
-  vector<Scalar> denominators(Rsearch+1, 0.0);
+  intensity_profile.resize(Rprofile+1);
 
-  for (int jz = -Rsearch; jz <= Rsearch; jz++) {
+  vector<Scalar> numerators(Rprofile+1, 0.0);
+  vector<Scalar> denominators(Rprofile+1, 0.0);
+
+  for (int jz = -Rprofile; jz <= Rprofile; jz++) {
     int iz0_jz = iz0 + jz;
-    for (int jy = -Rsearch; jy <= Rsearch; jy++) {
+    for (int jy = -Rprofile; jy <= Rprofile; jy++) {
       int iy0_jy = iy0 + jy;
-      for (int jx = -Rsearch; jx <= Rsearch; jx++) {
+      for (int jx = -Rprofile; jx <= Rprofile; jx++) {
         int ix0_jx = ix0 + jx;
-        if ((jx*jx + jy*jy + jz*jz) > Rsearch*Rsearch)
+        if ((jx*jx + jy*jy + jz*jz) > Rprofile*Rprofile)
           continue;
         if (((iz0_jz < 0) || (image_size[2] <= iz0_jz)) ||
             ((iy0_jy < 0) || (image_size[1] <= iy0_jy)) ||
@@ -581,10 +584,10 @@ BlobIntensityProfile(int const image_size[3], //!< image size
         // Consider all remaining voxels
         numerators[jr] += aaafSource[iz0_jz][iy0_jy][ix0_jx];
         denominators[jr] += 1.0;
-      } //for (int jx = -Rsearch; jx <= Rsearch; jx++)
-    } //for (int jy = -Rsearch; jy <= Rsearch; jy++)
-  } //for (int jz = -Rsearch; jz <= Rsearch; jz++)
-  for (int ir = 0; ir <= Rsearch; ir++) {
+      } //for (int jx = -Rprofile; jx <= Rprofile; jx++)
+    } //for (int jy = -Rprofile; jy <= Rprofile; jy++)
+  } //for (int jz = -Rprofile; jz <= Rprofile; jz++)
+  for (int ir = 0; ir <= Rprofile; ir++) {
     if (denominators[ir] == 0.0) {
       intensity_profile.resize(ir);
       break;
@@ -597,35 +600,6 @@ BlobIntensityProfile(int const image_size[3], //!< image size
 } // BlobIntensityProfile()
 
 
-
-/// @brief  Create a plot of intensity vs. radius for each blob.
-///         (It's not clear this is of general use to people, so I will keep
-///          this function out of the main library for now.  -andrew 2019-3-22)
-
-template<typename Scalar>
-
-void
-BlobIntensityProfiles(int const image_size[3], //!< image size
-                      Scalar const *const *const *aaafSource,   //!< ignore voxels where mask==0
-                      Scalar const *const *const *aaafMask,   //!< ignore voxels where mask==0
-                      const vector<array<Scalar,3> > &sphere_centers, //!< coordinates for the center of each sphere (blob)
-                      const vector<Scalar> &diameters,         //!< diameter of each sphere (in voxels)
-                      BlobCenterCriteria center_criteria,
-                      vector<vector<Scalar> > &intensity_profiles //!< store the intensity profiles here
-                      )
-{
-  size_t N = sphere_centers.size();
-  intensity_profiles.resize(N);
-  for (size_t i = 0; i < N; i++) {
-    BlobIntensityProfile(image_size,
-                         aaafSource,
-                         aaafMask,
-                         sphere_centers[i],
-                         diameters[i],
-                         center_criteria,
-                         intensity_profiles[i]);
-  } //for (size_t i = 0; i < N; i++)
-} //BlobIntensityProfiles()
 
 #endif //#ifndef DISABLE_INTENSITY_PROFILES
 

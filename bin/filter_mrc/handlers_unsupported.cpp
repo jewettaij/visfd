@@ -204,19 +204,18 @@ HandleBlobRadialIntensity(Settings settings,
 
     int blob_effective_center[3];
 
-    float diameter = diameters[i];
-
     #ifdef INTENSITY_PROFILE_RADIUS
-    diameter = 2*INTENSITY_PROFILE_RADIUS;
+    float radius_profile_width = INTENSITY_PROFILE_RADIUS;
     #endif
 
     BlobIntensityProfile(image_size,
                          tomo_in.aaafI,
                          mask.aaafI,
                          sphere_centers[i],
-                         diameter,
+                         diameters[i],
                          settings.blob_profiles_center_criteria,
                          intensity_profiles[i],
+                         radius_profile_width,
                          blob_effective_center);
 
     stringstream intensity_vs_r_file_name_ss;
