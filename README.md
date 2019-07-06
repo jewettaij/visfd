@@ -117,7 +117,7 @@ Documentation for this program is located
 Program names, command line arguments, file names, and function names
 (in the API) may all change in the future.
 Automated testing was added,
-however as of 2019-2-27, some commits still (temporarily) break everything.
+however as of 2019-7-05, some commits still (temporarily) break everything.
 (...because I'm too lazy to use branch & merge.
  This usually gets fixed within 24 hours.
  If the build is failing, choose a previous commit.)
