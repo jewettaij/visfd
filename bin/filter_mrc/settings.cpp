@@ -804,11 +804,13 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if ((vArgs[i] == "-blob") ||
              (vArgs[i] == "-blob-sigma") ||
              (vArgs[i] == "-blob-s") ||
+             (vArgs[i] == "-blobs") ||
              (vArgs[i] == "-blob-radii") ||
              (vArgs[i] == "-blob-r") ||
              (vArgs[i] == "-blobr") ||
              (vArgs[i] == "-blob-diameters") ||
-             (vArgs[i] == "-blob-d"))
+             (vArgs[i] == "-blob-d") ||
+             (vArgs[i] == "-blob"))
     {
       try {
         if ((i+5 >= vArgs.size()) ||

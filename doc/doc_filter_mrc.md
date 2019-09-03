@@ -97,7 +97,7 @@ Note: All of these parameters make reasonable defaults for ribosome detection
       It must be chosen carefully because it will vary from image to image.
       (Strategies for choosing this parameter are discussed below.)
       *Alternatively,* it can be determined automatically using the
-      ["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accept.txt-file_reject.txt)
+      ["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accepttxt-file_rejecttxt)
       argument.
 
 
@@ -292,8 +292,6 @@ using
 The
 ["**-blob**"](#Blob-detection)
 ,
-["**-blob-d**"](#Blob-detection)
-,
 ["**-blob-r**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest),
 and
 ["**-blob-s**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
@@ -377,7 +375,7 @@ The "**-surface-tv**" argument enables refinement of (*-surface*) results using
 [3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf).
 It performs a kind of directional blurring which reinforces regions in the image
 where detected ridges in the image point in the same or similar directions.
-(for a nice visual demonstration, see
+(For a nice visual demonstration, see
 [these slides](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf).)
 The σ_ratio argument is a number larger than 1 which controls the distance
 over which this blurring occurs.
@@ -401,7 +399,7 @@ because it can be a very expensive computation.
 ### -surface-tv-angle-exponent n
 The "**-surface-tv-angle-exponent**" parameter (*n*)
 controls the penalty applied to membrane-like regions which are pointing
-in incompatible directions.  It is 4 be default.
+in incompatible directions.  It is 4 by default.
 
 
 ### -surface-threshold threshold
@@ -738,7 +736,7 @@ The x,y,z coordinates of each minima or maxima are in the first 3 columns,
 followed by the number of voxels in the maxima or minima (which is usually 1), and finally
 it's "score" (which is the brightness of the voxel at that location).
 *(This format is nearly identical to the format used by the
-  "-blob",  "-blobr",  "-blobd" and "-draw-spheres" arguments.)*
+  "-blob",  "-blob-r",  "-blob-s" and "-draw-spheres" arguments.)*
 When a minima or maxima contains multiple voxels of identical brightness,
 the position of one of the voxels among them is chosen arbitrarily.
 
@@ -840,7 +838,7 @@ If "**-blob**" is selected, then the **d_min** and **d_max** parameters
 (3rd and 4th parameters), specify a range of diameters
 of the objects that you wish to detect.
 (Simlarly,
-["--blob-r"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
+["-blob-r"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
 allows the user to specify blob sizes in terms of their radii.)
 Either way, a LoG filter will be applied to the image using a series of
 different Gaussians whose widths (σ) vary between "**σ_min**", and "**σ_max**".
@@ -973,7 +971,8 @@ score thresholds, so that they keep all of the blobs detected
 (no matter how small or insignificant).
 Then later, they will run **filter_mrc** again using *either* the
 [**-discard-blobs**](#-discard-blobs),
-["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accept.txt-file_reject.txt)
+["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accepttxt-file_rejecttxt)
+
 argument,
 *or*
 the
@@ -2229,7 +2228,7 @@ to perform scale-free-blob-detection, *one Gaussian-width at a time,*
 in such a way that that you can directly compare
 the results of using different Gaussian-widths
 (the same way they are compared when using
-"**-blob**", "**-blobr**", and "**-blob**").
+"**-blob**", "**-blob-r**", and "**-blob-s**").
 
 In all versions, the filter is truncated far away from the central peak at a point which is chosen automatically according the shape of the filter selected by the user.  However this can be customized using the
 ["-truncate-threshold"](#Filter-Size) and

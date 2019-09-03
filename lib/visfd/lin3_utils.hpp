@@ -468,9 +468,9 @@ public:
   /// input:    i ∈ [0,5]
   /// outputs: di ∈ [0,2]
   ///          dj ∈ [0,2]
-  /// @returns   a pointer to a (size 2) array containing {di, dj}, where di<=dj
-  ///            (this array is statically allocated so you don't have
-  ///            to invoke delete[] on it later)
+  /// @returns  a pointer to a (size 2) array containing {di, dj}, where di<=dj.
+  ///           (This array has been statically allocated so you don't have
+  ///            to invoke delete[] on it later.  See definition above.)
 
   static const int *MapIndices(int i)
   { return MapIndices_linear_to_3x3[i]; }
@@ -557,11 +557,10 @@ static inline Scalar FrobeniusNormSym3(const Scalar A[6]) {
 ///        "diagonalized" using selfadjoint_eigenvalues3::DiagonalizeFlatSym3().
 ///        (This function is defined in "eigen_simple3.hpp".)
 /// @note Implementation detail:
-///       Currently, as of 2019-1, this means it is assumed that the first 3
-///       entries of m are assumed to be the eigenvalues, and the last 3 entries
+///       As of 2019-1, this means it is assumed that the first 3 entries
+///       of "m" are assumed to be the eigenvalues, and the last 3 entries
 ///       are the 3 eigenvectors expressed in "Shoemake" format.
 ///          (Shoemake, Graphics Gems III (1992) pp. 124-132)
-///       This could change.
 
 template <typename Scalar>
 void ConvertDiagFlatSym2Evects3(const Scalar m[6],   //!< a symmetrix 3x3 matrix which has been diagonalized and flattened
