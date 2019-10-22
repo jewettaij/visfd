@@ -201,6 +201,21 @@ requires "**PoissonRecon**" (an external program) which you can download
 These programs are available under the terms of the open-source 3-clause BSD
 license.  (See "[LICENSE.md](./LICENSE.md)")
 
+#### mrc_simple IMOD License dependency
+
+***Note:***
+A small subset of the code in "lib/mrc_simple" was adapted from ***IMOD***.
+The IMOD code uses the GPL license (version 2), which is more restrictive.
+License details for the mrc_simple library can be found in the
+[COPYRIGHT.txt](lib/mrc_simple/COPYRIGHT.txt)
+file located in that directory.
+*This license restriction aplies to the programs in the bin/
+ subdirectory (such as "filter_mrc" and "combine_mrc")
+ because they use the "lib/mrc_simple" code to read MRC/REC files.
+ If you write your own code using the "visfd" library to analyze 3D images
+ (which you have loaded into memory by some other means),
+ then you can ignore this notice.*
+
 ## Funding
 
 VISFD is funded by NIH grant R01GM120604.
