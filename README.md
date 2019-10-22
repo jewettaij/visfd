@@ -199,14 +199,19 @@ requires "**PoissonRecon**" (an external program) which you can download
 ## License
 
 All of the code in this repository
-(except for code located in "lib/mrc_simple")
+(except for code located in "lib/mrc_simple" and "lib/visfd/eigen_simple.hpp")
 is available under the terms of the terms of the
-Mozilla Public License Version 2.0.
-(See "[LICENSE.md](./LICENSE.md)")
+MIT license.  (See "[LICENSE.md](./LICENSE.md)")
 
-#### mrc_simple IMOD License dependency
+### Additional license dependencies
 
-***Note:***
+#### MPL-2.0 licensed code (eigen_simple)
+The "lib/visfd/eigen3_simple.hpp" file contains code from
+[Eigen](http://eigen.tuxfamily.org) which requires the 
+[MPL-2.0 license](lib/eigen_simple/COPYING.MPL2).
+
+
+#### GPLv2 licensed code (mrc_simple)
 A small subset of the code in "lib/mrc_simple" was adapted from ***IMOD***.
 The IMOD code uses the GPL license (version 2), which is more restrictive.
 License details for the "mrc_simple" library can be found in the
