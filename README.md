@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/jewettaij/visfd.svg?branch=master)](https://travis-ci.org/jewettaij/visfd.svg?branch=master)
-[![GitHub All Releases](https://img.shields.io/github/downloads/jewettaij/visfd/total)]
-[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/jewettaij/superpose3d)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]
+[![GitHub All Releases](https://img.shields.io/github/downloads/jewettaij/visfd/total)]()
+[![GitHub repo size](https://img.shields.io/github/repo-size/jewettaij/visfd)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 
 
 visfd
@@ -116,7 +116,7 @@ Documentation for this program is located
 [here](./doc/doc_pval_mrc.md).
 
 
-## Development Status: *pre-alpha*
+## Development Status: *alpha*
 Program names, command line arguments, file names, and function names
 (in the API) may all change in the future.
 Automated testing was added,
