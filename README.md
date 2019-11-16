@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/jewettaij/visfd.svg?branch=master)](https://travis-ci.org/jewettaij/visfd.svg?branch=master)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 [![GitHub All Releases](https://img.shields.io/github/downloads/jewettaij/visfd/total)]()
 [![GitHub repo size](https://img.shields.io/github/repo-size/jewettaij/visfd)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 
 
 visfd
