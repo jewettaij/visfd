@@ -13,7 +13,7 @@ brightness inversions,
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 3D surface [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[3D tensor voting]([example](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_blob.html)),
+[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf),
 and brightness-fluctuation
 filters.
 Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
@@ -309,7 +309,7 @@ and
 filters are used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 and
-[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf), respectively.
+[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf), respectively.
 Voxels belonging to different membranes can be grouped into different clusters
 using the
 ["**-connect**"](#-connect-threshold)
@@ -372,7 +372,7 @@ See Lindeberg Int.J.Comput.Vis.(1998) for details.)*
 
 ### -surface-tv σ_ratio
 The "**-surface-tv**" argument enables refinement of (*-surface*) results using
-[3D tensor voting](https://www.cs.stevens.edu/~mordohai/public/TensorVotingTutorial_2007.pdf).
+[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf).
 It performs a kind of directional blurring which reinforces regions in the image
 where detected ridges in the image point in the same or similar directions.
 (For a nice visual demonstration, see
