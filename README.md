@@ -1,6 +1,5 @@
 [![Build Status](https://travis-ci.org/jewettaij/visfd.svg?branch=master)](https://travis-ci.org/jewettaij/visfd.svg?branch=master)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
-[![GitHub All Releases](https://img.shields.io/github/downloads/jewettaij/visfd/total)]()
 [![GitHub repo size](https://img.shields.io/github/repo-size/jewettaij/visfd)]()
 
 
@@ -58,7 +57,7 @@ fluctuations,
 [LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
-[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+[3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
 filters.)*
 
 Documentation for this program is located
