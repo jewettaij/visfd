@@ -7,8 +7,8 @@ matrix:
 
     - language: cpp
       compiler: gcc
-      # (Optional? update to a relatively recent linux distro)
-      dist: xenial
+      # "dist" specifies the operating system ("bionic"=ubuntu18.04)
+      #dist: bionic
       #install:
       #  - sudo apt-get install -qq cppcheck
       script:
@@ -26,7 +26,8 @@ matrix:
 
     - language: bash
       compiler: clang
-      dist: xenial
+      # "dist" specifies the operating system ("bionic"=ubuntu18.04)
+      #dist: bionic
       before_install:
         - export LD_LIBRARY_PATH=/usr/local/clang/lib:$LD_LIBRARY_PATH
       #install:

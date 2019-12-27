@@ -2099,6 +2099,7 @@ ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 
 
 
+/// @class  TV3D
 /// @brief  A class for performing simple tensor-voting image processing 
 ///         operations in 3D.  Currently only "stick" voting is supported.
 ///         (Other kinds of tensor voting, such as "plate" and "ball" are not.)

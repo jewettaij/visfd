@@ -29,7 +29,7 @@ using namespace std;
 namespace visfd {
 
 
-
+/// @class Filter3D
 /// @brief A simple class for general linear (convolutional) filters in 3D
 ///
 /// @note  In practice, this class is not used often because separable filters

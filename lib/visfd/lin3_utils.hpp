@@ -406,6 +406,7 @@ static const int MapIndices_linear_to_3x3[][2] =
   { {0, 0}, {1, 1}, {2, 2}, {0, 1}, {1, 2}, {0, 2} };
 
 
+/// @class  SymmetricMatrix3x3
 /// @brief  A simple class for storing 3x3 symmetric arrays
 ///         A symmetric 3x3 matrix contains only 6 unique numbers.
 ///         Internally, this is stored as a 1-D array with 6 entries.

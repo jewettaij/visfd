@@ -14,7 +14,8 @@
 namespace visfd {
 
 
-
+/// @class CompactMultiChannelImage3D
+///
 /// @brief   This class is useful IF you have a volumetric multi-channel image
 ///             (ie, multiple numbers are stored for every voxel)
 ///          AND you want to avoid allocating space for voxels you don't need.
