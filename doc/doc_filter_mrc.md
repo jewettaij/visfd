@@ -1783,6 +1783,11 @@ The file format for both of these files is described
 This range of allowed scores is determined automatically from these examples.
 The (upper-bound or lower-bound) threshold will be chosen
 which minimize the number of incorrectly classified blobs.
+Here is an example of the output:
+```
+  threshold lower bound: 37.921
+  threshold upper bound: inf
+```
 Equal weight is given to false-positives and false-negatives,
 (so choose your examples accordingly).
 Choosing blobs which are "edge-cases" is recommended.
