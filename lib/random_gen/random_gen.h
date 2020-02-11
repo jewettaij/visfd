@@ -113,7 +113,7 @@ inline void RANDOM_INIT(long seed=-1)
   double seconds;
   y2k.tm_hour = 0;   y2k.tm_min = 0; y2k.tm_sec = 0;
   y2k.tm_year = 100; y2k.tm_mon = 0; y2k.tm_mday = 1;
-  time(&timer);  /* get current time; same as: timer = time(NULL)  */
+  time(&timer);  /* get current time; same as: timer = time(nullptr)  */
   seconds = difftime(timer,mktime(&y2k));
   if (seed < 0) {
     seed = static_cast<long>(floor(seconds));

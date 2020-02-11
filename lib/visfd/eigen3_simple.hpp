@@ -142,7 +142,7 @@ namespace selfadjoint_eigen3 {
                   // then the 3 eigenvectors will be stored in
                   // the 3 rows of the "eivects" 2D array
                   // (ie, eivects[0], eivects[1], eivects[2])
-                  Scalar eivects[][3] = NULL,
+                  Scalar eivects[][3] = nullptr,
                   EigenOrderType eival_order = INCREASING_EIVALS)
   {
     const Scalar EPSILON = std::numeric_limits<Scalar>::epsilon();

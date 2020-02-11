@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/jewettaij/visfd.svg?branch=master)](https://travis-ci.org/jewettaij/visfd.svg?branch=master)
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/jewettaij/visfd)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
-[![GitHub repo size](https://img.shields.io/github/repo-size/jewettaij/visfd)]()
 
 
 visfd
@@ -21,9 +21,6 @@ which use this library
 They are documented [here](./doc).
 Multiprocessor support is implemented using
 [OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
-
-
-#### WARNING: This project is changing.  Optimizations and features are being added rapidly.  Command-line syntax and the API could change.  Some features don't work well yet.  (-andrew 2019-4-11)
 
 
 ## programs included with this repository:
@@ -115,7 +112,7 @@ Documentation for this program is located
 [here](./doc/doc_pval_mrc.md).
 
 
-## Development Status: *alpha*
+### Development Status: *alpha*
 Program names, command line arguments, file names, and function names
 (in the API) may all change in the future.
 Automated testing was added,
@@ -124,6 +121,11 @@ however as of 2019-7-05, some commits still (temporarily) break everything.
  This usually gets fixed within 24 hours.
  If the build is failing, choose a previous commit.)
 
+### Development timeline: 2020
+Work on this project was temporarily halted on 2019-7.
+We hope to finish the remaining features
+and submit a paper on this software in 2020.
+Nevertheless, if you find a bug, please report it.  We will fix it.
 
 ## Compilation
 
@@ -134,9 +136,21 @@ however as of 2019-7-05, some commits still (temporarily) break everything.
 
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
 
+#### Warning: Avoid the **g++** compiler
+As of 2020-2-11, we have had better results
+[using the **CLANG** compiler.](https://github.com/jewettaij/visfd/issues/2).
+*(The problem with g++ seems to only appear when clustering voxels together
+after membrane detection to form connected membrane surfaces.)*
 
-Note: As of 2019-3-06, we have had good results using the **CLANG** compiler.
-      ([Avoid using GCC](https://github.com/jewettaij/visfd/issues/2) for now.)
+#### Warning: Avoid the **-Ofast** compiler argument
+As of 2020-2-11, we have had better results using
+[**-O3 -ffast-math**](https://github.com/jewettaij/visfd/issues/3) instead.
+(The problem with -Ofast seems to only appear during membrane detection.
+ See [setup_clang.sh](setup_clang.sh) for a list of suggested compiler flags.)
+
+*Note: This program has been carefully checked for memory errors using valgrind
+and was found to be clean.  The issues mentioned above only occur when compiler
+optimization flags like -Ofast are in use.*
 
 
 ## Windows:
