@@ -144,7 +144,7 @@ after membrane detection to form connected membrane surfaces.)*
 
 #### Warning: Avoid the **-Ofast** compiler argument
 As of 2020-2-11, we have had better results using
-[**-O3 -ffast-math**](https://github.com/jewettaij/visfd/issues/3) instead.
+[**-O3 -ffast-math**](https://github.com/jewettaij/visfd/issues/4) instead.
 (The problem with -Ofast seems to only appear during membrane detection.
  See [setup_clang.sh](setup_clang.sh) for a list of suggested compiler flags.)
 
