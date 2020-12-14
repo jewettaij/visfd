@@ -43,6 +43,13 @@ and
 [watershed segmentation](https://imagej.net/Classic_Watershed)
 with non-max suppression.
 A list of detected objects can be sorted, clustered, and saved to a text file.
+Detected membrane surfaces are represented as oriented point clouds,
+and can be saved to a file in .ply format.  These files can then be read by
+external programs 
+([*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon),
+[*meshlab*](http://www.meshlab.net), and
+[*voxelize_mesh.py*](doc/doc_voxelize_mesh.md))
+to generate closed surface meshes and new segmented images.
 
 *(filter_mrc can also be used to apply simple filters to images, including
 low-pass, high-pass,
@@ -113,19 +120,22 @@ Documentation for this program is located
 
 
 ### Development Status: *alpha*
+
 Program names, command line arguments, file names, and function names
-(in the API) may all change in the future.
+(in the API) may change in the future.
 Automated testing was added,
 however as of 2019-7-05, some commits still (temporarily) break everything.
 (...because I'm too lazy to use branch & merge.
  This usually gets fixed within 24 hours.
  If the build is failing, choose a previous commit.)
 
-### Development timeline: 2020
-Work on this project was temporarily halted on 2019-7.
+### Development Timeline: 2021
+
+Work on this project was temporarily halted on 2019-7,
+however I occasionally make small feature updates as I need them.
 We hope to finish the remaining features
-and submit a paper on this software in 2020.
-Nevertheless, if you find a bug, please report it.  We will fix it.
+and submit a paper on this software in 2021.
+Nevertheless, if you find a bug, please report it.  I will fix it.
 
 ## Compilation
 

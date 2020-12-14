@@ -132,14 +132,19 @@ can be visualized in [*meshlab*](http://www.meshlab.net),
 smoothed
 (for example,
  by iteratively using "Filters"->"Smoothing"->"HC Laplacian Smooth"),
-and later voxelized.
-(That is, turned in to a segmented 3D image showing the cytoplasmic volume,
- for example.  This new image could then be used as a mask for future
- image processing, allowing you to segment the contents of the cell
- or segment concentric compartments inside larger compartments.
- *Unfortunately this voxelization feature has not been implemented here yet.
-  Until then, there are plenty of free mesh voxelizers online.
-  -Andrew 2019-5-14*)
+and later voxelized using:
+```
+voxelize_mesh.py -mesh largest_membrane.ply -in tomogram.rec -out segmented.rec
+```
+**(WARNING: As of 2020-12-14, the "voxelize_mesh.py" script is probably buggy.)
+This newly created image file (eg. "segmented.rec") is a segmented 3D image,
+indicating which voxels belong to the interior of the closed surface.
+(These voxels could correspond to a cell's cytoplasm
+ or an organelle within the cell, for example.)
+This new image could then be used as a mask for future
+image processing, allowing you to segment the contents of the cell
+or segment concentric compartments inside larger compartments
+(eg. organelles inside cells).
 
 Note: All of these parameters make reasonably good defaults for membrane
       detection except the
