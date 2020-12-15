@@ -143,7 +143,7 @@ def main():
                                 bounds=bounds)
 
         # Now save the resulting numpy array as an MRC file
-        mrcdata = mrcfile.new(fname_out, overwrite=True)
+        mrcdata = mrcfile.new(args.fname_out, overwrite=True)
         mrcdata.voxel_size = voxel_width
         mrcdata.set_data(voxels)
         mrcdata.close()

@@ -134,7 +134,7 @@ smoothed
  by iteratively using "Filters"->"Smoothing"->"HC Laplacian Smooth"),
 and later voxelized using:
 ```
-voxelize_mesh.py -mesh largest_membrane.ply -in tomogram.rec -out segmented.rec
+voxelize_mesh.py -m largest_membrane.ply -i tomogram.rec -o segmented.rec
 ```
 **(WARNING: As of 2020-12-14, the "voxelize_mesh.py" script is probably buggy.)
 This newly created image file (eg. "segmented.rec") is a segmented 3D image,
