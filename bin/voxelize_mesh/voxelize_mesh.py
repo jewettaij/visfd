@@ -62,9 +62,12 @@ def voxelize_numpy(mesh,
     # the corresponding voxel is inside the closed mesh.
     # However it is a 1-dimensional VtkArray, not a 3D numpy array.
     # It must be converted to a 1D numpy array and converted to 3D with reshape.
-    return vtknp.vtk_to_numpy(mask).reshape(grid.dimensions[2],
-                                            grid.dimensions[1],
-                                            grid.dimensions[0])
+    # It also must be transposed (x,y axes swapped).  (I have no idea why.)
+    data = np.transpose(vtknp.vtk_to_numpy(mask).reshape(grid.dimensions[2],
+                                                         grid.dimensions[1],
+                                                         grid.dimensions[0]),
+                        (0,2,1))
+    return data
 
 
 
@@ -79,6 +82,8 @@ def main():
                         help='file name of an MRC (or REC) file with the same size as the target. (Typically it is the original image in which the mesh surface was detected.)')
         ap.add_argument('-w', '--width', dest='voxel_width', required=False, type=float,
                         help='-w (or --width) should be followed by the voxel width (default 1)')
+        ap.add_argument('-c', '--crop', dest='image_bounds', required=False, type=float, nargs=6,
+                        help='6 numbers indicating desired boundaries of the resulting cropped image: xmin xmax ymin ymax zmin zmax.  (These numbers are in units of voxels. Note: This will override the image size determined from the "-i" or "--in" argument.)')
         ap.add_argument('-b', '--bounds', dest='bounds', required=False, type=float, nargs=6,
                         help='6 numbers indicating desired image size: xmin xmax ymin ymax zmin zmax.  (If the voxel width is known, these numbers are in units of distance, not voxels. Note: This will override the image size determined from the "-i" or "--in" argument.)')
         args = ap.parse_args()
@@ -134,6 +139,15 @@ def main():
         elif voxel_width == None:
             voxel_width = 1
         assert(voxel_width != None)
+
+        # Alternatively, did the user specify the bounds in units of voxels?
+        if args.image_bounds:
+            bounds = (args.image_bounds[0]*voxel_width,
+                      args.image_bounds[1]*voxel_width,
+                      args.image_bounds[2]*voxel_width,
+                      args.image_bounds[3]*voxel_width,
+                      args.image_bounds[4]*voxel_width,
+                      args.image_bounds[5]*voxel_width)
 
 
         # Now convert the mesh into an image whose (physical) size is "bounds"

@@ -698,12 +698,12 @@ A *-threshold* value of 0.707 ≈ cos(45°) and corresponds to a
 In that case, neighboring voxels pointing in directions which
 differ by more than 45°
 will be assigned to different clusters (membranes).
-(The default value, -1, disables this feature.)
+(This works well in most cases.)
+By default, this feature is disabled.
 
 The difference in meaning between these 4 arguments will be elaborated on
 in the future.  For now it is safe to set them all equal to the same value,
-or omit them entirely since the default value of 0.707 works well in most cases
-(-andrew 2019-3-04).
+or omit them entirely (-andrew 2020-12-14).
 
 *(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments
   currently have no effect unless the
