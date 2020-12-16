@@ -132,11 +132,11 @@ can be visualized in [*meshlab*](http://www.meshlab.net),
 smoothed
 (for example,
  by iteratively using "Filters"->"Smoothing"->"HC Laplacian Smooth"),
-and later voxelized using:
+and later voxelized using [voxelize_mesh.py](doc_voxelize_mesh.md):
 ```
 voxelize_mesh.py -m largest_membrane.ply -i tomogram.rec -o segmented.rec
 ```
-**(WARNING: [A large amount of RAM is needed.](doc_voxelize_mesh.md)**)
+**(WARNING: [Use ulimit beforehand.](doc_voxelize_mesh.md)**)
 This newly created image file (eg. "segmented.rec") is a segmented 3D image,
 indicating which voxels belong to the interior of the closed surface.
 (These voxels could correspond to a cell's cytoplasm
@@ -162,8 +162,8 @@ Note: If the resulting surface is *not closed*,
 
 
 ## WARNING: Use *ulimit*
-Some operations, such as tensor-voting, consume a large amount of RAM.
-Consequently, it is strongly recommended that you use the 
+Some operations, such as tensor-voting and voxelization, consume a large
+amount of RAM.  Consequently, it is strongly recommended that you use the 
 [ulimit -v SIZE_IN_KB](https://ss64.com/bash/ulimit.html)
 command to prevent system lockup, especially if you are on a shared computer.
 (If my understanding is correct, running "ulimit -v 14000000" beforehand

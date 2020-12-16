@@ -3,6 +3,17 @@ voxelize_mesh.py
 **voxelize_mesh.py** is a command-line python script which voxelizes closed
 meshes.
 
+## WARNING: THIS PROGRAM PROBABLY HAS BUGS
+
+If you run into bugs, please email me or post an issue with the github
+issue tracker.
+
+Only the **-m**, **-o** and **-c** arguments have been tested so far.
+I have not yet tested the other features
+(command-line arguments) of this program.
+
+
+
 ### Explanation
 A "mesh" is a collection of connected polygons which form a surface.  Unlike
 image files, meshes contain vector geometry and are resolution independent.

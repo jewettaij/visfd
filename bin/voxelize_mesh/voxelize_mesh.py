@@ -88,6 +88,8 @@ def main():
                         help='6 numbers indicating desired boundaries of the resulting cropped image: xmin xmax ymin ymax zmin zmax.  (These numbers are in units of voxels. Note: This will override the image size determined from the "-i" or "--in" argument.)')
         ap.add_argument('-b', '--bounds', dest='bounds', required=False, type=float, nargs=6,
                         help='6 numbers indicating desired image size: xmin xmax ymin ymax zmin zmax.  (If the voxel width is known, these numbers are in units of distance, not voxels. Note: This will override the image size determined from the "-i" or "--in" argument.)')
+        ap.add_argument('-s', '--shift', dest='shift', required=False, type=float, nargs=3,
+                        help='3 numbers indicating a shift in the x,y,z coordinates of the mesh before voxelization.  (These numbers are in units of voxels, not physical distance.)')
         args = ap.parse_args()
 
 
@@ -153,12 +155,12 @@ def main():
 
         # Did the user want us to shift the x,y,z coordinates of the mesh?
         if args.shift:
-            bounds[0] -= args.shift[0]
-            bounds[1] -= args.shift[0]
-            bounds[2] -= args.shift[1]
-            bounds[3] -= args.shift[1]
-            bounds[4] -= args.shift[2]
-            bounds[5] -= args.shift[2]
+            bounds[0] -= args.shift[0]*voxel_width
+            bounds[1] -= args.shift[0]*voxel_width
+            bounds[2] -= args.shift[1]*voxel_width
+            bounds[3] -= args.shift[1]*voxel_width
+            bounds[4] -= args.shift[2]*voxel_width
+            bounds[5] -= args.shift[2]*voxel_width
 
         # Now convert the mesh into an image whose (physical) size is "bounds"
         voxels = voxelize_numpy(mesh,
