@@ -17,6 +17,21 @@ g_program_name = g_filename
 #sys.stderr.write(g_program_name+' v'+g_version_str+' '+g_date_str+' ')
 
 
+class InputError(Exception):
+    """ A generic exception object containing a string for error reporting.
+        (Raising this exception implies that the caller has provided
+         a faulty input file or argument.)
+
+    """
+    def __init__(self, err_msg):
+        self.err_msg = err_msg
+    def __str__(self):
+        return self.err_msg
+    def __repr__(self):
+        return str(self)
+
+
+
 def voxelize_numpy(mesh,
                    density=None,
                    check_surface=True,
@@ -64,7 +79,7 @@ def voxelize_numpy(mesh,
     # the corresponding voxel is inside the closed mesh.
     # However it is a 1-dimensional VtkArray, not a 3D numpy array.
     # It must be converted to a 1D numpy array and converted to 3D with reshape.
-    # It also must be transposed (x,y axes swapped).  (I have no idea why.)
+    # It also must be transposed (x,y,z axes swapped).  (I have no idea why.)
     data = np.transpose(vtknp.vtk_to_numpy(mask).reshape(grid.dimensions[2],
                                                          grid.dimensions[1],
                                                          grid.dimensions[0]),
@@ -84,7 +99,7 @@ def main():
                         help='file name of an MRC (or REC) file with the same size as the target. (Typically it is the original image in which the mesh surface was detected.)')
         ap.add_argument('-w', '--width', dest='voxel_width', required=False, type=float,
                         help='-w (or --width) should be followed by the voxel width (default 1)')
-        ap.add_argument('-c', '--crop', dest='image_bounds', required=False, type=float, nargs=6,
+        ap.add_argument('-c', '--crop', dest='ibounds', required=False, type=float, nargs=6,
                         help='6 numbers indicating desired boundaries of the resulting cropped image: xmin xmax ymin ymax zmin zmax.  (These numbers are in units of voxels. Note: This will override the image size determined from the "-i" or "--in" argument.)')
         ap.add_argument('-b', '--bounds', dest='bounds', required=False, type=float, nargs=6,
                         help='6 numbers indicating desired image size: xmin xmax ymin ymax zmin zmax.  (If the voxel width is known, these numbers are in units of distance, not voxels. Note: This will override the image size determined from the "-i" or "--in" argument.)')
@@ -99,18 +114,20 @@ def main():
         try:
             mesh = pv.read(args.fname_mesh)
         except IOError:
-            sys.stderr.write('Error: Unable to open file "'+
+            raise InputError('Error: Unable to open file "'+
                              args.fname_mesh+'" for reading.\n')
-            exit(1)
 
         # Determine the voxel width
         voxel_width = args.voxel_width
         if voxel_width == 0.0:
-            sys.stderr.write('Error: voxel width cannot be non-zero\n')
-            exit(1)
+            raise InputError('Error: voxel width cannot be non-zero\n')
 
         # Determine how big the image is
         bounds = args.bounds
+
+        # Make sure the user does not accidentally erase their original tomogram
+        if args.fname_out == args.fname_mrc_orig:
+            raise InputError('Error: Input and output image files cannot have the same name.\n')
 
         # Did the user specify an input image?
         # If so, use it to determine the output image size (and voxel width)
@@ -132,26 +149,25 @@ def main():
                             #                     '         Using the voxel width in the X direction\n')
                         else:
                             voxel_width = voxel_size
-                        bounds = (0.0, mrcdata.header.nx*voxel_width,
-                                  0.0, mrcdata.header.ny*voxel_width,
-                                  0.0, mrcdata.header.nz*voxel_width)
+                    bounds = (0.0, mrcdata.header.nx*voxel_width,
+                              0.0, mrcdata.header.ny*voxel_width,
+                              0.0, mrcdata.header.nz*voxel_width)
                     mrcdata.close()
             except IOError:
-                raise sys.stderr.write('Error: Unable to open file "'+
-                                       args.fname_mrc_orig+'" for reading.\n')
-                exit(1)
+                raise InputError('Error: Unable to open file "'+
+                                 args.fname_mrc_orig+'" for reading.\n')
         elif voxel_width == None:
             voxel_width = 1
         assert(voxel_width != None)
 
         # Alternatively, did the user specify the bounds in units of voxels?
-        if args.image_bounds:
-            bounds = (args.image_bounds[0]*voxel_width,
-                      (args.image_bounds[1]+0.99)*voxel_width,
-                      args.image_bounds[2]*voxel_width,
-                      (args.image_bounds[3]+0.99)*voxel_width,
-                      args.image_bounds[4]*voxel_width,
-                      (args.image_bounds[5]+0.99)*voxel_width)
+        if args.ibounds:
+            bounds = (args.ibounds[0]*voxel_width,
+                      (args.ibounds[1]+0.99)*voxel_width,
+                      args.ibounds[2]*voxel_width,
+                      (args.ibounds[3]+0.99)*voxel_width,
+                      args.ibounds[4]*voxel_width,
+                      (args.ibounds[5]+0.99)*voxel_width)
 
         # Did the user want us to shift the x,y,z coordinates of the mesh?
         if args.shift:
@@ -185,7 +201,7 @@ def main():
         #p.show()
         #p = pv.Plotter()
 
-    except (ValueError) as err:
+    except (InputError, ValueError) as err:
         sys.stderr.write('\n' + str(err) + '\n')
         sys.exit(-1)
 
