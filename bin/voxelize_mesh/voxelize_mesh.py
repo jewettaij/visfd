@@ -143,11 +143,11 @@ def main():
         # Alternatively, did the user specify the bounds in units of voxels?
         if args.image_bounds:
             bounds = (args.image_bounds[0]*voxel_width,
-                      args.image_bounds[1]*voxel_width,
+                      (args.image_bounds[1]+0.99)*voxel_width,
                       args.image_bounds[2]*voxel_width,
-                      args.image_bounds[3]*voxel_width,
+                      (args.image_bounds[3]+0.99)*voxel_width,
                       args.image_bounds[4]*voxel_width,
-                      args.image_bounds[5]*voxel_width)
+                      (args.image_bounds[5]+0.99)*voxel_width)
 
 
         # Now convert the mesh into an image whose (physical) size is "bounds"

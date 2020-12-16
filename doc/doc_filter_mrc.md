@@ -136,12 +136,12 @@ and later voxelized using:
 ```
 voxelize_mesh.py -m largest_membrane.ply -i tomogram.rec -o segmented.rec
 ```
-**(WARNING: As of 2020-12-14, the "voxelize_mesh.py" script is probably buggy.)
+**(WARNING: [A large amount of RAM is needed.](doc_voxelize_mesh.md)**)
 This newly created image file (eg. "segmented.rec") is a segmented 3D image,
 indicating which voxels belong to the interior of the closed surface.
 (These voxels could correspond to a cell's cytoplasm
  or an organelle within the cell, for example.)
-This new image could then be used as a mask for future
+This new image can then be used as a mask for future
 image processing, allowing you to segment the contents of the cell
 or segment concentric compartments inside larger compartments
 (eg. organelles inside cells).
