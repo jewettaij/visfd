@@ -3,15 +3,10 @@ voxelize_mesh.py
 **voxelize_mesh.py** is a command-line python script which voxelizes closed
 meshes.
 
-## WARNING: THIS PROGRAM PROBABLY HAS BUGS
+### Warning: This is experimental software
 
 If you run into bugs, please email me or post an issue with the github
-issue tracker.
-
-Only the **-m**, **-o** and **-c** arguments have been tested so far.
-I have not yet tested the other features
-(command-line arguments) of this program.
-
+issue tracker. -andrew 2020-12-15
 
 
 ### Explanation
