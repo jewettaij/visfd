@@ -83,7 +83,7 @@ However it can read any standard PLY file containing a closed polyhedral mesh.
 This program currently only supports the .mrc/.rec image file format.
 Documentation for this program is located
 [here](./doc/doc_voxelize_mesh.md).
-**WARNING: This experimental program currently requires
+**WARNING: This experimental program is very slow and currently requires
 a very large amount of RAM.**
 
 
