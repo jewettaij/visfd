@@ -77,16 +77,29 @@ by focusing on the region containing the feature of interest.)*
 size of each voxel using the **-w** argument.  (If you used *filter_mrc*
 then make sure that you use the same **-w** argument that it uses.)
 
-|Argument         | Explanation  |
-|-----------------|--------------|
-|-w voxel_width | The physical size of each voxel. If the mesh was created by *filter_mrc*, this should match the **-w** argument that you used with that program.|
-|-m MESH_FILE | Specify the name of a file containing a closed mesh (typically in PLY format).|
-|-i ORIG_IMAGE_FILE | Specify the name of a 3D image file (MRC or REC format) which is the same size as the image you want to create.|
-|-o NEW_IMAGE_FILE | Specify the name of a 3D image file (MRC or REC format) you wish to create size as the image you want to create.|
-|-c ix_min ix_max iy_min iy_max iz_min iz_max | This will crop the voxelized image to the size indicated by the 6 integer arguments.  (If you specify this argument, you do not need to use the **-i** or **-bounds** arguments.)|
-|-b x_min x_max y_min y_max z_min z_max | This will crop the voxelized image to the size indicated by the 6 floating point arguments.  These are in units of physical distance, not voxels. (If you specify this argument, you do not need to use the **-i** or **-c** arguments.)|
-|-s dx dy dz      | Shift the mesh in the dx dy dz direction before voxelization.  This is useful if you want to move the mesh by subvoxel amounts.  (Typical usage: "-s 0.5 0.5 0.5".  Note: Shifting the image will *not* effect any of the numbers in the header of the MRC file created by this script.) |
-|-----------------|---------------|
+## Arguments
+
+### -w voxel_width
+The physical size of each voxel. If the mesh was created by *filter_mrc*, this should match the **-w** argument that you used with that program.|
+
+### -m MESH_FILE
+Specify the name of a file containing a closed mesh (typically in PLY format).
+
+### -i ORIG_IMAGE_FILE
+Specify the name of a 3D image file (MRC or REC format) which is the same size as the image you want to create.
+
+### -o NEW_IMAGE_FILE
+Specify the name of the 3D image file (MRC or REC format) that you wish to create.
+
+### -c ix_min ix_max iy_min iy_max iz_min iz_max
+This will crop the voxelized image to the size indicated by the 6 integer arguments.  (If you specify this argument, you do not need to use the **-i** or **-bounds** arguments.)
+
+### -b x_min x_max y_min y_max z_min z_max
+This will crop the voxelized image to the size indicated by the 6 floating point arguments.  These are in units of physical distance, not voxels. (If you specify this argument, you do not need to use the **-i** or **-c** arguments.)
+
+### -s dx dy dz
+Shift the mesh in the dx dy dz direction before voxelization.  This is useful if you want to move the mesh by subvoxel amounts.  (Typical usage: "-s 0.5 0.5 0.5".  Note: Shifting the image will *not* effect any of the numbers in the header of the MRC file created by this script.)
+
 
 ## Installation
 
