@@ -161,6 +161,14 @@ Note: If the resulting surface is *not closed*,
       then try increasing the "--scale" parameter.
 
 
+## WARNING: Use *ulimit*
+Some operations, such as tensor-voting, consume a large amount of RAM.
+Consequently, it is strongly recommended that you use the 
+[ulimit -v SIZE_IN_KB](https://ss64.com/bash/ulimit.html)
+command to prevent system lockup, especially if you are on a shared computer.
+(If my understanding is correct, running "ulimit -v 14000000" beforehand
+should prevent programs like filter_mrc from consuming more than 14Gb of RAM.)
+
 
 ## Arguments:
 

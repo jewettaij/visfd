@@ -20,7 +20,8 @@ g_program_name = g_filename
 def voxelize_numpy(mesh,
                    density=None,
                    check_surface=True,
-                   bounds=None):
+                   bounds=None,
+                   shift=(0.0,0.0,0,0)):
     """Voxelize mesh to create a 3D numpy array of bools (True, False),
        indicating whether the corresponding voxel is within the closed surface
        formed by the mesh.
@@ -35,6 +36,7 @@ def voxelize_numpy(mesh,
         algorithm first checks to see if the surface is closed and
         manifold. If the surface is not closed and manifold, a runtime
         error is raised.
+
     bounds : Size of image in units of physical distance:
              (x_min, x_max, y_min, y_max, z_min, z_max)
              By default, mesh.bounds is used.
@@ -149,6 +151,14 @@ def main():
                       args.image_bounds[4]*voxel_width,
                       (args.image_bounds[5]+0.99)*voxel_width)
 
+        # Did the user want us to shift the x,y,z coordinates of the mesh?
+        if args.shift:
+            bounds[0] -= args.shift[0]
+            bounds[1] -= args.shift[0]
+            bounds[2] -= args.shift[1]
+            bounds[3] -= args.shift[1]
+            bounds[4] -= args.shift[2]
+            bounds[5] -= args.shift[2]
 
         # Now convert the mesh into an image whose (physical) size is "bounds"
         voxels = voxelize_numpy(mesh,
