@@ -25,10 +25,10 @@ This is called "voxelization".
 # WARNING: Extremely memory inneficient. Use *ulimit*
 This program was cobelled together using 3rd-party open-source tools:
 (pyvista, vtk) which are extremely slow and memory inneficient.
-Unfortunately, this is beyond my control,
-unless I rewrite the voxelizer from scratch.
 Currently, you must have RAM which is approximately 25-100 times
 larger than the size of the tomogram you are segmenting.
+(Unfortunately, this is beyond my control,
+unless I rewrite the voxelizer from scratch.)
 For this reason, this program is barely useable on a typical desktop computer.
 Exceeding the memory on your computer can make it unresponsive.
 **Consequently, it is strongly recommended that you use the 
