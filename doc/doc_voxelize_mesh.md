@@ -17,9 +17,9 @@ together with [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon)
 and [*meshlab*](http://www.meshlab.net)
 can be used to create closed meshes which define the boundary surface of an
 object detected from a 3D image (such as the boundary of a cell or organelle).
-The meshes themselves can be useful.  However if you're goal is to segment the
-original image, you must determine which voxels lie within a closed surface,
-and which voxels lie outside.  This is called "voxelization".
+If you're goal is to segment the original image, you must determine which
+voxels lie within this closed surface, and which voxels lie outside.
+This is called "voxelization".
 
 
 # WARNING: Extremely memory inneficient. Use *ulimit*
@@ -66,9 +66,9 @@ voxelize_mesh.py -m mesh.py -o segmented_image.rec -w 19.6 -c 330 430 80 140 50 
 ## Details
 1) You must provide the name of a file containing a closed
 mesh (typically in .ply format) using the
-**-m** argument
+**-m** argument.
 2) You must provide the name of the volumetric image file (in MRC/REC format)
-that you wish to create.
+that you wish to create using the **-o** argument.
 3) You must also provide a 3D image file which is the same size as the
 image you want to create using the **-i** argument.
 (If you used *filter_mrc* to create the mesh, then you would
