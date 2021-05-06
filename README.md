@@ -183,16 +183,44 @@ optimization flags like -Ofast are in use.*
 
 ## Windows:
 
-   It is recommended that you install the BASH shell environment on your computer, along with *clang* and *make*.  (If you decide to use a different compiler, modify the "setup_clang.sh" file accordingly.)  There are several ways to do that.
+It is recommended that you install the BASH shell environment on your computer, along with *clang* and *make*.  (If you decide to use a different compiler, modify the "setup_clang.sh" file accordingly.)  There are several ways to do that.
 
-   Perhaps the easiest way is to install [virtualbox](https://www.virtualbox.org) in windows together with a linux distribution with a lightweight desktop, such as [xubuntu](https://xubuntu.org).  Alternatively, if you are using Windows 10 or later, you can try installing the "Windows Subsystem for Linux (WSL)", as explained
-[here](https://solarianprogrammer.com/2017/04/15/install-wsl-windows-subsystem-for-linux/)
-and
-[here](https://msdn.microsoft.com/en-us/commandline/wsl/faq),
-or
-[Hyper-V](https://blogs.windows.com/buildingapps/2018/09/17/run-ubuntu-virtual-machines-made-even-easier-with-hyper-v-quick-create/).
-Otherwise, if you are using an older version of windows, try installing
-[CYGWIN](https://www.cygwin.com/) instead.
+Perhaps the easiest way is to install
+[Windows Subsystem for Linux (WSL2)](https://docs.microsoft.com/en-us/windows/wsl/install-win10),
+***or***
+[virtualbox](https://www.virtualbox.org)
+(In the later case, you will also need to install a linux distribution,
+preferably with a lightweight
+desktop such as [xubuntu](https://xubuntu.org).)
+Alternatively, you can try 
+[Hyper-V](https://www.nakivo.com/blog/run-linux-hyper-v/)
+or (if you have an older version of windows)
+[CYGWIN](https://www.cygwin.com/).
+
+WSL and virtualbox are virtual machines that allow you to run an
+alternate operating system from within windows.
+In this case that operating system is linux.  The BASH shell and the
+compiler tools that you need can be easily installed from within in linux.
+Both WSL and virtualbox also create an alternate filesystem inside windows
+where the linux operating system is stored.  Software (like *visfd/filter_mrc*)
+that you download and install there can access the files in that filesystem.
+So you may need to copy your tomograms and otherf files to this fileystem
+beforehand.  If you **are using WSL or WSL2**, then you should
+[use caution when using windows programs to edit files stored there](https://devblogs.microsoft.com/commandline/do-not-change-linux-files-using-windows-apps-and-tools/).
+This includes text editors, image editors, and tomography processing software
+(such as IMOD).
+One possible way to avoid problems is to try to restrict yourself to using
+programs which you downloaded and installed directly from within the
+WSL or WSL2 environment *(if possible)*.  In particular, a couple of the
+features of the *filter_mrc* program require you to learn and use a
+(unix-style) text editor.  (Word, Wordpad, and Notepad will not work.)
+Popular text editors include **Atom**, **Sublime**, **Notepad++**,
+and **VSCode**.  Older, non-graphical programs include **vim**, **emacs**,
+**nano**, **ne**, and **jove**.
+Again, it is a good idea to install and run such programs from within WSL,
+not windows.
+
+
 
 ## Apple Mac:
 

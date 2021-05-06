@@ -78,7 +78,7 @@ public:
 
     // Then loop over the entries in the table, updating "m" and performing
     // the filtering operation (sum) only when necessary.
-    Integer I =  halfwidth;
+    Integer I = halfwidth;
     for (Integer i=0; i<size_source; i++) {
 
       // update m
