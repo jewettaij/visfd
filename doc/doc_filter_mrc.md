@@ -55,9 +55,21 @@ filter_mrc -in tomogram.rec \
   -surface-tv 5.0 -surface-tv-angle-exponent 4
 ```
 
+This searches for dark surfaces of thickness approximately 60, and creates
+a new image file ("membranes_tv.rec") with the membranes emphasized.
+View this file (eg. using IMOD) to see if the membranes are successfully
+detected.  You may need to adjust this thickness parameter
+(and the other parameters) until the membrane is clearly visible.
+**This is slow, so try this on a small, cropped image first.**
+(In my experience, "60" is a reasonable default thickness parameter to
+detect lipid bilayers, assuming the voxel widths are in units of Angstroms.
+Incidentally, you can specify the units by indicating the voxel width using the
+[-w argument](#Voxel-Width).)
+
 Note: The computation time will be roughly proportional to the image size
-      *as well as* the "-surface-best" argument (which ranges from 0 to 1).
-      Try this on a small image first. (See example 3 below)
+*as well as* the "-surface-best" argument (which ranges from 0 to 1).
+(See [example 3](#Example-3) below)
+
 
 ### Example 2
 
@@ -109,6 +121,14 @@ and **generate a closed surface** for that membrane.
 (This example requires
  [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon) and
  [*meshlab*](http://www.meshlab.net).)
+
+This is a complicated example with several steps.
+In order for this to work, you must make sure you are able to detect the
+membrane first.  To do that, first try the procedure in [example 1](#Example-1)
+on your tomogram.  Try that on a small cropped image.
+View the newly created image, and if the membranes are clearly visible.
+If so, then you are ready to try the example below.
+(If not, adjust the -surface thickness parameter.)
 
 ```
 filter_mrc -in tomogram.rec \
