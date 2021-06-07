@@ -94,23 +94,25 @@ filter_mrc -in tomogram.rec \
   -draw-hollow-spheres tomogram_ribosomes.txt
 ```
 
-Note: The
-      ["*-mask cytoplasmic_volume.rec*"](#-mask-MRC_FILE)
-      argument used in the second step
-      is optional.
-      I use it in this example because we are searching for ribosomes,
-      so we want to restrict our search to blobs which lie *inside* the cell.
+Note:
+The ["*-mask cytoplasmic_volume.rec*"](#-mask-MRC_FILE)
+argument used in the second step
+is optional.
+I use it in this example because we are searching for ribosomes,
+so we want to restrict our search to blobs which lie *inside* the cell.
 
 
-Note: All of these parameters make reasonable defaults for ribosome detection
-      except the
-      ["*-minima-thresold*"](#Automatic-disposal-of-poor-scoring-blobs)
-      parameter ("-70" in the example).
-      It must be chosen carefully because it will vary from image to image.
-      (Strategies for choosing this parameter are discussed below.)
-      *Alternatively,* it can be determined automatically using the
-      ["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accepttxt-file_rejecttxt)
-      argument.
+Note:
+All of these parameters make reasonable
+defaults for ribosome detection except the
+["*-minima-thresold*"](#Automatic-disposal-of-poor-scoring-blobs)
+parameter ("-70" in the example).
+It must be chosen carefully because it will vary from image to image.
+(Strategies for choosing this parameter are discussed
+[below](#automatic-disposal-of-poor-scoring-blobs).
+*Alternatively,* it can be determined automatically using the
+["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accepttxt-file_rejecttxt)
+argument.
 
 
 
@@ -138,7 +140,8 @@ filter_mrc -in tomogram.rec \
   -connect 1.0e+09 -cvn 0.707 -cvs 0.707 -cts 0.707 -ctn 0.707 \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
-Note: This will generate an oriented point cloud file
+Note:
+This will generate an oriented point cloud file
 ("largest_membrane_pointcloud.ply").
 You can use
 [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon)
@@ -148,10 +151,9 @@ PoissonRecon --in largest_membrane_pointcloud.ply \
   --out largest_membrane.ply --depth 12 --scale 2.0
 ```
 The resulting *(hopefully)* closed surface (eg. "largest_membrane.ply")
-can be visualized in [*meshlab*](http://www.meshlab.net),
-smoothed
-(for example,
- by iteratively using "Filters"->"Smoothing"->"HC Laplacian Smooth"),
+can be visualized in [*meshlab*](http://www.meshlab.net), smoothed
+(for example, by iteratively using
+"Filters"->"Smoothing"->"HC Laplacian Smooth"),
 and later voxelized using [voxelize_mesh.py](doc_voxelize_mesh.md):
 ```
 voxelize_mesh.py -m largest_membrane.ply -i tomogram.rec -o segmented.rec
@@ -166,19 +168,22 @@ image processing, allowing you to segment the contents of the cell
 or segment concentric compartments inside larger compartments
 (eg. organelles inside cells).
 
-Note: All of these parameters make reasonably good defaults for membrane
-      detection except the
-      ["**-connect**"](#-connect-threshold)
-      parameter ("1.0e+09" in the example).
-      It must be chosen carefully because it will vary from image to image.
-      Strategies for choosing this parameter are discussed below.
-      If a suitable parameter can not be found, you can also use the
-      ["**-must-link**"](#-must-link-FILE)
-      argument to manually force connections between
-      disconnected regions. (See below.)
+Note:
+All of these parameters make reasonably good
+defaults for membrane detection except the
+["**-connect**"](#-connect-threshold)
+parameter ("1.0e+09" in the example).
+It must be chosen carefully because it will vary from image to image.
+Strategies for choosing this parameter are discussed
+[below](#strategies-for-determining-the--connect-threshold-parameter).
+If a suitable parameter can not be found, you can also use the
+["**-must-link**"](#-must-link-FILE)
+argument to manually force connections between
+disconnected regions. (See below.)
 
-Note: If the resulting surface is *not closed*,
-      then try increasing the "--scale" parameter.
+Note:
+If the resulting surface is *not closed*,
+then try increasing the "--scale" parameter.
 
 
 ## WARNING: Use *ulimit*
@@ -1005,16 +1010,12 @@ score thresholds, so that they keep all of the blobs detected
 Then later, they will run **filter_mrc** again using *either* the
 [**-discard-blobs**](#-discard-blobs),
 ["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accepttxt-file_rejecttxt)
-
-argument,
-*or*
-the
+argument, *or* the
 [**-minima-threshold**](#Automatic-disposal-of-poor-scoring-blobs)
 (or
 [**-maxima-threshold**](#Automatic-disposal-of-poor-scoring-blobs)
 [**-draw-spheres**](#-draw-spheres-filename)
-arguments
-(perhaps several times with different thresholds)
+arguments, perhaps several times with different thresholds)
 ...to decide which of these blobs are worth keeping.
 
 
@@ -1391,18 +1392,21 @@ The resulting voxels intensities will lie in the range from 0.48 to 0.52.
                   (thresh_a)    (thresh_b)
 ```
 
-*Note: If instead, you want the output intensities to range from*
-      **0 to 1**,
-      (for example), then use the more general*
-      "**-thresh2**"
-      *argument. (See below.)*
+*Note:
+If instead, you want the output intensities to range from*
+**0 to 1**,
+(for example), then use the more general*
+"**-thresh2**"
+*argument. (See below.)*
 
-*Note: Unfortunately, intensity values can be difficult to guess.
-       When choosing thresholds, the
-       [histogram_mrc.py program](doc_histogram_mrc.md)
-       can be useful.
-       It displays the range of voxel intensities in an image.
-       Alternatively you can use the "**-cl a b**" argument.*
+*Note:
+Unfortunately, intensity values can be difficult to guess.
+When choosing thresholds, the
+[histogram_mrc.py program](doc_histogram_mrc.md)
+can be useful.
+It displays the range of voxel intensities in an image.
+Alternatively you can use the "**-cl a b**" argument.*
+
 
 ### -cl
 ```
@@ -1417,12 +1421,13 @@ present in the image.  (Excluding masked voxels.  See below.)  Typical usage:
 ```
 This will clip voxel intensities which are either 2.5 standard-deviations
 below or above the average intensity value, respectively
-**Note:** You can use the
-       ["**-mask**"](#-mask-MRC_FILE) argument to exclude certain voxels
-       from the clipping and thresholding operations.
-       When using "**-mask**" together with "**-cl**", then
-       these voxels will also be excluded from consideration when
-       calculating the average and spread(σ) of voxel intensities.
+
+**Note:**
+You can use the ["**-mask**"](#-mask-MRC_FILE) argument to exclude
+certain voxels from the clipping and thresholding operations.
+When using "**-mask**" together with "**-cl**", then
+these voxels will also be excluded from consideration when
+calculating the average and spread(σ) of voxel intensities.
 
 
 ### -thresh threshold
