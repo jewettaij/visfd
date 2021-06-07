@@ -175,7 +175,7 @@ defaults for membrane detection except the
 parameter ("1.0e+09" in the example).
 It must be chosen carefully because it will vary from image to image.
 Strategies for choosing this parameter are discussed
-[below](#strategies-for-determining-the--connect-threshold-parameter).
+[below](#determining-the--connect-threshold-parameter).
 If a suitable parameter can not be found, you can also use the
 ["**-must-link**"](#-must-link-FILE)
 argument to manually force connections between
@@ -521,7 +521,7 @@ in the original image.
 
 This *threshold* parameter will vary from image to image
 and
-[must be chosen carefully](#Strategies-for-determining-the--connect-threshold-parameter).
+[must be chosen carefully](#determining-the--connect-threshold-parameter).
 If the *threshold* parameter is too large,
 then individual objects (eg. membranes) in the image
 will be split into multiple pieces.  
@@ -536,7 +536,7 @@ to belong to the same cluster (a.k.a. "island".  See below.)
 
 
 
-#### Strategies for determining the -connect threshold parameter
+#### Determining the -connect threshold parameter
 
 To choose the *threshold* parameter,
 run membrane-detection
