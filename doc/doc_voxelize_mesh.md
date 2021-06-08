@@ -6,10 +6,11 @@ meshes.
 ### Warning: This is experimental software
 
 If you run into bugs, please email me or post an issue with the github
-issue tracker. -andrew 2020-12-15
+issue tracker. -andrew 2021-6-08
 
 
 ### Explanation
+
 A "mesh" is a collection of connected polygons which form a surface.  Unlike
 image files, meshes contain vector geometry and are resolution independent.
 The [*filter_mrc*](doc_filter_mrc.md) program (included with this repository),
@@ -20,23 +21,6 @@ object detected from a 3D image (such as the boundary of a cell or organelle).
 If you're goal is to segment the original image, you must determine which
 voxels lie within this closed surface, and which voxels lie outside.
 This is called "voxelization".
-
-
-# WARNING: Extremely memory inneficient. Use *ulimit*
-This program was cobelled together using 3rd-party open-source tools:
-(pyvista, vtk) which are extremely slow and memory inneficient.
-Currently, you must have RAM which is approximately 25-100 times
-larger than the size of the tomogram you are segmenting.
-(Unfortunately, this is beyond my control,
-unless I rewrite the voxelizer from scratch.)
-For this reason, this program is barely useable on a typical desktop computer.
-Exceeding the memory on your computer can make it unresponsive.
-**Consequently, it is strongly recommended that you use the 
-[ulimit -v SIZE_IN_KB](https://ss64.com/bash/ulimit.html)
-command to prevent this**, especially if you are on a shared computer.
-(If my understanding is correct, running "ulimit -v 14000000" beforehand
-should prevent voxelize_mesh.py from consuming more than 14Gb of RAM.)
-
 
 ## Requirements
 
@@ -51,17 +35,54 @@ pip install pyvista
 pip install mrcfile
 ```
 
+# WARNING: Extremely memory inneficient. Use *ulimit*
+This program was cobelled together using 3rd-party open-source tools:
+(pyvista, vtk) which are extremely slow and memory inneficient for this task.
+Currently, this program requires 160 bytes of RAM *per voxel*,
+This means you may need RAM which is up to 160 times larger
+than the size of the tomogram file you are segmenting.
+A typical tomogram (1000x1000x600 voxels) would require 90Gb of RAM
+to voxelize.
+*(Unfortunately, this is beyond my control,
+unless I rewrite the voxelizer from scratch.)*
+For this reason, this program is barely useable on a typical desktop computer.
+
+Machines with enough RAM can be rented from cloud vendors like
+[Amazon](https://aws.amazon.com/ec2/instance-types/#Memory_Optimized)
+[Google](https://cloud.google.com/compute/docs/machine-types), and
+[Microsoft](https://docs.microsoft.com/en-us/azure/virtual-machines/sizes-memory).
+
+If you exceed the memory available on a rented computer,
+the virtual machine instance can be terminated safely.
+But exceeding the memory on your computer can make it unresponsive.
+**Consequently, if you are running this program on your own desktop
+or a shared cluster, it is strongly recommended that you use the 
+[ulimit -v SIZE_IN_KB](https://ss64.com/bash/ulimit.html)
+command to prevent this**
+(If my understanding is correct, running "ulimit -v 14000000" beforehand
+should prevent voxelize_mesh.py from consuming more than 14Gb of RAM.)
+
+## WARNING: Slow
+A dense mesh can take a couple hours to voxelize on a full-size tomogram.
+*(Again, this is beyond my control.)*
+However automatically generated meshes (using *filter_mrc* and *PoissonRecon*,
+for example) can be extremely dense, containing multiple triangles per voxel.
+You can smooth, and simplify ("resample") the mesh using 3rd-party tools
+like *meshlab*. (This can be done using the *"Filters"->"Remeshing, Simplification, and Reconstruction"->"Quadratic Edge Collapse Decimation"* menu option, and reducing the number of faces.)  Later on, when you run *voxelize_mesh.py*, this reduction significantly speed up the calculation (although it is still slow).
+
+
 ## Usage
 
 Typical usage:
 ```
-voxelize_mesh.py -m mesh.py -i orig_image.rec -o segmented_image.rec -w 19.6
+voxelize_mesh.py -m mesh.ply -i orig_image.rec -o segmented_image.rec -w 19.6
 ```
 If you are running out of memory,
 you can use the "-c" argument to reduce the image size:
 ```
-voxelize_mesh.py -m mesh.py -o segmented_image.rec -w 19.6 -c 330 430 80 140 50 100
+voxelize_mesh.py -m mesh.ply -o segmented_image.rec -w 19.6 -c 330 430 80 140 50 100
 ```
+
 
 ## Details
 1) You must provide the name of a file containing a closed
@@ -69,7 +90,7 @@ mesh (typically in .ply format) using the
 **-m** argument.
 2) You must provide the name of the volumetric image file (in MRC/REC format)
 that you wish to create using the **-o** argument.
-3) You must also provide a 3D image file which is the same size as the
+3) You can provide a 3D image file which is the same size as the
 image you want to create using the **-i** argument.
 (If you used *filter_mrc* to create the mesh, then you would
 provide the same image from which the mesh was detected.)
@@ -101,12 +122,12 @@ which is the same size as the image you want to create.
 Specify the name of the 3D image file (MRC or REC format)
 that you wish to create.
 
-### -c ix_min ix_max iy_min iy_max iz_min iz_max
+### -c ix<sub>min</sub> ix<sub>max</sub> iy<sub>min</sub> iy<sub>max</sub> iz<sub>min</sub> iz<sub>max</sub>
 This will crop the voxelized image to the size indicated by the 6 integer
 arguments.  (If you specify this argument, you do not need to use the
 **-i** or **-bounds** arguments.)
 
-### -b x_min x_max y_min y_max z_min z_max
+### -b x<sub>min</sub> x<sub>max</sub> y<sub>min</sub> y<sub>max</sub> z<sub>min</sub> z<sub>max</sub>
 This will crop the voxelized image to the size indicated by the 6 floating
 point arguments.  These are in units of physical distance, not voxels. (If you
 specify this argument, you do not need to use the **-i** or **-c** arguments.)

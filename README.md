@@ -249,9 +249,10 @@ If this doesn't work and you are desperate, you can try this instead:
 
 ## Requirements:
 
-**8GB** of RAM or higher is required.
-(For membrane detection,
+**16GB** of RAM or higher is required.
+(64GB is recommended.  For membrane detection,
  your RAM must exceed 11x the size of the tomogram that you are analyzing.
+ The *voxelize_mesh.py* program requires even more memory.
  You can reduce the memory needed and computation time dramatically
  by cropping your tomogram.)
 
