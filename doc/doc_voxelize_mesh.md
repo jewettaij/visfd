@@ -62,13 +62,16 @@ command to prevent this**
 (If my understanding is correct, running "ulimit -v 14000000" beforehand
 should prevent voxelize_mesh.py from consuming more than 14Gb of RAM.)
 
-## WARNING: Slow
+## To reduce computation time, reduce the number of vertices
+
 A dense mesh can take a couple hours to voxelize on a full-size tomogram.
-*(Again, this is beyond my control.)*
 However automatically generated meshes (using *filter_mrc* and *PoissonRecon*,
 for example) can be extremely dense, containing multiple triangles per voxel.
 You can smooth, and simplify ("resample") the mesh using 3rd-party tools
-like *meshlab*. (This can be done using the *"Filters"->"Remeshing, Simplification, and Reconstruction"->"Quadratic Edge Collapse Decimation"* menu option, and reducing the number of faces.)  Later on, when you run *voxelize_mesh.py*, this reduction significantly speed up the calculation (although it is still slow).
+like *meshlab*. (This can be done using the *"Filters"->"Remeshing, Simplification, and Reconstruction"->"Quadratic Edge Collapse Decimation"* menu option,
+and reducing the number of faces.)  Later on, when you run *voxelize_mesh.py*,
+this reduction will significantly speed up the calculation (although it is
+still slow).
 
 
 ## Usage
