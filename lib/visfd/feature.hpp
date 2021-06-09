@@ -2281,11 +2281,13 @@ public:
             for (Integer ix=0; ix<image_size[0]; ix++) {
               if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
                 continue;
-              assert(aaafDenominator[iz][iy][ix] > 0.0);
-              for (int di = 0; di < 3; di++) {
-                for (int dj = di; dj < 3; dj++) {
-                  aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
-                    /= aaafDenominator[iz][iy][ix];
+              if (aaafDenominator[iz][iy][ix] > 0.0) {
+                assert(aaaafDest[iz][iy][ix]);
+                for (int di = 0; di < 3; di++) {
+                  for (int dj = di; dj < 3; dj++) {
+                    aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
+                      /= aaafDenominator[iz][iy][ix];
+                  }
                 }
               }
             }
@@ -2414,7 +2416,6 @@ private:
     assert(aaaafV);
     assert(aaaafDest);
 
-
     //optional: count the number of voxels which can
     //          cast votes (useful for benchmarking)
     if (pReportProgress) {
@@ -2444,9 +2445,10 @@ private:
     for (Integer iz=0; iz<image_size[2]; iz++)
       for (Integer iy=0; iy<image_size[1]; iy++)
         for (Integer ix=0; ix<image_size[0]; ix++)
-          for (int di=0; di<3; di++)
-            for (int dj=0; dj<3; dj++)
-              aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ] = 0.0;
+          if (aaaafDest[iz][iy][ix])
+            for (int di=0; di<3; di++)
+              for (int dj=0; dj<3; dj++)
+                aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ] = 0.0;
 
     if (aaafDenominator) {
       // aaafDenominator[][][] keeps track of how much of the sum of
@@ -2583,6 +2585,7 @@ private:
 
           if ((aaafMaskDest) && (aaafMaskDest[iz_jz][iy_jy][ix_jx] == 0.0))
             continue;
+          assert(aaaafDest[iz_jz][iy_jy][ix_jx]);
 
           // The function describing how the vote-strength falls off with
           // distance has been precomputed and is stored in

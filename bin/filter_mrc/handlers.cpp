@@ -1341,7 +1341,7 @@ HandleRidgeDetector(Settings settings,
 
         // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
         #ifndef NDEBUG
-        if ((ix==image_size[0]/2) && //if ((ix==78) &&
+        if ((ix == image_size[0] / 2) &&
             (iy == image_size[1] / 2) &&
             (iz == image_size[2] / 2))
         {
@@ -1474,17 +1474,19 @@ HandleRidgeDetector(Settings settings,
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
-          float diagonalized_hessian[6];
-          DiagonalizeFlatSym3(tmp_tensor.aaaafI[iz][iy][ix],
-                              diagonalized_hessian,
-                              eival_order);
-          float score = ScoreTensorPlanar(diagonalized_hessian);
-          float peak_height = 1.0;
-          if (tomo_background.aaafI)
-            peak_height = (tomo_in.aaafI[iz][iy][ix] -
+          if (tmp_tensor.aaaafI[iz][iy][ix]) {
+            float diagonalized_hessian[6];
+            DiagonalizeFlatSym3(tmp_tensor.aaaafI[iz][iy][ix],
+                                diagonalized_hessian,
+                                eival_order);
+            float score = ScoreTensorPlanar(diagonalized_hessian);
+            float peak_height = 1.0;
+            if (tomo_background.aaafI)
+              peak_height = (tomo_in.aaafI[iz][iy][ix] -
                            tomo_background.aaafI[iz][iy][ix]);
-          score *= peak_height;
-          tomo_out.aaafI[iz][iy][ix] = score;
+            score *= peak_height;
+            tomo_out.aaafI[iz][iy][ix] = score;
+          }
         }
       }
     }
@@ -1502,14 +1504,16 @@ HandleRidgeDetector(Settings settings,
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
-          float eivals[3];
-          float eivects[3][3];
-          ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
-                                 eivals,
-                                 eivects,
-                                 eival_order);
-          for (int d=0; d<3; d++)
-            aaaafDirection[iz][iy][ix][d] = eivects[0][d];
+          if (tmp_tensor.aaaafI[iz][iy][ix]) {
+            float eivals[3];
+            float eivects[3][3];
+            ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
+                                   eivals,
+                                   eivects,
+                                   eival_order);
+            for (int d=0; d<3; d++)
+              aaaafDirection[iz][iy][ix][d] = eivects[0][d];
+          }
         }
       }
     }
