@@ -81,7 +81,7 @@ class Settings {
   bool use_mask_select; // do we select voxels with a specific value?
   int mask_select; // select only voxels from the input with this value
   bool use_mask_out; // should we specify the brightness of ignored voxels?
-  int mask_out;//what brightness do we set these voxels?(to go in out_file_name)
+  float mask_out;//what brightness do we set these voxels?(to go in out_file_name)
   bool is_mask_rectangle_in_voxels; // Is the mask-region a rectangular box?
   float mask_rectangle_xmin; // if so, what is the shape of that box?
   float mask_rectangle_xmax; // :
@@ -300,6 +300,8 @@ class Settings {
   float sphere_decals_background_scale; //multiply background voxel intensities
   bool sphere_decals_foreground_use_score; //color each sphere by its "score"?
                                        //This overrides sphere_decals_foreground
+  bool sphere_decals_background_norm;  //Automatically change shift and rescale
+                                       //brightness of the background voxels?
   bool sphere_decals_foreground_norm;  //Divide foreground intensity by the
                                        //number of voxels in each sphere
   float sphere_decals_shell_thickness;

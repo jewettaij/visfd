@@ -42,14 +42,15 @@ void
 DrawSpheres(int const image_size[3], //!< image size
             Scalar ***aaafDest,  //!< array where we should write new image
             Scalar const *const *const *aaafMask,   //!< Optional: ignore voxels where mask==0
-            const vector<array<Scalar,3> > &centers, //!< coordinates for the center of each sphere (blob)
-            const vector<Scalar> *pDiameters=nullptr,         //!< Optional: diameter of each spherical shell (in voxels)
-            const vector<Scalar> *pShellThicknesses=nullptr, //!< Optional: thickness of each spherical shell (in voxels)
-            const vector<Scalar> *pVoxelIntensitiesForeground=nullptr, //!< Optional: assign voxels in spherical shell to this value (the vector should contain a separate entry for every sphere)
-            Scalar voxel_intensity_background = 0.0, //!< Optional: assign background voxels to this value
-            Scalar const *const *const *aaafBackground = nullptr,   //!< Optional: superimpose background image?
-            Scalar voxel_intensity_background_rescale = 0.2, //!< Optional: superimpose with old image? This is the ratio of the fluctuations in voxel intensities of the newly created background image relative to the average foreground voxel intensity.
-            bool voxel_intensity_foreground_normalize = false, //!< Optional: divide brightnesses by number of voxels in spherical shell? (rarely useful)
+            const vector<array<Scalar,3> > &centers, //!< Coordinates for the center of each sphere (blob)
+            const vector<Scalar> *pDiameters=nullptr,        //!< Optional: Diameter of each spherical shell (in voxels)
+            const vector<Scalar> *pShellThicknesses=nullptr, //!< Optional: Thickness of each spherical shell (in voxels)
+            const vector<Scalar> *pVoxelIntensitiesForeground=nullptr, //!< Optional: Assign voxels in spherical shell to this brightness (the vector should contain a separate entry for every sphere).
+            Scalar const *const *const *aaafBackground = nullptr, //!< Optional: Specify the background voxels?
+            Scalar voxel_intensity_background_offset = 0.0, //!< Optional: Add this number to the brightness of the background voxels, if specified.  (Otherwise set them to this number.)
+            Scalar voxel_intensity_background_rescale = 1.0, //!< Optional: Multiply the background voxel brightnesses (if specified) by this number.
+            bool voxel_intensity_background_normalize = false, //!< Optional: Shift and rescale background brightness automatically?
+            bool voxel_intensity_foreground_normalize = false, //!< Optional: divide brightnesses by number of voxels in sphere (shell)? (rarely useful)
             ostream *pReportProgress = nullptr //!<Optional: report progress to the user?
             )
 {
@@ -102,42 +103,62 @@ DrawSpheres(int const image_size[3], //!< image size
                                     aaafMask);
   }
   double score_ave = 0.0;
-  for (int i = 0; i < (*pVoxelIntensitiesForeground).size(); i++)
-    score_ave += (*pVoxelIntensitiesForeground)[i];
-  if ((*pVoxelIntensitiesForeground).size() > 0)
-    score_ave /= (*pVoxelIntensitiesForeground).size();
   double score_rms = 0.0;
-  for (int i = 0; i < (*pVoxelIntensitiesForeground).size(); i++)
-    score_rms += SQR((*pVoxelIntensitiesForeground)[i]);
-  if ((*pVoxelIntensitiesForeground).size() > 0)
-    score_rms = sqrt(score_rms / (*pVoxelIntensitiesForeground).size());
-  double voxel_intensity_foreground_rms = score_rms;
-
-  // The spherical shells will have brightnesses chosen according to their
-  // scores. Rescale the tomogram intensities so that they are approximately
-  // in the range of scores.  This way we can see both at the same time
-  // (when viewing the tomogram using IMOD, for example)
+  double voxel_intensity_foreground_rms = 1.0;
+  if (voxel_intensity_background_normalize) {
+    for (int i = 0; i < (*pVoxelIntensitiesForeground).size(); i++)
+      score_ave += (*pVoxelIntensitiesForeground)[i];
+    if ((*pVoxelIntensitiesForeground).size() > 0)
+      score_ave /= (*pVoxelIntensitiesForeground).size();
+    for (int i = 0; i < (*pVoxelIntensitiesForeground).size(); i++)
+      score_rms += SQR((*pVoxelIntensitiesForeground)[i]);
+    if ((*pVoxelIntensitiesForeground).size() > 0)
+      score_rms = sqrt(score_rms / (*pVoxelIntensitiesForeground).size());
+    voxel_intensity_foreground_rms = score_rms;
+  }
+  // The spheres (or spherical shells) will have brightnesses chosen according
+  // to their "scores".
+  // Now determine the brightness of the background voxels.
   for (int iz = 0; iz < image_size[2]; iz++) {
     for (int iy = 0; iy < image_size[1]; iy++) {
       for (int ix = 0; ix < image_size[0]; ix++) {
-        if (background_stddev > 0.0)
+        if (! voxel_intensity_background_normalize) {
+          // The the background voxel brightnesses are a rescaled version of
+          // the original image (and the scaling factor is 1 by default).
           aaafDest[iz][iy][ix] =
-            ((aaafBackground[iz][iy][ix] - background_ave) / background_stddev)
-            *
-            voxel_intensity_foreground_rms
-            *
-            voxel_intensity_background_rescale;
-        else
-          aaafDest[iz][iy][ix] = 0.0;
+            aaafBackground[iz][iy][ix] * voxel_intensity_background_rescale;
+        }
+        else {
+          // Then we want to automatically shift and rescale the brightess of
+          // the background voxels so that the features of that image remain
+          // easy to see even when (very bright?) spheres are superimposed
+          // upon them.  (Why? If the spheres are many times brighter
+          // or darker than the voxels in the original image, the it will
+          // probably be impossible to see differenes in the brightnesses
+          // of the spheres or features in the background image when viewed
+          // together, because many of the voxels will appear as either
+          // all black or all white when displayed on a screen.)
+          if (background_stddev > 0.0)
+            aaafDest[iz][iy][ix] =
+              ((aaafBackground[iz][iy][ix]-background_ave) / background_stddev)
+              *
+              voxel_intensity_foreground_rms
+              *
+              voxel_intensity_background_rescale;
+          else
+            aaafDest[iz][iy][ix] = 0.0;
+        }
       }
     }
   }
 
-
+  // Now add the voxel_intensity_background brightness offset.
   for (int iz=0; iz<image_size[2]; iz++)
     for (int iy=0; iy<image_size[1]; iy++)
       for (int ix=0; ix<image_size[0]; ix++)
-        aaafDest[iz][iy][ix] += voxel_intensity_background;
+        aaafDest[iz][iy][ix] += voxel_intensity_background_offset;
+  // (Again, all we have done so far only effects the background voxels,
+  //  since we are about to overwrite the foreground voxels.)
 
 
   bool warn_points_outside_image = false;

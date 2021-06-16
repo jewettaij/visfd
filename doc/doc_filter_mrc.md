@@ -1595,38 +1595,125 @@ centered around *x0* with standard deviation σ.
 
 ## Annotation of detected objects in an image
 
-## -draw-spheres filename
-## -draw-hollow-spheres filename
+### (-draw-spheres filename)
+### (-draw-hollow-spheres filename)
 
 
 The "**-draw-spheres**" argument does not perform a filtering operation
 on the original image.
-Instead it reads a text file containing between 3 and 5 columns (eg "filename")
+Instead it reads a text file (eg "filename") containing between 3 and 5 columns
 indicating the location, size, and brightness of a series of points in space.
 After reading that file, a new image will be created
 (the same size as the input image)
 with each blob represented (by default) by a solid sphere centered
-at the points of interest.
-(The "**-draw-hollow-spheres**" argument behaves similarly,
- however it draws hollow spherical shells instead of solid spheres,
- and it superimposes them upon the original image.)
+at the points of interest superimposed on the original image (by default).
+The "**-draw-hollow-spheres**" argument behaves similarly,
+however it draws hollow spherical shells instead of solid spheres,
+and it superimposes them upon the original image.
 
-Each line in the file corresponds to a different sphere.
+
+#### -draw-spheres file format
+
+```
+# Column meaning:
+#  X    Y    Z    diameter brightess
+
+56.45 55.74 32.01 15.62483 2.658
+87.88 75.21 42.53 63.91314 7.172
+66.11 59.92 32.38 13.05745 7.172
+:
+```
+
+Each line in the file contains information describing a different sphere.
 The first three numbers on each line are assumed to store the x,y, and z
 coordinates of the center of that sphere.
-If the file contains only 3 columns, the "spheres" will be only 1-voxel wide
-by default.
-If the file contains a 4th column, then it is assumed to store the diameter of
-the sphere (in physical units, not voxels).
-(Either way, the sphere size can be overridden using
- the "**-diameters d**" or "**-radii r** arguments.)
+*(Unless the "-w 1" argument is used, the coordinates and diameters
+are assumed to be in physical units (eg. Angstroms), not voxels.)*
+If the file contains a 4th column, then it is assumed to
+store the diameter of each sphere.
+(Otherwise the "spheres" will be only 1 voxel wide by default.)
+Alternatively, the size of *all* of the spheres can be specified using
+the the "**-diameters d**" or "**-radii r** arguments
 If the file contains a 5th column, it is assumed to represent the brightness
-of that sphere.
-(This can be overridden using the "**-foreground brightness**" argument.)
-Incidentally, the format of this file matches the format of the text file
-generated during blob detection (using the "**-blob**" argument).
+of that sphere.  (Otherwise, the sphere brightness is 1 by default, unless
+it is overridden using the "**-foreground brightness**" argument.)
 
-The thickness of the shell can be controlled using the
+*Incidentally, the format of this file matches the format of the text file
+generated during blob detection (using the "-blob" argument).
+(If used this way, then blobs with good scores typically appear as black
+or white spheres, and grey spheres correspond to blobs with poor scores.
+If you are using IMOD, the score of a given blob can be queried by
+clicking on one of the voxels somewhere on the sphere or spherical shell marker
+for that blob and selecting the "Edit"->"Point"->"Value" menu option,
+or by pressing the "F" key.  The brightness of voxel at that location
+will be printed to the IMOD control window. That brightness is the score
+of the corresponding blob.)*
+
+
+#### Background voxels
+
+Again, by default, the background voxels will be the same as the voxels
+in the in the original image.  (This can be overridden.  See below.)
+However, depending on the brightness of the spheres,
+this often results in an image where the background
+voxels are either much brighter or much darker than the spheres
+(and thus appearing all white or all black when displayed on the screen).
+Instead their brightness can be shifted and rescaled
+so that the background image remains easy to see in the presence
+of the spheres.  This can be done by using the "**-background-scale ratio**"
+(and optional "**-background brightness**") arguments.
+The background voxel brightnesses will be multiplied by the **ratio** parameter
+and added to the the **brightness** parameter (if specified).
+(These parameters are 1 and 0 by default, respectively.)
+If you want all of the background voxels to have the *same*
+brightness use the "**-background brightness**" and
+"**-background-scale 0**" arguments.
+
+Choosing the correct *ratio* and *brightness* offsets can be difficult.
+If you use the "**-background-auto**" argument, then the brightness of
+background voxels will be automatically shifted and rescaled in an attempt to
+make them optimally visible when superimposed against the foreground voxels.
+The user can influence how this is done by (optionally) specifying the
+"**-background-scale ratio**" and "**-background brightness**" arguments.
+When "**-background-auto**" is in use, the *ratio* parameter is
+interpreted differently.  In this case, the *ratio* parameter
+controls the *contrast* of the background image
+*relative to the average brightness of the spheres*.
+This *ratio* parameter is typically between 0 and 1.
+
+Regardless of whether "**-background-auto**" is used,
+whenever the *ratio* parameter is larger, it is easier
+to see the background image and harder to see the spheres.
+When it is 0, the original image is not visible and
+all of the background voxels are set to the **-background brightness**
+parameter value (which is also 0 by default).
+
+#### Examples:
+
+- **Example 1:**
+Use "**-draw-spheres filename**" to read a file containing a list of spheres
+and draw then directly on top of the original image (without adjusting the
+brightness of the voxels from that image).
+
+- **Example 2:** In order to set the brightness of the sphere voxels to 
+1.5, and the background voxel brightnesses to 0.5, add these arguments:
+"**-foreground 1.5**", "**-background 0.5**", and "**-background-scale 0**".
+(The "**-foreground 1.5**" argument is not necessary if the file contains
+a fifth column.)
+
+- **Example 3:** To *automatically* adjust the contrast and brightness
+of the background voxels to make them visible in the presence of the spheres,
+use the "**-background-auto**" argument.  If the results are still not visually
+appealing, try using the "**-background-scale ratio**" argument, and vary
+the *ratio* parameter between 0 and 1 until the image looks reasonable.
+(Typical values of the *ratio* parameter are between 0.1 and 0.3.)
+
+
+
+#### Thin hollow spheres
+
+If "**-draw-hollow-spheres**" is used, then hollow spheres are drawn instead.
+The thickness of each hollow spherical shell can be controlled using the
 "**-sphere-shell-thickness thickness**" or
 "**-sphere-shell-ratio ratio**" arguments. 
 In the first example, the *thickness* of the sphere is the same for all spheres,
@@ -1645,29 +1732,15 @@ equal to 1/10th the radius of the sphere.
  using the "**-sphere-shell-thickness-min thickness**" argument.  In this case,
  the *thickness* argument should be in voxels, not in physical distance units.)
 
-By default, these spherical shells will be superimposed upon the
-original image (whose voxel's brightness will be shifted and scaled
-so that the voxels remain easy to see in the presence of the spherical shells).
-The average *brightness* and *contrast* of these background voxels
-is controlled by the "**-background brightness**", and the
-"**-background-scale ratio**" arguments, respectively.
-(Using "**-background-scale 0**" makes this background image invisible.
- The default scale *ratio* is 0.1666667.)
-
-When displayed in IMOD,
-blobs with good scores typically appear as black or white spheres,
-and grey spheres correspond to blobs with poor scores.
-The score of a given blob
-can be queried in IMOD by clicking on a voxel somewhere on the spherical shell
-and selecting the "Edit"->"Point"->"Value" menu option.)
-
 
 
 
 ## -discard-blobs
+
 ```
    -discard-blobs  orig_blobs.txt  selected_blobs.txt
 ```
+
 When *filter_mrc* is run using the "**-discard-blobs**" argument,
 no image processing is done on the source image.
 Instead, *filter_mrc* will read the list of blobs reported in a file

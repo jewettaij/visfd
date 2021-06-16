@@ -1088,6 +1088,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          continue;
         if (aaaiDest[iz][iy][ix] == UNDEFINED)
           continue;
         ptrdiff_t cluster_id = aaaiDest[iz][iy][ix];

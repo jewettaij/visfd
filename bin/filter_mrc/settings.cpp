@@ -94,9 +94,10 @@ Settings::Settings() {
   sphere_decals_diameter = -1.0;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
-  sphere_decals_background_scale = 0.0; //default dimming of original image to emphasize spheres
+  sphere_decals_background_scale = 1.0;
   sphere_decals_foreground_use_score = true;
   //sphere_decals_background_use_orig = true;
+  sphere_decals_background_norm = false;
   sphere_decals_foreground_norm = false;
   sphere_decals_scale = 1.0;
   //sphere_decals_shell_thickness = -1.0;
@@ -380,7 +381,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-mask-out")
     {
       try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         use_mask_out = true;
         mask_out = stof(vArgs[i+1]);
@@ -1963,6 +1964,11 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+    else if (vArgs[i] == "-background-auto") {
+      sphere_decals_background_norm = true;
+      sphere_decals_background_scale = 0.2;
+      num_arguments_deleted = 1;
+    }
 
     else if ((vArgs[i] == "-spheres-normalize") ||
              (vArgs[i] == "-sphere-normalize")) {

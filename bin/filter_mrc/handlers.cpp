@@ -516,9 +516,10 @@ HandleDrawSpheres(Settings settings,
               &diameters,
               &shell_thicknesses,
               &scores,
-              settings.sphere_decals_background,
               tomo_in.aaafI,
+              settings.sphere_decals_background,
               settings.sphere_decals_background_scale,
+              settings.sphere_decals_background_norm,
               settings.sphere_decals_foreground_norm);
 
 } //HandleDrawSpheres()
@@ -722,10 +723,12 @@ HandleBlobDetector(Settings settings,
                 &display_diameters,
                 &display_shell_thicknesses,
                 &display_scores,
-                settings.sphere_decals_background,
                 tomo_in.aaafI,
+                settings.sphere_decals_background,
                 settings.sphere_decals_background_scale,
+                settings.sphere_decals_background_norm,
                 false);
+
 
   } //if (tomo_out.aaafI)
 

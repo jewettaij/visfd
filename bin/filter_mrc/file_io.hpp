@@ -254,7 +254,8 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
                    Scalar distance_scale=1.0, //!< divide all distances and coordinates by this value
                    Scalar diameter_override=-1.0, //!< use this diameter (useful if no 4th column is present)
                    Scalar score_default=0.0, //!< default "score" (if no 5th column is present)
-                   Scalar diameter_factor=1.0 //!< multiply all diameters in the file by this number
+                   Scalar diameter_factor=1.0, //!< multiply all diameters in the file by this number
+                   char comment_char='#' //!<ignore text following this character ('\0' disables)
                    )
 {
   fstream coords_file;
@@ -265,10 +266,27 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
 
   bool custom_diameters = false;
   while (coords_file) {
+
     string strLine;
     getline(coords_file, strLine);
+
+    // ignore text after comments
+    size_t ic = strLine.find(comment_char);
+    if (ic != string::npos)
+      strLine = strLine.substr(0, ic);
     if (strLine.size() == 0)
       continue;
+    // discard lines that only contain whitespace
+    bool allspaces = true;
+    for (int ic = 0; ic < strLine.size(); ic++) {
+      if (! std::isspace(strLine[ic])) {
+        allspaces = false;
+        break;
+      }
+    }
+    if (allspaces)
+      continue;
+
     stringstream ssLine(strLine);
     double x, y, z;
     ssLine >> x;
