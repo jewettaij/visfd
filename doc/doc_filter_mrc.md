@@ -1633,16 +1633,16 @@ If the file contains a 4th column, then it is assumed to
 store the diameter of each sphere.
 (Otherwise the "spheres" will be only 1 voxel wide by default.)
 Alternatively, the size of *all* of the spheres can be specified using
-the the "**-diameters d**" or "**-radii r** arguments
+the the "**-diameters d**" or "**-radii r**" arguments.
 If the file contains a 5th column, it is assumed to represent the brightness
 of that sphere.  (Otherwise, the sphere brightness is 1 by default, unless
 it is overridden using the "**-foreground brightness**" argument.)
 
 *Incidentally, the format of this file matches the format of the text file
 generated during blob detection (using the "-blob" argument).
-(If used this way, then blobs with good scores typically appear as black
+If used this way, then blobs with good scores typically appear as black
 or white spheres, and grey spheres correspond to blobs with poor scores.
-If you are using IMOD, the score of a given blob can be queried by
+(If you are using IMOD, the score of a given blob can be queried by
 clicking on one of the voxels somewhere on the sphere or spherical shell marker
 for that blob and selecting the "Edit"->"Point"->"Value" menu option,
 or by pressing the "F" key.  The brightness of voxel at that location

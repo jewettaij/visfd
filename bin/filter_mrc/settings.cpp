@@ -1772,9 +1772,6 @@ Settings::ParseArgs(vector<string>& vArgs)
           sphere_decals_shell_thickness_is_ratio = true;
           sphere_decals_shell_thickness_min = 1.0;
         }
-        if (! user_set_background_scale_manually) {
-          sphere_decals_background_scale = 0.1666667; //default dimming of original image to emphasize the spheres
-        }
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] + 
@@ -1966,7 +1963,9 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-background-auto") {
       sphere_decals_background_norm = true;
-      sphere_decals_background_scale = 0.2;
+      if (! user_set_background_scale_manually) {
+        sphere_decals_background_scale = 0.2;
+      }
       num_arguments_deleted = 1;
     }
 
