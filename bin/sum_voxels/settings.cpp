@@ -66,6 +66,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     if ((vArgs[i] == "-volume") ||
+        (vArgs[i] == "-vol") ||
         (vArgs[i] == "-integral") ||
         (vArgs[i] == "-integrate")) {
       multiply_by_voxel_volume = true;

@@ -1365,7 +1365,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-norescale")
 
 
-    else if (vArgs[i] == "-invert")
+    else if ((vArgs[i] == "-invert") ||
+             (vArgs[i] == "-inv"))
     {
       invert_output = true;
       num_arguments_deleted = 1;

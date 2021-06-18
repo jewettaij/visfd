@@ -11,8 +11,8 @@ g_filename = __file__.split('/')[-1]
 g_module_name = g_filename
 if g_filename.rfind('.py') != -1:
     g_module_name = g_filename[:g_filename.rfind('.py')]
-g_date_str = '2020-12-13'
-g_version_str = '0.0.1'
+g_date_str = '2021-6-17'
+g_version_str = '0.0.2'
 g_program_name = g_filename
 #sys.stderr.write(g_program_name+' v'+g_version_str+' '+g_date_str+' ')
 
@@ -118,9 +118,15 @@ def main():
                              args.fname_mesh+'" for reading.\n')
 
         # Determine the voxel width
+        voxel_width_from_file = False
         voxel_width = args.voxel_width
         if voxel_width == 0.0:
             raise InputError('Error: voxel width cannot be non-zero\n')
+
+        # Determine the origin of the coordinate system
+        origin_from_file = False
+        #origin = args.origin  COMMENTING OUT. WE CAN ADD THIS FEATURE LATER.
+        origin = None
 
         # Determine how big the image is
         bounds = args.bounds
@@ -134,7 +140,14 @@ def main():
         if args.fname_mrc_orig:
             try:
                 with mrcfile.open(args.fname_mrc_orig, 'r') as mrcdata:
+                    mrc_header_cella = mrcdata.header.cella
+                    mrc_header_cellb = mrcdata.header.cellb
+                    mrc_header_origin = mrcdata.header.origin
+                    #mrc_ext_header = mrcdata.extended_header
+                    if origin == None:
+                        origin_from_file = True
                     if voxel_width == None:
+                        voxel_width_from_file = True
                         # mrcdata.voxel_size contains the width of the voxel
                         # (Sometimes it is a numpy array with 3 elements.)
                         if hasattr(mrcdata.voxel_size, 'x'):
@@ -152,6 +165,18 @@ def main():
                     bounds = (0.0, mrcdata.header.nx*voxel_width,
                               0.0, mrcdata.header.ny*voxel_width,
                               0.0, mrcdata.header.nz*voxel_width)
+                    # Should we consider non-zero origin?  In the future,
+                    # if the origin is not at 0,0,0, perhaps we should use this:
+                    # I'll worry about this later. -Andrew 2021-6-17
+                    #bounds = (mrcdata.header.origin.x,
+                    #          (mrcdata.header.origin.x +
+                    #           mrcdata.header.nx*voxel_width),
+                    #          mrcdata.header.origin.y,
+                    #          (mrcdata.header.origin.y +
+                    #           mrcdata.header.ny*voxel_width),
+                    #          mrcdata.header.origin.z,
+                    #          (mrcdata.header.origin.z +
+                    #           mrcdata.header.nz*voxel_width))
                     mrcdata.close()
             except IOError:
                 raise InputError('Error: Unable to open file "'+
@@ -186,7 +211,17 @@ def main():
 
         # Now save the resulting numpy array as an MRC file
         mrcdata = mrcfile.new(args.fname_out, overwrite=True)
-        mrcdata.voxel_size = voxel_width
+        #mrcdata.voxel_size = voxel_width
+        if voxel_width_from_file:
+            mrcdata.header.cella = mrc_header_cella
+            mrcdata.header.cellb = mrc_header_cellb
+            #mrcdata.set_extended_header(mrc_ext_header)
+        else:
+            mrcdata.header.cella.x = voxel_width * voxels.shape[2]
+            mrcdata.header.cella.y = voxel_width * voxels.shape[1]
+            mrcdata.header.cella.z = voxel_width * voxels.shape[0]
+        if origin_from_file:
+            mrcdata.header.origin = mrc_header_origin
         mrcdata.set_data(voxels)
         mrcdata.close()
 

@@ -474,34 +474,34 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
       // -----------------------------------------------
 
       Scalar s_eivals[3];
-      Scalar s_eivects[3][3];
+      Scalar s_eivecs[3][3];
 
       // the eigenvector of the saliency_hessian that we care about is the
       // one with the largest eigenvalue (which is assumed to be positive).
 
       ConvertFlatSym2Evects3(saliency_hessian,
                              s_eivals,
-                             s_eivects,
+                             s_eivecs,
                              eival_order);
 
       if (aaaafVector) {
         bool vect_threshold_exceeded = false;
 
         if (consider_dot_product_sign) {
-          if (DotProduct3(s_eivects[0], //principal (first) eivenvector
+          if (DotProduct3(s_eivecs[0], //principal (first) eigenvector
                           aaaafVector[iz][iy][ix])
               <
               (threshold_vector_saliency *
-               Length3(s_eivects[0]) *
+               Length3(s_eivecs[0]) *
                Length3(aaaafVector[iz][iy][ix])))
             vect_threshold_exceeded = true;
         }
         else {
-          if (SQR(DotProduct3(s_eivects[0], //principal (first) eivenvector
+          if (SQR(DotProduct3(s_eivecs[0], //principal (first) eigenvector
                               aaaafVector[iz][iy][ix]))
               <
               (SQR(threshold_vector_saliency) *
-               SquaredNorm3(s_eivects[0]) *
+               SquaredNorm3(s_eivecs[0]) *
                SquaredNorm3(aaaafVector[iz][iy][ix])))
             vect_threshold_exceeded = true;
         }
