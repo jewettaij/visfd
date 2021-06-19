@@ -95,7 +95,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         voxel_width = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by voxel width.\n");
       }
       num_arguments_deleted = 2;
@@ -112,7 +112,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-mask")
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       mask_file_name = vArgs[i+1];
       num_arguments_deleted = 2;
@@ -128,7 +128,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_select = stoi(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by an integer.\n");
       }
       num_arguments_deleted = 2;
@@ -162,7 +162,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_thresh2_use_clipping = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -181,7 +181,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_threshold_10_b = stof(vArgs[i+4]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 4 numbers.\n");
       }
       num_arguments_deleted = 5;
@@ -199,7 +199,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_threshold_10_b = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 4 numbers.\n");
       }
       num_arguments_deleted = 3;

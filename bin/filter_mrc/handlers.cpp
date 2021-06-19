@@ -1233,8 +1233,8 @@ HandleRidgeDetector(Settings settings,
   // is only allocated (non-null) for voxels which were selected by the user
   // (ie voxels for which the mask is non-zero).  This can reduce memory usage
   // by a factor of up to 3 (assuming floats) for this array.
-  CompactMultiChannelImage3D<float> tmp_tensor(6);
-  tmp_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  CompactMultiChannelImage3D<float> vote_tensor(6);
+  vote_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
 
 
   // How did the user specify how wide to make the filter window?
@@ -1289,7 +1289,7 @@ HandleRidgeDetector(Settings settings,
   CalcHessian(tomo_in.header.nvoxels,
               tomo_in.aaafI,
               aaaafGradient,
-              tmp_tensor.aaaafI,
+              vote_tensor.aaaafI,
               mask.aaafI,
               sigma,
               settings.filter_truncate_ratio,
@@ -1303,7 +1303,7 @@ HandleRidgeDetector(Settings settings,
   //  for(int iy=0; iy < image_size[1]; iy++)
   //    for(int ix=0; ix < image_size[0]; ix++)
   //      tomo_out.aaafI[iz][iy][ix] =
-  //        FrobeniusNormSqdSym3(tmp_tensor.aaaafI[iz][iy][ix]);
+  //        FrobeniusNormSqdSym3(vote_tensor.aaaafI[iz][iy][ix]);
   //return;
   // DELETE THIS DEBUGGING CRUFT
 
@@ -1329,13 +1329,13 @@ HandleRidgeDetector(Settings settings,
     for(int iy=0; iy < image_size[1]; iy++) {
       for(int ix=0; ix < image_size[0]; ix++) {
 
-        if (! tmp_tensor.aaaafI[iz][iy][ix]) //ignore voxels that are either
+        if (! vote_tensor.aaaafI[iz][iy][ix]) //ignore voxels that are either
           continue;                         //in the mask or on the boundary
 
         float eivals[3];
         float eivects[3][3];
 
-        ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
+        ConvertFlatSym2Evects3(vote_tensor.aaaafI[iz][iy][ix],
                                eivals,
                                eivects,
                                eival_order);
@@ -1455,31 +1455,73 @@ HandleRidgeDetector(Settings settings,
 
 
   if (settings.surface_tv_sigma > 0.0) {
-    assert(settings.filter_truncate_ratio > 0);
+    if (settings.load_intermediate_fname_base != "") {
+      // Load the contents of the vote_tensor.aaaafI
+      // array from different MRC files.
+      //
+      // First figure out the file name(s) we are going to use.
+      // Strip the ".rec" or ".mrc" off of the end of the file name
+      int nf = settings.load_intermediate_fname_base.size();
+      string fname_suffix = "";
+      if (nf > 4)
+        fname_suffix = settings.load_intermediate_fname_base.substr(nf-4, nf);
+      string fname_prefix = settings.load_intermediate_fname_base;
+      if ((fname_suffix == ".mrc") || (fname_suffix == ".rec") ||
+          (fname_suffix == ".MRC") || (fname_suffix == ".REC"))
+        fname_prefix = settings.load_intermediate_fname_base.substr(0, nf-4);
+      // Then load the files corresponding to the tensor
+      for (int d = 0; d < 6; d++) {
+        stringstream fname_ss;
+        fname_ss << fname_prefix << "_tensor_" << d << ".rec";
+        cerr << "loading \"" << fname_ss.str() << "\"" << endl;
+        MrcSimple tomo_tmp;
+        tomo_tmp.Read(fname_ss.str(), false);
+        for(int iz=0; iz < image_size[2]; iz++)
+          for(int iy=0; iy < image_size[1]; iy++)
+            for(int ix=0; ix < image_size[0]; ix++)
+              vote_tensor.aaaafI[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
+      }
+      // Then load the files corresponding to the direction
+      //for (int d = 0; d < 3; d++) {
+      //  stringstream fname_ss;
+      //  fname_ss << fname_prefix << "_direction_" << d << ".rec";
+      //  cerr << "loading \"" << fname_ss.str() << "\"" << endl;
+      //  MrcSimple tomo_tmp;
+      //  tomo_tmp.Read(fname_ss.str(), false);
+      //  for(int iz=0; iz < image_size[2]; iz++)
+      //    for(int iy=0; iy < image_size[1]; iy++)
+      //      for(int ix=0; ix < image_size[0]; ix++)
+      //        aaaafDirection[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
+      //}
+    } //if (settings.load_intermediate_files)
+    else {
+      assert(settings.filter_truncate_ratio > 0);
 
-    TV3D<float, int, array<float,3>, float* >
-      tv(settings.surface_tv_sigma,
-         settings.surface_tv_exponent,
-         settings.surface_tv_truncate_ratio);
+      TV3D<float, int, array<float,3>, float* >
+        tv(settings.surface_tv_sigma,
+           settings.surface_tv_exponent,
+           settings.surface_tv_truncate_ratio);
 
-    tv.TVDenseStick(tomo_in.header.nvoxels,
-                    tomo_out.aaafI,
-                    aaaafDirection,
-                    tmp_tensor.aaaafI,
-                    mask.aaafI,
-                    mask.aaafI,
-                    false,  // (we want to detect surfaces not curves)
-                    //settings.surface_hessian_score_threshold,
-                    true,   // (do normalize near rectangular image bounaries)
-                    false,  // (diagonalize each tensor afterwards?)
-                    &cerr);
+      tv.TVDenseStick(tomo_in.header.nvoxels,
+                      tomo_out.aaafI,
+                      aaaafDirection,
+                      vote_tensor.aaaafI,
+                      mask.aaafI,
+                      mask.aaafI,
+                      false,  // (we want to detect surfaces not curves)
+                      //settings.surface_hessian_score_threshold,
+                      true,   // (do normalize near rectangular image bounaries)
+                      false,  // (diagonalize each tensor afterwards?)
+                      &cerr);
+    }
 
+    // Now calculate the saliency of each voxel using the tensor
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
-          if (tmp_tensor.aaaafI[iz][iy][ix]) {
+          if (vote_tensor.aaaafI[iz][iy][ix]) {
             float diagonalized_hessian[6];
-            DiagonalizeFlatSym3(tmp_tensor.aaaafI[iz][iy][ix],
+            DiagonalizeFlatSym3(vote_tensor.aaaafI[iz][iy][ix],
                                 diagonalized_hessian,
                                 eival_order);
             float score = ScoreTensorPlanar(diagonalized_hessian);
@@ -1498,19 +1540,63 @@ HandleRidgeDetector(Settings settings,
 
 
 
+  if (settings.save_intermediate_files && (settings.out_file_name != "")) {
+    // Save the contents of the vote_tensor.aaaafI
+    // arrays in different MRC files (for use later on).
+    //
+    // First figure out the file name(s) we are going to use.
+    // Strip the ".rec" or ".mrc" off of the end of the file name
+    int nf = settings.out_file_name.size();
+    string fname_suffix = "";
+    if (nf > 4)
+      fname_suffix = settings.out_file_name.substr(nf-4, nf);
+    string fname_prefix = settings.out_file_name;
+    if ((fname_suffix == ".mrc") || (fname_suffix == ".rec") ||
+        (fname_suffix == ".MRC") || (fname_suffix == ".REC"))
+      fname_prefix = settings.out_file_name.substr(0, nf-4);
+    // Then save the files corresponding to the tensor
+    for (int d = 0; d < 6; d++) {
+      stringstream fname_ss;
+      fname_ss << fname_prefix << "_tensor_" << d << ".rec";
+      cerr << "allocating space for \"" << fname_ss.str() << "\"" << endl;
+      MrcSimple tomo_tmp = tomo_out;
+      for(int iz=0; iz < image_size[2]; iz++)
+        for(int iy=0; iy < image_size[1]; iy++)
+          for(int ix=0; ix < image_size[0]; ix++)
+            tomo_tmp.aaafI[iz][iy][ix] = vote_tensor.aaaafI[iz][iy][ix][d];
+      cerr << "writing \"" << fname_ss.str() << "\"" << endl;
+      tomo_tmp.Write(fname_ss.str());
+    }
+    // Then save the files corresponding to aaaafDirection
+    //for (int d = 0; d < 3; d++) {
+    //  stringstream fname_ss;
+    //  fname_ss << fname_prefix << "_direction_" << d << ".rec";
+    //  cerr << "allocating space for \"" << fname_ss.str() << "\"" << endl;
+    //  MrcSimple tomo_tmp = tomo_out;
+    //  for(int iz=0; iz < image_size[2]; iz++)
+    //    for(int iy=0; iy < image_size[1]; iy++)
+    //      for(int ix=0; ix < image_size[0]; ix++)
+    //        tomo_tmp.aaafI[iz][iy][ix] = aaaafDirection[iz][iy][ix][d];
+    //  cerr << "writing \"" << fname_ss.str() << "\"" << endl;
+    //  tomo_tmp.Write(fname_ss.str());
+    //}
+  } //if (settings.save_intermediate_files)
+
+
+
   if (settings.cluster_connected_voxels)
   {
     tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.  I
                         // should allocate a new 3D array to store the saliency)
 
-    // Copy the principal eigenvector of tmp_tensor into aaaafDirection
+    // Copy the principal eigenvector of vote_tensor into aaaafDirection
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
-          if (tmp_tensor.aaaafI[iz][iy][ix]) {
+          if (vote_tensor.aaaafI[iz][iy][ix]) {
             float eivals[3];
             float eivects[3][3];
-            ConvertFlatSym2Evects3(tmp_tensor.aaaafI[iz][iy][ix],
+            ConvertFlatSym2Evects3(vote_tensor.aaaafI[iz][iy][ix],
                                    eivals,
                                    eivects,
                                    eival_order);
@@ -1548,7 +1634,7 @@ HandleRidgeDetector(Settings settings,
                      settings.connect_threshold_vector_saliency,
                      settings.connect_threshold_vector_neighbor,
                      false, //eigenvector signs are arbitrary so ignore them
-                     tmp_tensor.aaaafI,
+                     vote_tensor.aaaafI,
                      settings.connect_threshold_tensor_saliency,
                      settings.connect_threshold_tensor_neighbor,
                      true,  //the tensor should be positive definite near the target

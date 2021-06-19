@@ -86,7 +86,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       in_file_name = vArgs[i+1];
 
@@ -107,7 +107,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         image_size[2] = stoi(vArgs[i+3]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 3 positive integers.\n");
       }
 
@@ -119,7 +119,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       out_file_name = vArgs[i+1];
 
@@ -136,7 +136,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_coords_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name\n");
       }
       num_arguments_deleted = 2;
@@ -150,7 +150,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         voxel_width = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by voxel width.\n");
       }
       num_arguments_deleted = 2;
@@ -169,7 +169,7 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-rand"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive integer.\n");
       randomize_input_image = true;
       random_seed = stoi(vArgs[i+1]);
@@ -180,7 +180,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-mask")
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       mask_file_name = vArgs[i+1];
       num_arguments_deleted = 2;
@@ -196,7 +196,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_select = stoi(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by an integer.\n");
       }
       num_arguments_deleted = 2;
@@ -213,7 +213,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         vfSigma[0] = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive number (\"s\"),\n"
                        " the Gaussian width\n");
       }
@@ -236,7 +236,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         vfSigma[0] = stof(vArgs[i+1]) / sqrt(2*M_PI);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive number (\"s\"),\n"
                        " the bin width\n");
       }
@@ -291,7 +291,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         }
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 3 positive numbers:\n"
                        "      bin_width_min  bin_width_max  growth_ratio N\n"
                        " The first two numbers should be in increasing order\n"
@@ -312,7 +312,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         //                                   n_exp));
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number.\n");
       }
       num_arguments_deleted = 2;
@@ -328,7 +328,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_truncate_ratio = -1.0; //(disables) override any filter_truncate_ratio settings
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number.\n");
       }      
       num_arguments_deleted = 2;
@@ -349,7 +349,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a nonnegativenumber.\n");
       }      
       num_arguments_deleted = 2;
@@ -368,7 +368,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a nonnegativenumber.\n");
       }      
       num_arguments_deleted = 2;
@@ -402,7 +402,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-np") {
       #ifdef DISABLE_OPENMP
-      throw InputErr("Error: The " + vArgs[i] + 
+      throw InputErr("Error: The " + vArgs[i] +
                      " argument is only available if program was compiled\n"
                      " with support for OpenMP (multiprocessor support).\n");
       #else
@@ -414,7 +414,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         omp_set_num_threads(num_threads);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive integer, the\n"
                        "       number of threads (processors) requested.\n");
       }

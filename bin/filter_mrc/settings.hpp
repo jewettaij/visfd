@@ -90,6 +90,8 @@ class Settings {
   float mask_rectangle_zmin;
   float mask_rectangle_zmax;
 
+  bool save_intermediate_files;       // save progress for some slow operations?
+  string load_intermediate_fname_base = ""; //load progress from a previous run?
 
   // ---- parameters for "difference of generalized gaussians" filters ----
   //

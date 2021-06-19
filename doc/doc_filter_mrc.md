@@ -52,23 +52,32 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 filter_mrc -in tomogram.rec \
   -out membranes_tv.rec \
   -surface minima 60.0 -surface-best 0.06 \
-  -surface-tv 5.0 -surface-tv-angle-exponent 4
+  -surface-tv 5.0 -surface-tv-angle-exponent 4 \
+  -save-progress
 ```
 
-This searches for dark surfaces of thickness approximately 60, and creates
-a new image file ("membranes_tv.rec") with the membranes emphasized.
+This searches for dark surfaces of thickness approximately 60 (Angstroms), and
+creates a new image file ("membranes_tv.rec") with the membranes emphasized.
 View this file (eg. using IMOD) to see if the membranes are successfully
 detected.  You may need to adjust this thickness parameter
 (and the other parameters) until the membrane is clearly visible.
-**This is slow, so try this on a small, cropped image first.**
+**This is extremely slow, so try this on a small, cropped image first.**
+Downsampling the image may also help.
 (In my experience, "60" is a reasonable default thickness parameter to
 detect lipid bilayers, assuming the voxel widths are in units of Angstroms.
-Incidentally, you can specify the units by indicating the voxel width using the
+Incidentally, you can specify the physical width of each voxel using the
 [-w argument](#Voxel-Width).)
 
 Note: The computation time will be roughly proportional to the image size
 *as well as* the "-surface-best" argument (which ranges from 0 to 1).
 (See [example 3](#Example-3) below)
+
+Note: The optional
+("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+argument allows us to skip the time
+consuming process of running tensor voting again later on when we try
+to stitch the resulting surface fragments into a contiguous closed surface.
+(See [example 3](#Example-3) below.)
 
 
 ### Example 2
@@ -135,17 +144,22 @@ If so, then you are ready to try the example below.
 ```
 filter_mrc -in tomogram.rec \
   -out membranes_tv_clusters.rec \
-  -surface minima 60.0 -surface-best 0.08 \
+  -surface minima 60.0 \
   -surface-tv 5.0 -surface-tv-angle-exponent 4 \
+  -load-progress membranes_tv.rec \
   -connect 1.0e+09 -cvn 0.707 -cvs 0.707 -cts 0.707 -ctn 0.707 \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
 Note:
-This will generate an oriented point cloud file
-("largest_membrane_pointcloud.ply").
-You can use
+Here I assumed that the user has already followed the instructions in
+[example 1](#Example-1).  (Consequently, to save time, we used the
+("-load-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+to argument to skip over the time consuming
+process of detecting the membrane again.)
+This will generate a new file ("largest_membrane_pointcloud.ply")
+containing a list of points located on the largest surface. You can use
 [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon)
-to close the holes in the surface due to the missing wedge:
+to load this file and close the holes in the surface:
 ```
 PoissonRecon --in largest_membrane_pointcloud.ply \
   --out largest_membrane.ply --depth 12 --scale 2.0
@@ -174,6 +188,8 @@ defaults for membrane detection except the
 ["**-connect**"](#-connect-threshold)
 parameter ("1.0e+09" in the example).
 It must be chosen carefully because it will vary from image to image.
+Use the "-load-progress FILENAME" argument to save time
+while experimenting with different thresholds.
 Strategies for choosing this parameter are discussed
 [below](#determining-the--connect-threshold-parameter).
 If a suitable parameter can not be found, you can also use the
@@ -423,15 +439,24 @@ ratio when detecting curves and surfaces.
 Tensor-voting refinement is not done by default
 because it can be a very expensive computation.
 
+Note: The tensor-voting algorithm selected the "-surface-tv" argument
+is **extremely slow**.  Typically, once you have detected the surfaces
+in an image, you will want to analyze them to stitch together larger
+surfaces, with the correct orientation.  This is usually an iterative process.
+Consequenly, **it is strongly recommended that you use the
+("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+argument,**
+so that you don't need to repeat the tensor-voting calculation each time.
+
 *(Note: -surface-tv is not an independent filter.
-        It enables refinement of existing results from the -surface filter.
-        This argument is ignored unless the -surface argument is also used.)*
+It enables refinement of existing results from the -surface filter.
+This argument is ignored unless the -surface argument is also used.)*
 
 *(Technical details: The width of the Gaussian used in the radial-decay
-                     function used in tensor voting has a width of
-                     σ_tv = σ_ratio ⨉ σ,
-                     where "σ" is the bluring used in the ridge detection
-                     and it has a value of σ=thickness/√3)*
+function used in tensor voting has a width of
+σ_tv = σ_ratio ⨉ σ,
+where "σ" is the bluring used in the ridge detection
+and it has a value of σ=thickness/√3)*
 
 
 ### -surface-tv-angle-exponent n
@@ -527,6 +552,17 @@ then individual objects (eg. membranes) in the image
 will be split into multiple pieces.  
 If too small, then separate objects in the image will be joined together.
 
+Because it often takes several iterations to choose the correct
+thresholds, it is recommended that you run *filter_mrc* once in advance
+to detect the membrane, saving your progress using the
+("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+argument.  *Then* when you are ready to connect the surfaces (or curves)
+together using the "-connect" argument, use the 
+("-load-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+argument to load the directional features of the image that you measured earlier
+(to avoid having to recalculate them again).
+(This was demonstrated in [example 1](#Example-1) and [example 3](#Example-3).)
+
 *Note:* If you are unable to find thresholds which connect all of
 the pieces together correctly, you can also use the
 ["**-must-link**"](#-must-link-FILE)
@@ -547,6 +583,9 @@ and
 )
 once in advance without the
 ["-connect"](#-connect-threshold)
+argument
+with the
+("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
 argument
 (as we did in the membrane-detection
 [example](#Example-1)).
@@ -578,16 +617,31 @@ indicating which cluster they belong to
 (reverse-sorted by cluster size, starting at 1).
 
 If some clusters are too big, you can either increase the *threshold*
-value, *or* you can alter increase angular sensitivity by increasing
-the *-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9.
-(See below.)
+value, *or* you can alter increase angular sensitivity by decreasing
+the [*-connect-angle*](#--connect-angle) from 45 degrees to 25 degrees
+(or, equivalently increasing the 
+*-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9).
+(See below)
 
-Because it might take several tries, and membrane detection is slow,
-it is a bad idea to try this on a full-sized tomogram image.
-Instead try this on one or more small cropped versions of the image
+Because it will probably take several tries to choose these parameters,
+ to save time you can use the 
+("-load-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+argument to avoid having to recalculate the directional features of the image
+that you (hopefully) measured earlier, 
+as demonstrated in [example 3](#Example-3).
+
+Also: It is a bad idea to try this on the original full-sized tomogram image.
+1) Instead try this on one or more small cropped versions of the image
 near the junction points of interest.
 (You can crop images either by using IMOD,
  or by using the "crop_mrc" program distributed with *visfd*.)
+2) You can also reduce the size and resolution of the image
+(during the detection process), using the ["-bin"](#--bin) argument.
+For example, using "-bin 2" will often also produce reasonable results
+and will reduce the computation time considerably.  Any features
+detected at reduced resolution will be scaled up in size accordingly
+(along with the voxel width).
+
 
 Make sure clustering was successful *before* attempting to
 close holes in the surface using programs like *meshlab* or *PoissonRecon*.
@@ -742,6 +796,32 @@ or omit them entirely (-andrew 2020-12-14).
   currently have no effect unless the
   ["-surface"](#Detecting-membranes) argument was also supplied.
   -andrew 2019-3-04)*
+
+
+
+## -save-progress *FILENAME* and -load-progress *FILENAME*
+
+The optional "-save-progress" argument will create 6 temporary files
+(ending in "_tensor_1.rec", ...,  "_tensor_6.rec").
+This is useful because the process of stitching together a closed
+membrane surface (or a continuous filamentous curve)
+typically involves many iterations of trial and error,
+using different thresholds and constraints until the
+resulting surface (or curve) is reasonable.
+If we use "-save-progress", then we can skip the time consuming
+process of running tensor-voting each time.
+We can do this using the "-load-progress FILENAME" argument.
+The *FILENAME* argument should be the name of the file you
+created using "-save-progress" earlier.
+Note that when using "-load-progress", you must respecify all
+of the same arguments that you used earlier when you used
+"-save-progress" **except** for the "-out" argument.
+(You can use a different "-out FILENAME" when you use "-load-progress".)
+
+Be warned that using "-save-progress" will also consume substantial disk space
+because each of these 6 files files may be up to 4 times larger than the
+size of the original tomogram file.
+(You should probably delete these files eventually.)
 
 
 

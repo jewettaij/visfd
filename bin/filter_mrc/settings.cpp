@@ -38,6 +38,7 @@ Settings::Settings() {
   mask_rectangle_ymax = -1; // ymax < ymin disables the mask rectangle
   mask_rectangle_zmin = 0;
   mask_rectangle_zmax = -1; // zmax < zmin disables the mask rectangle
+  save_intermediate_files = false;
 
   voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
   voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
@@ -247,7 +248,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       in_file_name = vArgs[i+1];
 
@@ -268,7 +269,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_set_image_size[2] = stoi(vArgs[i+3]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 6 integers.\n");
       }
       num_arguments_deleted = 4;
@@ -278,7 +279,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       out_file_name = vArgs[i+1];
 
@@ -289,7 +290,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if ((vArgs[i] == "-outf") || (vArgs[i] == "-out-force"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       out_file_name = vArgs[i+1];
       out_file_overwrite = true;
@@ -300,7 +301,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-mask")
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       mask_file_name = vArgs[i+1];
       num_arguments_deleted = 2;
@@ -316,7 +317,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_select = stoi(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by an integer.\n");
       }
       num_arguments_deleted = 2;
@@ -343,7 +344,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_rectangle_zmax = stoi(vArgs[i+6]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by (nonnegative) 6 integers.\n");
       }
       num_arguments_deleted = 7;
@@ -371,7 +372,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_rectangle_zmax = stof(vArgs[i+6]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 6 numbers.\n");
       }
       num_arguments_deleted = 7;
@@ -387,7 +388,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_out = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number.\n");
       }
       num_arguments_deleted = 2;
@@ -402,7 +403,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         voxel_width = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by voxel width.\n");
       }
       num_arguments_deleted = 2;
@@ -435,7 +436,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           filter_type = GGAUSS;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 3 positive numbers:\n"
                        " s_x  s_y  s_z\n"
                        " the Gaussian widths in the X, Y, and Z direction.)\n");
@@ -462,7 +463,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           filter_type = GGAUSS;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive number (\"s\"),\n"
                        " the Gaussian width\n");
       }
@@ -497,7 +498,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           filter_type = DOGG;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 6 positive numbers.\n");
       }
       num_arguments_deleted = 7;
@@ -527,7 +528,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           filter_type = DOGG;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 positive numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -560,7 +561,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_type = DOGGXY;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 5 positive numbers:\n"
                        " a_x  a_y  b_x  b_y  a_z\n"
                        " (I.E., the \"A\" and \"B\" Gaussian widths in X and Y directions,\n"
@@ -593,7 +594,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_type = DOGGXY;
       }
       catch (invalid_argument& exc) {
-          throw InputErr("Error: The " + vArgs[i] + 
+          throw InputErr("Error: The " + vArgs[i] +
                          " argument must be followed by 3 positive numbers:\n"
                          " a_xy  b_xy  a_z\n"
                          " (I.E., the \"A\" and \"-B\" Gaussian widths in the XY plane,\n"
@@ -631,7 +632,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_type = DOG_SCALE_FREE;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive number:\n"
                        "       the (approximate) width of the objects of interest.\n");
       }
@@ -655,7 +656,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_type = DOG_SCALE_FREE;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 3 positive numbers:\n"
                        "       the approximate widths of the objects of interest in the XYZ directions\n"
                        "       (Due to the missing-wedge artifact they might differ.\n");
@@ -676,7 +677,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         nonmax_min_radial_separation_ratio = 0.0;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
                        "       the maximum overlap allowed between a pair of detected blobs\n"
                        "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
@@ -697,7 +698,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         nonmax_min_radial_separation_ratio = 0.0;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
                        "       the maximum overlap allowed between a pair of detected blobs\n"
                        "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
@@ -719,7 +720,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         //nonmax_min_radial_separation_ratio = (1.0 - max_overlap) * sqrt(3.0);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
                        "       the maximum overlap allowed between a pair of detected blobs\n"
                        "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
@@ -741,7 +742,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //    //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
     //  }
     //  catch (invalid_argument& exc) {
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by a number:\n"
     //                   "       the minimum allowed separation between a pair of detected blobs\n"
     //                   "       (as a fraction of the sum of their Gaussian widths (σ1+σ2)).");
@@ -767,7 +768,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
                        "       the minimum allowed separation between a pair of detected blobs\n"
                        "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
@@ -792,7 +793,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //    //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
     //  }
     //  catch (invalid_argument& exc) {
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by a number:\n"
     //                   "       the minimum allowed separation between a pair of detected blobs\n"
     //                   "       (as a fraction of the sum of their diameters, estimated using d=2r≈2σ√3).");
@@ -914,7 +915,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_type = BLOB;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a type (either\n"
                        "       \"minima\", \"maxima\", or \"all\")\n"
                        "       as well as a file name, followed by 3 positive numbers.\n"
@@ -940,7 +941,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_coords_file_name = vArgs[i+2];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by two different file names\n");
       }
       filter_type = SPHERE_NONMAX_SUPPRESSION;
@@ -960,7 +961,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by \"score\"\n"
                        "       (In the future, it may be followed by a list of attributes surrounded\n"
                        "        in quotes.  But currently only the \"score\" attribute is supported.\n"
@@ -980,7 +981,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         training_neg_fname = vArgs[i+2];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by two file names:\n"
                        "       FILE_POS.txt  FILE_NEG.txt\n"
                        "       containing positive and negative training data, respectively.\n");
@@ -1043,7 +1044,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         } //Read multi_training_meta_fname
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed a file name. Example: FILE_TRAINING_SETS.txt\n"
                        "\n"
                        "File format details:\n"
@@ -1074,7 +1075,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
@@ -1092,7 +1093,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         score_bounds_are_ratios = false;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
@@ -1110,7 +1111,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
@@ -1129,7 +1130,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         score_bounds_are_ratios = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 2;
@@ -1147,7 +1148,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         sphere_diameters_upper_bound = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number number.\n");
       }
       num_arguments_deleted = 3;
@@ -1164,7 +1165,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         score_upper_bound = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by two numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -1182,7 +1183,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         user_set_delta_manually = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 1 positive number.\n");
       }
       num_arguments_deleted = 2;
@@ -1206,7 +1207,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         user_set_exponents_manually = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by two positive numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -1228,7 +1229,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         user_set_exponents_manually = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive number.\n");
       }
       num_arguments_deleted = 2;
@@ -1238,7 +1239,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //Commenting out:  The user cannot set filter_truncate_halfwidth directly anymore:
     //else if (vArgs[i] == "-window") {
     //  if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by either 1 or 3 positive integers.\n");
     //  filter_truncate_halfwidth[0] = stoi(vArgs[i+1]);
     //  num_arguments_deleted = 2;
@@ -1267,7 +1268,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         //                                   n_exp));
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number.\n");
       }
       num_arguments_deleted = 2;
@@ -1283,7 +1284,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_truncate_ratio = -1.0; //(disables) override any filter_truncate_ratio settings
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number.\n");
       }      
       num_arguments_deleted = 2;
@@ -1305,7 +1306,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_rescale_offset = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 numbers:\n"
                        " outA  outB\n"
                        "  (the desired minimum and maximum voxel intensity values for the final image)\n");
@@ -1325,7 +1326,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_thresh_b_value = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 numbers:\n"
                        " outA  outB\n"
                        "  (the desired minimum and maximum voxel intensity values for the final image)\n");
@@ -1347,7 +1348,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_rescale_min = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 numbers:\n"
                        " outA  outB\n"
                        "  (the desired minimum and maximum voxel intensity values for the final image)\n");
@@ -1383,7 +1384,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_threshold_01_b = in_threshold_01_a;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 1 number.\n");
       }
       num_arguments_deleted = 2;
@@ -1401,7 +1402,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_thresh2_use_clipping = false;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -1424,7 +1425,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           out_thresh2_use_clipping_sigma = false;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -1451,7 +1452,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 4 numbers\n"
                        "       (These numbers must be either in increasing or decreasing order.)\n");
       }
@@ -1471,7 +1472,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_threshold_10_b = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 4 numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -1488,7 +1489,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_thresh_gauss_sigma = stof(vArgs[i+2]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 4 numbers.\n");
       }
       num_arguments_deleted = 3;
@@ -1526,13 +1527,13 @@ Settings::ParseArgs(vector<string>& vArgs)
         //mask_out = 1.0;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 7 numbers:\n"
                        "       ntests radius threshold sign seed\n");
       }
       num_arguments_deleted = 8;
       #else
-      throw InputErr("Error: The " + vArgs[i] + 
+      throw InputErr("Error: The " + vArgs[i] +
                      " feature has been disabled in this version.\n"
                      "       To enable it, edit the \"settings.h\" file and comment out this line:\n"
                      "       \"#define DISABLE_BOOTSTRAPPING\"\n"
@@ -1561,13 +1562,13 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[2] = r;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 numbers:\n"
                        "       template_radius background_radius\n");
       }
       num_arguments_deleted = 3;
       #else
-      throw InputErr("Error: The " + vArgs[i] + 
+      throw InputErr("Error: The " + vArgs[i] +
                      " feature has been disabled in this version.\n"
                      "       To enable it, edit the \"settings.h\" file and comment out this line:\n"
                      "       \"#define DISABLE_TEMPLATE_MATCHING\"\n"
@@ -1599,12 +1600,12 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[2] = stof(vArgs[i+6]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 6 positive numbers.\n");
       }
       num_arguments_deleted = 7;
       #else
-      throw InputErr("Error: The " + vArgs[i] + 
+      throw InputErr("Error: The " + vArgs[i] +
                      " feature has been disabled in this version.\n"
                      "       To enable it, edit the \"settings.h\" file and comment out this line:\n"
                      "       \"#define DISABLE_TEMPLATE_MATCHING\"\n"
@@ -1631,12 +1632,12 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[2] = stof(vArgs[i+3]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 3 positive numbers.\n");
       }
       num_arguments_deleted = 4;
       #else
-      throw InputErr("Error: The " + vArgs[i] + 
+      throw InputErr("Error: The " + vArgs[i] +
                      " feature has been disabled in this version.\n"
                      "       To enable it, edit the \"settings.h\" file and comment out this line:\n"
                      "       \"#define DISABLE_TEMPLATE_MATCHING\"\n"
@@ -1661,14 +1662,14 @@ Settings::ParseArgs(vector<string>& vArgs)
         template_background_radius[2] = template_background_radius[0];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive number:\n"
                        "       the radius of the region of nearby voxels over which we will perform\n"
                        "       the average before calculating fluctuations around that average.\n");
       }
       num_arguments_deleted = 2;
       #else
-      throw InputErr("Error: The " + vArgs[i] + 
+      throw InputErr("Error: The " + vArgs[i] +
                      " feature has been disabled in this version.\n"
                      "       To enable it, edit the \"settings.h\" file and comment out this line:\n"
                      "       \"#define DISABLE_TEMPLATE_MATCHING\"\n"
@@ -1685,7 +1686,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         find_minima_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
-          throw InputErr("Error: The " + vArgs[i] + 
+          throw InputErr("Error: The " + vArgs[i] +
                          " argument must be followed by a number.\n");
       }
       num_arguments_deleted = 2;
@@ -1700,7 +1701,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         find_maxima_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
-          throw InputErr("Error: The " + vArgs[i] + 
+          throw InputErr("Error: The " + vArgs[i] +
                          " argument must be followed by a number.\n");
       }
       num_arguments_deleted = 2;
@@ -1716,7 +1717,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-          throw InputErr("Error: The " + vArgs[i] + 
+          throw InputErr("Error: The " + vArgs[i] +
                          " argument must be followed by a positive integer.\n");
       }
       num_arguments_deleted = 2;
@@ -1737,7 +1738,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-distance-points") {
       if (i+1 >= vArgs.size())
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       filter_type = DISTANCE_TO_POINTS;
       in_coords_file_name = vArgs[i+1];
@@ -1755,7 +1756,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_coords_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name\n");
       }
       num_arguments_deleted = 2;
@@ -1775,7 +1776,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         }
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name\n");
       }
       num_arguments_deleted = 2;
@@ -1794,7 +1795,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         sphere_decals_diameter = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -1814,7 +1815,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         sphere_decals_diameter = stof(vArgs[i+1]) * 2.0;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -1831,7 +1832,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         sphere_decals_scale = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
                        "       the ratio of the displyed sphere size to the diameter detected (usually 1).\n");
       }
@@ -1850,7 +1851,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         user_set_thickness_manually = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a numbers:\n"
                        "       -the ratio of the shell thickness to the sphere diameter\n");
       }
@@ -1870,7 +1871,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         user_set_thickness_manually = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -1890,7 +1891,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         user_set_thickness_manually = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -1916,7 +1917,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         sphere_decals_background = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
                        "       the voxel intensity value outside the sphere (normally 0).\n");
       }
@@ -1936,7 +1937,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         user_set_background_scale_manually = true;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number, usually between 0 and 1:\n"
                        "       how much to supress fluctuations in the original background image.\n");
       }
@@ -1955,7 +1956,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         sphere_decals_foreground = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
                        "       the voxel intensity value outside the sphere (normally 0).\n");
       }
@@ -2006,7 +2007,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by an argument:  \"type\"  \"width\"\n"
                        "       The \"type\" argument must be either \"minima\" or \"maxima\".\n"
                        "       (It depends on whether you want to detect dark or bright objects.)\n");
@@ -2027,7 +2028,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         watershed_threshold = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       
@@ -2061,7 +2062,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         watershed_boundary_label = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       
@@ -2071,7 +2072,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if (vArgs[i] == "-planar") {
-      throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] + 
+      throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] +
                      " argument has been renamed.\n"
                      "       It is now called \"-surface\", and it requires an additional argument.\n"
                      "       See documentation for details.\n");
@@ -2080,7 +2081,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if (vArgs[i] == "-planar-tv") {
-      throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] + 
+      throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] +
                      " argument has been renamed.\n"
                      "       It is now called \"-surface-tv\"\n");
     }
@@ -2110,7 +2111,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         width_b[2] = 0.0;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 2 arguments:  \"type\"  \"width\"\n"
                        "       The \"type\" argument must be either \"minima\" or \"maxima\"\n"
                        "       (depending on whether you want to detect dark or bright objects)\n"
@@ -2134,7 +2135,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         width_b[2] = width_b[0];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number: the width\n"
                        "       (σ) of the Gaussian used beforehand for smoothing (in physical units).\n"
                        "       (This selects the scale or resolution of the filter.)\n");
@@ -2152,7 +2153,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         surface_hessian_score_threshold_is_a_fraction = false;
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number, the threshold\n"
                        "       for deciding whether to compute the surface normal there.\n");
       }
@@ -2171,7 +2172,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number between 0 and 1:  The fraction of the\n"
                        "       number of voxels you wish to keep (not discard) after ridge detection\n"
                        "       (giving preference to the most \"ridge-like\" voxels).\n"
@@ -2200,7 +2201,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw InputErr("Error: the -surface-tv argument must be >= 1.0\n");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number, the ratio\n"
                        "       of widths used in directional blurring (typically 3)\n");
       }
@@ -2216,7 +2217,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         surface_tv_exponent = stoi(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number, the threshold\n"
                        "       for deciding whether to compute the surface normal there.\n");
       }
@@ -2232,7 +2233,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         surface_tv_score_threshold = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number, the threshold\n"
                        "       for deciding whether to compute the surface normal there.\n");
       }
@@ -2247,7 +2248,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         surface_tv_num_iters = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number, the threshold\n"
                        "       for deciding whether to compute the surface normal there.\n");
       }
@@ -2263,12 +2264,37 @@ Settings::ParseArgs(vector<string>& vArgs)
         out_normals_fname = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       }
       num_arguments_deleted = 2;
     }
 
+
+
+    else if (vArgs[i] == "-save-progress")
+    {
+      save_intermediate_files = true;
+      num_arguments_deleted = 1;
+    }
+
+
+    else if (vArgs[i] == "-load-progress")
+    {
+      load_intermediate_fname_base = vArgs[i+1];
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        connect_threshold_saliency = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a file name\n"
+                       "       (The suffix at the end of the file (eg \".mrc\" or \".rec\") is optional.)\n");
+      }
+      num_arguments_deleted = 2;
+    }
 
 
     else if ((vArgs[i] == "-connect") ||
@@ -2284,7 +2310,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         connect_threshold_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -2302,7 +2328,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         connect_threshold_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -2320,7 +2346,28 @@ Settings::ParseArgs(vector<string>& vArgs)
         connect_threshold_vector_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if (vArgs[i] == "-connect-angle")
+    {
+      cluster_connected_voxels = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        theta = stof(vArgs[i+1]);
+        connect_threshold_vector_saliency = cos(theta*M_PI/180.0);
+        connect_threshold_vector_neighbor = cos(theta*M_PI/180.0);
+        connect_threshold_tensor_saliency = cos(theta*M_PI/180.0);
+        connect_threshold_tensor_neighbor = cos(theta*M_PI/180.0);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -2337,7 +2384,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         connect_threshold_vector_neighbor = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -2354,7 +2401,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         connect_threshold_tensor_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -2371,7 +2418,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         connect_threshold_tensor_neighbor = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -2389,7 +2436,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a nonnegative integer\n");
       }
       num_arguments_deleted = 2;
@@ -2407,7 +2454,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         must_link_filename = vArgs[i+1];
       } // try {
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
       num_arguments_deleted = 2;
@@ -2417,7 +2464,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-np") {
       #ifdef DISABLE_OPENMP
-      throw InputErr("Error: The " + vArgs[i] + 
+      throw InputErr("Error: The " + vArgs[i] +
                      " argument is only available if program was compiled\n"
                      " with support for OpenMP (multiprocessor support).\n");
       #else
@@ -2429,7 +2476,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         omp_set_num_threads(num_threads);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive integer, the\n"
                        "       number of threads (processors) requested.\n");
       }
@@ -2461,7 +2508,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         blob_profiles_file_name_base = vArgs[i+3];
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed\n"
                        "       by 3 additional arguments:\n"
                        "       CENTER_TYPE  input_coords_file  output_file_base_name \n"
@@ -2484,7 +2531,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //      (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
     //      (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
     //      (vArgs[i+4] == "") || (vArgs[i+4][0] == '-'))
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by 2 numbers:\n"
     //                   "       template_radius background_radius\n");
     //  filter_type = TEMPLATE_GGAUSS;
@@ -2501,7 +2548,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //  template_background_exponent = stof(vArgs[i+4]);
     //  num_arguments_deleted = 5;
     //  #else
-    //  throw InputErr("Error: The " + vArgs[i] + 
+    //  throw InputErr("Error: The " + vArgs[i] +
     //                 " feature has been disabled in this version.\n"
     //                 "       To enable it, edit the \"settings.h\" file and comment out this line:\n"
     //                 "       \"#define DISABLE_TEMPLATE_MATCHING\"\n"
@@ -2512,14 +2559,14 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     //else if (vArgs[i] == "-template-background-exponent") {
     //  if (i+2 >= vArgs.size())
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by 1 number.\n");
     //  template_background_exponent = stof(vArgs[i+1]);
     //}
     //
     //else if (vArgs[i] == "-template-compare-exponent") {
     //  if (i+2 >= vArgs.size())
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by 1 number.\n");
     //  template_compare_exponent = stof(vArgs[i+1]);
     //}
@@ -2527,7 +2574,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     // NOT USED YET:
     //else if (vArgs[i] == "-xwedge") {
     //  if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by 1 or 3 positive numbers.\n");
     //  missing_wedge_min[0] = stof(vArgs[i+1]);
     //  num_arguments_deleted = 2;
@@ -2544,7 +2591,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     //
     //else if ((vArgs[i] == "-ywedge") || (vArgs[i] == "-wedge")) {
     //  if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-    //    throw InputErr("Error: The " + vArgs[i] + 
+    //    throw InputErr("Error: The " + vArgs[i] +
     //                   " argument must be followed by 1 or 3 positive numbers.\n");
     //  missing_wedge_min[1] = stof(vArgs[i+1]);
     //  num_arguments_deleted = 2;

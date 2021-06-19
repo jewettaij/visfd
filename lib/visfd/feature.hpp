@@ -2076,6 +2076,25 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
 
 
 
+/// @brief: Calculate how "curve"-like a feature along a ridge.
+///         WARNING: THIS IS A GUESS. I HAVE NOT TESTED THIS (-Andrew 2021-6-18)
+///         This function assumes that "diagonalizedMatrix3x3" has been 
+///         diagonalized, and that its first 3 entries 
+///         are the eigenvalues of the original hessian matrix.
+
+
+template<typename TensorContainer, typename VectorContainer>
+double
+ScoreHessianLinear(TensorContainer diagonalizedHessian,
+                   VectorContainer gradient=nullptr)
+{
+  double lambda1 = diagonalizedHessian[0];
+  double lambda2 = diagonalizedHessian[1];
+  double lambda3 = diagonalizedHessian[2];
+  //return 0.5*(lambda1 + lambda2) - lambda3;
+  return lambda1*lambda2 - lambda3*lambda3;
+} // ScoreHessianLinear()
+
 
 
 /// @brief: Calculate how "plane"-like a feature along a ridge is
@@ -2085,18 +2104,29 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
 ///         are the eigenvalues of the original hessian matrix.
 
 template<typename TensorContainer>
-
 double
 ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 {
-  //return ScoreHessianPlanar(diagonalizedMatrix3x3,
-  //                          nullptr,
-  //                          multiplier);
+  //return ScoreHessianPlanar(diagonalizedMatrix3, nullptr);
   double lambda1 = diagonalizedMatrix3[0];
   double lambda2 = diagonalizedMatrix3[1];
   return lambda1 - lambda2;  // the "stickness" (See TensorVoting paper)
 }
 
+
+/// @brief: Calculate how "curve"-like a feature along a ridge is
+///         from the tensor created by the process of tensor voting.
+///         WARNING: THIS IS A GUESS. I HAVE NOT TESTED THIS (-Andrew 2021-6-18)
+///         This function assumes that "diagonalizedMatrix3x3" has been 
+///         diagonalized, and that its first 3 entries 
+///         are the eigenvalues of the original hessian matrix.
+
+template<typename TensorContainer>
+double
+ScoreTensorLinear(const TensorContainer diagonalizedMatrix3)
+{
+  return ScoreHessianLinear(diagonalizedMatrix3, nullptr);
+}
 
 
 /// @class  TV3D

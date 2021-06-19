@@ -97,7 +97,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-mask")
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       mask_file_name = vArgs[i+1];
       num_arguments_deleted = 2;
@@ -112,7 +112,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_select = stoi(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] + 
+        throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by an integer.\n");
       }
       num_arguments_deleted = 2;
@@ -127,7 +127,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         mask_out = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
-          throw InputErr("Error: The " + vArgs[i] + 
+          throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number.\n");
       }
       num_arguments_deleted = 2;
