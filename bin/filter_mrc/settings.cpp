@@ -38,7 +38,9 @@ Settings::Settings() {
   mask_rectangle_ymax = -1; // ymax < ymin disables the mask rectangle
   mask_rectangle_zmin = 0;
   mask_rectangle_zmax = -1; // zmax < zmin disables the mask rectangle
-  save_intermediate_files = false;
+
+  save_intermediate_fname_base = "";
+  load_intermediate_fname_base = "";
 
   voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
   voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
@@ -2274,8 +2276,19 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-save-progress")
     {
-      save_intermediate_files = true;
-      num_arguments_deleted = 1;
+      save_intermediate_fname_base = vArgs[i+1];
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        connect_threshold_saliency = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a file name\n"
+                       "       (The suffix at the end of the file (eg \".mrc\" or \".rec\") is optional.)\n");
+      }
+      num_arguments_deleted = 2;
     }
 
 
@@ -2360,7 +2373,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        theta = stof(vArgs[i+1]);
+        double theta = stof(vArgs[i+1]);
         connect_threshold_vector_saliency = cos(theta*M_PI/180.0);
         connect_threshold_vector_neighbor = cos(theta*M_PI/180.0);
         connect_threshold_tensor_saliency = cos(theta*M_PI/180.0);

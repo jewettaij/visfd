@@ -50,14 +50,14 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 # (target thickness ≈ 60.0 Angstroms)
 
 filter_mrc -in tomogram.rec \
-  -out membranes_tv.rec \
+  -out membranes.rec \
   -surface minima 60.0 -surface-best 0.06 \
   -surface-tv 5.0 -surface-tv-angle-exponent 4 \
-  -save-progress
+  -save-progress membranes
 ```
 
 This searches for dark surfaces of thickness approximately 60 (Angstroms), and
-creates a new image file ("membranes_tv.rec") with the membranes emphasized.
+creates a new image file ("membranes.rec") with the membranes emphasized.
 View this file (eg. using IMOD) to see if the membranes are successfully
 detected.  You may need to adjust this thickness parameter
 (and the other parameters) until the membrane is clearly visible.
@@ -143,10 +143,10 @@ If so, then you are ready to try the example below.
 
 ```
 filter_mrc -in tomogram.rec \
-  -out membranes_tv_clusters.rec \
+  -out membranes_clusters.rec \
   -surface minima 60.0 \
   -surface-tv 5.0 -surface-tv-angle-exponent 4 \
-  -load-progress membranes_tv.rec \
+  -load-progress membranes \
   -connect 1.0e+09 -cvn 0.707 -cvs 0.707 -cts 0.707 -ctn 0.707 \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
@@ -590,7 +590,7 @@ argument
 (as we did in the membrane-detection
 [example](#Example-1)).
 Open the file created during that step
-(eg. "membranes_tv.rec") in IMOD.
+(eg. "membranes.rec") in IMOD.
 Find a place in this image where the saliency (brightness)
 of the membrane you are interested in is weak.
 Click on voxels located near the weakest point (a.k.a. "junction point",
@@ -609,7 +609,7 @@ This makes a good first guess for the "*-connect*" parameter.
 
 After using the "*-connect*" argument you can can
 open the REC/MRC file we created
-(eg "*membranes_tv_clusters.rec*")
+(eg "*membranes_clusters.rec*")
 in IMOD, and click on different voxels (using "Edit"->"Point"->"Value")
 to see whether the voxels were clustered correctly into the same object.
 The voxel brightness values in that image should be integers

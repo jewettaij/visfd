@@ -1455,12 +1455,44 @@ HandleRidgeDetector(Settings settings,
 
 
   if (settings.surface_tv_sigma > 0.0) {
-    if (settings.load_intermediate_fname_base != "") {
-      // Load the contents of the vote_tensor.aaaafI
-      // array from different MRC files.
+
+    if (settings.load_intermediate_fname_base == "") {
+
+      // Then the user is NOT loading (previously generated) files containing
+      // the features we are looking for (like surfaces or curves).
+      //
+      // Hence we must calculate these features (using tensor-voting).
+
+      assert(settings.filter_truncate_ratio > 0);
+
+      TV3D<float, int, array<float,3>, float* >
+        tv(settings.surface_tv_sigma,
+           settings.surface_tv_exponent,
+           settings.surface_tv_truncate_ratio);
+
+      tv.TVDenseStick(tomo_in.header.nvoxels,
+                      tomo_out.aaafI,
+                      aaaafDirection,
+                      vote_tensor.aaaafI,
+                      mask.aaafI,
+                      mask.aaafI,
+                      false,  // (we want to detect surfaces not curves)
+                      //settings.surface_hessian_score_threshold,
+                      true,   // (do normalize near rectangular image bounaries)
+                      false,  // (diagonalize each tensor afterwards?)
+                      &cerr);
+
+    } // if (settings.load_intermediate_fname_base == "")
+
+    else {
+
+      // Load the contents of the vote_tensor.aaaafI array
+      // from a series of files (generated previously).
       //
       // First figure out the file name(s) we are going to use.
-      // Strip the ".rec" or ".mrc" off of the end of the file name
+      // If the "settings.load_intermediate_fname_base" file name ends in
+      // ".rec" or ".mrc", then remove these these suffixes.
+      // First figure out the file name(s) we are going to use.
       int nf = settings.load_intermediate_fname_base.size();
       string fname_suffix = "";
       if (nf > 4)
@@ -1481,41 +1513,12 @@ HandleRidgeDetector(Settings settings,
             for(int ix=0; ix < image_size[0]; ix++)
               vote_tensor.aaaafI[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
       }
-      // Then load the files corresponding to the direction
-      //for (int d = 0; d < 3; d++) {
-      //  stringstream fname_ss;
-      //  fname_ss << fname_prefix << "_direction_" << d << ".rec";
-      //  cerr << "loading \"" << fname_ss.str() << "\"" << endl;
-      //  MrcSimple tomo_tmp;
-      //  tomo_tmp.Read(fname_ss.str(), false);
-      //  for(int iz=0; iz < image_size[2]; iz++)
-      //    for(int iy=0; iy < image_size[1]; iy++)
-      //      for(int ix=0; ix < image_size[0]; ix++)
-      //        aaaafDirection[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
-      //}
-    } //if (settings.load_intermediate_files)
-    else {
-      assert(settings.filter_truncate_ratio > 0);
+    } // else clause for if (settings.load_intermediate_fname_base == "")
 
-      TV3D<float, int, array<float,3>, float* >
-        tv(settings.surface_tv_sigma,
-           settings.surface_tv_exponent,
-           settings.surface_tv_truncate_ratio);
 
-      tv.TVDenseStick(tomo_in.header.nvoxels,
-                      tomo_out.aaafI,
-                      aaaafDirection,
-                      vote_tensor.aaaafI,
-                      mask.aaafI,
-                      mask.aaafI,
-                      false,  // (we want to detect surfaces not curves)
-                      //settings.surface_hessian_score_threshold,
-                      true,   // (do normalize near rectangular image bounaries)
-                      false,  // (diagonalize each tensor afterwards?)
-                      &cerr);
-    }
 
-    // Now calculate the saliency of each voxel using the tensor
+    // Now that the feature tensor has been calculated,
+    // calculate the saliency of each voxel using this tensor.
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
@@ -1540,20 +1543,24 @@ HandleRidgeDetector(Settings settings,
 
 
 
-  if (settings.save_intermediate_files && (settings.out_file_name != "")) {
-    // Save the contents of the vote_tensor.aaaafI
-    // arrays in different MRC files (for use later on).
+  // Save the contents of the vote_tensor.aaaafI array for future use?
+  if (settings.save_intermediate_fname_base != "") {
+
+    // Then we will save the 4-dimensional vote_tensor.aaaafI array
+    // in a series of 3-dimensional image files, with names ending in
+    // "_tensor_0.rec", "_tensor_1.rec", ..., "_tensor_5.rec"
     //
     // First figure out the file name(s) we are going to use.
-    // Strip the ".rec" or ".mrc" off of the end of the file name
-    int nf = settings.out_file_name.size();
+    // If the "settings.save_intermediate_fname_base" file name ends in
+    // ".rec" or ".mrc", then remove these these suffixes.
+    int nf = settings.save_intermediate_fname_base.size();
     string fname_suffix = "";
     if (nf > 4)
-      fname_suffix = settings.out_file_name.substr(nf-4, nf);
-    string fname_prefix = settings.out_file_name;
+      fname_suffix = settings.save_intermediate_fname_base.substr(nf-4, nf);
+    string fname_prefix = settings.save_intermediate_fname_base;
     if ((fname_suffix == ".mrc") || (fname_suffix == ".rec") ||
         (fname_suffix == ".MRC") || (fname_suffix == ".REC"))
-      fname_prefix = settings.out_file_name.substr(0, nf-4);
+      fname_prefix = settings.save_intermediate_fname_base.substr(0, nf-4);
     // Then save the files corresponding to the tensor
     for (int d = 0; d < 6; d++) {
       stringstream fname_ss;
@@ -1567,20 +1574,8 @@ HandleRidgeDetector(Settings settings,
       cerr << "writing \"" << fname_ss.str() << "\"" << endl;
       tomo_tmp.Write(fname_ss.str());
     }
-    // Then save the files corresponding to aaaafDirection
-    //for (int d = 0; d < 3; d++) {
-    //  stringstream fname_ss;
-    //  fname_ss << fname_prefix << "_direction_" << d << ".rec";
-    //  cerr << "allocating space for \"" << fname_ss.str() << "\"" << endl;
-    //  MrcSimple tomo_tmp = tomo_out;
-    //  for(int iz=0; iz < image_size[2]; iz++)
-    //    for(int iy=0; iy < image_size[1]; iy++)
-    //      for(int ix=0; ix < image_size[0]; ix++)
-    //        tomo_tmp.aaafI[iz][iy][ix] = aaaafDirection[iz][iy][ix][d];
-    //  cerr << "writing \"" << fname_ss.str() << "\"" << endl;
-    //  tomo_tmp.Write(fname_ss.str());
-    //}
-  } //if (settings.save_intermediate_files)
+
+  } //if (settings.save_intermediate_fname_base != "")
 
 
 
