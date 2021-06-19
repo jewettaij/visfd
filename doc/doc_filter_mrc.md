@@ -147,7 +147,7 @@ filter_mrc -in tomogram.rec \
   -surface minima 60.0 \
   -surface-tv 5.0 -surface-tv-angle-exponent 4 \
   -load-progress membranes \
-  -connect 1.0e+09 -cvn 0.707 -cvs 0.707 -cts 0.707 -ctn 0.707 \
+  -connect 1.0e+09 -connect-angle 45 \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
 Note:
@@ -618,17 +618,16 @@ indicating which cluster they belong to
 
 If some clusters are too big, you can either increase the *threshold*
 value, *or* you can alter increase angular sensitivity by decreasing
-the [*-connect-angle*](#--connect-angle) from 45 degrees to 25 degrees
-(or, equivalently increasing the 
+the [*-connect-angle*](#--connect-angle-theta) from 45 degrees to 25 degrees
+(or, equivalently by increasing the
 *-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9).
-(See below)
 
 Because it will probably take several tries to choose these parameters,
- to save time you can use the 
+you can use the
 ("-load-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
-argument to avoid having to recalculate the directional features of the image
-that you (hopefully) measured earlier, 
-as demonstrated in [example 3](#Example-3).
+argument to avoid having to recalculate the directional features
+of the image that you (hopefully) measured earlier.
+This was demonstrated in [example 3](#Example-3).
 
 Also: It is a bad idea to try this on the original full-sized tomogram image.
 1) Instead try this on one or more small cropped versions of the image
@@ -649,7 +648,7 @@ close holes in the surface using programs like *meshlab* or *PoissonRecon*.
 
 ### -must-link FILE
 
-*WARNING: This is an experimental feature as of 2019-4-09*
+*WARNING: This is an experimental feature. Please report bugs.*
 
 If the "**-connect**" argument fails, you can manually force
 different regions in the image to the same object
@@ -768,34 +767,55 @@ Consequently they are not integers (unless the
 argument was used).
 
 
+### -connect-angle theta
 
-### -cts *threshold*
-### -ctn *threshold*
-### -cvs *threshold*
-### -cvn *threshold*
-
-The *-cts*, *-ctn*, *-cvs*, *-cvn* arguments determine how similar the
+The *theta* argument determines how similar the
 orientations of each voxel must be in order for a pair of neighboring voxels
 to be merged into the same cluster (ie. the same membrane or same filament).
+Neighboring voxels whose orientations differ by more than *theta* will
+not be grouped into the same cluster (ie. the same surface or same curve).
+If not specified, the default value is assumed to be 45 degrees.
+However *theta* values from 15-60 degrees are common.
 
-Threshold values in the range from -1 to 1 are supported.
+Note: The *-connect-angle* argument has no effect unless the
+["-surface" and "-connect"](#Detecting-membranes) arguments are also supplied.
 
-A *-threshold* value of 0.707 ≈ cos(45°) and corresponds to a
+#### -cts, -ctn, -cvs, -cvn
+
+*(Warning: This is an advanced experimental feature.
+These arguments can probably be ignored by most users.)*
+
+Alternatively, if you need more detailed control over the criteria
+used to decide whether to add voxels to an existing cluster,
+then you can specify 4 different thresholds using the
+"**-cts threshold**", "**-ctn threshold**",
+"**-cvs threshold**", and "**-cvn *threshold**" arguments.
+This is an *alternative* to (specifying the "**-connect-angle**" argument).
+
+
+Motivation and explanation:
+Ideally, if tensor-voting worked, then the results of tensor voting should
+agree with the actual direction of the features located at each voxel location.
+If not, then you can exclude these voxels from consideration.
+To do that, the "*-cts*" and "*-cvs*" threshold arguments specify
+the minimum similarity between the hessian of the image brightness with the
+tensor and vector features that resulted from tensor voting, respectively.
+Additionally, the tensors from *neighboring* voxels which are part of the
+same surface or curve should be poinging in the same direction.
+So the "*-ctn*" and "*-cvn*" threshold arguments specify is the
+minimum similarity between the orientations of the tensors and vectors
+from neighboring voxels, respectively.
+All of these threshold parameters should be in the range from -1 to 1.
+A *-cvn -threshold* value of 0.707 ≈ cos(45°) and corresponds to a
 45 degree difference between orientations of neighboring voxels.
 In that case, neighboring voxels pointing in directions which
-differ by more than 45°
-will be assigned to different clusters (membranes).
-(This works well in most cases.)
-By default, this feature is disabled.
+differ by more than 45° will be assigned to different clusters (membranes).
+(This works reasonably well for phospholipid membranes.)
 
-The difference in meaning between these 4 arguments will be elaborated on
-in the future.  For now it is safe to set them all equal to the same value,
-or omit them entirely (-andrew 2020-12-14).
+Note that the *-cts*, *-ctn*, *-cvs*, and *-cvn* arguments
+have no effect unless the ["-surface" and "-connect"](#Detecting-membranes)
+arguments are also in use.
 
-*(Note: The "-connect" and *-cts*, *-ctn*, *-cvs*, *-cvn* arguments
-  currently have no effect unless the
-  ["-surface"](#Detecting-membranes) argument was also supplied.
-  -andrew 2019-3-04)*
 
 
 

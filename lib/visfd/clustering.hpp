@@ -579,8 +579,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
         // -----------------------------------------------
         // Then, condsider discarding voxel ix_jx,iy_jy,iz_jz due to
-        // inconsistencies between aaaafVector[iz][iy][ix]
-        //                     and aaaafVector[iz_jz][iy_jy][ix_jx]
+        // inconsistencies between aaaafSymTensor[iz][iy][ix]
+        //                     and aaaafSymTensor[iz_jz][iy_jy][ix_jx]
         // -----------------------------------------------
         if (aaaafSymmetricTensor) {
           if (TraceProductSym3(aaaafSymmetricTensor[iz][iy][ix],
@@ -596,8 +596,8 @@ ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
 
         // -----------------------------------------------
         // Then, condsider discarding voxel ix_jx,iy_jy,iz_jz due to
-        // inconsistencies between aaaafSymTensor[iz][iy][ix]
-        //                     and aaaafSymTensor[iz_jz][iy_jy][ix_jx]
+        // inconsistencies between aaaafVector[iz][iy][ix]
+        //                     and aaaafVector[iz_jz][iy_jy][ix_jx]
         // -----------------------------------------------
         if (aaaafSymmetricTensor) {
           if (consider_dot_product_sign) {
