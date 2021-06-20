@@ -314,13 +314,26 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
 
 
 
-/// @brief Figure out which sphere is located at each position in crds[].
-///        For every sphere, there is a corresponding "sphere_id".  This is
-///        defined as 1 + the corresponding index into the sphere_center_crds[].
-///        If crds[i] lies inside one of the spheres, store the corresponding
-///        sphere_id in the sphere_ids[i] vector.  (If crds[i] lies inside more
-///        than one sphere, give priority spheres occuring later in the list.)
-///        If crds[i] lies outside any of the spheres, store 0 there.
+/// @brief Suppose we have already detected a list of objects ("blobs") in
+///        an image, and recorded their locations and sizes
+///        (in the "sphere_center_crds", and "sphere_diameters" arguments).
+///        It is assumed that these spheres are (mostly) non-overlapping.
+///        Suppose also that the caller has supplied us with a list of
+///        locations within the image corresponding to where they believe some
+///        of these objects ("blobs") are located.  The caller wants to select
+///        some of these objects.  The goal of this function is to to figure
+///        out which objects they have selected.  So, for each entry in the
+///        "crds" array (ie. the x,y,z coordinates stored in crds[i]),
+///        we want to figure out if that location lies within any
+///        of the spheres, and if so, which one?  (If it lies in more than one
+///        sphere, priority is given to spheres occuring later in the list.)
+/// @note  For every sphere ("blob"), there is a corresponding "sphere_id".
+///        The "sphere_id" is defined as 1 + the corresponding index into
+///        the sphere_center_crds[].  If crds[i] lies inside one of the spheres,
+///        store the corresponding sphere_id in the sphere_ids[i] vector.
+///        (Again, if crds[i] lies inside more than one sphere, give priority
+///        to spheres occuring later in the list.)
+///        If crds[i] lies outside all of the spheres, store 0 there.
 /// @returns void.  Results are stored in "sphere_ids".
 
 template<typename Scalar, typename Integer>

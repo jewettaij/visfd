@@ -1435,9 +1435,8 @@ CalcHessian(int const image_size[3], //!< source image size
 
 
 
-/// CalcMomentTensor()
-/// This may be algebraically equivalent to CalcHessian()
-/// However this version of the function might be more robust for small ridges.
+/// @brief   The "CalcMomentTensor()" function was intended to be a variant
+/// of the "CalcHessian()" function which is more robust for small ridges.
 /// (This is because I apply the derivative to the Gaussian filter
 ///  before applying the filter, ...instead of applying the Gaussian filter
 ///  first and then taking finite differences afterwards.  If the width of the 
