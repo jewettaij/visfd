@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.23.0");
-string g_date_string("2021-6-19");
+string g_version_string("0.25.0");
+string g_date_string("2021-6-20");
 
 
 
@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
 
 
 
-    settings.surface_tv_sigma /= voxel_width[0];
+    settings.tv_sigma /= voxel_width[0];
     for (int d=0; d<3; d++) {
       settings.width_a[d] /= voxel_width[d];
       settings.width_b[d] /= voxel_width[d];

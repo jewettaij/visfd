@@ -206,7 +206,7 @@ class Settings {
   float out_thresh_gauss_x0;
   float out_thresh_gauss_sigma;
 
-  // ---- parameters for watershed segmentation ----
+  // ---- parameters for watershed segmentation (and clustering) ----
 
   bool watershed_show_boundaries;
   float watershed_boundary_label;
@@ -230,14 +230,14 @@ class Settings {
 
   string out_normals_fname;
   bool  ridges_are_maxima;
-  float surface_hessian_score_threshold;
-  bool  surface_hessian_score_threshold_is_a_fraction;
-  float surface_tv_score_threshold;
-  float surface_tv_sigma;
-  int   surface_tv_exponent = 4;
-  int   surface_tv_num_iters = 1;
-  float surface_tv_truncate_ratio;
- 
+  float hessian_score_threshold;
+  bool  hessian_score_threshold_is_a_fraction;
+  float tv_score_threshold;
+  float tv_sigma;
+  int   tv_exponent;
+  //int   tv_num_iters = 1;  <-- CRUFT.  REMOVE THIS LINE LATER
+  float tv_truncate_ratio;
+  bool detect_curves_not_surfaces;
 
   // ---- parameters for scale free blob detection ----
 

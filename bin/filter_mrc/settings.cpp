@@ -124,21 +124,25 @@ Settings::Settings() {
   nonmax_max_volume_overlap_large = std::numeric_limits<float>::infinity();
   auto_thresh_score = false;
 
+  out_normals_fname = "";
+  ridges_are_maxima = false;
+  hessian_score_threshold = 0.0; //don't discard any voxels before TV
+  hessian_score_threshold_is_a_fraction = false;
+  tv_score_threshold = 0.0;
+  tv_sigma = 0.0;
+  tv_exponent = 4;
+  //tv_num_iters = 0;  <-- CRUFT.  REMOVE THIS LINE LATER
+  tv_truncate_ratio = sqrt(2.0);
+  detect_curves_not_surfaces = false;
+
+
+  // ---- parameters for watershed segmentation (and clustering) ----
   clusters_begin_at_maxima = false;
   watershed_boundary_label = 0.0;
   watershed_show_boundaries = true;
   watershed_threshold = std::numeric_limits<float>::infinity();
 
-  out_normals_fname = "";
-  ridges_are_maxima = false;
-  surface_hessian_score_threshold = 0.0; //don't discard any voxels before TV
-  surface_hessian_score_threshold_is_a_fraction = false;
-  surface_tv_score_threshold = 0.0;
-  surface_tv_sigma = 0.0;
-  surface_tv_exponent = 4;
-  surface_tv_num_iters = 0;
-  surface_tv_truncate_ratio = sqrt(2.0);
-
+  // ---- parameters for the clustering of connected voxels into islands ----
   cluster_connected_voxels = false;
   connect_threshold_saliency = std::numeric_limits<float>::infinity();
   //connect_threshold_vector_saliency = M_SQRT1_2; //45 degree change maximum
@@ -153,6 +157,7 @@ Settings::Settings() {
   is_must_link_constraints_in_voxels = false;
   select_cluster = 0;
 
+  // --- parameters for intensity maps and thresholding ---
   use_intensity_map = false;
   use_dual_thresholds = false;
   in_threshold_01_a = 0.0;
@@ -2102,15 +2107,19 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-planar-tv") {
       throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] +
                      " argument has been renamed.\n"
-                     "       It is now called \"-surface-tv\"\n");
+                     "       It is now called \"-tv\"\n");
     }
 
 
 
-    else if ((vArgs[i] == "-surface") ||
-             (vArgs[i] == "-membrane"))
+    else if ((vArgs[i] == "-surface") || (vArgs[i] == "-curve"))
     {
       filter_type = RIDGE_SURFACE;
+      if (vArgs[i] == "-curve")
+        detect_curves_not_surfaces = true;
+      else
+        detect_curves_not_surfaces = false;
+
       try {
         if ((i+2 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
@@ -2141,8 +2150,9 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-surface-background") ||
-             (vArgs[i] == "-membrane-background"))
+    else if ((vArgs[i] == "-detection-background") ||
+             (vArgs[i] == "-surface-background") ||
+             (vArgs[i] == "-curve-background"))
     {
       filter_type = RIDGE_SURFACE;
       try {
@@ -2157,19 +2167,20 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number: the width\n"
                        "       (σ) of the Gaussian used beforehand for smoothing (in physical units).\n"
-                       "       (This selects the scale or resolution of the filter.)\n");
+                       "       (This selects the low frequency variations in the background that\n"
+                       "        you wish to ignore.)\n");
       }
       num_arguments_deleted = 2;
     }
 
 
-    else if (vArgs[i] == "-surface-threshold") {
+    else if (vArgs[i] == "-detection-threshold") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        surface_hessian_score_threshold = stof(vArgs[i+1]);
-        surface_hessian_score_threshold_is_a_fraction = false;
+        hessian_score_threshold = stof(vArgs[i+1]);
+        hessian_score_threshold_is_a_fraction = false;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2179,15 +2190,15 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-surface-best") {
+    else if (vArgs[i] == "-best") {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        surface_hessian_score_threshold = stof(vArgs[i+1]);
-        surface_hessian_score_threshold_is_a_fraction = true;
-        if (! ((0.0 <= surface_hessian_score_threshold) &&
-               (surface_hessian_score_threshold <= 1.0)))
+        hessian_score_threshold = stof(vArgs[i+1]);
+        hessian_score_threshold_is_a_fraction = true;
+        if (! ((0.0 <= hessian_score_threshold) &&
+               (hessian_score_threshold <= 1.0)))
           throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
@@ -2206,18 +2217,19 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-surface-tv") {
+    else if ((vArgs[i] == "-tv") ||
+             (vArgs[i] == "-surface-tv")) {
       if (filter_type != RIDGE_SURFACE)
-        throw InputErr("Error: the -surface-tv argument must appear in the argument list\n"
+        throw InputErr("Error: the -tv argument must appear in the argument list\n"
                        "       after the -surface argument.  It does not make sense to use\n"
-                       "       -surface-tv refinement if you are not using the -surface filter.\n");
+                       "       -tv refinement if you are not using the -surface or -curve filters.\n");
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        surface_tv_sigma = stof(vArgs[i+1]);
-        if (surface_tv_sigma < 1.0)
-          throw InputErr("Error: the -surface-tv argument must be >= 1.0\n");
+        tv_sigma = stof(vArgs[i+1]);
+        if (tv_sigma < 1.0)
+          throw InputErr("Error: the -tv argument must be >= 1.0\n");
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2228,12 +2240,13 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-surface-tv-angle-exponent") {
+    else if ((vArgs[i] == "-tv-angle-exponent") ||
+             (vArgs[i] == "-surface-tv-angle-exponent")) {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        surface_tv_exponent = stoi(vArgs[i+1]);
+        tv_exponent = stoi(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2244,12 +2257,13 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-surface-tv-threshold") {
+    else if ((vArgs[i] == "-tv-threshold") ||
+             (vArgs[i] == "-surface-tv-threshold")) {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
           throw invalid_argument("");
-        surface_tv_score_threshold = stof(vArgs[i+1]);
+        tv_score_threshold = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2259,20 +2273,24 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-surface-tv-iter") {
-      try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
-          throw invalid_argument("");
-        surface_tv_num_iters = stof(vArgs[i+1]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number, the threshold\n"
-                       "       for deciding whether to compute the surface normal there.\n");
-      }
-      num_arguments_deleted = 2;
-    }
+
+    // CRUFT
+    //   I can't remember what this code was supposed to be used for.
+    // COMMENTING OUT:
+    //else if ((vArgs[i] == "-tv-iter") ||
+    //         (vArgs[i] == "-surface-tv-iter")) {
+    //  try {
+    //    if ((i+1 >= vArgs.size()) ||
+    //        (vArgs[i+1] == ""))
+    //      throw invalid_argument("");
+    //    tv_num_iters = stof(vArgs[i+1]);
+    //  }
+    //  catch (invalid_argument& exc) {
+    //    throw InputErr("Error: The " + vArgs[i] +
+    //                   " argument must be followed by a number.");
+    //  }
+    //  num_arguments_deleted = 2;
+    //}
 
 
     else if (vArgs[i] == "-surface-normals-file") {
@@ -2824,8 +2842,8 @@ Settings::ParseArgs(vector<string>& vArgs)
   if (filter_type == RIDGE_SURFACE) {
     float sigma = width_a[0];
     // The parameter entered by the user is a ratio, not an absolute number.
-    // Now that we know what sigma is, multiply surface_tv_sigma by sigma.
-    surface_tv_sigma *= sigma;
+    // Now that we know what sigma is, multiply tv_sigma by sigma.
+    tv_sigma *= sigma;
   }
 
 

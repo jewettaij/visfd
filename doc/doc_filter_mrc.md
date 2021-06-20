@@ -51,8 +51,8 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
 filter_mrc -in tomogram.rec \
   -out membranes.rec \
-  -surface minima 60.0 -surface-best 0.06 \
-  -surface-tv 5.0 -surface-tv-angle-exponent 4 \
+  -surface minima 60.0 -best 0.06 \
+  -tv 5.0 -tv-angle-exponent 4 \
   -bin 2 \
   -save-progress membranes
 ```
@@ -77,11 +77,11 @@ detecting the membrane each time we run "filter_mrc" later on.
 (See [example 3](#Example-3) below.)
 
 Note: The computation time will be roughly proportional to the image size
-*as well as* the "-surface-best" argument (which ranges from 0 to 1).
+*as well as* the "-best" argument (which ranges from 0 to 1).
 (See [example 3](#Example-3) below.)  The computation time also varies
 dramatically with the voxel width.  High resolution images with many small
 voxels are prohibitively slow to analyze.  So in this example, the user
-included the optional [-bin 2](#--bin-width) argument, to reduce the image
+included the optional [-bin 2](#--bin-binsize) argument, to reduce the image
 resolution by a factor of 2.  If the thickness of the membrane you wish
 to detect is multiple voxels wide, then using "-bin 2" or "-bin 3" should
 hopefully not significantly affect the features you detect.
@@ -153,7 +153,7 @@ If so, then you are ready to try the example below.
 filter_mrc -in tomogram.rec \
   -out membranes_clusters.rec \
   -surface minima 60.0 \
-  -surface-tv 5.0 -surface-tv-angle-exponent 4 \
+  -tv 5.0 -tv-angle-exponent 4 \
   -bin 2 \
   -load-progress membranes \
   -connect 1.0e+09 -connect-angle 45 \
@@ -368,7 +368,7 @@ is supported.
 The
 ["**-surface**"](#Detecting-membranes)
 and
-["**-surface-tv**"](#-surface-tv-σ_ratio)
+["**-tv**"](#-tv-σ_ratio)
 filters are used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 and
@@ -380,19 +380,21 @@ argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
 using the
-["**-surface-orientations-file**"](#-surface-orientations-file-PLY_FILE)
+["**-surface-normals-file**"](#-surface-normals-file-PLY_FILE)
 argument.
 
 
 # Feature detection
 
-## Detecting membranes
+## Detecting surfaces
 
 ### -surface type thickness
 
 When the "**-surface**" filter is selected, a
 [3D planar ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 filter will be used.
+This kind of filter can detect thin surfaces
+that are brighter or darker than their surroundings.
 The "*type*" argument must be either "*minima*" or "*maxima*".
 If *type* = "*minima*", then this filter will detect thin membrane-like
 structures which are dark on a bright background.
@@ -414,23 +416,38 @@ in the two orthogonal directions.
 Because this filter depends on second derivatives,
 it is prone to detect a large number of spurious fluctuations in brightness
 (in addition to the membrane-like structures you are interested in).
-Tensor-voting (using the *-surface-tv* argument)
+Tensor-voting (using the *-tv* argument)
 can be used to remove these spurious detected peaks
 and improve the signal-to-noise ratio.
 
-*(Technical details: This will generate an output image whose brightness equals
-Ngamma_norm = λ1^2 - λ2^2,
-where λ1, abd λ2 are the largest and second-largest eigenvalues of the
-hessian matrix, multiplied by σ^2 [in units of voxels].
-See Lindeberg Int.J.Comput.Vis.(1998) for details.)*
+**WARNING**
+*This filter requires a very large amount of memory
+(enough to store at least 9 copies of the original image in 32bit-float mode).*
+
+
+
+## Detecting curves
+
+### -curve type thickness
+***WARNING: THIS FEATURE HAS NOT BEEN TESTED -Andrew 2021-6-20***
+
+The detection of (linear, filamentous) curves
+in images is much like the detection of surfaces.
+The user must specify the *type* of the curve (ie. "*maxima*" or "*minima*"),
+and its approximate *thickness* (in physical units).
+See the documentation for
+[detecting surfaces](#-Detecting-surfaces) for more details.
+As with surface detection, the curve detection fidelity 
+can be improved using tensor voting (with the "-tv" argument).
 
 **WARNING**
 *This filter requires a very large amount of memory
-(enough to store at least 8 copies of the original image in 32bit-float mode).*
+(enough to store at least 9 copies of the original image in 32bit-float mode).*
 
 
-### -surface-tv σ_ratio
-The "**-surface-tv**" argument enables refinement of (*-surface*) results using
+
+### -tv σ_ratio
+The "**-tv**" argument enables refinement of (*-surface*) results using
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf).
 It performs a kind of directional blurring which reinforces regions in the image
 where detected ridges in the image point in the same or similar directions.
@@ -444,9 +461,9 @@ ratio when detecting curves and surfaces.
 Tensor-voting refinement is not done by default
 because it can be a very expensive computation.
 
-Note: The tensor-voting algorithm selected the "-surface-tv" argument
+Note: The tensor-voting algorithm selected the "-tv" argument
 is **extremely slow**.  Croping the tomogram and/or reducing the resolution
-of the 3D image (using the ["-bin"](#--bin-width) argument)
+of the 3D image (using the ["-bin"](#--bin-binsize) argument)
 dramatically reduce computation time.
 
 Typically, once you have detected the surfaces (or curves) in an image, you
@@ -458,7 +475,7 @@ Consequenly, **it is strongly recommended that you use the
 argument,**
 so that you don't need to repeat the slow tensor-voting calculation each time.
 
-*(Note: -surface-tv is not an independent filter.
+*(Note: -tv is not an independent filter.
 It enables refinement of existing results from the -surface filter.
 This argument is ignored unless the -surface argument is also used.)*
 
@@ -469,13 +486,13 @@ where "σ" is the bluring used in the ridge detection
 and it has a value of σ=thickness/√3)*
 
 
-### -surface-tv-angle-exponent n
-The "**-surface-tv-angle-exponent**" parameter (*n*)
+### -tv-angle-exponent n
+The "**-tv-angle-exponent**" parameter (*n*)
 controls the penalty applied to membrane-like regions which are pointing
 in incompatible directions.  It is 4 by default.
 
 
-### -surface-threshold threshold
+### -detection-threshold threshold
 
 This will discard voxels whose
 [saliency](https://www.pyimagesearch.com/2018/07/16/opencv-saliency-detection)
@@ -490,13 +507,13 @@ the "-surface" filter argument, and then visualizing the resulting file.
  see the saliency of voxels of interest.)*
 
 In practice, it is often easier to use the
-[*-surface-best**](#-surface-best-fraction)
+[*-best**](#-best-fraction)
 argument, because no intermediate visualization step is required.
 
 
-### -surface-best fraction
+### -best fraction
 
-The vast majority of voxels in an image do not resemble the feature you are searching for (ie membranes).  The "-surface-best" argument will discard all but the most salient voxels in the image.  It discards voxels from future consideration
+The vast majority of voxels in an image do not resemble the feature you are searching for (ie membranes).  The "-best" argument will discard all but the most salient voxels in the image.  It discards voxels from future consideration
 unless their
 [saliency](https://www.pyimagesearch.com/2018/07/16/opencv-saliency-detection)
 is in the top *fraction* of all of the voxel saliencies from the entire image
@@ -589,7 +606,7 @@ run membrane-detection
 (for example using
 ["-surface"](#Detecting-membranes)
 and
-["-surface-tv"](#-surface-tv-σ_ratio)
+["-tv"](#-tv-σ_ratio)
 )
 once in advance without the
 ["-connect"](#-connect-threshold)
@@ -645,7 +662,7 @@ near the junction points of interest.
 (You can crop images either by using IMOD,
  or by using the "crop_mrc" program distributed with *visfd*.)
 2) Again, you can also reduce the size and resolution of the image
-(during the detection process), using the ["-bin"](#--bin-width) argument.
+(during the detection process), using the ["-bin"](#--bin-binsize) argument.
 For example, using "-bin 2" will often also produce reasonable results
 and will reduce the computation time considerably.  Any features
 detected at reduced resolution will be scaled up in size accordingly
@@ -756,7 +773,7 @@ will be joined with all of the voxels connected to the second voxel
 
 
 ### -select-cluster cluster-ID
-### -surface-orientations-file PLY_FILE
+### -surface-normals-file PLY_FILE
 
 Once clustering is working, you can select one of the clusters using
 the "**-select-cluster**" argument.
@@ -765,7 +782,7 @@ the "**-select-cluster**" argument.
 You can create a file which contains a list of voxels locations
 (for the voxels belonging to that cluster),
 as well as their surface orientations
-using the "**-surface-orientations-file**".
+using the "**-surface-normals-file**".
 The resulting file will be in .PLY format.
 This oriented point-cloud file can be used for further processing
 (for example for hole-repair using the "PoissonRecon" program).
@@ -1402,26 +1419,39 @@ of the Gaussian independently in the x,y,z directions:
   by (9π/2)^(1/6)≈1.5549880806696572 to compensate.)
 
 
-## Image resizing
+## Resizing the image
 
-### -bin width
+### -bin binsize
+***WARNING: THIS IS AN EXPERIMENTAL FEATURE -Andrew 2021-6-20***
 
-Reduce the resolution of the image in each direction by a factor of *width*.
-(Width must be a positive integer.)
-This will dramatically reduce the computation time necessary to detect
-objects in the image.  A reduction in resolution is justifiable if you
-are detecting features in the image (such as surfaces or blobs)
-that are significantly larger (or thicker) than the voxel width.
+Reduce the resolution of the image in each direction by a factor of *binsize*.
+(*binsize* must be a positive integer.)
+The new image will be smaller in each direction by a factof of *binsize*.
 
-Note that the width of each voxel will be increased accordingly,
-so that the positions of any features in the image that you detect
-should not be significantly effected by the change in resolution.
+Motivation: Reducing the resolution of an image can often dramatically
+reduce the computation time necessary to detect objects in the image.
+If you are detecting features in the image (such as membranes or blobs)
+that are significantly larger (or thicker) than the voxel width,
+then a reduction in resolution by a factor of 2 or so
+should not effect your ability to detect it accurately,
+(and could make tensor voting up to 64 times faster (as of 2021-6-20)).
 
 Note that you can use this argument together with other arguments.
 If you do that, the reduction of resolution occurs before all
 other operations are performed (such as "-blob" or "-surface" detection).
 This allows you to reduce the image size before
 these other expensive calculations are performed.
+
+Note that the width of each voxel will be increased accordingly,
+so that the positions of any features in the image that you detect
+should not be significantly effected by the change in resolution.
+(This includes the coordinates of the surface mesh.)
+Similarly, when using "-bin", the user does not need to alter
+any of the other parameters or arguments passed to the program
+(such as the thickness parameters or sigma parameters
+that characterize the size of the objects they want to detect).
+The software will automatically adjust these parameters
+to compensate for the change in image resolution.
 
 
 

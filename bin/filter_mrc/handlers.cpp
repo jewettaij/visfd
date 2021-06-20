@@ -1369,8 +1369,12 @@ HandleTV(Settings settings,
         #endif  //#ifndef NDEBUG
 
 
-        score = ScoreHessianPlanar(eivals,
-                                   aaaafGradient[iz][iy][ix]);
+        if (settings.detect_curves_not_surfaces)
+          score = ScoreHessianLinear(eivals,
+                                     aaaafGradient[iz][iy][ix]);
+        else
+          score = ScoreHessianPlanar(eivals,
+                                     aaaafGradient[iz][iy][ix]);
 
         float peak_height = 1.0;
         if (tomo_background.aaafI)
@@ -1416,9 +1420,9 @@ HandleTV(Settings settings,
 
   { // Use thresholding to reduce the number of voxels that we have to consider
     
-    float hessian_score_threshold = settings.surface_hessian_score_threshold;
-    if (settings.surface_hessian_score_threshold_is_a_fraction) {
-      float hessian_score_fraction = settings.surface_hessian_score_threshold;
+    float hessian_score_threshold = settings.hessian_score_threshold;
+    if (settings.hessian_score_threshold_is_a_fraction) {
+      float hessian_score_fraction = settings.hessian_score_threshold;
       size_t n_voxels = 0;
       for (int iz=0; iz < image_size[2]; iz++) {
         for (int iy=0; iy < image_size[1]; iy++) {
@@ -1464,7 +1468,7 @@ HandleTV(Settings settings,
 
 
 
-  if (settings.surface_tv_sigma > 0.0) {
+  if (settings.tv_sigma > 0.0) {
 
     if (settings.load_intermediate_fname_base == "") {
 
@@ -1476,9 +1480,9 @@ HandleTV(Settings settings,
       assert(settings.filter_truncate_ratio > 0);
 
       TV3D<float, int, array<float,3>, float* >
-        tv(settings.surface_tv_sigma,
-           settings.surface_tv_exponent,
-           settings.surface_tv_truncate_ratio);
+        tv(settings.tv_sigma,
+           settings.tv_exponent,
+           settings.tv_truncate_ratio);
 
       tv.TVDenseStick(tomo_in.header.nvoxels,
                       tomo_out.aaafI,
@@ -1486,8 +1490,8 @@ HandleTV(Settings settings,
                       vote_tensor.aaaafI,
                       mask.aaafI,
                       mask.aaafI,
-                      false,  // (we want to detect surfaces not curves)
-                      //settings.surface_hessian_score_threshold,
+                      settings.detect_curves_not_surfaces,
+                      //settings.hessian_score_threshold,
                       true,   // (do normalize near rectangular image bounaries)
                       false,  // (diagonalize each tensor afterwards?)
                       &cerr);
@@ -1527,6 +1531,7 @@ HandleTV(Settings settings,
 
 
 
+
     // Now that the feature tensor has been calculated,
     // calculate the saliency of each voxel using this tensor.
     for(int iz=0; iz < image_size[2]; iz++) {
@@ -1537,7 +1542,11 @@ HandleTV(Settings settings,
             DiagonalizeFlatSym3(vote_tensor.aaaafI[iz][iy][ix],
                                 diagonalized_hessian,
                                 eival_order);
-            float score = ScoreTensorPlanar(diagonalized_hessian);
+            float score;
+            if (settings.detect_curves_not_surfaces)
+              score = ScoreTensorLinear(diagonalized_hessian);
+            else
+              score = ScoreTensorPlanar(diagonalized_hessian);
             float peak_height = 1.0;
             if (tomo_background.aaafI)
               peak_height = (tomo_in.aaafI[iz][iy][ix] -
@@ -1548,7 +1557,7 @@ HandleTV(Settings settings,
         }
       }
     }
-  } // if (settings.surface_tv_sigma > 0.0)
+  } // if (settings.tv_sigma > 0.0)
 
 
 
