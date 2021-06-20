@@ -15,7 +15,7 @@
                              // to separate different objects in an image)
 #include <draw.hpp>          // functions for drawing and annotation
 #include <filter3d.hpp>      // common 3D filters
-
+#include <resample.hpp>      // resize the image
 
 // lower level functions and classes (upon which the files above depend):
 

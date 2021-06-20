@@ -53,6 +53,7 @@ filter_mrc -in tomogram.rec \
   -out membranes.rec \
   -surface minima 60.0 -surface-best 0.06 \
   -surface-tv 5.0 -surface-tv-angle-exponent 4 \
+  -bin 2 \
   -save-progress membranes
 ```
 
@@ -62,22 +63,29 @@ View this file (eg. using IMOD) to see if the membranes are successfully
 detected.  You may need to adjust this thickness parameter
 (and the other parameters) until the membrane is clearly visible.
 **This is extremely slow, so try this on a small, cropped image first.**
-Downsampling the image may also help.
 (In my experience, "60" is a reasonable default thickness parameter to
 detect lipid bilayers, assuming the voxel widths are in units of Angstroms.
 Incidentally, you can specify the physical width of each voxel using the
 [-w argument](#Voxel-Width).)
 
+Note: After the membrane features are detected, they must be analyzed.
+This typically requires running the "filter_mrc" program multiple times.
+The optional
+["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+argument used here allows us to skip the time consuming process of
+detecting the membrane each time we run "filter_mrc" later on.
+(See [example 3](#Example-3) below.)
+
 Note: The computation time will be roughly proportional to the image size
 *as well as* the "-surface-best" argument (which ranges from 0 to 1).
-(See [example 3](#Example-3) below)
+(See [example 3](#Example-3) below.)  The computation time also varies
+dramatically with the voxel width.  High resolution images with many small
+voxels are prohibitively slow to analyze.  So in this example, the user
+included the optional [-bin 2](#--bin-width) argument, to reduce the image
+resolution by a factor of 2.  If the thickness of the membrane you wish
+to detect is multiple voxels wide, then using "-bin 2" or "-bin 3" should
+hopefully not significantly affect the features you detect.
 
-Note: The optional
-("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
-argument allows us to skip the time
-consuming process of running tensor voting again later on when we try
-to stitch the resulting surface fragments into a contiguous closed surface.
-(See [example 3](#Example-3) below.)
 
 
 ### Example 2
@@ -146,6 +154,7 @@ filter_mrc -in tomogram.rec \
   -out membranes_clusters.rec \
   -surface minima 60.0 \
   -surface-tv 5.0 -surface-tv-angle-exponent 4 \
+  -bin 2 \
   -load-progress membranes \
   -connect 1.0e+09 -connect-angle 45 \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
@@ -153,7 +162,7 @@ filter_mrc -in tomogram.rec \
 Note:
 Here I assumed that the user has already followed the instructions in
 [example 1](#Example-1).  (Consequently, to save time, we used the
-("-load-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+["-load-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
 to argument to skip over the time consuming
 process of detecting the membrane again.)
 This will generate a new file ("largest_membrane_pointcloud.ply")
@@ -375,10 +384,6 @@ using the
 argument.
 
 
-
-
-
-
 # Feature detection
 
 ## Detecting membranes
@@ -440,13 +445,18 @@ Tensor-voting refinement is not done by default
 because it can be a very expensive computation.
 
 Note: The tensor-voting algorithm selected the "-surface-tv" argument
-is **extremely slow**.  Typically, once you have detected the surfaces
-in an image, you will want to analyze them to stitch together larger
-surfaces, with the correct orientation.  This is usually an iterative process.
+is **extremely slow**.  Croping the tomogram and/or reducing the resolution
+of the 3D image (using the ["-bin"](#--bin-width) argument)
+dramatically reduce computation time.
+
+Typically, once you have detected the surfaces (or curves) in an image, you
+will probably want to analyze them to stitch together larger surfaces.
+This is usually an iterative process and it
+requires running the "filter_mrc" program multiple times.
 Consequenly, **it is strongly recommended that you use the
-("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
 argument,**
-so that you don't need to repeat the tensor-voting calculation each time.
+so that you don't need to repeat the slow tensor-voting calculation each time.
 
 *(Note: -surface-tv is not an independent filter.
 It enables refinement of existing results from the -surface filter.
@@ -555,10 +565,10 @@ If too small, then separate objects in the image will be joined together.
 Because it often takes several iterations to choose the correct
 thresholds, it is recommended that you run *filter_mrc* once in advance
 to detect the membrane, saving your progress using the
-("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
 argument.  *Then* when you are ready to connect the surfaces (or curves)
 together using the "-connect" argument, use the 
-("-load-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+["-load-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
 argument to load the directional features of the image that you measured earlier
 (to avoid having to recalculate them again).
 (This was demonstrated in [example 1](#Example-1) and [example 3](#Example-3).)
@@ -585,7 +595,7 @@ once in advance without the
 ["-connect"](#-connect-threshold)
 argument
 with the
-("-save-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
 argument
 (as we did in the membrane-detection
 [example](#Example-1)).
@@ -624,7 +634,7 @@ the [*-connect-angle*](#--connect-angle-theta) from 45 degrees to 25 degrees
 
 Because it will probably take several tries to choose these parameters,
 you can use the
-("-load-progress")[#--save-progress-FILENAME-and--load-progress-FILENAME]
+["-load-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
 argument to avoid having to recalculate the directional features
 of the image that you (hopefully) measured earlier.
 This was demonstrated in [example 3](#Example-3).
@@ -634,8 +644,8 @@ Also: It is a bad idea to try this on the original full-sized tomogram image.
 near the junction points of interest.
 (You can crop images either by using IMOD,
  or by using the "crop_mrc" program distributed with *visfd*.)
-2) You can also reduce the size and resolution of the image
-(during the detection process), using the ["-bin"](#--bin) argument.
+2) Again, you can also reduce the size and resolution of the image
+(during the detection process), using the ["-bin"](#--bin-width) argument.
 For example, using "-bin 2" will often also produce reasonable results
 and will reduce the computation time considerably.  Any features
 detected at reduced resolution will be scaled up in size accordingly
@@ -1213,7 +1223,6 @@ which are assigned to *label* instead.  (This parameter is a number.)
 
 ## General filters:
 
-
 ### -gauss and -ggauss
 The **-gauss** and **-gauss-aniso** arguments must be followed by one or more numbers specifying the width of the Gaussian filter to apply to your image:
 ```
@@ -1391,6 +1400,29 @@ of the Gaussian independently in the x,y,z directions:
  are calculated becomes more and more like a uniform sphere with radius σ.
  (So if you do this, be sure to multiply your radius argument, r,
   by (9π/2)^(1/6)≈1.5549880806696572 to compensate.)
+
+
+## Image resizing
+
+### -bin width
+
+Reduce the resolution of the image in each direction by a factor of *width*.
+(Width must be a positive integer.)
+This will dramatically reduce the computation time necessary to detect
+objects in the image.  A reduction in resolution is justifiable if you
+are detecting features in the image (such as surfaces or blobs)
+that are significantly larger (or thicker) than the voxel width.
+
+Note that the width of each voxel will be increased accordingly,
+so that the positions of any features in the image that you detect
+should not be significantly effected by the change in resolution.
+
+Note that you can use this argument together with other arguments.
+If you do that, the reduction of resolution occurs before all
+other operations are performed (such as "-blob" or "-surface" detection).
+This allows you to reduce the image size before
+these other expensive calculations are performed.
+
 
 
 

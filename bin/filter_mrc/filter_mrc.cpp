@@ -78,19 +78,98 @@ int main(int argc, char **argv) {
     }
 
 
-    int image_size[3];
+    // ---- mask ----
+
+    // Optional: if there is a "mask", read that too
+    MrcSimple mask;
+    if (settings.mask_file_name != "") {
+      cerr << "Reading mask \""<<settings.mask_file_name<<"\"" << endl;
+      mask.Read(settings.mask_file_name, false);
+      WarnMRCSignedBytes(mask, settings.mask_file_name, cerr);
+      if ((mask.header.nvoxels[0] != tomo_in.header.nvoxels[0]) ||
+          (mask.header.nvoxels[1] != tomo_in.header.nvoxels[1]) ||
+          (mask.header.nvoxels[2] != tomo_in.header.nvoxels[2])) {
+          throw VisfdErr("Error: The size of the mask image does not match the size of the input image.\n");
+      }
+      // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
+      if (settings.use_mask_select) {
+        for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
+          for (int iy=0; iy<mask.header.nvoxels[1]; iy++)
+            for (int ix=0; ix<mask.header.nvoxels[0]; ix++)
+              if (mask.aaafI[iz][iy][ix] == settings.mask_select)
+                mask.aaafI[iz][iy][ix] = 1.0;
+              else
+                mask.aaafI[iz][iy][ix] = 0.0;
+      }
+    }
+
+
+    // Reduce the size of the input image (using binning)?
+    if (settings.resize_with_binning > 1) {
+      int nvoxels_resized[3];
+      for (int d=0; d < 3; d++)
+        nvoxels_resized[d] = (tomo_in.header.nvoxels[d] /
+                              settings.resize_with_binning);
+      MrcSimple tomo_tmp = tomo_in;
+      tomo_tmp.Resize(nvoxels_resized);
+      // Now bin the original image, and save the result in tomo_tmp.aaafI
+      BinArray3D(tomo_in.header.nvoxels,
+                 nvoxels_resized,
+                 tomo_in.aaafI,
+                 tomo_tmp.aaafI);
+      // Copy the contents of tomo_tmp into tomo_in.
+      tomo_in.swap(tomo_tmp);
+      // (Note: The old contents of "tomo_in.aaafI" will be freed
+      //  when tomo_tmp is destroyed or modified with Resize().)
+
+      // Did the user supply a mask?
+      // If so, we should resize (bin) the mask as well.
+      if (mask.header.nvoxels[0] > 0) {
+        // Since we swapped tomo_in <--> tomo_tmp,
+        // the tomo_tmp.aaafI array is no longer the correct size.
+        // We can fix that by invoking Resize() again.
+        tomo_tmp.Resize(nvoxels_resized);
+        // Now bin the mask, and save the result in tomo_tmp.aaafI
+        BinArray3D(mask.header.nvoxels,
+                   nvoxels_resized,
+                   mask.aaafI,
+                   tomo_tmp.aaafI);
+        // Copy the contents of tomo_tmp into mask.
+        mask.swap(tomo_tmp);
+        //(The old contents of "mask" will be freed when tomo_tmp is destroyed.)
+      }
+    } //if (settings.resize_with_binning > 0)
+
+
+
+
+    // ---- How many voxels are in the image we will be processing? ----
+    int image_size[3]; // <-- store here
     for (int d = 0; d < 3; d++)
       image_size[d] = tomo_in.header.nvoxels[d];
 
+
+
+    // ---- Voxel width? ----
     float voxel_width[3] = {1.0, 1.0, 1.0};
-
-    // ---- Voxel size? ----
-
     if (settings.voxel_width > 0.0) {
       // Did the user manually specify the width of each voxel?
       voxel_width[0] = settings.voxel_width;
       voxel_width[1] = settings.voxel_width;
       voxel_width[2] = settings.voxel_width;
+      // If the user altered the size of the voxel width by grouping
+      // multiple voxels into single voxels (through binning),
+      // then the effective size of the new voxels is larger than
+      // the original voxels.  It is assumed that the voxel_width specified
+      // by the user is the voxel width of the original image, not the binned
+      // image.  So we must increase this voxel width to compensate.
+      // (We don't have to do this if the voxel width is stored
+      //  header of the MRC file, because that width is inferred from the
+      //  header.cellA[] and image_size[] numbers, which are currently correct.)
+      if (settings.resize_with_binning > 0) {
+        for (int d=0; d < 3; d++)
+          voxel_width[d] *= settings.resize_with_binning;
+      }
     }
     else {
       // Otherwise, infer it from the header of the MRC file
@@ -125,6 +204,39 @@ int main(int argc, char **argv) {
         "all 3 directions.  (For example \"-w "<<voxel_width[0]<<"\")\n";
       throw VisfdErr(err_msg.str());
     }
+
+
+
+    if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
+      mask = tomo_in; //allocate an array for an image the same size as tomo_in
+      if (! settings.is_mask_rectangle_in_voxels) {
+        settings.mask_rectangle_xmin /= voxel_width[0];
+        settings.mask_rectangle_xmax /= voxel_width[0];
+        settings.mask_rectangle_ymin /= voxel_width[1];
+        settings.mask_rectangle_ymax /= voxel_width[1];
+        settings.mask_rectangle_zmin /= voxel_width[2];
+        settings.mask_rectangle_zmax /= voxel_width[2];
+      }
+
+      for (int iz=0; iz<mask.header.nvoxels[2]; iz++) {
+        for (int iy=0; iy<mask.header.nvoxels[1]; iy++) {
+          for (int ix=0; ix<mask.header.nvoxels[0]; ix++) {
+            if ((floor(settings.mask_rectangle_xmin) <= ix) &&
+                (ix <= ceil(settings.mask_rectangle_xmax)) && 
+                (floor(settings.mask_rectangle_ymin) <= iy) &&
+                (iy <= ceil(settings.mask_rectangle_ymax)) && 
+                (floor(settings.mask_rectangle_zmin) <= iz) &&
+                (iz <= ceil(settings.mask_rectangle_zmax)))
+              mask.aaafI[iz][iy][ix] = 1.0;
+            else
+              mask.aaafI[iz][iy][ix] = 0.0;
+          }
+        }
+      }
+    } //if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
+
+
+
 
     settings.surface_tv_sigma /= voxel_width[0];
     for (int d=0; d<3; d++) {
@@ -188,67 +300,6 @@ int main(int argc, char **argv) {
             settings.must_link_constraints[i][j][d] /= voxel_width[d];
 
 
-    // ---- mask ----
-
-    // Optional: if there is a "mask", read that too
-    MrcSimple mask;
-    if (settings.mask_file_name != "") {
-      cerr << "Reading mask \""<<settings.mask_file_name<<"\"" << endl;
-      mask.Read(settings.mask_file_name, false);
-      WarnMRCSignedBytes(mask, settings.mask_file_name, cerr);
-      if ((mask.header.nvoxels[0] != image_size[0]) ||
-          (mask.header.nvoxels[1] != image_size[1]) ||
-          (mask.header.nvoxels[2] != image_size[2])) {
-        if ((image_size[0]!=0) && (image_size[1]!=0) && (image_size[2]!=0)) {
-          image_size[0] = mask.header.nvoxels[0];
-          image_size[1] = mask.header.nvoxels[1];
-          image_size[2] = mask.header.nvoxels[2];
-          tomo_in.Resize(image_size);
-        }
-        else
-          throw VisfdErr("Error: The size of the mask image does not match the size of the input image.\n");
-      }
-      // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
-      if (settings.use_mask_select) {
-        for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
-          for (int iy=0; iy<mask.header.nvoxels[1]; iy++)
-            for (int ix=0; ix<mask.header.nvoxels[0]; ix++)
-              if (mask.aaafI[iz][iy][ix] == settings.mask_select)
-                mask.aaafI[iz][iy][ix] = 1.0;
-              else
-                mask.aaafI[iz][iy][ix] = 0.0;
-      }
-    }
-
-    else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
-
-      mask = tomo_in; //allocate an array for an image the same size as tomo_in
-      if (! settings.is_mask_rectangle_in_voxels) {
-        settings.mask_rectangle_xmin /= voxel_width[0];
-        settings.mask_rectangle_xmax /= voxel_width[0];
-        settings.mask_rectangle_ymin /= voxel_width[1];
-        settings.mask_rectangle_ymax /= voxel_width[1];
-        settings.mask_rectangle_zmin /= voxel_width[2];
-        settings.mask_rectangle_zmax /= voxel_width[2];
-      }
-
-      for (int iz=0; iz<mask.header.nvoxels[2]; iz++) {
-        for (int iy=0; iy<mask.header.nvoxels[1]; iy++) {
-          for (int ix=0; ix<mask.header.nvoxels[0]; ix++) {
-            if ((floor(settings.mask_rectangle_xmin) <= ix) &&
-                (ix <= ceil(settings.mask_rectangle_xmax)) && 
-                (floor(settings.mask_rectangle_ymin) <= iy) &&
-                (iy <= ceil(settings.mask_rectangle_ymax)) && 
-                (floor(settings.mask_rectangle_zmin) <= iz) &&
-                (iz <= ceil(settings.mask_rectangle_zmax)))
-              mask.aaafI[iz][iy][ix] = 1.0;
-            else
-              mask.aaafI[iz][iy][ix] = 0.0;
-          }
-        }
-      }
-
-    } //else if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
 
     if (settings.rescale_min_max_in) {
       tomo_in.Rescale01(mask.aaafI,
@@ -345,7 +396,7 @@ int main(int argc, char **argv) {
     else if (settings.filter_type == Settings::RIDGE_SURFACE) {
 
       // find surface ridges (ie membranes or wide tubes)
-      HandleRidgeDetector(settings, tomo_in, tomo_out, mask, voxel_width);
+      HandleTV(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 

@@ -19,6 +19,10 @@ using namespace std;
 
 Settings::Settings() {
   // Default settings
+  voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
+  voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
+  filter_type = NONE;
+
   in_file_name = "";
   in_set_image_size[0] = 0;
   in_set_image_size[1] = 0;
@@ -39,12 +43,10 @@ Settings::Settings() {
   mask_rectangle_zmin = 0;
   mask_rectangle_zmax = -1; // zmax < zmin disables the mask rectangle
 
+  resize_with_binning = 0; //width of bin to use to reduce image size?
+
   save_intermediate_fname_base = "";
   load_intermediate_fname_base = "";
-
-  voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
-  voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
-  filter_type = NONE;
 
   // The code is a little bit confusing because I tried to cram as much
   // functionality into the smallest number of parameters possible:
@@ -417,6 +419,21 @@ Settings::ParseArgs(vector<string>& vArgs)
       voxel_width_divide_by_10 = true;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-a2nm")
+
+
+    else if (vArgs[i] == "-bin")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        resize_with_binning = stoi(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by voxel width.\n");
+      }
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-bin")
 
 
     else if ((vArgs[i] == "-gauss-aniso") || (vArgs[i] == "-ggauss-aniso"))

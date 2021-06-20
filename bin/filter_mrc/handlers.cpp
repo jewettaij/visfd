@@ -35,6 +35,16 @@ using namespace visfd;
 
 
 void
+HandleBinning(Settings settings,
+              MrcSimple &tomo_in,
+              MrcSimple &tomo_out,
+              MrcSimple &mask,
+              float voxel_width[3])
+{
+
+}
+
+void
 HandleGGauss(Settings settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
@@ -1169,11 +1179,11 @@ HandleClusterConnected(Settings settings,
 
 
 void
-HandleRidgeDetector(Settings settings,
-                    MrcSimple &tomo_in,
-                    MrcSimple &tomo_out,
-                    MrcSimple &mask,
-                    float voxel_width[3])
+HandleTV(Settings settings,
+         MrcSimple &tomo_in,
+         MrcSimple &tomo_out,
+         MrcSimple &mask,
+         float voxel_width[3])
 {
   cerr << "filter_type = surface ridge detector\n";
 
@@ -1713,4 +1723,4 @@ HandleRidgeDetector(Settings settings,
             &(aafGradient),
             &(aaaafGradient));
 
-} //HandleRidgeDetector()
+} //HandleTV()

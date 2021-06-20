@@ -90,6 +90,8 @@ class Settings {
   float mask_rectangle_zmin;
   float mask_rectangle_zmax;
 
+  int resize_with_binning; //width of bin to use to reduce image size?
+
   string save_intermediate_fname_base = ""; //save progress of slow calculations
   string load_intermediate_fname_base = ""; //load progress from a previous run?
 
