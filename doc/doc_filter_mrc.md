@@ -14,8 +14,8 @@ brightness inversions,
 fluctuation (noise) detectors,
 as well as more complex filters for
 surface detection,
-curve detection (EXPIRIMENTAL 2021-6-20),
-edge detection (EXPIRIMENTAL 2021-6-20),
+curve detection (EXPIRIMENTAL 2021-6-21),
+edge detection (EXPIRIMENTAL 2021-6-21),
 and
 [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523).
 
@@ -373,9 +373,9 @@ filter is used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 - The ["**-edge**"](#--edge-thickness) filter is used to detect
 surfaces at the edge of light-dark regions
-*(<- WARNING: FEATURE NOT TESTED. 2021-6-20)*
+*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*
 - The ["**-curve**"](#Detecting-curves) filter is used to detect thin curves.
-*(<- WARNING: FEATURE NOT TESTED. 2021-6-20)*.
+*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*.
 
 The fidelity of all three of these detectors can be improved by using
 a method known as [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
@@ -391,7 +391,7 @@ argument.
 
 The [-bin](#--bin-binwidth) argument can be used to reduce the size
 and resolution of the image.
-*(<- WARNING: FEATURE NOT TESTED. 2021-6-20)*.
+
 
 
 # Feature detection
@@ -436,7 +436,7 @@ and improve the signal-to-noise ratio.
 ### -edge thickness
 
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
-2021-6-20***
+2021-6-21***
 
 If the "**-edge**" filter is selected, the program will
 attempt to detect the sharp boundary surfaces between
@@ -470,7 +470,7 @@ such as Angstroms, not in voxels.)
 ### -curve type thickness
 
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
-2021-6-20***
+2021-6-21***
 
 When the **-curve** argument is specified, the program will
 seek out thin curvy line like features in the image.
@@ -1485,8 +1485,8 @@ of the Gaussian independently in the x,y,z directions:
 ## Resizing the image
 
 ### -bin binsize
-***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
-2021-6-20***
+
+***WARNING: THIS FEATURE IS EXPERIMENTAL.  PLEASE REPORT BUGS.  2021-6-21***
 
 Reduce the resolution of the image in each direction by a factor of *binsize*.
 (*binsize* must be a positive integer.)
@@ -1498,7 +1498,7 @@ If you are detecting features in the image (such as membranes or blobs)
 that are significantly larger (or thicker) than the voxel width,
 then a reduction in resolution by a factor of 2 or so
 should not effect your ability to detect it accurately,
-(and could make tensor voting up to 64 times faster (as of 2021-6-20)).
+(and could make tensor voting up to 64 times faster (as of 2021-6-21)).
 
 Note that you can use this argument together with other arguments.
 If you do that, the reduction of resolution occurs before all

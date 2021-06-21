@@ -40,8 +40,8 @@ features of the **visfd** library.
 This program was intended to be used for automatic
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 [surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
-edge detection (*EXPERIMENTAL_2021-6-20*),
-filament (curve) detection (*EXPERIMENTAL_2021-6-20*),
+edge detection (*EXPERIMENTAL_2021-6-21*),
+filament (curve) detection (*EXPERIMENTAL_2021-6-21*),
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
 and
 [watershed segmentation](https://imagej.net/Classic_Watershed)
@@ -70,7 +70,7 @@ and
 [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
 filters.)*
 
-*(As of 2021-6-20, this program does not have a graphical user interface, so
+*(As of 2021-6-21, this program does not have a graphical user interface, so
 tutorials explain how to use this software with IMOD and meshlab to display
 results and choose parameters.)*
 
