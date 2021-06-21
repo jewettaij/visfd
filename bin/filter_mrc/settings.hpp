@@ -48,7 +48,9 @@ class Settings {
                      // Gaussian and the surrounding voxel brightnesses
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
     BLOB,            // blob detection
-    RIDGE_SURFACE,    // a ridge detector for surfaces (ie a membrane detector)
+    SURFACE_EDGE,    // detect the edge of a light-dark boundary (gradient)
+    SURFACE_RIDGE,   // a ridge detector for surfaces (a thin membrane detector)
+    CURVE,           // a ridge detector for thin filamentous curves
     WATERSHED,       // Watershed segmentation
     CLUSTER_CONNECTED,       // Similar to Watershed segmentation
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
@@ -226,7 +228,7 @@ class Settings {
   vector<vector<array<float, 3> > > must_link_constraints;
   bool is_must_link_constraints_in_voxels = false;
 
-  // ---- parameters used by the ridge detector used for detecting surfaces ----
+  // ---- parameters used by the curve and surface detectors ----
 
   string out_normals_fname;
   bool  ridges_are_maxima;
@@ -237,7 +239,6 @@ class Settings {
   int   tv_exponent;
   //int   tv_num_iters = 1;  <-- CRUFT.  REMOVE THIS LINE LATER
   float tv_truncate_ratio;
-  bool detect_curves_not_surfaces;
 
   // ---- parameters for scale free blob detection ----
 

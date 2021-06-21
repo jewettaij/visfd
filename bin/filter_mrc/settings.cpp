@@ -124,6 +124,7 @@ Settings::Settings() {
   nonmax_max_volume_overlap_large = std::numeric_limits<float>::infinity();
   auto_thresh_score = false;
 
+  // ---- parameters used by the curve and surface detectors ----
   out_normals_fname = "";
   ridges_are_maxima = false;
   hessian_score_threshold = 0.0; //don't discard any voxels before TV
@@ -133,8 +134,6 @@ Settings::Settings() {
   tv_exponent = 4;
   //tv_num_iters = 0;  <-- CRUFT.  REMOVE THIS LINE LATER
   tv_truncate_ratio = sqrt(2.0);
-  detect_curves_not_surfaces = false;
-
 
   // ---- parameters for watershed segmentation (and clustering) ----
   clusters_begin_at_maxima = false;
@@ -2112,13 +2111,16 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-surface") || (vArgs[i] == "-curve"))
+    else if ((vArgs[i] == "-surface") || (vArgs[i] == "-surface-thin") ||
+             (vArgs[i] == "-edge") || (vArgs[i] == "-surface-edge") ||
+             (vArgs[i] == "-curve"))
     {
-      filter_type = RIDGE_SURFACE;
-      if (vArgs[i] == "-curve")
-        detect_curves_not_surfaces = true;
-      else
-        detect_curves_not_surfaces = false;
+      if (vArgs[i] == "-surface")
+        filter_type = SURFACE_RIDGE;
+      else if ((vArgs[i] == "-edge") || (vArgs[i] == "-surface-edge"))
+        filter_type = SURFACE_EDGE;
+      else if (vArgs[i] == "-curve")
+        filter_type = CURVE;
 
       try {
         if ((i+2 >= vArgs.size()) ||
@@ -2154,7 +2156,7 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-surface-background") ||
              (vArgs[i] == "-curve-background"))
     {
-      filter_type = RIDGE_SURFACE;
+      filter_type = SURFACE_RIDGE;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -2219,7 +2221,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if ((vArgs[i] == "-tv") ||
              (vArgs[i] == "-surface-tv")) {
-      if (filter_type != RIDGE_SURFACE)
+      if (filter_type != SURFACE_RIDGE)
         throw InputErr("Error: the -tv argument must appear in the argument list\n"
                        "       after the -surface argument.  It does not make sense to use\n"
                        "       -tv refinement if you are not using the -surface or -curve filters.\n");
@@ -2316,7 +2318,6 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        connect_threshold_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2334,7 +2335,6 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        connect_threshold_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2839,7 +2839,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-  if (filter_type == RIDGE_SURFACE) {
+  if (filter_type == SURFACE_RIDGE) {
     float sigma = width_a[0];
     // The parameter entered by the user is a ratio, not an absolute number.
     // Now that we know what sigma is, multiply tv_sigma by sigma.
@@ -2847,7 +2847,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   }
 
 
-  if (cluster_connected_voxels && (filter_type != RIDGE_SURFACE))
+  if (cluster_connected_voxels && (filter_type != SURFACE_RIDGE))
   {
     assert(connect_threshold_saliency!=std::numeric_limits<float>::infinity());
     filter_type = CLUSTER_CONNECTED;
@@ -2939,6 +2939,22 @@ Settings::ParseArgs(vector<string>& vArgs)
     is_must_link_constraints_in_voxels =
       ProcessLinkConstraints(must_link_filename,
                              must_link_constraints);
+
+
+
+  if (filter_type == SURFACE_EDGE) {
+    // When clustering voxels together into larger blobs, we sometimes
+    // consider the orientation of the hessian.  But this is not always useful.
+    // If we are using an edge detector, then the hessian (2nd derivative)
+    // of the brightness should be close to zero near the edge of a light-dark
+    // boundary.  At these boundary locations, the gradient is large, but
+    // the second derivative is approximately zero.  Consequently, we should
+    // not be comparing the directions of the principal axes of the hessian with
+    // the tensor axes, (again, ince the hessian there is approximately zero).
+    // To disable that comparision, set these thresholds to zero:
+    connect_threshold_vector_saliency = -std::numeric_limits<float>::infinity();
+    connect_threshold_tensor_saliency = -std::numeric_limits<float>::infinity();
+  }
 
 } // Settings::ParseArgs()
 

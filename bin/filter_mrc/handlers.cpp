@@ -1243,8 +1243,8 @@ HandleTV(Settings settings,
   // is only allocated (non-null) for voxels which were selected by the user
   // (ie voxels for which the mask is non-zero).  This can reduce memory usage
   // by a factor of up to 3 (assuming floats) for this array.
-  CompactMultiChannelImage3D<float> vote_tensor(6);
-  vote_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  CompactMultiChannelImage3D<float> hessian_tensor(6);
+  hessian_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
 
 
   // How did the user specify how wide to make the filter window?
@@ -1299,7 +1299,7 @@ HandleTV(Settings settings,
   CalcHessian(tomo_in.header.nvoxels,
               tomo_in.aaafI,
               aaaafGradient,
-              vote_tensor.aaaafI,
+              hessian_tensor.aaaafI,
               mask.aaafI,
               sigma,
               settings.filter_truncate_ratio,
@@ -1313,7 +1313,7 @@ HandleTV(Settings settings,
   //  for(int iy=0; iy < image_size[1]; iy++)
   //    for(int ix=0; ix < image_size[0]; ix++)
   //      tomo_out.aaafI[iz][iy][ix] =
-  //        FrobeniusNormSqdSym3(vote_tensor.aaaafI[iz][iy][ix]);
+  //        FrobeniusNormSqdSym3(hessian_tensor.aaaafI[iz][iy][ix]);
   //return;
   // DELETE THIS DEBUGGING CRUFT
 
@@ -1339,13 +1339,13 @@ HandleTV(Settings settings,
     for(int iy=0; iy < image_size[1]; iy++) {
       for(int ix=0; ix < image_size[0]; ix++) {
 
-        if (! vote_tensor.aaaafI[iz][iy][ix]) //ignore voxels that are either
+        if (! hessian_tensor.aaaafI[iz][iy][ix]) //ignore voxels that are either
           continue;                         //in the mask or on the boundary
 
         float eivals[3];
         float eivects[3][3];
 
-        ConvertFlatSym2Evects3(vote_tensor.aaaafI[iz][iy][ix],
+        ConvertFlatSym2Evects3(hessian_tensor.aaaafI[iz][iy][ix],
                                eivals,
                                eivects,
                                eival_order);
@@ -1369,12 +1369,23 @@ HandleTV(Settings settings,
         #endif  //#ifndef NDEBUG
 
 
-        if (settings.detect_curves_not_surfaces)
+
+        if (settings.filter_type == Settings::CURVE) {
           score = ScoreHessianLinear(eivals,
                                      aaaafGradient[iz][iy][ix]);
-        else
+        }
+        else if (settings.filter_type == Settings::SURFACE_EDGE) {
+          score = sqrt(SQR(aaaafGradient[iz][iy][ix][0]) +
+                       SQR(aaaafGradient[iz][iy][ix][1]) +
+                       SQR(aaaafGradient[iz][iy][ix][2]));
+        }
+        else if (settings.filter_type == Settings::SURFACE_RIDGE) {
           score = ScoreHessianPlanar(eivals,
                                      aaaafGradient[iz][iy][ix]);
+        }
+        else
+          assert(0);  //the filter_type should be one of the options above
+
 
         float peak_height = 1.0;
         if (tomo_background.aaafI)
@@ -1406,9 +1417,20 @@ HandleTV(Settings settings,
         #endif
 
 
-        aaaafDirection[iz][iy][ix][0] = eivects[0][0];
-        aaaafDirection[iz][iy][ix][1] = eivects[0][1];
-        aaaafDirection[iz][iy][ix][2] = eivects[0][2];
+        if (settings.filter_type != Settings::SURFACE_EDGE) {
+          // Currently the aaaafDirection = aaaafGradient.
+          // If the directional feature that we want to detect is
+          // the edge of some sharp boundary between a light and dark region,
+          // then leave aaaafDirection alone, because it is already pointing
+          // in the direction of increasing brightness (along the gradient).
+          //
+          // However, if we want to detect ridges (thin membranes or curves)
+          // then we should have aaaafDirection point in the direction
+          // of the principal axis of the hessian.
+          aaaafDirection[iz][iy][ix][0] = eivects[0][0];
+          aaaafDirection[iz][iy][ix][1] = eivects[0][1];
+          aaaafDirection[iz][iy][ix][2] = eivects[0][2];
+        }
 
 
       } //for(int ix=0; ix < image_size[0]; ix++)
@@ -1468,6 +1490,15 @@ HandleTV(Settings settings,
 
 
 
+
+  // To save memory we will re-use the large array we used to store
+  // the hessian that we calculated earlier.  But we will rename
+  // this array "aaaafVoteTensor" to (hopefully) make it more clear in
+  // the code that this tensor no longer necessarily stores the hessian.
+  float ****aaaafVoteTensor = hessian_tensor.aaaafI;
+
+
+
   if (settings.tv_sigma > 0.0) {
 
     if (settings.load_intermediate_fname_base == "") {
@@ -1487,10 +1518,10 @@ HandleTV(Settings settings,
       tv.TVDenseStick(tomo_in.header.nvoxels,
                       tomo_out.aaafI,
                       aaaafDirection,
-                      vote_tensor.aaaafI,
+                      aaaafVoteTensor,
                       mask.aaafI,
                       mask.aaafI,
-                      settings.detect_curves_not_surfaces,
+                      (settings.filter_type == Settings::CURVE),
                       //settings.hessian_score_threshold,
                       true,   // (do normalize near rectangular image bounaries)
                       false,  // (diagonalize each tensor afterwards?)
@@ -1500,7 +1531,7 @@ HandleTV(Settings settings,
 
     else {
 
-      // Load the contents of the vote_tensor.aaaafI array
+      // Load the contents of the aaaafVoteTensor array
       // from a series of files (generated previously).
       //
       // First figure out the file name(s) we are going to use.
@@ -1525,7 +1556,7 @@ HandleTV(Settings settings,
         for(int iz=0; iz < image_size[2]; iz++)
           for(int iy=0; iy < image_size[1]; iy++)
             for(int ix=0; ix < image_size[0]; ix++)
-              vote_tensor.aaaafI[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
+              aaaafVoteTensor[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
       }
     } // else clause for if (settings.load_intermediate_fname_base == "")
 
@@ -1537,20 +1568,20 @@ HandleTV(Settings settings,
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
-          if (vote_tensor.aaaafI[iz][iy][ix]) {
+          if (aaaafVoteTensor[iz][iy][ix]) {
             float diagonalized_hessian[6];
-            DiagonalizeFlatSym3(vote_tensor.aaaafI[iz][iy][ix],
+            DiagonalizeFlatSym3(aaaafVoteTensor[iz][iy][ix],
                                 diagonalized_hessian,
                                 eival_order);
             float score;
-            if (settings.detect_curves_not_surfaces)
+            if (settings.filter_type == Settings::CURVE)
               score = ScoreTensorLinear(diagonalized_hessian);
             else
               score = ScoreTensorPlanar(diagonalized_hessian);
             float peak_height = 1.0;
             if (tomo_background.aaafI)
               peak_height = (tomo_in.aaafI[iz][iy][ix] -
-                           tomo_background.aaafI[iz][iy][ix]);
+                             tomo_background.aaafI[iz][iy][ix]);
             score *= peak_height;
             tomo_out.aaafI[iz][iy][ix] = score;
           }
@@ -1589,7 +1620,7 @@ HandleTV(Settings settings,
       for(int iz=0; iz < image_size[2]; iz++)
         for(int iy=0; iy < image_size[1]; iy++)
           for(int ix=0; ix < image_size[0]; ix++)
-            tomo_tmp.aaafI[iz][iy][ix] = vote_tensor.aaaafI[iz][iy][ix][d];
+            tomo_tmp.aaafI[iz][iy][ix] = aaaafVoteTensor[iz][iy][ix][d];
       cerr << "writing \"" << fname_ss.str() << "\"" << endl;
       tomo_tmp.Write(fname_ss.str());
     }
@@ -1607,10 +1638,10 @@ HandleTV(Settings settings,
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
         for(int ix=0; ix < image_size[0]; ix++) {
-          if (vote_tensor.aaaafI[iz][iy][ix]) {
+          if (aaaafVoteTensor[iz][iy][ix]) {
             float eivals[3];
             float eivects[3][3];
-            ConvertFlatSym2Evects3(vote_tensor.aaaafI[iz][iy][ix],
+            ConvertFlatSym2Evects3(aaaafVoteTensor[iz][iy][ix],
                                    eivals,
                                    eivects,
                                    eival_order);
@@ -1648,7 +1679,7 @@ HandleTV(Settings settings,
                      settings.connect_threshold_vector_saliency,
                      settings.connect_threshold_vector_neighbor,
                      false, //eigenvector signs are arbitrary so ignore them
-                     vote_tensor.aaaafI,
+                     aaaafVoteTensor,
                      settings.connect_threshold_tensor_saliency,
                      settings.connect_threshold_tensor_neighbor,
                      true,  //the tensor should be positive definite near the target

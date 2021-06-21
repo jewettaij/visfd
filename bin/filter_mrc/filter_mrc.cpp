@@ -29,7 +29,7 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.25.0");
+string g_version_string("0.26.0");
 string g_date_string("2021-6-20");
 
 
@@ -393,7 +393,9 @@ int main(int argc, char **argv) {
 
 
 
-    else if (settings.filter_type == Settings::RIDGE_SURFACE) {
+    else if ((settings.filter_type == Settings::SURFACE_EDGE) ||
+             (settings.filter_type == Settings::SURFACE_RIDGE) ||
+             (settings.filter_type == Settings::CURVE)) {
 
       // find surface ridges (ie membranes or wide tubes)
       HandleTV(settings, tomo_in, tomo_out, mask, voxel_width);

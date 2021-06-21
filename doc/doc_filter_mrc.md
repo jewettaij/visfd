@@ -425,11 +425,34 @@ and improve the signal-to-noise ratio.
 (enough to store at least 9 copies of the original image in 32bit-float mode).*
 
 
+### -edge thickness
+
+***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
+2021-6-20***
+
+This will detect the sharp boundary between a
+light regions and a dark regions in the image.
+Unfortunately real images are noisy.  Noise will add many spurious bumps
+which must be filtered or smoothed away before edge detection begins.
+Consequently the user must specify a *thickness* argument.  
+The *thickness* indicates the width of features that you wish to ignore.
+Light or dark patches smaller than *thickness* will
+not be visible to the edge-detector.
+Using a larger *thickness* will reduce the noise in the image, but may also
+smooth over small (high-frequency) features in image you wish to detect.
+(Unless the "-w 1" argument was specified, then
+the *thickness* parameter should be in units of physical distance,
+such as Angstroms, not in voxels.)
+As with **-surface** argument, the surface detection fidelity 
+can be improved using tensor voting (with the "-tv" argument).
+
 
 ## Detecting curves
 
 ### -curve type thickness
-***WARNING: THIS FEATURE HAS NOT BEEN TESTED -Andrew 2021-6-20***
+
+***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
+2021-6-20***
 
 The detection of (linear, filamentous) curves
 in images is much like the detection of surfaces.
@@ -1422,7 +1445,8 @@ of the Gaussian independently in the x,y,z directions:
 ## Resizing the image
 
 ### -bin binsize
-***WARNING: THIS IS AN EXPERIMENTAL FEATURE -Andrew 2021-6-20***
+***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
+2021-6-20***
 
 Reduce the resolution of the image in each direction by a factor of *binsize*.
 (*binsize* must be a positive integer.)

@@ -2074,7 +2074,6 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
 } // ScoreHessianPlanar()
 
 
-
 /// @brief: Calculate how "curve"-like a feature along a ridge.
 ///         WARNING: THIS IS A GUESS. I HAVE NOT TESTED THIS (-Andrew 2021-6-18)
 ///         This function assumes that "diagonalizedMatrix3x3" has been 
