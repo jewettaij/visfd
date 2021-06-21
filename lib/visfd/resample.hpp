@@ -57,7 +57,7 @@ void BinArray3D(Integer const size_source[3],
                 Integer const *offset = nullptr)
 {
   Integer bin_size[3];
-  for (int d = 0; d < 2; d++) {
+  for (int d = 0; d < 3; d++) {
     assert((size_source[d] > 0) && (size_dest[d] > 0));
     bin_size[d] = size_source[d] / size_dest[d];
     if (offset && ((offset[d] >= bin_size[d]) || (offset[d] < 0))) {
@@ -78,8 +78,8 @@ void BinArray3D(Integer const size_source[3],
           for (Integer dy=0; dy < bin_size[1]; dy++) {
             for (Integer dx=0; dx < bin_size[0]; dx++) {
               Integer ix = Ix*bin_size[0] + dx;
-              Integer iy = Ix*bin_size[1] + dy;
-              Integer iz = Ix*bin_size[2] + dz;
+              Integer iy = Iy*bin_size[1] + dy;
+              Integer iz = Iz*bin_size[2] + dz;
               if (offset) {
                 ix += offset[0];
                 iy += offset[1];

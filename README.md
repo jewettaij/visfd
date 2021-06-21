@@ -37,26 +37,29 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 **filter_mrc** is a stand-alone program which uses many of the
 features of the **visfd** library.
-It was intended to be used for
+This program was intended to be used for automatic
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 [surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
-filament (curve) detection (*available soon*),
+edge detection (*EXPERIMENTAL_2021-6-20*),
+filament (curve) detection (*EXPERIMENTAL_2021-6-20*),
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
 and
 [watershed segmentation](https://imagej.net/Classic_Watershed)
-with non-max suppression.
-A list of detected objects can be sorted, clustered, and saved to a text file.
-Detected membrane surfaces are represented as oriented point clouds,
-and can be saved to a file in .ply format.  These files can then be read by
-external programs 
+A list of detected objects can be sorted, merged into contiguous regions,
+and saved to standard files for further analysis by 3rd party programs.
+For example, detected surfaces can be saved to a mesh file (in .ply format).
+These files can then be read by external programs
 ([*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon),
 [*meshlab*](http://www.meshlab.net), and
 [*voxelize_mesh.py*](doc/doc_voxelize_mesh.md))
-to generate closed surface meshes and new segmented images.
+to generate smooth, connected, closed surface meshes
+and create new segmented images.
 
-*(filter_mrc can also be used to apply simple filters to images, including
+*(filter_mrc can also be used as a crude 3D image editor,
+erasing or drawing spherical features in the image.
+Users can also apply simple filters to images, including
 low-pass, high-pass,
-thresholding,
+thresholding, clipping,
 brightness inversions,
 fluctuations,
 [generalized Gaussian blur](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
@@ -66,6 +69,10 @@ fluctuations,
 and
 [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
 filters.)*
+
+*(As of 2021-6-20, this program does not have a graphical user interface, so
+tutorials explain how to use this software with IMOD and meshlab to display
+results and choose parameters.)*
 
 Documentation for this program is located
 [here](./doc/doc_filter_mrc.md).

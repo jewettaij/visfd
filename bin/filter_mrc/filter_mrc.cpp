@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.26.0");
-string g_date_string("2021-6-20");
+string g_version_string("0.26.1");
+string g_date_string("2021-6-21");
 
 
 
@@ -110,6 +110,10 @@ int main(int argc, char **argv) {
       for (int d=0; d < 3; d++)
         nvoxels_resized[d] = (tomo_in.header.nvoxels[d] /
                               settings.resize_with_binning);
+      double voxel_width = tomo_in.header.cellA[0]/tomo_in.header.nvoxels[0];
+      if (settings.voxel_width > 0)
+        voxel_width = settings.voxel_width;
+
       MrcSimple tomo_tmp = tomo_in;
       tomo_tmp.Resize(nvoxels_resized);
       // Now bin the original image, and save the result in tomo_tmp.aaafI
@@ -117,7 +121,14 @@ int main(int argc, char **argv) {
                  nvoxels_resized,
                  tomo_in.aaafI,
                  tomo_tmp.aaafI);
-      // Copy the contents of tomo_tmp into tomo_in.
+
+      // Now update the voxel size related information
+      // in the header section of "tomo_tmp".
+      tomo_tmp.header.cellA[0] = voxel_width * nvoxels_resized[0];
+      tomo_tmp.header.cellA[1] = voxel_width * nvoxels_resized[1];
+      tomo_tmp.header.cellA[2] = voxel_width * nvoxels_resized[2];
+
+      // Now copy the contents of tomo_tmp into tomo_in.
       tomo_in.swap(tomo_tmp);
       // (Note: The old contents of "tomo_in.aaafI" will be freed
       //  when tomo_tmp is destroyed or modified with Resize().)

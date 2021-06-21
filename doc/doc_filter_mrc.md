@@ -11,22 +11,25 @@ brightness inversions,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
-3D surface [ridge detection](https://en.wikipedia.org/wiki/Ridge_detection),
+fluctuation (noise) detectors,
+as well as more complex filters for
+surface detection,
+curve detection (EXPIRIMENTAL 2021-6-20),
+edge detection (EXPIRIMENTAL 2021-6-20),
 and
-[3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
-and brightness-fluctuation
-filters.
-Fast [separable](https://en.wikipedia.org/wiki/Separable_filter)
-filters are used whenever possible.
+[3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523).
+
 
 **filter_mrc** can also be used for 3D
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection)
 ([example](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_blob.html)),
 local minima-finding, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed),
+clustering,
 and the detection and segmentation of **1D curves** and **2D surfaces**
 (including **membranes**).
-A list of detected objects can be saved to a text file.
+A list of detected objects can be saved to a text file,
+and surfaces can be saved to a mesh (PLY) file for further analysis.
 Annotated images can be saved to a new .mrc/.rec file.
 
 All filters support "masking".
@@ -365,23 +368,30 @@ filter.)
 is supported.
 
 
-The
-["**-surface**"](#Detecting-membranes)
-and
-["**-tv**"](#-tv-σ_ratio)
-filters are used to detect thin, membrane-like structures using
+- The ["**-surface**"](#Detecting-membranes)
+filter is used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
-and
-[3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf), respectively.
-Voxels belonging to different membranes can be grouped into different clusters
-using the
-["**-connect**"](#-connect-threshold)
-argument.
+- The ["**-edge**"](#--edge-thickness) filter is used to detect
+surfaces at the edge of light-dark regions
+*(<- WARNING: FEATURE NOT TESTED. 2021-6-20)*
+- The ["**-curve**"](#Detecting-curves) filter is used to detect thin curves.
+*(<- WARNING: FEATURE NOT TESTED. 2021-6-20)*.
+
+The fidelity of all three of these detectors can be improved by using
+a method known as [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+using the ["**-tv**"](#-tv-σ_ratio) argument.
+Voxels belonging to individual surfaces can be grouped together using using the
+["**-connect**"](#-connect-threshold) argument.
 Voxels belonging to the same membrane can be analyzed and their orientations
 can be saved to a file in order to repair holes and perform further analysis
 using the
 ["**-surface-normals-file**"](#-surface-normals-file-PLY_FILE)
 argument.
+
+
+The [-bin](#--bin-binwidth) argument can be used to reduce the size
+and resolution of the image.
+*(<- WARNING: FEATURE NOT TESTED. 2021-6-20)*.
 
 
 # Feature detection
@@ -390,11 +400,9 @@ argument.
 
 ### -surface type thickness
 
-When the "**-surface**" filter is selected, a
-[3D planar ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
-filter will be used.
-This kind of filter can detect thin surfaces
-that are brighter or darker than their surroundings.
+If the "**-surface**" filter is selected, the program will detect
+thin membrane-like surfaces which are either brighter or darker
+than their surroundings.
 The "*type*" argument must be either "*minima*" or "*maxima*".
 If *type* = "*minima*", then this filter will detect thin membrane-like
 structures which are dark on a bright background.
@@ -416,7 +424,7 @@ in the two orthogonal directions.
 Because this filter depends on second derivatives,
 it is prone to detect a large number of spurious fluctuations in brightness
 (in addition to the membrane-like structures you are interested in).
-Tensor-voting (using the *-tv* argument)
+Tensor-voting (using the [-tv](#--tv-σ_ratio) argument)
 can be used to remove these spurious detected peaks
 and improve the signal-to-noise ratio.
 
@@ -430,21 +438,31 @@ and improve the signal-to-noise ratio.
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
 2021-6-20***
 
-This will detect the sharp boundary between a
-light regions and a dark regions in the image.
-Unfortunately real images are noisy.  Noise will add many spurious bumps
-which must be filtered or smoothed away before edge detection begins.
-Consequently the user must specify a *thickness* argument.  
-The *thickness* indicates the width of features that you wish to ignore.
-Light or dark patches smaller than *thickness* will
-not be visible to the edge-detector.
+If the "**-edge**" filter is selected, the program will
+attempt to detect the sharp boundary surfaces between
+light regions and a dark volumetric regions in the image.
+(This filter detects gradients in image brightness.)
+Unfortunately real images are noisy.  Image noise will create many spurious
+bumps which must be filtered or smoothed away before edge detection begins.
+Consequently the user must specify a *thickness* argument which indicates
+amount of smoothing to use to erase features that you wish to ignore
+*before* the boundary (gradient) of the image is detected.
+This means that light or dark patches in the image which are
+smaller than *thickness* will not be visible to the edge-detector.
 Using a larger *thickness* will reduce the noise in the image, but may also
 smooth over small (high-frequency) features in image you wish to detect.
+
+As with **-surface** argument, the edge detection fidelity
+can be improved using tensor voting (with the [-tv](#--tv-σ_ratio) argument).
+
 (Unless the "-w 1" argument was specified, then
 the *thickness* parameter should be in units of physical distance,
 such as Angstroms, not in voxels.)
-As with **-surface** argument, the surface detection fidelity 
-can be improved using tensor voting (with the "-tv" argument).
+
+**WARNING**
+*This filter requires a very large amount of memory
+(enough to store at least 9 copies of the original image in 32bit-float mode).*
+
 
 
 ## Detecting curves
@@ -454,14 +472,29 @@ can be improved using tensor voting (with the "-tv" argument).
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
 2021-6-20***
 
+When the **-curve** argument is specified, the program will
+seek out thin curvy line like features in the image.
+These features are long in one direction, and short in the other two directions.
 The detection of (linear, filamentous) curves
 in images is much like the detection of surfaces.
-The user must specify the *type* of the curve (ie. "*maxima*" or "*minima*"),
-and its approximate *thickness* (in physical units).
-See the documentation for
-[detecting surfaces](#-Detecting-surfaces) for more details.
-As with surface detection, the curve detection fidelity 
-can be improved using tensor voting (with the "-tv" argument).
+(Both detectors use
+[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection).)
+As with the **-surface** argument, the user must specify
+the *type* of the curve, which can be either "*maxima*" or "*minima*",
+depending on whether the curve is bright with a dark background,
+or dark with a bright background, respectively.
+The user must *also* specify the approximate *thickness*
+of the curve (in physical units).
+(Curves which are thicker than this will not be detected.)
+
+*As with surface detection, the curve detection fidelity
+can be improved using tensor voting (with the [-tv](#--tv-σ_ratio) argument).*
+
+(Unless the "-w 1" argument was specified,
+the *thickness* parameter should be in units of physical distance,
+such as Angstroms, not in voxels.)
+Also see the documentation for the [-surface](#--surface-type-thickness)
+argument.
 
 **WARNING**
 *This filter requires a very large amount of memory
@@ -487,7 +520,8 @@ because it can be a very expensive computation.
 Note: The tensor-voting algorithm selected the "-tv" argument
 is **extremely slow**.  Croping the tomogram and/or reducing the resolution
 of the 3D image (using the ["-bin"](#--bin-binsize) argument)
-dramatically reduce computation time.
+will dramatically reduce computation time.  This recommended
+when you are in the early stages of learning to use this feature.
 
 Typically, once you have detected the surfaces (or curves) in an image, you
 will probably want to analyze them to stitch together larger surfaces.
@@ -495,18 +529,24 @@ This is usually an iterative process and it
 requires running the "filter_mrc" program multiple times.
 Consequenly, **it is strongly recommended that you use the
 ["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
-argument,**
+argument,** the first time you use the **-tv** argument,
 so that you don't need to repeat the slow tensor-voting calculation each time.
 
 *(Note: -tv is not an independent filter.
-It enables refinement of existing results from the -surface filter.
-This argument is ignored unless the -surface argument is also used.)*
+It enables refinement of existing results from the
+"-surface", "-edge", and "-curve" filters.
+Hence, the "-tv" argument is ignored unless one of these
+three filters has been selected.)
 
 *(Technical details: The width of the Gaussian used in the radial-decay
 function used in tensor voting has a width of
 σ_tv = σ_ratio ⨉ σ,
-where "σ" is the bluring used in the ridge detection
-and it has a value of σ=thickness/√3)*
+where "σ" is the *thickess* parameter specified in the
+[-surface](#--surface-type-thickness),
+[-edge](#--edge-thickness),
+or
+[-curve](#--curve-type-thickness), arguments
+The *σ_ratio* parameter has a value of 1/√3.)*
 
 
 ### -tv-angle-exponent n
