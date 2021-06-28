@@ -3,13 +3,13 @@ filter_mrc
 
 **filter_mrc** is typically used for detecting
 1-D **curves** and 2-D **surfaces** in 3-D images
-*(using [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523))*,
+*(using [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523))*.
 It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
 
 It can also apply simple filters to an 3D image (tomogram),
 and save the result as a new .mrc/.rec file.
-Several other simple filters are included including
+Several primitive filters are included including
 low-pass, high-pass,
 thresholding,
 brightness inversions,
@@ -17,7 +17,7 @@ brightness inversions,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
-edge,
+edge detectors,
 and fluctuation (noise) detectors
 are available
 
