@@ -7,7 +7,7 @@ filter_mrc
 It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
 
-It can also be used local minima-finding, clustering, and
+**filter_mrc** can be used local minima-finding, clustering, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed).
 The coordinates of the objects that are detected can be saved to
 text files for processing and refinement using popular 3rd-party software tools
@@ -16,20 +16,20 @@ The *filter_mrc* program can also apply simple filters to an 3D image
 (tomogram), and save the result as a new .mrc/.rec file.
 Several primitive filters are included including
 low-pass, high-pass,
+edge detectors,
+ridge detectors,
 thresholding,
 brightness inversions,
 [generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
-edge detectors,
-and fluctuation (noise) detectors
-are available
+and fluctuation (noise) detectors are available
 
 Lastly, the *filter_mrc* program can be used as a crude paint program
 to modify, edit, or annotate existing volumetric images.
 
-All filters support "masking".
+All operations support "masking".
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.
