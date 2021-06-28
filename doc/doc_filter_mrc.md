@@ -1,9 +1,15 @@
 filter_mrc
 ===========
 
-**filter_mrc** is typically used to apply a filter to a 3D image,
+**filter_mrc** is typically used for detecting
+2-D **surfaces**, and 1-D **curves**
+*(using [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523))*
+in 3-D images, as well as point-like **blobs**.
+*(WARNING: The detection of curves is experimental as of 2021-6-28.)*
+
+It can also apply simple filters to an 3D image (tomogram),
 and save the result as a new .mrc/.rec file.
-It currently supports
+Several other simple filters are included including
 low-pass, high-pass,
 thresholding,
 brightness inversions,
@@ -11,13 +17,9 @@ brightness inversions,
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
-fluctuation (noise) detectors,
-as well as more complex filters for
-surface detection,
-curve detection (EXPIRIMENTAL 2021-6-21),
-edge detection (EXPIRIMENTAL 2021-6-21),
-and
-[3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523).
+edge,
+and fluctuation (noise) detectors
+are available
 
 
 **filter_mrc** can also be used for 3D
@@ -280,25 +282,48 @@ will allow you to enter distance parameters in units of voxels.
 
 ## A Short Description of Each Filter Type:
 
+Again, this program is most frequently used for detecting
+2-D **surfaces**, 1-D **curves**, and point-like **blobs** in images.
 
-The user can select the type of filter they want to use
-using command line arguments.
 
-
-The
-["**-invert**"](#-invert)
-filter exchanges bright and dark voxels.
-The ["**-rescale**"](#-rescale-m-b)
-filter allows you to shift (offset) and rescale voxel brightnesses arbitrarily.
-The
-["**-thresh**"](#-thresh-threshold),
-["**-thresh-interval**"](#-thresh-interval-in_a-in_b)
-["**-thresh2**"](#-thresh2-thresh_a-thresh_b),
-["**-thresh4**"](#-thresh4-thresh01_a-thresh01_b-thresh10_a-thresh10_b),
+- The ["**-surface**"](#Detecting-membranes)
+argument is used to detect thin, membrane-like structures using
+[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
+- The ["**-edge**"](#--edge-thickness) argument is used to detect
+surfaces at the edge of light-dark regions
+*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*
+- The ["**-curve**"](#Detecting-curves) argument is used to detect thin curves.
+*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*.
+The fidelity of these three detectors can be improved by using
+a method known as [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
+using the ["**-tv**"](#-tv-σ_ratio) argument.
+Voxels belonging to individual surfaces or curves
+can be grouped together using using the
+["**-connect**"](#-connect-threshold) argument.
+Voxels belonging to the same surface can be analyzed and their locations
+and orientations can be saved to a file for further analysis using the
+["**-surface-normals-file**"](#-surface-normals-file-PLY_FILE)
+argument.
+- The
+["**-blob**"](#Blob-detection)
+,
+["**-blob-r**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest),
 and
-["**-clip**"](#-clip-a-b)
-filters are used to use clip voxel intensities and to select voxels
-whose intensities lie within in a range specified by the user.
+["**-blob-s**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
+arguments can be used for
+[scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).
+Objects in the image of various sizes can be detected using this filter.
+Several strategies for
+[Non-max suppression](#Non-max-suppression:-automatic-disposal-of-blobs)
+are provided.
+
+All of these detection algorithms can be quite slow.
+Several strategies to reduce computation time are described below,
+including cropping and [binning](#--bin-binwidth) your 3-D image (tomogram).
+
+
+
+Other, simpler filters are also provided:
 
 
 The
@@ -355,39 +380,21 @@ or minima and maxima which are too close together
 using
 [non-max suppression](#Non-max-suppression:-automatic-disposal-of-minima-or-maxima).
 
+
 The
-["**-blob**"](#Blob-detection)
-,
-["**-blob-r**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest),
+["**-invert**"](#-invert)
+filter exchanges bright and dark voxels.
+The ["**-rescale**"](#-rescale-m-b)
+filter allows you to shift (offset) and rescale voxel brightnesses arbitrarily.
+The
+["**-thresh**"](#-thresh-threshold),
+["**-thresh-interval**"](#-thresh-interval-in_a-in_b)
+["**-thresh2**"](#-thresh2-thresh_a-thresh_b),
+["**-thresh4**"](#-thresh4-thresh01_a-thresh01_b-thresh10_a-thresh10_b),
 and
-["**-blob-s**"](#Specifying-the-radius-or-Gaussian-sigma-parameters-for-the-objects-of-interest)
-filters can be used for [scale-free blob detection](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian).  Objects in the image of various sizes can be detected using this filter.  Depending upon how many sizes are considered, the computation can be slow.  (For a fast and sloppy alternative, you can use the
-["**-log-d**"](#LoG-filters)
-filter.)
-[Non-max suppression](#Non-max-suppression:-automatic-disposal-of-blobs)
-is supported.
-
-
-- The ["**-surface**"](#Detecting-membranes)
-filter is used to detect thin, membrane-like structures using
-[3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
-- The ["**-edge**"](#--edge-thickness) filter is used to detect
-surfaces at the edge of light-dark regions
-*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*
-- The ["**-curve**"](#Detecting-curves) filter is used to detect thin curves.
-*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*.
-
-The fidelity of all three of these detectors can be improved by using
-a method known as [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
-using the ["**-tv**"](#-tv-σ_ratio) argument.
-Voxels belonging to individual surfaces can be grouped together using using the
-["**-connect**"](#-connect-threshold) argument.
-Voxels belonging to the same membrane can be analyzed and their orientations
-can be saved to a file in order to repair holes and perform further analysis
-using the
-["**-surface-normals-file**"](#-surface-normals-file-PLY_FILE)
-argument.
-
+["**-clip**"](#-clip-a-b)
+filters are used to use clip voxel intensities and to select voxels
+whose intensities lie within in a range specified by the user.
 
 The [-bin](#--bin-binwidth) argument can be used to reduce the size
 and resolution of the image.
