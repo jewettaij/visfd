@@ -7,8 +7,13 @@ filter_mrc
 It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
 
-It can also apply simple filters to an 3D image (tomogram),
-and save the result as a new .mrc/.rec file.
+It can also be used local minima-finding, clustering, and
+[classic watershed segmentation](https://imagej.net/Classic_Watershed).
+The coordinates of the objects that are detected can be saved
+to a file for processing and refinement using 3rd-party software tools
+(including tools for surface smoothing and surface closure).
+The *filter_mrc* program can also apply simple filters to an 3D image
+(tomogram), and save the result as a new .mrc/.rec file.
 Several primitive filters are included including
 low-pass, high-pass,
 thresholding,
@@ -23,11 +28,6 @@ are available
 
 
 **filter_mrc** can also be used for 3D
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection)
-([example](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_blob.html)),
-local minima-finding, and
-[classic watershed segmentation](https://imagej.net/Classic_Watershed),
-clustering,
 and the detection and segmentation of **1D curves** and **2D surfaces**
 (including **membranes**).
 A list of detected objects can be saved to a text file,
