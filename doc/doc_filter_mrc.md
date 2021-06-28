@@ -9,8 +9,8 @@ It can also detect point-like (or sphere-like) **blobs**.
 
 It can also be used local minima-finding, clustering, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed).
-The coordinates of the objects that are detected can be saved
-to a file for processing and refinement using 3rd-party software tools
+The coordinates of the objects that are detected can be saved to
+text files for processing and refinement using popular 3rd-party software tools
 (including tools for surface smoothing and surface closure).
 The *filter_mrc* program can also apply simple filters to an 3D image
 (tomogram), and save the result as a new .mrc/.rec file.
@@ -26,13 +26,8 @@ edge detectors,
 and fluctuation (noise) detectors
 are available
 
-
-**filter_mrc** can also be used for 3D
-and the detection and segmentation of **1D curves** and **2D surfaces**
-(including **membranes**).
-A list of detected objects can be saved to a text file,
-and surfaces can be saved to a mesh (PLY) file for further analysis.
-Annotated images can be saved to a new .mrc/.rec file.
+Lastly, the *filter_mrc* program can be used as a crude paint program
+to modify, edit, or annotate existing volumetric images.
 
 All filters support "masking".
 An image *mask* can be used to exclude certain
