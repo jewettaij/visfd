@@ -1556,7 +1556,8 @@ HandleTV(Settings settings,
         for(int iz=0; iz < image_size[2]; iz++)
           for(int iy=0; iy < image_size[1]; iy++)
             for(int ix=0; ix < image_size[0]; ix++)
-              aaaafVoteTensor[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
+              if (aaaafVoteTensor[iz][iy][ix])
+                aaaafVoteTensor[iz][iy][ix][d] = tomo_tmp.aaafI[iz][iy][ix];
       }
     } // else clause for if (settings.load_intermediate_fname_base == "")
 
@@ -1620,7 +1621,8 @@ HandleTV(Settings settings,
       for(int iz=0; iz < image_size[2]; iz++)
         for(int iy=0; iy < image_size[1]; iy++)
           for(int ix=0; ix < image_size[0]; ix++)
-            tomo_tmp.aaafI[iz][iy][ix] = aaaafVoteTensor[iz][iy][ix][d];
+            if (aaaafVoteTensor[iz][iy][ix])
+              tomo_tmp.aaafI[iz][iy][ix] = aaaafVoteTensor[iz][iy][ix][d];
       cerr << "writing \"" << fname_ss.str() << "\"" << endl;
       tomo_tmp.Write(fname_ss.str());
     }
