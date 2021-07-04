@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/jewettaij/visfd.svg?branch=master)](https://travis-ci.com/jewettaij/visfd.svg?branch=master)
+[![CircleCI](https://circleci.com/gh/jewettaij/visfd.svg?style=svg)](https://circleci.com/gh/jewettaij/visfd)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/jewettaij/visfd)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 

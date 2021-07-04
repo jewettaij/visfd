@@ -1,0 +1,47 @@
+version: 2.1
+
+jobs:
+  linux-build-and-test:
+    docker:
+      - image: "cimg/base:stable-20.04"
+    steps:
+      - checkout
+      - run:
+          name: Installing SUDO
+          command: 'sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*'
+      - run:
+          name: Installing git
+          command: 'sudo apt-get update && sudo apt-get install -y git'
+      - run:
+          name: Installing shunit2
+          command: 'git clone https://github.com/kward/shunit2 shunit2'
+      #- run:
+      #    name: Install CMAKE
+      #    command: 'sudo apt-get update && sudo apt-get install -y cmake'
+      - run:
+          name: Install MAKE
+          command: 'sudo apt-get update && sudo apt-get install -y make'
+      #- run:
+      #    name: Installing GCC
+      #    command: 'sudo apt-get update && sudo apt-get install -y g++'
+      - run:
+          name: Installing CLANG
+          command: 'sudo apt-get update && sudo apt-get install -y clang'
+      - run:
+          name: Build CLANG version
+          command: |
+            source setup_clang.sh
+            make clean
+            make
+      - run:
+          name: Test CLANG version
+          command: |
+            bash tests/test_fluctuation_filter.sh
+            bash tests/test_blob_detection.sh
+            bash tests/test_watershed.sh
+            bash tests/test_membrane_detection.sh
+
+workflows:
+  main:
+    jobs:
+      - linux-build-and-test
