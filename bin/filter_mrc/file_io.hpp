@@ -568,7 +568,7 @@ ProcessLinkConstraints(string must_link_filename,
       stringstream err_msg;
       err_msg
         << "Error: Format error in file \""<<must_link_filename<<"\".\n"
-        << "       Each broup must contain at least 2 voxels.  (Voxels appear on different\n"
+        << "       Each group must contain at least 2 voxels.  (Voxels appear on different\n"
         << "       lines, so blank-line delimters must not separate SINGLE non-blank lines)\n"
         << "       Furthermore, the voxels in each set must be unique.\n";
 

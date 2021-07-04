@@ -54,7 +54,7 @@ filter_mrc -in tomogram.rec \
   -surface minima 60.0 -best 0.06 \
   -tv 5.0 -tv-angle-exponent 4 \
   -bin 2 \
-  -save-progress membranes
+  -save-progress temporary_file.rec
 ```
 
 This searches for dark surfaces of thickness approximately 60 (Angstroms), and
@@ -71,7 +71,7 @@ Incidentally, you can specify the physical width of each voxel using the
 Note: After the membrane features are detected, they must be analyzed.
 This typically requires running the "filter_mrc" program multiple times.
 The optional
-["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+["-save-progress"](#--save-progress-FILENAME)
 argument used here allows us to skip the time consuming process of
 detecting the membrane each time we run "filter_mrc" later on.
 (See [example 3](#Example-3) below.)
@@ -155,14 +155,14 @@ filter_mrc -in tomogram.rec \
   -surface minima 60.0 \
   -tv 5.0 -tv-angle-exponent 4 \
   -bin 2 \
-  -load-progress membranes \
+  -load-progress temporary_file.rec \
   -connect 1.0e+09 -connect-angle 45 \
   -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
 ```
 Note:
 Here I assumed that the user has already followed the instructions in
 [example 1](#Example-1).  (Consequently, to save time, we used the
-["-load-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+["-load-progress"](#--load-progress-FILENAME)
 to argument to skip over the time consuming
 process of detecting the membrane again.)
 This will generate a new file ("largest_membrane_pointcloud.ply")
@@ -530,7 +530,7 @@ will probably want to analyze them to stitch together larger surfaces.
 This is usually an iterative process and it
 requires running the "filter_mrc" program multiple times.
 Consequenly, **it is strongly recommended that you use the
-["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+["-save-progress"](#--save-progress-FILENAME)
 argument,** the first time you use the **-tv** argument,
 so that you don't need to repeat the slow tensor-voting calculation each time.
 
@@ -647,10 +647,10 @@ If too small, then separate objects in the image will be joined together.
 Because it often takes several iterations to choose the correct
 thresholds, it is recommended that you run *filter_mrc* once in advance
 to detect the membrane, saving your progress using the
-["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+["-save-progress"](#--save-progress-FILENAME)
 argument.  *Then* when you are ready to connect the surfaces (or curves)
 together using the "-connect" argument, use the 
-["-load-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+["-load-progress"](#--load-progress-FILENAME)
 argument to load the directional features of the image that you measured earlier
 (to avoid having to recalculate them again).
 (This was demonstrated in [example 1](#Example-1) and [example 3](#Example-3).)
@@ -677,7 +677,7 @@ once in advance without the
 ["-connect"](#-connect-threshold)
 argument
 with the
-["-save-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+["-save-progress"](#--save-progress-FILENAME)
 argument
 (as we did in the membrane-detection
 [example](#Example-1)).
@@ -716,7 +716,7 @@ the [*-connect-angle*](#--connect-angle-theta) from 45 degrees to 25 degrees
 
 Because it will probably take several tries to choose these parameters,
 you can use the
-["-load-progress"](#--save-progress-FILENAME-and--load-progress-FILENAME)
+["-load-progress"](#--load-progress-FILENAME)
 argument to avoid having to recalculate the directional features
 of the image that you (hopefully) measured earlier.
 This was demonstrated in [example 3](#Example-3).
@@ -911,10 +911,14 @@ arguments are also in use.
 
 
 
-## -save-progress *FILENAME* and -load-progress *FILENAME*
+## -save-progress FILENAME
+## -load-progress FILENAME
 
-The optional "-save-progress" argument will create 6 temporary files
-(ending in "_tensor_1.rec", ...,  "_tensor_6.rec").
+These two optional arguments work together to minimize the amount of time users
+must spend redundantly waiting for slow operations (tensor voting) to complete.
+The "-save-progress" argument will create 6 temporary files
+(whose name begins with FILENAME and
+ends with "_tensor_1.rec", ...,  "_tensor_6.rec").
 This is useful because the process of stitching together a closed
 membrane surface (or a continuous filamentous curve)
 typically involves many iterations of trial and error,
@@ -923,12 +927,13 @@ resulting surface (or curve) is reasonable.
 If we use "-save-progress", then we can skip the time consuming
 process of running tensor-voting each time.
 We can do this using the "-load-progress FILENAME" argument.
-The *FILENAME* argument should be the name of the file you
-created using "-save-progress" earlier.
+The *FILENAME* argument should match the argument
+you used with "-save-progress" earlier.
 Note that when using "-load-progress", you must respecify all
 of the same arguments that you used earlier when you used
-"-save-progress" **except** for the "-out" argument.
-(You can use a different "-out FILENAME" when you use "-load-progress".)
+"-save-progress".
+(Note: The "-out FNAME" argument is an exception.
+When you use "-load-progress", you are permitted to change the "-out" argument.)
 
 Be warned that using "-save-progress" will also consume substantial disk space
 because each of these 6 files files may be up to 4 times larger than the
