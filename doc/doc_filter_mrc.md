@@ -1567,6 +1567,7 @@ to read with other programs (such as ChimeraX and IMOD).
 
 
 
+
 ### -rescale m b
 
 Rescale the voxel intensities (multiply the brightnesses by *m*)
@@ -2411,7 +2412,8 @@ This command can be issued *multiple times*, along with the
 [-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
 [-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r)
 commands to define complex regions in space.
-***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
+The resulting mask region can be visualized using the
+[-fill](#--fill-brightness) argument.
 
 *Note:*
 By default, the *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
@@ -2430,7 +2432,6 @@ Note: If you are using IMOD to locate voxel coordinates,
 
 
 ### -mask-rect-subtract xmin xmax ymin ymax zmin zmax
-***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
 
 This command can be used to *remove* the voxels in a existing mask
 which belong to a rectangular region bounded by the 6 numeric arguments: 
@@ -2441,12 +2442,12 @@ This command can be issued multiple times as part of an ordered chain of
 [-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
 [-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r)
 commands which collectively define complex regions in space.
+The resulting mask region can be visualized using the
+[-fill](#--fill-brightness) argument.
 
 
 
 ### -mask-sphere x0 y0 z0 r
-### -mask-sphere-subtract x0 y0 z0 r
-***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
 
 You can can use the "**-mask-sphere**" argument to define one or more spherical
 regions in space that will be used as a *mask* in later operations.
@@ -2463,6 +2464,8 @@ This command can be issued *multiple times*, along with the
 [-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
 [-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
 commands to define complex regions in space.
+The resulting mask region can be visualized using the
+[-fill](#--fill-brightness) argument.
 
 *Note:*
 By default, the *x0*, *y0*, *z0*, and *r*
@@ -2473,8 +2476,7 @@ the "**-mask-crds-units distance**" (where **distance** is the word "distance",
 not a number).
 
 
-### -mask-rect-subtract xmin xmax ymin ymax zmin zmax
-***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
+### -mask-sphere-subtract x0 y0 z0 r
 
 This command can be used to *remove* the voxels in a existing mask which
 belong to a spherical region centered at *x0*, *y0*, *z0*, with radius *r*.
@@ -2484,6 +2486,18 @@ This command can be issued multiple times as part of an ordered chain of
 [-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
 [-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
 commands which collectively define complex regions in space.
+The resulting mask region can be visualized using the
+[-fill](#--fill-brightness) argument.
+
+
+### -fill brightness
+
+Replace all of the voxel brightnesses with *brightness*.
+If masks are used, then voxels outside the mask will be omitted.
+When using the *-mask-rect* and *-mask-sphere* arguments,
+using "**-fill 1**" will generate a 3-D image
+(which you can view in IMOD, for example)
+This provides a way to see where the mask region is located.
 
 
 

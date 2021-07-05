@@ -1142,6 +1142,13 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 {
   assert(aaafSource);
   assert(aaafDest);
+  assert(sigma[0] >= 0.0);
+  assert(sigma[1] >= 0.0);
+  assert(sigma[2] >= 0.0);
+  assert(truncate_halfwidth[0] > 0);
+  assert(truncate_halfwidth[1] > 0);
+  assert(truncate_halfwidth[2] > 0);
+
   //assert(aaafMask);
   //Allocate filters in all 3 directions.  (Later apply them sequentially.)
   Filter1D<Scalar, int> aFilter[3];

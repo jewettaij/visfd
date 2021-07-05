@@ -126,10 +126,9 @@ DrawRegions(int const image_size[3], //!< image size
                 continue;
 
               // now decide what to do with this voxel
-              if (negative_means_subtract) {
-                // then interpret negative voxel values as set exclusion
-                //if ((value == -1) && (aaafDest[iz+jz][iy+jy][ix+jx] == 1))
-                if ((value < 0) && (aaafDest[iz+jz][iy+jy][ix+jx] > 0))
+              if (value < 0) {
+                if (negative_means_subtract &&
+                    (aaafDest[iz+jz][iy+jy][ix+jx] > 0))
                   // then exclude this voxel from the existing set of voxels
                   aaafDest[iz+jz][iy+jy][ix+jx] = 0.0; // 0=excluded, 1=included
               }
@@ -152,22 +151,21 @@ DrawRegions(int const image_size[3], //!< image size
         Scalar izmin = floor(vRegions[i].data.rect.zmin + 0.5);
         Scalar izmax = floor(vRegions[i].data.rect.zmax + 0.5);
 
-        for (int iz=std::min<float>(izmin, 0);
-             iz < std::max<float>(izmax, image_size[2]);
+        for (int iz=std::max<float>(izmin, 0);
+             iz < std::min<float>(izmax, image_size[2]);
              iz++) {
-          for (int iy=std::min<float>(iymin, 0);
-               iy < std::max<float>(iymax, image_size[1]);
+          for (int iy=std::max<float>(iymin, 0);
+               iy < std::min<float>(iymax, image_size[1]);
                iy++) {
-            for (int ix=std::min<float>(ixmin, 0);
-                 ix < std::max<float>(ixmax, image_size[0]);
+            for (int ix=std::max<float>(ixmin, 0);
+                 ix < std::min<float>(ixmax, image_size[0]);
                  ix++) {
               if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
                 continue;
               // now decide what to do with this voxel
-              if (negative_means_subtract) {
-                // then interpret negative voxel values as set exclusion
-                //if ((value == -1) && (aaafDest[iz][iy][ix] == 1))
-                if ((value < 0) && (aaafDest[iz][iy][ix] > 0))
+              if (value < 0) {
+                if (negative_means_subtract &&
+                    (aaafDest[iz][iy][ix] > 0))
                   // then exclude this voxel from the existing set of voxels
                   aaafDest[iz][iy][ix] = 0.0; // 0=excluded, 1=included
               }

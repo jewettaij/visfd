@@ -159,6 +159,7 @@ Settings::Settings() {
   in_threshold_10_a = 0.0;
   in_threshold_10_b = 0.0;
   out_thresh2_use_clipping = false;
+  out_thresh2_use_clipping_sigma = true;
   out_thresh_a_value = 0.0;
   out_thresh_b_value = 1.0;
   rescale_min_max_in = false;
@@ -391,7 +392,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-mask-sphere")
     {
       try {
-        if ((i+6 >= vArgs.size()) ||
+        if ((i+4 >= vArgs.size()) ||
             (vArgs[i+1] == "") ||
             (vArgs[i+2] == "") ||
             (vArgs[i+3] == "") ||
@@ -418,7 +419,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-mask-sphere-subtract")
     {
       try {
-        if ((i+6 >= vArgs.size()) ||
+        if ((i+4 >= vArgs.size()) ||
             (vArgs[i+1] == "") ||
             (vArgs[i+2] == "") ||
             (vArgs[i+3] == "") ||
@@ -531,7 +532,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        blur_distance = -stof(vArgs[i+1]);
+        blur_distance = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -547,6 +548,8 @@ Settings::ParseArgs(vector<string>& vArgs)
         in_threshold_01_a = 0.9213503964748575;  // ≈ (1+erf(1))/2
 
       in_threshold_01_b = in_threshold_01_a;
+      use_intensity_map = true;
+
       num_arguments_deleted = 2;
     } // if ((vArgs[i] == "-blur-contract") || (vArgs[i] == "-blur-expand"))
 
@@ -1449,6 +1452,24 @@ Settings::ParseArgs(vector<string>& vArgs)
                        "  (the desired minimum and maximum voxel intensity values for the final image)\n");
       }
       num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-rescale")
+
+
+    else if (vArgs[i] == "-fill")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_rescale_multiply = true;
+        out_rescale_multiply = 0.0;
+        out_rescale_offset = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number.");
+      }
+      num_arguments_deleted = 2;
     } // if (vArgs[i] == "-rescale")
 
 
