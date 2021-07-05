@@ -35,13 +35,8 @@ Settings::Settings() {
   use_mask_select = false;
   mask_out = 0.0;
   use_mask_out = true;
-  is_mask_rectangle_in_voxels = true;
-  mask_rectangle_xmin = 0;
-  mask_rectangle_xmax = -1; // xmax < xmin disables the mask rectangle
-  mask_rectangle_ymin = 0;
-  mask_rectangle_ymax = -1; // ymax < ymin disables the mask rectangle
-  mask_rectangle_zmin = 0;
-  mask_rectangle_zmax = -1; // zmax < zmin disables the mask rectangle
+  vMaskRegions.resize(0);
+  is_mask_crds_in_voxels = true; //are mask crds in units of voxels or physical distance?
 
   resize_with_binning = 0; //width of bin to use to reduce image size?
 
@@ -259,10 +254,9 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       in_file_name = vArgs[i+1];
-
       num_arguments_deleted = 2;
-
     } // if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
+
 
     else if (vArgs[i] == "-image-size")
     {
@@ -290,11 +284,10 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       out_file_name = vArgs[i+1];
-
       num_arguments_deleted = 2;
-
     } // if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
    
+
     else if ((vArgs[i] == "-outf") || (vArgs[i] == "-out-force"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -303,8 +296,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       out_file_name = vArgs[i+1];
       out_file_overwrite = true;
       num_arguments_deleted = 2;
-
     } // if (vArgs[i] == "-outf")
+
 
     else if (vArgs[i] == "-mask")
     {
@@ -331,60 +324,146 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     } // if (vArgs[i] == "-mask-select")
 
+
     else if ((vArgs[i] == "-mask-rect") ||
              (vArgs[i] == "-mask-rectangle"))
     {
       try {
         if ((i+6 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
-            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
-            (vArgs[i+4] == "") || (vArgs[i+4][0] == '-') ||
-            (vArgs[i+5] == "") || (vArgs[i+5][0] == '-') ||
-            (vArgs[i+6] == "") || (vArgs[i+6][0] == '-'))
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == "") ||
+            (vArgs[i+3] == "") ||
+            (vArgs[i+4] == "") ||
+            (vArgs[i+5] == "") ||
+            (vArgs[i+6] == ""))
           throw invalid_argument("");
-        is_mask_rectangle_in_voxels = true;
-        mask_rectangle_xmin = stoi(vArgs[i+1]);
-        mask_rectangle_xmax = stoi(vArgs[i+2]);
-        mask_rectangle_ymin = stoi(vArgs[i+3]);
-        mask_rectangle_ymax = stoi(vArgs[i+4]);
-        mask_rectangle_zmin = stoi(vArgs[i+5]);
-        mask_rectangle_zmax = stoi(vArgs[i+6]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by (nonnegative) 6 integers.\n");
-      }
-      num_arguments_deleted = 7;
-    } // if (vArgs[i] == "-mask-rect")
-
-
-    else if ((vArgs[i] == "-mask-rect-dist") ||
-             (vArgs[i] == "-mask-rectangle-distance-units"))
-    {
-      try {
-        if ((i+6 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
-            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-') ||
-            (vArgs[i+4] == "") || (vArgs[i+4][0] == '-') ||
-            (vArgs[i+5] == "") || (vArgs[i+5][0] == '-') ||
-            (vArgs[i+6] == "") || (vArgs[i+6][0] == '-'))
-          throw invalid_argument("");
-        is_mask_rectangle_in_voxels = false;
-        mask_rectangle_xmin = stof(vArgs[i+1]);
-        mask_rectangle_xmax = stof(vArgs[i+2]);
-        mask_rectangle_ymin = stof(vArgs[i+3]);
-        mask_rectangle_ymax = stof(vArgs[i+4]);
-        mask_rectangle_zmin = stof(vArgs[i+5]);
-        mask_rectangle_zmax = stof(vArgs[i+6]);
+        SimpleRegion<float> region;
+        region.type = SimpleRegion<float>::RECT;
+        region.value = 1;
+        region.data.rect.xmin = stof(vArgs[i+1]);
+        region.data.rect.xmax = stof(vArgs[i+2]);
+        region.data.rect.ymin = stof(vArgs[i+3]);
+        region.data.rect.ymax = stof(vArgs[i+4]);
+        region.data.rect.zmin = stof(vArgs[i+5]);
+        region.data.rect.zmax = stof(vArgs[i+6]);
+        vMaskRegions.push_back(region);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by 6 numbers.\n");
       }
       num_arguments_deleted = 7;
-    } // if (vArgs[i] == "-mask-rectangle-physical")
+    } // if (vArgs[i] == "-mask-rect")
+
+
+    else if ((vArgs[i] == "-mask-rect-subtract") ||
+             (vArgs[i] == "-mask-rectangle-subtract"))
+    {
+      try {
+        if ((i+6 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == "") ||
+            (vArgs[i+3] == "") ||
+            (vArgs[i+4] == "") ||
+            (vArgs[i+5] == "") ||
+            (vArgs[i+6] == ""))
+          throw invalid_argument("");
+        SimpleRegion<float> region;
+        region.type = SimpleRegion<float>::RECT;
+        region.value = -1;
+        region.data.rect.xmin = stof(vArgs[i+1]);
+        region.data.rect.xmax = stof(vArgs[i+2]);
+        region.data.rect.ymin = stof(vArgs[i+3]);
+        region.data.rect.ymax = stof(vArgs[i+4]);
+        region.data.rect.zmin = stof(vArgs[i+5]);
+        region.data.rect.zmax = stof(vArgs[i+6]);
+        vMaskRegions.push_back(region);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 6 numbers.\n");
+      }
+      num_arguments_deleted = 7;
+    } // if (vArgs[i] == "-mask-rect-subtract")
+
+
+
+    else if (vArgs[i] == "-mask-sphere")
+    {
+      try {
+        if ((i+6 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == "") ||
+            (vArgs[i+3] == "") ||
+            (vArgs[i+4] == ""))
+          throw invalid_argument("");
+        SimpleRegion<float> region;
+        region.type = SimpleRegion<float>::SPHERE;
+        region.value = 1;
+        region.data.sphere.x0 = stof(vArgs[i+1]);
+        region.data.sphere.y0 = stof(vArgs[i+2]);
+        region.data.sphere.z0 = stof(vArgs[i+3]);
+        region.data.sphere.r = stof(vArgs[i+4]);
+        vMaskRegions.push_back(region);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 4 numbers.\n");
+      }
+      num_arguments_deleted = 5;
+    } // if (vArgs[i] == "-mask-sphere")
+
+
+
+    else if (vArgs[i] == "-mask-sphere-subtract")
+    {
+      try {
+        if ((i+6 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == "") ||
+            (vArgs[i+3] == "") ||
+            (vArgs[i+4] == ""))
+          throw invalid_argument("");
+        SimpleRegion<float> region;
+        region.type = SimpleRegion<float>::SPHERE;
+        region.value = -1;
+        region.data.sphere.x0 = stof(vArgs[i+1]);
+        region.data.sphere.y0 = stof(vArgs[i+2]);
+        region.data.sphere.z0 = stof(vArgs[i+3]);
+        region.data.sphere.r = stof(vArgs[i+4]);
+        vMaskRegions.push_back(region);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 4 numbers.\n");
+      }
+      num_arguments_deleted = 5;
+    } // if (vArgs[i] == "-mask-sphere-subtract")
+
+
+
+    else if ((vArgs[i] == "-mask-crds-units") ||
+             (vArgs[i] == "-mask-coords-units") ||
+             (vArgs[i] == "-mask-coordinates-units"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) && (vArgs[i+1] == "voxels"))
+          is_mask_crds_in_voxels = false;
+        if ((i+1 >= vArgs.size()) &&
+            ((vArgs[i+1] == "distance") ||
+             (vArgs[i+1] == "physical") ||
+             (vArgs[i+1] == "Ansgroms") ||
+             (vArgs[i+1] == "angstroms") ||
+             (vArgs[i+1] == "nm") ||
+             (vArgs[i+1] == "nanometers")))
+          is_mask_crds_in_voxels = true;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by either \"voxels\" or \"distance\".\n");
+      }
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-mask-rect-units")
 
 
     else if (vArgs[i] == "-mask-out")
@@ -418,11 +497,13 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-w")
 
 
+
     else if ((vArgs[i] == "-a2nm") || (vArgs[i] == "-ang-to-nm"))
     {
       voxel_width_divide_by_10 = true;
       num_arguments_deleted = 1;
     } // if (vArgs[i] == "-a2nm")
+
 
 
     else if (vArgs[i] == "-bin")
@@ -431,13 +512,46 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         resize_with_binning = stoi(vArgs[i+1]);
+        if (resize_with_binning < 1)
+          throw invalid_argument("");
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by voxel width.\n");
+                       " argument must be followed by a positive integer.\n");
       }
       num_arguments_deleted = 2;
     } // if (vArgs[i] == "-bin")
+
+
+
+    else if ((vArgs[i] == "-blur-expand") ||
+             (vArgs[i] == "-blur-contract"))
+    {
+      float blur_distance;
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        blur_distance = -stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number.\n");
+      }
+      filter_type = GAUSS;
+      width_a[0] = blur_distance;
+      width_a[1] = width_a[0];
+      width_a[2] = width_a[0];
+      if ((vArgs[i] == "-blur-expand") || (vArgs[i] == "-expand"))
+        in_threshold_01_a = 0.07864960352514255; // ≈ (1-erf(1))/2
+      else if ((vArgs[i] == "-blur-contract") || (vArgs[i] == "-contract"))
+        in_threshold_01_a = 0.9213503964748575;  // ≈ (1+erf(1))/2
+
+      in_threshold_01_b = in_threshold_01_a;
+      num_arguments_deleted = 2;
+    } // if ((vArgs[i] == "-blur-contract") || (vArgs[i] == "-blur-expand"))
+
+
+
 
 
     else if ((vArgs[i] == "-gauss-aniso") || (vArgs[i] == "-ggauss-aniso"))
@@ -1338,7 +1452,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-rescale")
 
 
-    else if (vArgs[i] == "-thresh-range")
+    else if ((vArgs[i] == "-thresh-range") ||
+             (vArgs[i] == "-thresh-range-out"))
     {
       try {
         if ((i+2 >= vArgs.size()) ||
@@ -1397,7 +1512,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-invert")
 
 
-    else if (vArgs[i] == "-thresh") {
+    else if ((vArgs[i] == "-thresh") ||
+             (vArgs[i] == "-thresh-out")) {
       try {
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
@@ -1414,7 +1530,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-thresh2") {
+    else if ((vArgs[i] == "-thresh2") ||
+             (vArgs[i] == "-thresh2-out")) {
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
@@ -1455,7 +1572,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-thresh4") {
+    else if ((vArgs[i] == "-thresh4") ||
+             (vArgs[i] == "-thresh4-out")) {
       try {
         if (i+4 >= vArgs.size())
           throw invalid_argument("");
@@ -1483,7 +1601,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-thresh-interval") {
+    else if ((vArgs[i] == "-thresh-interval") ||
+             (vArgs[i] == "-thresh-interval-out")) {
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");
@@ -1502,7 +1621,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-thresh-gauss") {
+    else if ((vArgs[i] == "-thresh-gauss") ||
+             (vArgs[i] == "-thresh-gauss-out")) {
       try {
         if (i+2 >= vArgs.size())
           throw invalid_argument("");

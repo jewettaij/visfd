@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.26.2");
-string g_date_string("2021-6-28");
+string g_version_string("0.27.1");
+string g_date_string("2021-7-05");
 
 
 
@@ -75,6 +75,11 @@ int main(int argc, char **argv) {
              (settings.in_set_image_size[2] > 0))
     {
       tomo_in.Resize(settings.in_set_image_size);
+      // By default, set the voxel_width to 1.
+      // The voxel_width = ratio of cellA / nvoxels.  So we make sure it's 1:
+      tomo_in.header.cellA[0] = tomo_in.header.nvoxels[0];
+      tomo_in.header.cellA[1] = tomo_in.header.nvoxels[1];
+      tomo_in.header.cellA[2] = tomo_in.header.nvoxels[2];
     }
 
 
@@ -217,38 +222,69 @@ int main(int argc, char **argv) {
     }
 
 
+    // Now that we know voxel_size, rescale coordinates
+    // of the regions that define the image mask (if applicable).
+    if (settings.vMaskRegions.size() > 0) {
 
-    if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
-      mask = tomo_in; //allocate an array for an image the same size as tomo_in
-      if (! settings.is_mask_rectangle_in_voxels) {
-        settings.mask_rectangle_xmin /= voxel_width[0];
-        settings.mask_rectangle_xmax /= voxel_width[0];
-        settings.mask_rectangle_ymin /= voxel_width[1];
-        settings.mask_rectangle_ymax /= voxel_width[1];
-        settings.mask_rectangle_zmin /= voxel_width[2];
-        settings.mask_rectangle_zmax /= voxel_width[2];
+      // first, make sure the mask is allocated and initialized
+      if (mask.aaafI == nullptr) {
+        mask=tomo_in; //allocate an array for an image the same size as tomo_in
+        for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
+          for (int iy=0; iy<mask.header.nvoxels[1]; iy++)
+            for (int ix=0; ix<mask.header.nvoxels[0]; ix++)
+              mask.aaafI[iz][iy][ix] == 0.0; //ignore each voxel by default
       }
 
-      for (int iz=0; iz<mask.header.nvoxels[2]; iz++) {
-        for (int iy=0; iy<mask.header.nvoxels[1]; iy++) {
-          for (int ix=0; ix<mask.header.nvoxels[0]; ix++) {
-            if ((floor(settings.mask_rectangle_xmin) <= ix) &&
-                (ix <= ceil(settings.mask_rectangle_xmax)) && 
-                (floor(settings.mask_rectangle_ymin) <= iy) &&
-                (iy <= ceil(settings.mask_rectangle_ymax)) && 
-                (floor(settings.mask_rectangle_zmin) <= iz) &&
-                (iz <= ceil(settings.mask_rectangle_zmax)))
-              mask.aaafI[iz][iy][ix] = 1.0;
-            else
-              mask.aaafI[iz][iy][ix] = 0.0;
-          }
-        }
-      }
-    } //if (settings.mask_rectangle_xmin <= settings.mask_rectangle_xmax) {
+      // now, we loop through the vMaskRegions array, rescaling their coords
+      if (! settings.is_mask_crds_in_voxels) {
+        for (int i = 0; i < settings.vMaskRegions.size(); i++) {
+          switch (settings.vMaskRegions[i].type) {
+          case SimpleRegion<float>::RECT:
+            {
+              settings.vMaskRegions[i].data.rect.xmin /= voxel_width[0];
+              settings.vMaskRegions[i].data.rect.xmax /= voxel_width[0];
+              settings.vMaskRegions[i].data.rect.ymin /= voxel_width[1];
+              settings.vMaskRegions[i].data.rect.ymax /= voxel_width[1];
+              settings.vMaskRegions[i].data.rect.zmin /= voxel_width[2];
+              settings.vMaskRegions[i].data.rect.zmax /= voxel_width[2];
+            }
+            break;
+          case SimpleRegion<float>::SPHERE:
+            {
+              // assume voxel_width[0] == voxel_width[1] == voxel_width[2]
+              // (I haven't yet implemented non-cubical bin-widths.-A 2021-7-04)
+              settings.vMaskRegions[i].data.sphere.r  /= voxel_width[0];
+              settings.vMaskRegions[i].data.sphere.x0 /= voxel_width[0];
+              settings.vMaskRegions[i].data.sphere.y0 /= voxel_width[0];
+              settings.vMaskRegions[i].data.sphere.z0 /= voxel_width[0];
+            }
+            break;
+          default:
+            assert(false); //this line should not be reached
+            break;
+          } //switch (settings.vMaskRegions[i].type)
+        } //for (int i = 0; i < settings.vMaskRegions.size(); i++)
+      } //if (! settings.is_mask_crds_in_voxels)
+
+      // Now use VISFD's "DrawRegions()" function to fill the
+      // voxels in these regions of the mask with brightness=1,
+      // which means we want to include these voxels in the mask.
+      // The remaining voxels will have brightness=0,
+      // (unless they were read from a file beforehand)
+      // ...and will be excluded from the mask.
+
+      DrawRegions(image_size,
+                  mask.aaafI,
+                  static_cast<const float* const* const*>(nullptr),
+                  settings.vMaskRegions,
+                  true);//<--allows us to add and subtract regions from the mask
+
+    } //if (settings.vMaskRegions.size() > 0)
 
 
 
-
+    // Now that we know the voxel_width, rescale any tensor-voting
+    // parameters that have units of physical distance.
     settings.tv_sigma /= voxel_width[0];
     for (int d=0; d<3; d++) {
       settings.width_a[d] /= voxel_width[d];

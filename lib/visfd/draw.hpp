@@ -31,6 +31,168 @@ namespace visfd {
 
 
 
+/// @brief SimpleRegion is a class used for storing
+/// It stores coordinates describing the size and shape of the elementary
+/// region being described, as well as a data member named "value".
+/// The "value" is a number.  It is typically 1 or -1, but can be any number.
+/// Typically the number is interpeted this way:
+/// If the region you are describing includes
+/// the values of the object (eg. rect or sphere),
+/// then set value = 1.  If the region EXCLUDES
+/// the values of this object, set value = -1.
+/// You can build complex regions using multiple
+/// "SimpleRegion" objects.
+/// For example: You can described a rectangular region
+/// with a spherical cavity by setting value=1 for
+/// the rectangle, and value=-1 for the sphere.
+template<typename Scalar>
+struct SimpleRegion {
+  struct Rect {
+    Scalar xmin;
+    Scalar xmax;
+    Scalar ymin;
+    Scalar ymax;
+    Scalar zmin;
+    Scalar zmax;
+    //Rect() { xmin=0; xmax=-1; ymin=0; ymax=-1; zmin=0; zmax=-1; }
+  };
+  struct Sphere {
+    Scalar x0;
+    Scalar y0;
+    Scalar z0;
+    Scalar r;
+    //Sphere() { x0=0; y0=0; z0=0; r=-1; }
+  };
+  enum RegionType {RECT, SPHERE};
+  RegionType type;
+  union {
+    Rect rect;
+    Sphere sphere;
+  } data;
+  Scalar value;        // A number associated with this region (see above).
+
+  SimpleRegion():type(RECT), value(1) {
+    //initialize with non-sensical values
+    data.rect.xmin=0;
+    data.rect.xmax=-1;
+    data.rect.ymin=0;
+    data.rect.ymax=-1;
+    data.rect.zmin=0;
+    data.rect.zmax=-1;
+  }
+}; // struct SimpleRegion
+
+
+
+
+
+
+template<typename Scalar>
+void
+DrawRegions(int const image_size[3], //!< image size
+            Scalar ***aaafDest,  //!< array where we should write new image
+            Scalar const *const *const *aaafMask, //!< Optional: ignore voxels where mask==0
+            vector<SimpleRegion<Scalar> > vRegions,        //!< a list of primitive regions and their brightnesses
+            bool negative_means_subtract = false  //!< should we interpret negative brightness as set subtraction?
+            )
+{
+  for (int i=0; i < vRegions.size(); i++) {
+
+    switch (vRegions[i].type) {
+    case SimpleRegion<Scalar>::SPHERE:
+      {
+        Scalar R = vRegions[i].data.sphere.r;
+        int Ri = ceil(R-0.5);
+        Scalar value = vRegions[i].value;
+        int ix  = floor(vRegions[i].data.sphere.x0 + 0.5);
+        int iy  = floor(vRegions[i].data.sphere.y0 + 0.5);
+        int iz  = floor(vRegions[i].data.sphere.z0 + 0.5);
+        for (int jz = -Ri; jz <= Ri; jz++) {
+          for (int jy = -Ri; jy <= Ri; jy++) {
+            Scalar descr = R*R - (jy*jy + jz*jz);
+            if (descr < 0.0)
+              continue;
+            int xrange = floor(sqrt(descr));
+            for (int jx = -xrange; jx <= xrange; jx++) {
+              assert(jx*jx + jy*jy + jz*jz <= R*R);
+              if ((ix+jx < 0) ||
+                  (ix+jx >= image_size[0]) ||
+                  (iy+jy < 0) ||
+                  (iy+jy >= image_size[1]) ||
+                  (iz+jz < 0) ||
+                  (iz+jz >= image_size[2]))
+                continue;
+              else if (aaafMask && (aaafMask[iz+jz][iy+jy][ix+jx] == 0.0))
+                continue;
+
+              // now decide what to do with this voxel
+              if (negative_means_subtract) {
+                // then interpret negative voxel values as set exclusion
+                //if ((value == -1) && (aaafDest[iz+jz][iy+jy][ix+jx] == 1))
+                if ((value < 0) && (aaafDest[iz+jz][iy+jy][ix+jx] > 0))
+                  // then exclude this voxel from the existing set of voxels
+                  aaafDest[iz+jz][iy+jy][ix+jx] = 0.0; // 0=excluded, 1=included
+              }
+              else
+                // then set this voxel's brightness directly
+                aaafDest[iz+jz][iy+jy][ix+jx] = value;
+            } //for (int jx = -xrange; jx <= xrange; jx++)
+          } //for (int jy = -Ri; jy <= Ri; jy++)
+        } //for (int jz = -Ri; jz <= Ri; jz++)
+      } //case SimpleRegion<Scalar>::SPHERE:
+      break;
+
+    case SimpleRegion<Scalar>::RECT:
+      {
+        Scalar value = vRegions[i].value;
+        Scalar ixmin = floor(vRegions[i].data.rect.xmin + 0.5);
+        Scalar ixmax = floor(vRegions[i].data.rect.xmax + 0.5);
+        Scalar iymin = floor(vRegions[i].data.rect.ymin + 0.5);
+        Scalar iymax = floor(vRegions[i].data.rect.ymax + 0.5);
+        Scalar izmin = floor(vRegions[i].data.rect.zmin + 0.5);
+        Scalar izmax = floor(vRegions[i].data.rect.zmax + 0.5);
+
+        for (int iz=std::min<float>(izmin, 0);
+             iz < std::max<float>(izmax, image_size[2]);
+             iz++) {
+          for (int iy=std::min<float>(iymin, 0);
+               iy < std::max<float>(iymax, image_size[1]);
+               iy++) {
+            for (int ix=std::min<float>(ixmin, 0);
+                 ix < std::max<float>(ixmax, image_size[0]);
+                 ix++) {
+              if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+                continue;
+              // now decide what to do with this voxel
+              if (negative_means_subtract) {
+                // then interpret negative voxel values as set exclusion
+                //if ((value == -1) && (aaafDest[iz][iy][ix] == 1))
+                if ((value < 0) && (aaafDest[iz][iy][ix] > 0))
+                  // then exclude this voxel from the existing set of voxels
+                  aaafDest[iz][iy][ix] = 0.0; // 0=excluded, 1=included
+              }
+              else
+                // then set this voxel's brightness directly
+                aaafDest[iz][iy][ix] = value;
+            } // loop over ix
+          } // loop over iy
+        } // loop over iz
+      } //case SimpleRegion<Scalar>::RECT:
+      break;
+
+    default:
+      assert(false); //this line should not be reached
+      break;
+
+    } //switch (vRegions[i].type)
+
+  } //for (int i=0; i < vRegions.size(); i++)
+} //DrawRegions()
+
+
+
+
+
 /// @brief  Create a 3D image containing multiple spheres (or spherical shells)
 ///         various sizes, thicknesses, and locations, specified by the caller.
 ///         The resulting spheres can (optionally) be superimposed with the
@@ -201,14 +363,21 @@ DrawSpheres(int const image_size[3], //!< image size
       for (int jz = -Rs; jz <= Rs; jz++) {
         for (int jy = -Rs; jy <= Rs; jy++) {
           for (int jx = -Rs; jx <= Rs; jx++) {
-            if (aaafMask
-                &&
-                (aaafMask[static_cast<int>(iz)+jz]
-                         [static_cast<int>(iy)+jy]
-                         [static_cast<int>(ix)+jx]
-                 == 0.0))
+            if ((ix+jx < 0) ||
+                (ix+jx >= image_size[0]) ||
+                (iy+jy < 0) ||
+                (iy+jy >= image_size[1]) ||
+                (iz+jz < 0) ||
+                (iz+jz >= image_size[2]))
               continue;
-            Scalar rsqr = jx*jx + jy*jy + jz*jz;
+            else if (aaafMask
+                     &&
+                     (aaafMask[static_cast<int>(iz)+jz]
+                              [static_cast<int>(iy)+jy]
+                              [static_cast<int>(ix)+jx]
+                      == 0.0))
+              continue;
+            int rsqr = jx*jx + jy*jy + jz*jz;
             if ((Rssqr_min <= rsqr) && (rsqr <= Rssqr_max))
               nvoxelspersphere++;
           }

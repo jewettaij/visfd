@@ -19,6 +19,8 @@ extern string g_version_string;
 extern string g_date_string;
 
 
+
+
 /// @brief  The "Settings" class contains a list of parameters specified by the
 ///         user which control the behavior of the "filter_mrc" program.
 
@@ -41,23 +43,23 @@ class Settings {
     DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary
              //   widths andarbitrary exponents, slow)
              //   and a 1D Gaussian filter (in the Z direction)
-    DOG_SCALE_FREE,  // scale-free version of the DOG filter (similar widths)
+    DOG_SCALE_FREE,  // differential version of the DOG filter (similar widths)
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses
     TEMPLATE_GGAUSS, // Perform a least-squares fit between a generalized
                      // Gaussian and the surrounding voxel brightnesses
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
-    BLOB,            // blob detection
+    BLOB,            // detect (scale-free) blobs
     SURFACE_EDGE,    // detect the edge of a light-dark boundary (gradient)
-    SURFACE_RIDGE,   // a ridge detector for surfaces (a thin membrane detector)
-    CURVE,           // a ridge detector for thin filamentous curves
+    SURFACE_RIDGE,   // detect 2D surface-like ridges (a thin membrane detector)
+    CURVE,           // detect 1D curve-like ridges (a filament detector)
     WATERSHED,       // Watershed segmentation
-    CLUSTER_CONNECTED,       // Similar to Watershed segmentation
+    CLUSTER_CONNECTED,  // Similar to Watershed segmentation
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
     SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
-    DISTANCE_TO_POINTS, //voxel intensity = distance to nearest object
-    SPHERE_DECALS,   //voxel intensity = 1 if within R from the nearest object
+    DISTANCE_TO_POINTS, //voxel intensity= distance to nearest object
+    SPHERE_DECALS,      //voxel intensity= 1 if within R from the nearest object
     BLOB_RADIAL_INTENSITY // Report intensity-vs-radius for each blob
   } FilterType; 
   
@@ -84,14 +86,8 @@ class Settings {
   int mask_select; // select only voxels from the input with this value
   bool use_mask_out; // should we specify the brightness of ignored voxels?
   float mask_out;//what brightness do we set these voxels?(to go in out_file_name)
-  bool is_mask_rectangle_in_voxels; // Is the mask-region a rectangular box?
-  float mask_rectangle_xmin; // if so, what is the shape of that box?
-  float mask_rectangle_xmax; // :
-  float mask_rectangle_ymin;
-  float mask_rectangle_ymax;
-  float mask_rectangle_zmin;
-  float mask_rectangle_zmax;
-
+  bool is_mask_crds_in_voxels; // Are mask crds in units of voxels or physical distance?
+  vector<SimpleRegion<float> > vMaskRegions; // set mask=one or more regions in space
   int resize_with_binning; //width of bin to use to reduce image size?
 
   string save_intermediate_fname_base = ""; //save progress of slow calculations

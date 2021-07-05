@@ -21,9 +21,9 @@ void MrcHeader::Read(istream& mrc_file) {
           
   // Convert the binary data into numbers (Ints and floats)
 
-  // 1    NX       number of columns (fastest changing in map)
-  // 2    NY       number of rows   
-  // 3    NZ       number of sections (slowest changing in map)
+  // 0    NX       number of columns (fastest changing in map)
+  // 1    NY       number of rows
+  // 2    NZ       number of sections (slowest changing in map)
 
   // Commenting out the lines with "mrc_file.read()", although they also work.
   //mrc_file.read((char*)&nvoxels[0], sizeof(Int));
@@ -35,7 +35,7 @@ void MrcHeader::Read(istream& mrc_file) {
   nvoxels[2] = *(reinterpret_cast<Int*>(header_data)+2);
 
 
-  // 4    MODE     data type :
+  // 3    MODE     data type :
   //       0        image : signed 8-bit bytes range -128 to 127
   //       1        image : 16-bit halfwords
   //       2        image : 32-bit reals
@@ -76,9 +76,9 @@ void MrcHeader::Read(istream& mrc_file) {
 
 
 
-  // 5    NXSTART number of first column in map (Default = 0)
-  // 6    NYSTART number of first row in map
-  // 7    NZSTART number of first section in map
+  // 4    NXSTART number of first column in map (Default = 0)
+  // 5    NYSTART number of first row in map
+  // 6    NZSTART number of first section in map
   //mrc_file.read((char*)&nstart[0], sizeof(Int));
   //mrc_file.read((char*)&nstart[1], sizeof(Int));
   //mrc_file.read((char*)&nstart[2], sizeof(Int));
@@ -87,9 +87,9 @@ void MrcHeader::Read(istream& mrc_file) {
   nstart[2] = *(reinterpret_cast<Int*>(header_data)+6);
 
 
-  // 8     MX       number of intervals along X
-  // 9     MY       number of intervals along Y
-  // 10    MZ       number of intervals along Z
+  // 7     MX       number of intervals along X
+  // 8     MY       number of intervals along Y
+  // 9     MZ       number of intervals along Z
   //mrc_file.read((char*)&mvoxels[0], sizeof(Int));
   //mrc_file.read((char*)&mvoxels[1], sizeof(Int));
   //mrc_file.read((char*)&mvoxels[2], sizeof(Int));
@@ -98,7 +98,7 @@ void MrcHeader::Read(istream& mrc_file) {
   mvoxels[2] = *(reinterpret_cast<Int*>(header_data)+9);
 
 
-  // 11-13    CELLA    cell dimensions in angstroms
+  // 10-12    CELLA    cell dimensions in angstroms
   //mrc_file.read((char*)&(cellA[0]), sizeof(float));
   //mrc_file.read((char*)&(cellA[1]), sizeof(float));
   //mrc_file.read((char*)&(cellA[2]), sizeof(float));
@@ -107,7 +107,7 @@ void MrcHeader::Read(istream& mrc_file) {
   cellA[2] = *(reinterpret_cast<float*>(header_data)+12);
 
 
-  // 14-16    CELLB    cell angles in degrees
+  // 13-15    CELLB    cell angles in degrees
   //mrc_file.read((char*)&(cellB[0]), sizeof(float));
   //mrc_file.read((char*)&(cellB[1]), sizeof(float));
   //mrc_file.read((char*)&(cellB[2]), sizeof(float));
@@ -116,9 +116,9 @@ void MrcHeader::Read(istream& mrc_file) {
   cellB[2] = *(reinterpret_cast<float*>(header_data)+15);
 
 
-  // 17    MAPC     axis corresp to cols (1,2,3 for X,Y,Z)
-  // 18    MAPR     axis corresp to rows (1,2,3 for X,Y,Z)
-  // 19    MAPS     axis corresp to sections (1,2,3 for X,Y,Z)
+  // 16    MAPC     axis corresp to cols (1,2,3 for X,Y,Z)
+  // 17    MAPR     axis corresp to rows (1,2,3 for X,Y,Z)
+  // 18    MAPS     axis corresp to sections (1,2,3 for X,Y,Z)
   //mrc_file.read((char*)&(mapCRS[0]), sizeof(Int));
   //mrc_file.read((char*)&(mapCRS[1]), sizeof(Int));
   //mrc_file.read((char*)&(mapCRS[2]), sizeof(Int));
@@ -127,9 +127,9 @@ void MrcHeader::Read(istream& mrc_file) {
   mapCRS[2] = *(reinterpret_cast<Int*>(header_data)+18);
 
 
-  // 20    DMIN     minimum brightness value
-  // 21    DMAX     maximum brightness value
-  // 22    DMEAN    mean brightness value
+  // 19    DMIN     minimum brightness value
+  // 20    DMAX     maximum brightness value
+  // 21    DMEAN    mean brightness value
   //mrc_file.read((char*)&(dmin), sizeof(float));
   //mrc_file.read((char*)&(dmax), sizeof(float));
   //mrc_file.read((char*)&(dmean), sizeof(float));
@@ -162,15 +162,15 @@ void MrcHeader::Read(istream& mrc_file) {
   #endif // #ifdef ENABLE_IMOD_COMPATIBILITY
 
 
-  // 23    ISPG     space group number 0 or 1 (default=0)
+  // 22    ISPG     space group number 0 or 1 (default=0)
   //mrc_file.read((char*)&(ispg), sizeof(Int));
   ispg = *(reinterpret_cast<Int*>(header_data)+22);
 
-  // 24    NSYMBT   number of bytes used for symmetry data (0 or 80)
+  // 23    NSYMBT   number of bytes used for symmetry data (0 or 80)
   //mrc_file.read((char*)&(nsymbt), sizeof(Int));
   nsymbt = *(reinterpret_cast<Int*>(header_data)+23);
 
-  // 25-49    EXTRA    extra space used for anything   - 0 by default
+  // 24-49    EXTRA    extra space used for anything   - 0 by default
   //mrc_file.read(extra_raw_data, 25*MrcHeader::SIZE_PER_FIELD)
   // copy the bytes we dont use into the remaining_raw_data array
   memcpy(extra_raw_data,
@@ -192,16 +192,16 @@ void MrcHeader::Read(istream& mrc_file) {
 
 void MrcHeader::Write(ostream& mrc_file) const {
 
-  // 1    NX       number of columns (fastest changing in map)
-  // 2    NY       number of rows   
-  // 3    NZ       number of sections (slowest changing in map)
+  // 0    NX       number of columns (fastest changing in map)
+  // 1    NY       number of rows
+  // 2    NZ       number of sections (slowest changing in map)
 
   // Commenting out the lines with "mrc_file.read()", although they also work.
   mrc_file.write((char*)&nvoxels[0], sizeof(Int));
   mrc_file.write((char*)&nvoxels[1], sizeof(Int));
   mrc_file.write((char*)&nvoxels[2], sizeof(Int));
 
-  // 4    MODE     data type :
+  // 3    MODE     data type :
   //       0        image : signed 8-bit bytes range -128 to 127
   //       1        image : 16-bit halfwords
   //       2        image : 32-bit reals
@@ -211,57 +211,58 @@ void MrcHeader::Write(ostream& mrc_file) const {
   mrc_file.write((char*)&mode, sizeof(Int));
 
 
-  // 5    NXSTART number of first column in map (Default = 0)
-  // 6    NYSTART number of first row in map
-  // 7    NZSTART number of first section in map
+  // 4    NXSTART number of first column in map (Default = 0)
+  // 5    NYSTART number of first row in map
+  // 6    NZSTART number of first section in map
   mrc_file.write((char*)&nstart[0], sizeof(Int));
   mrc_file.write((char*)&nstart[1], sizeof(Int));
   mrc_file.write((char*)&nstart[2], sizeof(Int));
 
 
-  // 8    MX       number of intervals along X
-  // 9    MY       number of intervals along Y
-  // 10    MZ       number of intervals along Z
+  // 7    MX       number of intervals along X
+  // 8    MY       number of intervals along Y
+  // 9    MZ       number of intervals along Z
   mrc_file.write((char*)&mvoxels[0], sizeof(Int));
   mrc_file.write((char*)&mvoxels[1], sizeof(Int));
   mrc_file.write((char*)&mvoxels[2], sizeof(Int));
 
 
-  // 11-13    CELLA    cell dimensions in angstroms
+  // 10-12    CELLA    cell dimensions in angstroms
   mrc_file.write((char*)&(cellA[0]), sizeof(float));
   mrc_file.write((char*)&(cellA[1]), sizeof(float));
   mrc_file.write((char*)&(cellA[2]), sizeof(float));
 
 
-  // 14-16    CELLB    cell angles in degrees
+  // 13-15    CELLB    cell angles in degrees
   mrc_file.write((char*)&(cellB[0]), sizeof(float));
   mrc_file.write((char*)&(cellB[1]), sizeof(float));
   mrc_file.write((char*)&(cellB[2]), sizeof(float));
 
 
-  // 17    MAPC     axis corresp to cols (1,2,3 for X,Y,Z)
-  // 18    MAPR     axis corresp to rows (1,2,3 for X,Y,Z)
-  // 19    MAPS     axis corresp to sections (1,2,3 for X,Y,Z)
+  // 16    MAPC     axis corresp to cols (1,2,3 for X,Y,Z)
+  // 17    MAPR     axis corresp to rows (1,2,3 for X,Y,Z)
+  // 18    MAPS     axis corresp to sections (1,2,3 for X,Y,Z)
   mrc_file.write((char*)&(mapCRS[0]), sizeof(Int));
   mrc_file.write((char*)&(mapCRS[1]), sizeof(Int));
   mrc_file.write((char*)&(mapCRS[2]), sizeof(Int));
 
-  // 20    DMIN     minimum brightness value
-  // 21    DMAX     maximum brightness value
-  // 22    DMEAN    mean brightness value
+  // 19    DMIN     minimum brightness value
+  // 20    DMAX     maximum brightness value
+  // 21    DMEAN    mean brightness value
   mrc_file.write((char*)&(dmin), sizeof(float));
   mrc_file.write((char*)&(dmax), sizeof(float));
   mrc_file.write((char*)&(dmean), sizeof(float));
 
 
-  // 23    ISPG     space group number 0 or 1 (default=0)
+  // 22    ISPG     space group number 0 or 1 (default=0)
   mrc_file.write((char*)&(ispg), sizeof(Int));
 
-  // 24    NSYMBT   number of bytes used for symmetry data (0 or 80)
+  // 23    NSYMBT   number of bytes used for symmetry data (0 or 80)
   mrc_file.write((char*)&(nsymbt), sizeof(Int));
 
-  // 25-49    EXTRA    extra space used for anything   - 0 by default
-  mrc_file.write(extra_raw_data, (1+(49-25))*sizeof(Int));
+  // 24-49    EXTRA    extra space used for anything   - 0 by default
+  mrc_file.write(extra_raw_data,
+                 25*sizeof(Int));
 
   // 50-52    ORIGIN   origin in X,Y,Z used for transforms
   mrc_file.write((char*)&(origin[0]), sizeof(float));

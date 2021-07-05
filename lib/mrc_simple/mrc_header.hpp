@@ -110,6 +110,13 @@ public:
 
   // constructor sets the tomogram size to 0,0,0
   MrcHeader() {
+    // first, erase the portion of the header which is rarely used:
+    memset(extra_raw_data,'\0',25*SIZE_PER_FIELD); //fill this array with zeros
+    memset(extra_raw_data,'\0',SIZE_REMAINING_HEADER); //fill this array with zeros
+    ispg = 0;    // no idea what this is
+    nsymbt = 0;  // no idea what this is
+
+    // then, set the attributes that are commonly used
     mapCRS[0] = 1;
     mapCRS[1] = 2;
     mapCRS[2] = 3;
@@ -119,8 +126,8 @@ public:
     cellA[0] = 0.0; 
     cellA[1] = 0.0; 
     cellA[2] = 0.0;
-    dmin = 0.0;   //impossible values
-    dmax = 0.0;  //impossible values
+    dmin =  0.0;   //impossible values
+    dmax = -1.0;   //impossible values
     dmean = 0.0;
     mode = MRC_MODE_UNDEFINED;
     cellB[0] = 90.0; 

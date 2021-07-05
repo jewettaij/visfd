@@ -191,7 +191,21 @@ image processing, allowing you to segment the contents of the cell
 or segment concentric compartments inside larger compartments
 (eg. organelles inside cells).
 
-Note:
+Optional: The file "segmented.rec" includes voxels all the way to the
+membrane boundary.  Hence, some of these voxels at the surface are actually
+in the membrane itself, which is typically darker than the interior.
+In order to exclude these membrane voxels, you may want to discard voxels that
+too close to the surface.  The following command will contract the boundary
+of the surface by approximately 40 Angstroms inward, creating a new file
+"segmented_interior.rec".
+```
+filter_mrc -i segmented.rec -o segmented_interior.rec -blur-contract 40
+```
+*(See [-blur-contract](#--blur-contract-distance) for details.)*
+*(WARNING: The -blur-contract feature has not yet been tested. -Andrew 2021-7-05)*
+
+
+**Note:**
 All of these parameters make reasonably good
 defaults for membrane detection except the
 ["**-connect**"](#-connect-threshold)
@@ -2381,21 +2395,31 @@ will be interpreted the same way in IMOD and other programs.
 
 ### -mask-rect xmin xmax ymin ymax zmin zmax
 
-As an alternative to using the "**-mask**" argument to provide an image file
-(containing the mask), the user can alternatively use the "**-mask-rect**"
-argument to specify the coordinates of a rectangle.
+You can can use the "**-mask-rect**" argument to define one or more rectangular
+regions in space that will be used as a *mask* in later operations.
+(Masks are used to ignore certain voxels during detection
+and filter operations).  This is an alternative to using
+the ["**-mask**"](#-mask-MRC_FILE) argument.
+(It can also be used in *addition* to the "-mask" argument.)
+The rectangle is bounded by the 6 numeric arguments:
+*xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*.
 Voxels *outside* this rectangle will be *ignored*,
 and voxels *within* this rectangle will *not*.
-(This will produce the same behavior as providing an image containing
- *1s* for voxels within the rectangle, and *0s" outside.)
+
+This command can be issued *multiple times*, along with the
+[-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
+[-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r)
+commands to define complex regions in space.
+***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
 
 *Note:*
-The *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
-positions are in units of *voxels*
-(**not** physical distance).
-If you want to specify the rectangle in physical coordinates
-(for example, in Angstroms), use the "**-mask-rect-dist**"
-argument instead.
+By default, the *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
+positions are in units of *voxels* (**not** physical distance).
+If you want to specify the rectangle coordinates in units of *physical distance*
+(for example, in Angstroms), then add these two arguments to the argument list:
+the "**-mask-crds-units distance**" (where **distance** is the word "distance",
+not a number).
 
 Note: If you are using IMOD to locate voxel coordinates,
        keep in mind that IMOD uses
@@ -2405,16 +2429,123 @@ Note: If you are using IMOD to locate voxel coordinates,
       In this program, voxel coordinates begin at (0,0,0).
 
 
-### -mask-rect-dist  *xmin* *xmax* *ymin* *ymax* *zmin* *zmax*
+### -mask-rect-subtract xmin xmax ymin ymax zmin zmax
+***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
 
-This is an alternate version of the "**-mask-rect**" argument
-which uses *physical units*.
-In other words, the *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
-arguments are in physical units (eg. Angstroms), *not* voxels.
-You can supply the coordinates in voxels
-by using the "*-w*" argument.
+This command can be used to *remove* the voxels in a existing mask
+which belong to a rectangular region bounded by the 6 numeric arguments: 
+*xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*.
+This command can be issued multiple times as part of an ordered chain of
+["**-mask**"](#-mask-MRC_FILE),
+[-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
+[-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r)
+commands which collectively define complex regions in space.
 
 
+
+### -mask-sphere x0 y0 z0 r
+### -mask-sphere-subtract x0 y0 z0 r
+***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
+
+You can can use the "**-mask-sphere**" argument to define one or more spherical
+regions in space that will be used as a *mask* in later operations.
+This is an alternative to using
+the ["**-mask**"](#-mask-MRC_FILE) argument.
+(It can also be used in *addition* to the "-mask" argument.)
+The *x0*, *y0*, *z0*, and *r* arguments specify the position of the sphere's
+center and its radius, respectively.
+Voxels *outside* the sphere will be *ignored*,
+and voxels *within* this sphere will *not*.
+
+This command can be issued *multiple times*, along with the
+[-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r), and
+[-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
+commands to define complex regions in space.
+
+*Note:*
+By default, the *x0*, *y0*, *z0*, and *r*
+positions are in units of *voxels* (**not** physical distance).
+If you want to specify the rectangle coordinates in units of *physical distance*
+(for example, in Angstroms), then add these two arguments to the argument list:
+the "**-mask-crds-units distance**" (where **distance** is the word "distance",
+not a number).
+
+
+### -mask-rect-subtract xmin xmax ymin ymax zmin zmax
+***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
+
+This command can be used to *remove* the voxels in a existing mask which
+belong to a spherical region centered at *x0*, *y0*, *z0*, with radius *r*.
+This command can be issued multiple times as part of an ordered chain of
+["**-mask**"](#-mask-MRC_FILE),
+[-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
+[-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
+commands which collectively define complex regions in space.
+
+
+
+### -blur-contract distance
+### -blur-expand distance
+
+***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
+
+The **-blur-contract** and **-blur-expand** arguments are useful
+for modifying the size of an existing binary image (eg. mask),
+making the region appear bigger or smaller.
+(You can use these arguments to modify an image that you eventually intend
+to use with the "-mask" argument in a future invocation of filter_mrc.)
+
+Recall that a *mask image* is a 3-D image used with the
+["**-mask**"](#--mask-MRC_FILE)
+argument.  The brightness value of each voxel in a mask image is
+typically either 0 or 1
+*(depending on whether the voxel is supposed to be
+ignored or considered during subsequent calculations)*.
+I will refer to such image (of 1s and 0s) as a "binary image".
+The **-blur-expand** and **-blur-contract** arguments can enlarge
+or shrink the size of the region stored in a binary image by
+a distance of roughly *distance* (which has units of physical distance
+unless the "*-w 1*" argument is used).
+
+Note that features in the image which are smaller or narrower than
+*distance* will be lost after this operation is completed.
+Consquently, for large distances, it might work better to
+repeat this operation multiple time with the same small *distance* argument,
+instead of using a single large *distance* argument.
+You will have to experiment to see what works best.
+
+#### Details
+This is implemented by blurring the image, and then applying a threshold
+so that all voxels whose brightness are below a threshold are discarded.
+Consequently, you cannot combine these arguments with either the *-gauss*
+or *-thresh* arguments, because:
+
+- "-blur-expand *distance*" is equivalent to
+"-gauss *distance* -thresh 0.0786496", *(where 0.0786496 ≈ (1-erf(1))/2)*
+- "-blur-contract *distance*" is equivalent to
+"-gauss *distance* -thresh 0.9213504", *(where 0.9213504 ≈ (1+erf(1))/2)*
+
+The motivation for this strategy is outlined below:
+If you start with a binary image (consisting of 1s and 0s),
+and blur it, and discard all voxels whose brightness is less than 0.5,
+(setting their brightness to 0, and the other voxel brightnesses to 1),
+then you will get back a new binary image which strongly resembles
+the original binary image
+(with some high frequencies removed due to the blurring).
+It will have roughly the same number of bright and dark voxels
+as the original image.
+But if, after blurring, you discard all voxels with threshold brightness
+less than, say, 0.75 (instead of 0.5), then this is a more stringent
+requirement.  As a result, *fewer* voxels will remain, compared to if
+you had chosen 0.5.
+This effectively shrinks the size of the selected region (consisting of 1s)
+from the binary image.  Alternatively, if you only discard voxels whose
+brightness less than, say, 0.25, then this is a more forgiving criteria.
+This will select *more* voxels, effectively expanding the size of the
+selected region from the binary image.
 
 
 ## Miscellaneous
