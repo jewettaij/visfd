@@ -71,7 +71,7 @@ Incidentally, you can specify the physical width of each voxel using the
 Note: After the membrane features are detected, they must be analyzed.
 This typically requires running the "filter_mrc" program multiple times.
 The optional
-["-save-progress"](#--save-progress-FILENAME)
+["-save-progress"](#-save-progress-FILENAME)
 argument used here allows us to skip the time consuming process of
 detecting the membrane each time we run "filter_mrc" later on.
 (See [example 3](#Example-3) below.)
@@ -81,7 +81,7 @@ Note: The computation time will be roughly proportional to the image size
 (See [example 3](#Example-3) below.)  The computation time also varies
 dramatically with the voxel width.  High resolution images with many small
 voxels are prohibitively slow to analyze.  So in this example, the user
-included the optional [-bin 2](#--bin-binsize) argument, to reduce the image
+included the optional [-bin 2](#-bin-binsize) argument, to reduce the image
 resolution by a factor of 2.  If the thickness of the membrane you wish
 to detect is multiple voxels wide, then using "-bin 2" or "-bin 3" should
 hopefully not significantly affect the features you detect.
@@ -162,7 +162,7 @@ filter_mrc -in tomogram.rec \
 Note:
 Here I assumed that the user has already followed the instructions in
 [example 1](#Example-1).  (Consequently, to save time, we used the
-["-load-progress"](#--load-progress-FILENAME)
+["-load-progress"](#-load-progress-FILENAME)
 to argument to skip over the time consuming
 process of detecting the membrane again.)
 This will generate a new file ("largest_membrane_pointcloud.ply")
@@ -201,7 +201,7 @@ of the surface by approximately 40 Angstroms inward, creating a new file
 ```
 filter_mrc -i segmented.rec -o segmented_interior.rec -blur-contract 40
 ```
-*(See [-blur-contract](#--blur-contract-distance) for details.)*
+*(See [-blur-contract](#-blur-contract-distance) for details.)*
 
 
 **Note:**
@@ -297,7 +297,7 @@ Again, this program is most frequently used for detecting
 - The ["**-surface**"](#Detecting-membranes)
 argument is used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
-- The ["**-edge**"](#--edge-thickness) argument is used to detect
+- The ["**-edge**"](#-edge-thickness) argument is used to detect
 surfaces at the edge of light-dark regions
 *(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*
 - The ["**-curve**"](#Detecting-curves) argument is used to detect thin curves.
@@ -327,7 +327,7 @@ are provided.
 
 All of these detection algorithms can be quite slow.
 Several strategies to reduce computation time are described below,
-including cropping and [binning](#--bin-binwidth) your 3-D image (tomogram).
+including cropping and [binning](#-bin-binwidth) your 3-D image (tomogram).
 
 
 
@@ -404,7 +404,7 @@ and
 filters are used to use clip voxel intensities and to select voxels
 whose intensities lie within in a range specified by the user.
 
-The [-bin](#--bin-binwidth) argument can be used to reduce the size
+The [-bin](#-bin-binwidth) argument can be used to reduce the size
 and resolution of the image.
 
 
@@ -439,7 +439,7 @@ in the two orthogonal directions.
 Because this filter depends on second derivatives,
 it is prone to detect a large number of spurious fluctuations in brightness
 (in addition to the membrane-like structures you are interested in).
-Tensor-voting (using the [-tv](#--tv-σ_ratio) argument)
+Tensor-voting (using the [-tv](#-tv-σ_ratio) argument)
 can be used to remove these spurious detected peaks
 and improve the signal-to-noise ratio.
 
@@ -468,7 +468,7 @@ Using a larger *thickness* will reduce the noise in the image, but may also
 smooth over small (high-frequency) features in image you wish to detect.
 
 As with **-surface** argument, the edge detection fidelity
-can be improved using tensor voting (with the [-tv](#--tv-σ_ratio) argument).
+can be improved using tensor voting (with the [-tv](#-tv-σ_ratio) argument).
 
 (Unless the "-w 1" argument was specified, then
 the *thickness* parameter should be in units of physical distance,
@@ -503,12 +503,12 @@ of the curve (in physical units).
 (Curves which are thicker than this will not be detected.)
 
 *As with surface detection, the curve detection fidelity
-can be improved using tensor voting (with the [-tv](#--tv-σ_ratio) argument).*
+can be improved using tensor voting (with the [-tv](#-tv-σ_ratio) argument).*
 
 (Unless the "-w 1" argument was specified,
 the *thickness* parameter should be in units of physical distance,
 such as Angstroms, not in voxels.)
-Also see the documentation for the [-surface](#--surface-type-thickness)
+Also see the documentation for the [-surface](#-surface-type-thickness)
 argument.
 
 **WARNING**
@@ -534,7 +534,7 @@ because it can be a very expensive computation.
 
 Note: The tensor-voting algorithm selected the "-tv" argument
 is **extremely slow**.  Croping the tomogram and/or reducing the resolution
-of the 3D image (using the ["-bin"](#--bin-binsize) argument)
+of the 3D image (using the ["-bin"](#-bin-binsize) argument)
 will dramatically reduce computation time.  This recommended
 when you are in the early stages of learning to use this feature.
 
@@ -543,7 +543,7 @@ will probably want to analyze them to stitch together larger surfaces.
 This is usually an iterative process and it
 requires running the "filter_mrc" program multiple times.
 Consequenly, **it is strongly recommended that you use the
-["-save-progress"](#--save-progress-FILENAME)
+["-save-progress"](#-save-progress-FILENAME)
 argument,** the first time you use the **-tv** argument,
 so that you don't need to repeat the slow tensor-voting calculation each time.
 
@@ -557,10 +557,10 @@ three filters has been selected.)
 function used in tensor voting has a width of
 σ_tv = σ_ratio ⨉ σ,
 where "σ" is the *thickess* parameter specified in the
-[-surface](#--surface-type-thickness),
-[-edge](#--edge-thickness),
+[-surface](#-surface-type-thickness),
+[-edge](#-edge-thickness),
 or
-[-curve](#--curve-type-thickness), arguments
+[-curve](#-curve-type-thickness), arguments
 The *σ_ratio* parameter has a value of 1/√3.)*
 
 
@@ -660,10 +660,10 @@ If too small, then separate objects in the image will be joined together.
 Because it often takes several iterations to choose the correct
 thresholds, it is recommended that you run *filter_mrc* once in advance
 to detect the membrane, saving your progress using the
-["-save-progress"](#--save-progress-FILENAME)
+["-save-progress"](#-save-progress-FILENAME)
 argument.  *Then* when you are ready to connect the surfaces (or curves)
 together using the "-connect" argument, use the 
-["-load-progress"](#--load-progress-FILENAME)
+["-load-progress"](#-load-progress-FILENAME)
 argument to load the directional features of the image that you measured earlier
 (to avoid having to recalculate them again).
 (This was demonstrated in [example 1](#Example-1) and [example 3](#Example-3).)
@@ -690,7 +690,7 @@ once in advance without the
 ["-connect"](#-connect-threshold)
 argument
 with the
-["-save-progress"](#--save-progress-FILENAME)
+["-save-progress"](#-save-progress-FILENAME)
 argument
 (as we did in the membrane-detection
 [example](#Example-1)).
@@ -723,13 +723,13 @@ indicating which cluster they belong to
 
 If some clusters are too big, you can either increase the *threshold*
 value, *or* you can alter increase angular sensitivity by decreasing
-the [*-connect-angle*](#--connect-angle-theta) from 45 degrees to 25 degrees
+the [*-connect-angle*](#-connect-angle-theta) from 45 degrees to 25 degrees
 (or, equivalently by increasing the
 *-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9).
 
 Because it will probably take several tries to choose these parameters,
 you can use the
-["-load-progress"](#--load-progress-FILENAME)
+["-load-progress"](#-load-progress-FILENAME)
 argument to avoid having to recalculate the directional features
 of the image that you (hopefully) measured earlier.
 This was demonstrated in [example 3](#Example-3).
@@ -740,7 +740,7 @@ near the junction points of interest.
 (You can crop images either by using IMOD,
  or by using the "crop_mrc" program distributed with *visfd*.)
 2) Again, you can also reduce the size and resolution of the image
-(during the detection process), using the ["-bin"](#--bin-binsize) argument.
+(during the detection process), using the ["-bin"](#-bin-binsize) argument.
 For example, using "-bin 2" will often also produce reasonable results
 and will reduce the computation time considerably.  Any features
 detected at reduced resolution will be scaled up in size accordingly
@@ -2405,12 +2405,12 @@ Voxels *outside* this rectangle will be *ignored*,
 and voxels *within* this rectangle will *not*.
 
 This command can be issued *multiple times*, along with the
-[-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
-[-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
-[-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r)
+[-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-sphere](#-mask-sphere-x0-y0-z0-r), and
+[-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r)
 commands to define complex regions in space.
 The resulting mask region can be visualized using the
-[-fill](#--fill-brightness) argument.
+[-fill](#-fill-brightness) argument.
 
 *Note:*
 By default, the *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*
@@ -2435,12 +2435,12 @@ which belong to a rectangular region bounded by the 6 numeric arguments:
 *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*.
 This command can be issued multiple times as part of an ordered chain of
 ["**-mask**"](#-mask-MRC_FILE),
-[-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
-[-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
-[-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r)
+[-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-sphere](#-mask-sphere-x0-y0-z0-r), and
+[-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r)
 commands which collectively define complex regions in space.
 The resulting mask region can be visualized using the
-[-fill](#--fill-brightness) argument.
+[-fill](#-fill-brightness) argument.
 
 
 
@@ -2457,12 +2457,12 @@ Voxels *outside* the sphere will be *ignored*,
 and voxels *within* this sphere will *not*.
 
 This command can be issued *multiple times*, along with the
-[-mask-sphere-subtract](#--mask-sphere-subtract-x0-y0-z0-r), and
-[-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
-[-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r), and
+[-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
 commands to define complex regions in space.
 The resulting mask region can be visualized using the
-[-fill](#--fill-brightness) argument.
+[-fill](#-fill-brightness) argument.
 
 *Note:*
 By default, the *x0*, *y0*, *z0*, and *r*
@@ -2479,12 +2479,12 @@ This command can be used to *remove* the voxels in a existing mask which
 belong to a spherical region centered at *x0*, *y0*, *z0*, with radius *r*.
 This command can be issued multiple times as part of an ordered chain of
 ["**-mask**"](#-mask-MRC_FILE),
-[-mask-sphere](#--mask-sphere-x0-y0-z0-r), and
-[-mask-rect](#--mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
-[-mask-rect-subtract](#--mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-sphere](#-mask-sphere-x0-y0-z0-r), and
+[-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
+[-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
 commands which collectively define complex regions in space.
 The resulting mask region can be visualized using the
-[-fill](#--fill-brightness) argument.
+[-fill](#-fill-brightness) argument.
 
 
 ### -fill brightness
@@ -2509,7 +2509,7 @@ making the region appear bigger or smaller.
 to use with the "-mask" argument in a future invocation of filter_mrc.)
 
 Recall that a *mask image* is a 3-D image used with the
-["**-mask**"](#--mask-MRC_FILE)
+["**-mask**"](#-mask-MRC_FILE)
 argument.  The brightness value of each voxel in a mask image is
 typically either 0 or 1
 *(depending on whether the voxel is supposed to be
