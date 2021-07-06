@@ -8,7 +8,7 @@ It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
 
 
-## Alternatives to filter_mrc
+### Alternatives to filter_mrc
 Many of the features of **filter_mrc** are also available
 from popular python libraries, including:
 [scikit-image](https://scikit-image.org),
@@ -19,6 +19,7 @@ MRC files can be read in python using the
 [mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
 module.
 
+### Description
 
 **filter_mrc** can be used local minima-finding, clustering, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed).
