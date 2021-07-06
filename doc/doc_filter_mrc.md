@@ -7,6 +7,19 @@ filter_mrc
 It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
 
+
+## Alternatives to filter_mrc
+Many of the features of **filter_mrc** are also available
+from popular python libraries, including:
+[scikit-image](https://scikit-image.org),
+[opencv](https://opencv.org),
+and
+[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html)
+MRC files can be read in python using the
+[mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
+module.
+
+
 **filter_mrc** can be used local minima-finding, clustering, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed).
 The coordinates of the objects that are detected can be saved to
@@ -199,9 +212,9 @@ too close to the surface.  The following command will contract the boundary
 of the surface by approximately 40 Angstroms inward, creating a new file
 "segmented_interior.rec".
 ```
-filter_mrc -i segmented.rec -o segmented_interior.rec -blur-contract 40
+filter_mrc -i segmented.rec -o segmented_interior.rec -erode-gauss 40
 ```
-*(See [-blur-contract](#-blur-contract-distance) for details.)*
+*(See [-erode-gauss](#-erode-gauss-distance) for details.)*
 
 
 **Note:**
@@ -226,11 +239,17 @@ then try increasing the "--scale" parameter.
 
 ## WARNING: Use *ulimit*
 Some operations, such as tensor-voting and voxelization, consume a large
-amount of RAM.  Consequently, it is strongly recommended that you use the 
+amount of RAM.  Consequently, I recommend using the 
 [ulimit -v SIZE_IN_KB](https://ss64.com/bash/ulimit.html)
 command to prevent system lockup, especially if you are on a shared computer.
 (If my understanding is correct, running "ulimit -v 14000000" beforehand
 should prevent programs like filter_mrc from consuming more than 14Gb of RAM.)
+
+If you are not able to run *ulimit* (for example, if you don't have
+administrator/sudo priveleges), then just use caution.
+In that case, run a system monitor (like "top") in another window.
+Then, when you run *filter_mrc* or *voxelize_mesh.py*, be prepared to kill that
+program if it uses more than 80% of the system memory.
 
 
 ## Arguments:
@@ -2498,30 +2517,44 @@ This provides a way to see where the mask region is located.
 
 
 
-### -blur-contract distance
-### -blur-expand distance
+### -erode-gauss distance
+### -dilate-gauss distance
 
 
-The **-blur-contract** and **-blur-expand** arguments are useful
+*(Note: This is a crude implementation of
+[image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
+[image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
+For a more flexible and sophisticated implementation in python, try using
+[dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.dilation)
+[erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.erosion)
+[binary_dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_dilation)
+[binary_erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_erosion)
+from
+[scikit-image](https://scikit-image.org),
+along with the
+[mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
+module.)*
+
+The **-erode-gauss** and **-dilate-gauss** arguments are useful
 for modifying the size of an existing binary image (eg. mask),
 making the region appear bigger or smaller.
-(You can use these arguments to modify an image that you eventually intend
-to use with the "-mask" argument in a future invocation of filter_mrc.)
+(This is useful to modify an image that you eventually intend
+to use with the "-mask" argument in a future invocation of filter_mrc.
+But these operations work on any binary image.)
 
 Recall that a *mask image* is a 3-D image used with the
-["**-mask**"](#-mask-MRC_FILE)
-argument.  The brightness value of each voxel in a mask image is
-typically either 0 or 1
+["**-mask**"](#-mask-MRC_FILE) argument.
+The brightness value of each voxel in a mask image is typically either 0 or 1
 *(depending on whether the voxel is supposed to be
 ignored or considered during subsequent calculations)*.
-I will refer to such image (of 1s and 0s) as a "binary image".
-The **-blur-expand** and **-blur-contract** arguments can enlarge
+I will refer to an image (of 1s and 0s) as a "binary image".
+The **-dilate-gauss** and **-erode-gauss** arguments will enlarge
 or shrink the size of the region stored in a binary image by
 a distance of roughly *distance* (which has units of physical distance
 unless the "*-w 1*" argument is used).
 
-Note that features in the image which are smaller or narrower than
-*distance* will be lost after this operation is completed.
+Note that, due to blurring, features in the image which are smaller or
+narrower than *distance* will be lost after this operation is completed.
 Consquently, for large distances, it might work better to
 repeat this operation multiple time with the same small *distance* argument,
 instead of using a single large *distance* argument.
@@ -2533,9 +2566,9 @@ so that all voxels whose brightness are below a threshold are discarded.
 Consequently, you cannot combine these arguments with either the *-gauss*
 or *-thresh* arguments, because:
 
-- "-blur-expand *distance*" is equivalent to
+- "-dilate-gauss *distance*" is equivalent to
 "-gauss *distance* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
-- "-blur-contract *distance*" is equivalent to
+- "-erode-gauss *distance*" is equivalent to
 "-gauss *distance* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
 
 The motivation for this strategy is outlined below:
@@ -2556,6 +2589,8 @@ from the binary image.  Alternatively, if you only discard voxels whose
 brightness less than, say, 0.25, then this is a more forgiving criteria.
 This will select *more* voxels, effectively expanding the size of the
 selected region from the binary image.
+The thresholds above were chosen so that the selected region
+expands or shrinks by roughly a distance of *distance*.
 
 
 ## Miscellaneous
