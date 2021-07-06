@@ -8,19 +8,6 @@ It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
 
 
-### Alternatives to filter_mrc
-Many of the features of **filter_mrc** are also available
-from popular python libraries, including:
-[scikit-image](https://scikit-image.org),
-[opencv](https://opencv.org),
-and
-[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html)
-MRC files can be read in python using the
-[mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
-module.
-
-### Description
-
 **filter_mrc** can be used local minima-finding, clustering, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed).
 The coordinates of the objects that are detected can be saved to
@@ -53,6 +40,18 @@ Masks can also be used to give some voxels more consideration
 than others during the blurring (filtering) process.  (A.K.A. "weighting".)
 You can use a mask to to apply a filter to an image
 whose boundaries are smooth and gradual as opposed to jagged and rectangular,
+
+
+### Alternatives to filter_mrc
+Many of the features of **filter_mrc** are also available
+from popular python libraries, including:
+[scikit-image](https://scikit-image.org),
+[opencv](https://opencv.org),
+and
+[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html)
+MRC files can be read in python using the
+[mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
+module.
 
 
 
