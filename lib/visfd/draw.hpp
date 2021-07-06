@@ -96,6 +96,44 @@ DrawRegions(int const image_size[3], //!< image size
             bool negative_means_subtract = false  //!< should we interpret negative brightness as set subtraction?
             )
 {
+
+  // Special case:  Should the background voxels be initialized with 1s?
+  // If the first region has a negative value and negative_means_subtract==true,
+  // then it means that the caller wants to remove (subtract) those voxels from
+  // the set of non-zero background voxels, by setting their brightness to zero.
+  // That doesn't make sense if all of the voxels in the image
+  // already have brightness zero.  So I interpret this special case as a
+  // request to subtract these voxels from a binary image which is filled with
+  // non-zero values.  Since a binary image only contains 1s or 0s, I will
+  // initialize the image full of 1s.  Then in the next step, we will remove
+  // the voxels in the first region (vRegions[0]) from this background of 1s.
+  if (negative_means_subtract &&
+      (vRegions.size() > 0) && (vRegions[0].value < 0)) {
+    bool all_zero = true;
+    for (int iz = 0; iz < image_size[2] && all_zero; iz++) {
+      for (int iy = 0; iy < image_size[1] && all_zero; iy++) {
+        for (int ix = 0; ix < image_size[0] && all_zero; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
+          if (aaafDest[iz][iy][ix] != 0.0)
+            all_zero = false;
+        }
+      }
+    }
+    if (all_zero) {
+      for (int iz = 0; iz < image_size[2] && all_zero; iz++) {
+        for (int iy = 0; iy < image_size[1] && all_zero; iy++) {
+          for (int ix = 0; ix < image_size[0] && all_zero; ix++) {
+            if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+              continue;
+            aaafDest[iz][iy][ix] = 1.0;
+          }
+        }
+      }
+    }
+  } // if (negative_means_subtract && (vRegions[0].value < 0))
+
+
   for (int i=0; i < vRegions.size(); i++) {
 
     switch (vRegions[i].type) {
@@ -152,13 +190,13 @@ DrawRegions(int const image_size[3], //!< image size
         Scalar izmax = floor(vRegions[i].data.rect.zmax + 0.5);
 
         for (int iz=std::max<float>(izmin, 0);
-             iz < std::min<float>(izmax, image_size[2]);
+             iz <= std::min<float>(izmax, image_size[2]-1);
              iz++) {
           for (int iy=std::max<float>(iymin, 0);
-               iy < std::min<float>(iymax, image_size[1]);
+               iy <= std::min<float>(iymax, image_size[1]-1);
                iy++) {
             for (int ix=std::max<float>(ixmin, 0);
-                 ix < std::min<float>(ixmax, image_size[0]);
+                 ix <= std::min<float>(ixmax, image_size[0]-1);
                  ix++) {
               if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
                 continue;

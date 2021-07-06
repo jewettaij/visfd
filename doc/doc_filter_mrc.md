@@ -202,7 +202,6 @@ of the surface by approximately 40 Angstroms inward, creating a new file
 filter_mrc -i segmented.rec -o segmented_interior.rec -blur-contract 40
 ```
 *(See [-blur-contract](#--blur-contract-distance) for details.)*
-*(WARNING: The -blur-contract feature has not yet been tested. -Andrew 2021-7-05)*
 
 
 **Note:**
@@ -1507,8 +1506,6 @@ of the Gaussian independently in the x,y,z directions:
 
 ### -bin binsize
 
-***WARNING: THIS FEATURE IS EXPERIMENTAL.  PLEASE REPORT BUGS.  2021-6-21***
-
 Reduce the resolution of the image in each direction by a factor of *binsize*.
 (*binsize* must be a positive integer.)
 The new image will be smaller in each direction by a factof of *binsize*.
@@ -2504,7 +2501,6 @@ This provides a way to see where the mask region is located.
 ### -blur-contract distance
 ### -blur-expand distance
 
-***WARNING: This feature has not yet been tested. -Andrew 2021-7-05***
 
 The **-blur-contract** and **-blur-expand** arguments are useful
 for modifying the size of an existing binary image (eg. mask),
@@ -2538,9 +2534,9 @@ Consequently, you cannot combine these arguments with either the *-gauss*
 or *-thresh* arguments, because:
 
 - "-blur-expand *distance*" is equivalent to
-"-gauss *distance* -thresh 0.0786496", *(where 0.0786496 ≈ (1-erf(1))/2)*
+"-gauss *distance* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
 - "-blur-contract *distance*" is equivalent to
-"-gauss *distance* -thresh 0.9213504", *(where 0.9213504 ≈ (1+erf(1))/2)*
+"-gauss *distance* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
 
 The motivation for this strategy is outlined below:
 If you start with a binary image (consisting of 1s and 0s),

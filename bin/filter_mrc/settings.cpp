@@ -159,7 +159,7 @@ Settings::Settings() {
   in_threshold_10_a = 0.0;
   in_threshold_10_b = 0.0;
   out_thresh2_use_clipping = false;
-  out_thresh2_use_clipping_sigma = true;
+  out_thresh2_use_clipping_sigma = false;
   out_thresh_a_value = 0.0;
   out_thresh_b_value = 1.0;
   rescale_min_max_in = false;
@@ -543,9 +543,9 @@ Settings::ParseArgs(vector<string>& vArgs)
       width_a[1] = width_a[0];
       width_a[2] = width_a[0];
       if ((vArgs[i] == "-blur-expand") || (vArgs[i] == "-expand"))
-        in_threshold_01_a = 0.07864960352514255; // ≈ (1-erf(1))/2
+        in_threshold_01_a = 0.1572992070502851; // ≈ 1-erf(1)
       else if ((vArgs[i] == "-blur-contract") || (vArgs[i] == "-contract"))
-        in_threshold_01_a = 0.9213503964748575;  // ≈ (1+erf(1))/2
+        in_threshold_01_a = 0.8427007929497149;  // ≈ erf(1)
 
       in_threshold_01_b = in_threshold_01_a;
       use_intensity_map = true;
