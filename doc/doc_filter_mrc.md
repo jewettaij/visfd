@@ -513,7 +513,7 @@ For noisy or cluttered images, you may have to experiment with all of these
 options to maximize the chance of success.
 
 
-### -edge distance
+### -edge thickness
 
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
 2021-6-21***
