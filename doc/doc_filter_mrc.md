@@ -493,7 +493,7 @@ of the mask region to include these voxels near the periphery.
 [-dilate-gauss](#-dilate-gauss-thickness)
 argument with a large thickness parameter.  This is discussed below.
 Alternatively, if your only goal is to reduce the computation time, you can
-use the [-mask-rect]#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax) and
+use the [-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax) and
 [-mask-sphere](#-mask-sphere-x0-y0-z0-r) arguments to create a mask
 region large enough to enclose the object of interest.)*
 
