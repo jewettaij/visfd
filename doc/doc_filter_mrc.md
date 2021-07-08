@@ -476,15 +476,15 @@ You can do this using the ["**-mask**"](#-mask-MRC_FILE) argument
 and [other similar arguments](#Masking).
 
 You can use an image mask during the initial stages of detection
-(for example, using the [-surface](#-surface-thickness),
-[-curve](#-surface-thickness),
-[-edge](#-surface-thickness), and
+(for example, using the [-surface](#-surface-type-thickness),
+[-curve](#-curve-type-thickness),
+[-edge](#-edge-thickness), and
 [-tv](#-tv-σ_ratio) arguments).
 However since detection is very sensitive to noise near the mask boundary,
 it may be better to refrain from using a mask until later on,
 (for example, when using the 
 [-connect](#-connect-threshold) and
-["**-surface-normals-file**"](#-surface-normals-file-PLY_FILE)
+["-surface-normals-file"](#-surface-normals-file-PLY_FILE)
 arguments).  Otherwise, you may detect many faint, minor objects or spurious
 noise near this boundary instead of the surface or curve that you are seeking.
 Alternatively, to get around this problem you can dilate (expand) the size
