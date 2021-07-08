@@ -24,7 +24,7 @@ using namespace std;
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
 #include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable())
 #include <filter3d.hpp>   // defines common 3D image filters
-
+#include <morphology.hpp> // defines FindExtrema()
 
 
 namespace visfd {

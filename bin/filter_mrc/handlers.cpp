@@ -23,6 +23,7 @@ using namespace visfd;
 #include <feature.hpp>
 #include <segmentation.hpp>
 #include <clustering.hpp>
+#include <morphology.hpp>
 #include <draw.hpp>
 #include "err.hpp"
 #include "settings.hpp"
@@ -63,7 +64,7 @@ HandleGGauss(Settings settings,
                tomo_in.aaafI,
                tomo_out.aaafI,
                mask.aaafI,
-               true,
+               settings.normalize_near_boundaries,
                &cerr);
 
 } //HandleGGauss()
@@ -89,7 +90,7 @@ HandleGauss(Settings settings,
                  settings.width_a,
                  settings.filter_truncate_ratio,
                  settings.filter_truncate_threshold,
-                 true,
+                 settings.normalize_near_boundaries,
                  &cerr);
 
   cerr << " Filter Used:\n"
@@ -369,7 +370,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
                           settings.nonmax_min_radial_separation_ratio,
                           settings.nonmax_max_volume_overlap_large,
                           settings.nonmax_max_volume_overlap_small,
-                          PRIORITIZE_HIGH_MAGNITUDE_SCORES,
+                          SORT_DECREASING_MAGNITUDE,
                           &cerr);
 
   cerr << " " << crds.size() << " blobs remaining" << endl;
@@ -388,7 +389,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
                                   scores,
                                   settings.training_pos_crds,
                                   settings.training_neg_crds,
-                                  PRIORITIZE_HIGH_MAGNITUDE_SCORES,
+                                  SORT_DECREASING_MAGNITUDE,
                                   &settings.score_lower_bound,
                                   &settings.score_upper_bound,
                                   &cerr);
@@ -455,7 +456,7 @@ HandleBlobScoreSupervisedMulti(Settings settings,
                                  settings.multi_training_neg_crds,
                                  &threshold_lower_bound,
                                  &threshold_upper_bound,
-                                 PRIORITIZE_HIGH_MAGNITUDE_SCORES,
+                                 SORT_DECREASING_MAGNITUDE,
                                  &cerr);
 
 } //HandleBlobScoreSupervisedMulti()
@@ -949,7 +950,7 @@ HandleExtrema(Settings settings,
                               settings.nonmax_min_radial_separation_ratio,
                               settings.nonmax_max_volume_overlap_large,
                               settings.nonmax_max_volume_overlap_small,
-                              PRIORITIZE_LOW_SCORES,
+                              SORT_INCREASING,
                               &cerr);
     }
 
@@ -961,7 +962,7 @@ HandleExtrema(Settings settings,
                               settings.nonmax_min_radial_separation_ratio,
                               settings.nonmax_max_volume_overlap_large,
                               settings.nonmax_max_volume_overlap_small,
-                              PRIORITIZE_HIGH_SCORES,
+                              SORT_DECREASING,
                               &cerr);
     }
 
@@ -1023,7 +1024,7 @@ HandleLocalFluctuations(Settings settings,
                             settings.template_background_exponent,
                             settings.filter_truncate_ratio,
                             settings.filter_truncate_threshold,
-                            true,
+                            settings.normalize_near_boundaries,
                             &cerr);
 
   tomo_out.FindMinMaxMean();
@@ -1269,7 +1270,7 @@ HandleTV(Settings settings,
                mask.aaafI,
                settings.width_b[0],
                truncate_halfwidth,
-               true,
+               settings.normalize_near_boundaries,
                &cerr);
 
     truncate_halfwidth = floor(settings.width_a[0] *
@@ -1281,7 +1282,7 @@ HandleTV(Settings settings,
                mask.aaafI,
                settings.width_a[0],
                truncate_halfwidth,
-               true,
+               settings.normalize_near_boundaries,
                &cerr);
   }
 
@@ -1523,8 +1524,8 @@ HandleTV(Settings settings,
                       mask.aaafI,
                       (settings.filter_type == Settings::CURVE),
                       //settings.hessian_score_threshold,
-                      true,   // (do normalize near rectangular image bounaries)
-                      false,  // (diagonalize each tensor afterwards?)
+                      false, // don't boost votes from voxels near mask boundary
+                      false, // don't diagonalize each tensor afterwards
                       &cerr);
 
     } // if (settings.load_intermediate_fname_base == "")

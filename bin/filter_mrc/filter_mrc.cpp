@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.27.3");
-string g_date_string("2021-7-06");
+string g_version_string("0.27.4");
+string g_date_string("2021-7-08");
 
 
 
@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
         for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
           for (int iy=0; iy<mask.header.nvoxels[1]; iy++)
             for (int ix=0; ix<mask.header.nvoxels[0]; ix++)
-              mask.aaafI[iz][iy][ix] == 0.0; //ignore each voxel by default
+              mask.aaafI[iz][iy][ix] = 0.0; //ignore each voxel by default
       }
 
       // now, we loop through the vMaskRegions array, rescaling their coords

@@ -45,8 +45,7 @@ whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 ### Alternatives to filter_mrc
 Many of the features of **filter_mrc** are also available
 from popular python libraries, including:
-[scikit-image](https://scikit-image.org),
-[opencv](https://opencv.org),
+[scikit-image](https://scikit-image.org)
 and
 [scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html)
 MRC files can be read in python using the
@@ -214,7 +213,7 @@ of the surface by approximately 40 Angstroms inward, creating a new file
 ```
 filter_mrc -i segmented.rec -o segmented_interior.rec -erode-gauss 40
 ```
-*(See [-erode-gauss](#-erode-gauss-distance) for details.)*
+*(See [-erode-gauss](#-erode-gauss-thickness) for details.)*
 
 
 **Note:**
@@ -467,7 +466,54 @@ and improve the signal-to-noise ratio.
 (enough to store at least 9 copies of the original image in 32bit-float mode).*
 
 
-### -edge thickness
+#### Detection and masking
+
+You may wish to ignore certain voxels which are not part of the region
+that you want to consider.
+This can reduce the computation time.
+In some cases, it can also improve detection accuracy.
+You can do this using the ["**-mask**"](#-mask-MRC_FILE) argument
+and [other similar arguments](#Masking).
+
+You can use an image mask during the initial stages of detection
+(for example, using the [-surface](#-surface-thickness),
+[-curve](#-surface-thickness),
+[-edge](#-surface-thickness), and
+[-tv](#-tv-σ_ratio) arguments).
+However since detection is very sensitive to noise near the mask boundary,
+it may be better to refrain from using a mask until later on,
+(for example, when using the 
+[-connect](#-connect-threshold) and
+["**-surface-normals-file**"](#-surface-normals-file-PLY_FILE)
+arguments).  Otherwise, you may detect many faint, minor objects or spurious
+noise near this boundary instead of the surface or curve that you are seeking.
+Alternatively, to get around this problem you can dilate (expand) the size
+of the mask region to include these voxels near the periphery.
+*(One way to do this is using the 
+[-dilate-gauss](#-dilate-gauss-thickness)
+argument with a large thickness parameter.  This is discussed below.
+Alternatively, if your only goal is to reduce the computation time, you can
+use the [-mask-rect(#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax) and
+[-mask-sphere](#-mask-sphere-x0-y0-z0-r) arguments to create a mask
+region large enough to enclose the object of interest.)*
+
+It may also help to vary the *size of the region* in the mask file using 
+[erosion](https://en.wikipedia.org/wiki/Erosion_(morphology)) or
+[dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)).
+(If you are using the "-mask" argument to load a mask image file,
+you can do this by creating a new mask file using *filter_mrc* again with the
+[-erode-gauss](#-erode-gauss-thickness) or
+[-dilate-gauss](#-dilate-gauss-thickness) arguments.)
+Eroding the mask can elimate traces of any structure at the edge
+of the mask boundary that might otherwise confuse or distract the detector.
+But, as mentioned earlier, dilating the mask is frequently more effective
+at improving the detection accuracy near the mask boundary.
+
+For noisy or cluttered images, you may have to experiment with all of these
+options to maximize the chance of success.
+
+
+### -edge distance
 
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
 2021-6-21***
@@ -476,7 +522,7 @@ If the "**-edge**" filter is selected, the program will
 attempt to detect the sharp boundary surfaces between
 light regions and a dark volumetric regions in the image.
 (This filter detects gradients in image brightness.)
-Unfortunately real images are noisy.  Image noise will create many spurious
+Unfortunately real images are noisy.  Typical images will have many spurious
 bumps which must be filtered or smoothed away before edge detection begins.
 Consequently the user must specify a *thickness* argument which indicates
 amount of smoothing to use to erase features that you wish to ignore
@@ -484,7 +530,8 @@ amount of smoothing to use to erase features that you wish to ignore
 This means that light or dark patches in the image which are
 smaller than *thickness* will not be visible to the edge-detector.
 Using a larger *thickness* will reduce the noise in the image, but may also
-smooth over small (high-frequency) features in image you wish to detect.
+smooth over small (high-frequency) features in boundary surface
+that you want to detect.
 
 As with **-surface** argument, the edge detection fidelity
 can be improved using tensor voting (with the [-tv](#-tv-σ_ratio) argument).
@@ -496,6 +543,11 @@ such as Angstroms, not in voxels.)
 **WARNING**
 *This filter requires a very large amount of memory
 (enough to store at least 9 copies of the original image in 32bit-float mode).*
+
+#### edge detection and masking
+It is recommended that you refrain from using any of the "-mask" arguments
+***during*** edge detection.
+See [here](#Detection-and-masking) for alternative strategies.
 
 
 
@@ -533,6 +585,11 @@ argument.
 **WARNING**
 *This filter requires a very large amount of memory
 (enough to store at least 9 copies of the original image in 32bit-float mode).*
+
+#### curve detection and masking
+It is recommended that you refrain from using any of the "-mask" arguments
+***during*** curve detection.
+See [here](#Detection-and-masking) for alternative strategies.
 
 
 
@@ -961,16 +1018,23 @@ process of running tensor-voting each time.
 We can do this using the "-load-progress FILENAME" argument.
 The *FILENAME* argument should match the argument
 you used with "-save-progress" earlier.
-Note that when using "-load-progress", you must respecify all
-of the same arguments that you used earlier when you used
-"-save-progress".
-(Note: The "-out FNAME" argument is an exception.
-When you use "-load-progress", you are permitted to change the "-out" argument.)
+Be warned that files generated by "-save-progress" will consume
+a substantial amount of disk space.  You should delete them eventually.
 
-Be warned that using "-save-progress" will also consume substantial disk space
-because each of these 6 files files may be up to 4 times larger than the
-size of the original tomogram file.
-(You should probably delete these files eventually.)
+
+Note that when using "-load-progress", you must again specify
+all the same arguments that you used earlier when you used
+"-save-progress"
+(including the "-in" "-surface", "-edge", and "-curve", and "-tv" arguments).
+When you do this, you are permitted to make some changes which are listed below.
+When you use "-load-progress", you are permitted to change the "-out" argument.
+You can also add an image mask (or change the mask, for example
+using the "-mask", "-mask-rect", "-mask-sphere" arguments).
+Adding a mask is useful if you want to restrict the detection
+of surface features to certain regions inside the image, for example.
+(It makes sense to start using a mask now because
+[masks are not typically used during the initial stages of detection](#Surface-detection-and-masking).)
+
 
 
 
@@ -1165,7 +1229,6 @@ Note: If **type** is set to *all*, then two different files will be generated
 whose names will end in ".minima.txt" and ".maxima.txt", respectively.
 
 
-
 #### Blob detection and masking
 
 It is recommended that you refrain from specifying a mask
@@ -1173,21 +1236,19 @@ It is recommended that you refrain from specifying a mask
 (for example, by using the
 ["**-mask**"](#-mask-MRC_FILE)
 argument).
-Doing so could cause blobs which are near the periphery of the mask
-to be ignored.
+This is because the detector is more sensitive to noise in the image
+near the mask boundary (or image boundary).
 Instead, it is recommended that you use the
-["**-mask**"](#-mask-MRC_FILE)
-argument
-*later on, after you have finished blob detection*.
+"-mask" argument *later on, after you have finished blob detection*.
 (This was shown in [example 2](#Example-2) above.)
 
-Sometimes you might want to use the
-["**-mask**"](#-mask-MRC_FILE)
-argument during blob detection because it can
-accelerate the search for blobs
-(by ignoring voxels outside the mask).
-However don't do this if you care
-about blobs near the periphery.
+Sometimes you might want to use the "-mask" argument during blob detection
+because it can accelerate the search for blobs (by ignoring voxels outside
+the mask). However don't do this if you care about blobs near the periphery.
+Alternatively, to get around this problem you can dilate (expand) the size
+of the mask region to include these voxels near the periphery.
+*(One way to do this is using the 
+[-dilate-gauss](#-dilate-gauss-thickness) argument.)*
 
 
 #### Non-max suppression: automatic disposal of blobs
@@ -2453,7 +2514,7 @@ This command can be used to *remove* the voxels in a existing mask
 which belong to a rectangular region bounded by the 6 numeric arguments: 
 *xmin*, *xmax*, *ymin*, *ymax*, *zmin*, and *zmax*.
 This command can be issued multiple times as part of an ordered chain of
-["**-mask**"](#-mask-MRC_FILE),
+[-mask](#-mask-MRC_FILE),
 [-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
 [-mask-sphere](#-mask-sphere-x0-y0-z0-r), and
 [-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r)
@@ -2497,7 +2558,7 @@ not a number).
 This command can be used to *remove* the voxels in a existing mask which
 belong to a spherical region centered at *x0*, *y0*, *z0*, with radius *r*.
 This command can be issued multiple times as part of an ordered chain of
-["**-mask**"](#-mask-MRC_FILE),
+[-mask](#-mask-MRC_FILE),
 [-mask-sphere](#-mask-sphere-x0-y0-z0-r), and
 [-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
 [-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
@@ -2517,8 +2578,8 @@ This provides a way to see where the mask region is located.
 
 
 
-### -erode-gauss distance
-### -dilate-gauss distance
+### -erode-gauss thickness
+### -dilate-gauss thickness
 
 
 *(Note: This is a crude implementation of
@@ -2550,14 +2611,14 @@ ignored or considered during subsequent calculations)*.
 I will refer to an image (of 1s and 0s) as a "binary image".
 The **-dilate-gauss** and **-erode-gauss** arguments will enlarge
 or shrink the size of the region stored in a binary image by
-a distance of roughly *distance* (which has units of physical distance
+a distance of roughly *thickness* (which has units of physical distance
 unless the "*-w 1*" argument is used).
 
 Note that, due to blurring, features in the image which are smaller or
-narrower than *distance* will be lost after this operation is completed.
+narrower than *thickness* will be lost after this operation is completed.
 Consquently, for large distances, it might work better to
-repeat this operation multiple time with the same small *distance* argument,
-instead of using a single large *distance* argument.
+repeat this operation multiple time with the same small *thickness* argument,
+instead of using a single large *thickness* argument.
 You will have to experiment to see what works best.
 
 #### Details
@@ -2566,10 +2627,10 @@ so that all voxels whose brightness are below a threshold are discarded.
 Consequently, you cannot combine these arguments with either the *-gauss*
 or *-thresh* arguments, because:
 
-- "-dilate-gauss *distance*" is equivalent to
-"-gauss *distance* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
-- "-erode-gauss *distance*" is equivalent to
-"-gauss *distance* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
+- "-dilate-gauss *thickness*" is equivalent to
+"-gauss *thickness* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
+- "-erode-gauss *thickness*" is equivalent to
+"-gauss *thickness* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
 
 The motivation for this strategy is outlined below:
 If you start with a binary image (consisting of 1s and 0s),
@@ -2590,7 +2651,7 @@ brightness less than, say, 0.25, then this is a more forgiving criteria.
 This will select *more* voxels, effectively expanding the size of the
 selected region from the binary image.
 The thresholds above were chosen so that the selected region
-expands or shrinks by roughly a distance of *distance*.
+expands or shrinks by roughly a distance of *thickness*.
 
 
 ## Miscellaneous

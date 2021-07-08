@@ -18,7 +18,7 @@
 using namespace std;
 #include <err_visfd.hpp> // defines the "VisfdErr" exception type
 #include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
-#include <visfd_utils.hpp>    // defines invert_permutation(), SortBlobs(), FindSpheres() ...
+#include <visfd_utils.hpp>    // defines invert_permutation(), FindSpheres()
 #include <alloc2d.hpp>    // defines Alloc2D() and Dealloc2D()
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
 #include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable())
@@ -28,197 +28,6 @@ using namespace std;
 
 
 namespace visfd {
-
-
-
-/// @brief   Find all of the local minima and local maxima in an image (aaafI).
-///          The locations of minima and maxima are stored in the
-///          *pv_minima_crds and *pv_maxima_crds arrays, and sorted in
-///          increasing and decreasing order respectively.  (IE they are sorted
-///          so that the most significant local minima or maxima will appear
-///          first in the list.)
-///          If either pv_minima_crds or pv_maxima_crds is nullptr, then
-///          the minima or maxima will be ignored.
-///          The optional pv_minima_scores and pv_maxima_scores store the
-///          The caller can automatically discard minima or maxima which
-///          are not sufficiently low or high, by supplying thresholds.
-///          The optional aaafMask array (if not nullptr) can be used to ignore
-///          certain voxels in the image (whose aaafMask entries are zero).
-/// @note    Local minima or maxima on the boundaries of the image 
-///          (or near the edge of the mask)
-///          are not as trustworthy since some of the neighboring voxels
-///          will not be available for comparison.  These minima and maxima
-///          can be ignored by setting allow_borders=false.  The number of
-///          neighbors around every voxel which are considered (eg, 6, 18, 26)
-///          can be controlled using the "connectivity" argument.
-
-template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
-
-void
-FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
-            Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
-            Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-            vector<array<Coordinate, 3> > *pva_minima_crds, //!< store minima locations (ix,iy,iz) here (if not nullptr)
-            vector<array<Coordinate, 3> > *pva_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not nullptr)
-            vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not nullptr)
-            vector<Scalar> *pv_maxima_scores, //!< store corresponding maxima aaafI[iz][iy][ix] values here (if not nullptr)
-            vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
-            vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
-            Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
-            Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
-            int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-            bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-            Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
-            ostream *pReportProgress=nullptr   //!< optional: print progress to the user?
-                   )
-{
-  bool find_minima = (pva_minima_crds != nullptr);
-  bool find_maxima = (pva_maxima_crds != nullptr);
-
-  vector<size_t> minima_indices;
-  vector<size_t> maxima_indices;
-  vector<Scalar> minima_scores;
-  vector<Scalar> maxima_scores;
-  vector<size_t> *pv_minima_indices = nullptr;
-  vector<size_t> *pv_maxima_indices = nullptr;
-  if (find_minima) {
-    pv_minima_indices = &minima_indices;
-    if (! pv_minima_scores)
-      pv_minima_scores = &minima_scores;
-  }
-  if (find_maxima) {
-    pv_maxima_indices = &maxima_indices;
-    if (! pv_maxima_scores)
-      pv_maxima_scores = &maxima_scores;
-  }
-
-  _FindExtrema(image_size,
-               aaafI,
-               aaafMask,
-               pv_minima_indices,
-               pv_maxima_indices,
-               pv_minima_scores,
-               pv_maxima_scores,
-               pv_minima_nvoxels,
-               pv_maxima_nvoxels,
-               minima_threshold,
-               maxima_threshold,
-               connectivity,
-               allow_borders,
-               aaaiDest,
-               pReportProgress);
-
-  // Now convert the indices back to x,y,z coordinates
-  if (pva_minima_crds) {
-    size_t N = minima_indices.size();
-    assert(pva_minima_crds);
-    pva_minima_crds->resize(N);
-    for (size_t n = 0; n < N; n++) {
-      size_t i = minima_indices[n];
-      // convert from a 1D index (i) to 3-D indices (ix, iy, iz)
-      size_t ix = i % image_size[0];
-      i /= image_size[0];
-      size_t iy = i % image_size[1];
-      i /= image_size[1];
-      size_t iz = i;
-      (*pva_minima_crds)[n][0] = ix;
-      (*pva_minima_crds)[n][1] = iy;
-      (*pva_minima_crds)[n][2] = iz;
-    }
-  }
-  if (pva_maxima_crds) {
-    size_t N = maxima_indices.size();
-    assert(pva_maxima_crds);
-    pva_maxima_crds->resize(N);
-    for (size_t n = 0; n < N; n++) {
-      size_t i = maxima_indices[n];
-      // convert from a 1D index (i) to 3-D indices (ix, iy, iz)
-      size_t ix = i % image_size[0];
-      i /= image_size[0];
-      size_t iy = i % image_size[1];
-      i /= image_size[1];
-      size_t iz = i;
-      (*pva_maxima_crds)[n][0] = ix;
-      (*pva_maxima_crds)[n][1] = iy;
-      (*pva_maxima_crds)[n][2] = iz;
-    }
-  }
-} //FindExtrema()
-
-
-
-
-
-/// @brief  The following version of this function seeks either minima
-///         or maxima, but not both.  (If you want both, use the other version.
-///         That version is faster than invoking this function twice.)
-///         See the description of that version for details.
-
-template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
-
-void
-FindExtrema(int const image_size[3],            //!< size of input image array
-            Scalar const *const *const *aaafI,   //!< input image array
-            Scalar const *const *const *aaafMask, //!< if not nullptr then zero entries indicate which voxels to ignore
-            vector<array<Coordinate, 3> > &extrema_crds, //!< store the location of each extrema
-            vector<Scalar> &extrema_scores, //!< store the brightness of each extrema
-            vector<IntegerIndex> &extrema_nvoxels, //!< store number of voxels in each extrema (usually 1)
-            bool seek_minima=true,    //!< search for minima or maxima?
-            Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
-            int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
-            bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-            Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
-            ostream *pReportProgress=nullptr)  //!< print progress to the user?
-{
-  // NOTE:
-  // C++ will not allow us to supply nullptr to a function that expects a pointer 
-  // to a template expression: Template argument deduction/substitution fails.
-  // We need to re-cast "nullptr" as a pointer with the correct type.
-  // One way to do that is to define these new versions of nullptr:
-  vector<array<Coordinate, 3> > *null_vai3 = nullptr;  
-  vector<Scalar> *null_vf = nullptr;  
-  vector<IntegerIndex> *null_vi = nullptr;  
-
-  if (seek_minima) {
-    FindExtrema(image_size,
-                aaafI,
-                aaafMask,
-                &extrema_crds,    // store minima locations here
-                null_vai3,        // <-- don't search for maxima
-                &extrema_scores,  // store minima values here
-                null_vf,          // <-- don't search for maxima
-                &extrema_nvoxels, // store number of voxels in each minima
-                null_vi,          // <-- don't search for maxima
-                threshold,
-                -std::numeric_limits<Scalar>::infinity(),
-                connectivity,
-                allow_borders,
-                aaaiDest,
-                pReportProgress);
-  }
-  else {
-    if (threshold == std::numeric_limits<Scalar>::infinity())
-      threshold = -std::numeric_limits<Scalar>::infinity();
-    FindExtrema(image_size,
-                aaafI,
-                aaafMask,
-                null_vai3,        // <-- don't search for minima
-                &extrema_crds,    // store maxima locations here
-                null_vf,          // <-- don't search for minima
-                &extrema_scores,  // store maxima values here
-                null_vi,          // <-- don't search for minima
-                &extrema_nvoxels, // store number of voxels in each maxima
-                std::numeric_limits<Scalar>::infinity(),
-                threshold,
-                connectivity,
-                allow_borders,
-                aaaiDest,
-                pReportProgress);
-  }
-} // FindExtrema()
-
-
-
 
 
 
@@ -718,39 +527,177 @@ BlobDogD(int const image_size[3], //!<source image size
 
 
 
+/// @brief sort blobs by their scores
+
+template<typename Scalar1, typename Scalar2, typename Scalar3>
+
+void
+SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
+          vector<Scalar2>& blob_diameters,  //!< the width of each blob
+          vector<Scalar3>& blob_scores,  //!< the score for each blob
+          bool ascending_order = true,
+          bool ignore_score_sign = true,
+          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
+          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
+          )
+{ 
+  size_t n_blobs = blob_crds.size();
+  assert(n_blobs == blob_diameters.size());
+  assert(n_blobs == blob_scores.size());
+  vector<tuple<Scalar3, size_t> > score_index(n_blobs);
+  for (size_t i = 0; i < n_blobs; i++) {
+    if (ignore_score_sign)
+      score_index[i] = make_tuple(std::fabs(blob_scores[i]), i);
+    else
+      score_index[i] = make_tuple(blob_scores[i], i);
+  }
+
+  if (n_blobs == 0)
+    return;
+
+  if (pReportProgress)
+    *pReportProgress << "-- Sorting blobs according to their scores... ";
+  if (ascending_order)
+    sort(score_index.begin(),
+         score_index.end());
+  else
+    sort(score_index.rbegin(),
+         score_index.rend());
+
+  vector<size_t> permutation(n_blobs);
+  for (size_t i = 0; i < score_index.size(); i++)
+    permutation[i] = get<1>(score_index[i]);
+
+  if (pPermutation != nullptr)
+    *pPermutation = permutation;
+
+  score_index.clear();
+  apply_permutation(permutation, blob_crds);
+  apply_permutation(permutation, blob_diameters);
+  apply_permutation(permutation, blob_scores);
+  if (pReportProgress)
+    *pReportProgress << "done --" << endl;
+
+} //SortBlobs()
+
+
+
+/// @brief sort blobs by their scores according to "sort_blob_criteria"
+
+template<typename Scalar1, typename Scalar2, typename Scalar3>
+
+void
+SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
+          vector<Scalar2>& blob_diameters,  //!< the width of each blob
+          vector<Scalar3>& blob_scores,  //!< the score for each blob
+          SortCriteria sort_blob_criteria, //!< give priority to high or low scoring blobs?
+          bool ascending_order = true,
+          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
+          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
+          )
+{
+  if (sort_blob_criteria == SORT_DECREASING)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              ascending_order,
+              false,
+              pPermutation,
+              pReportProgress);
+  else if (sort_blob_criteria == SORT_INCREASING)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              ! ascending_order,
+              false,
+              pPermutation,
+              pReportProgress);
+  else if (sort_blob_criteria == SORT_DECREASING_MAGNITUDE)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              ascending_order,
+              true,
+              pPermutation,
+              pReportProgress);
+  else if (sort_blob_criteria == SORT_INCREASING_MAGNITUDE)
+    SortBlobs(blob_crds,
+              blob_diameters, 
+              blob_scores,
+              ! ascending_order,
+              true,
+              pPermutation,
+              pReportProgress);
+} //SortBlobs()
 
 
 
 
-/// @brief  Calculate the volume of overlap between two spheres of radius 
-///         Ri and Rj separated by a distance of rij.
+/// @brief  This variant of the function also takes care of discarding 
+///         training data which is not sufficiently close to any of the blobs.
+///         It also throws an exception if the remaining training data is empty.
+/// @return This function has no return value.
+///         The results are stored in:
+///           out_training_crds,
+///           out_training_accepted,
+///           out_training_scores
 
 template<typename Scalar>
+static void
 
-Scalar CalcSphereOverlap(Scalar rij,//!<the distance between the spheres' centers
-                         Scalar Ri, //!< the radius of sphere i
-                         Scalar Rj  //!< the radius of sphere j
-                         )
+FindBlobScores(const vector<array<Scalar,3> >& in_training_crds, //!< locations of blob-like things in training set
+               const vector<bool>& in_training_accepted, //!< classify each blob-like thing as "accepted" (true) or "rejected" (false)
+               vector<array<Scalar,3> >& out_training_crds, //!< same as in_training_crds after discarding entries too far away from any existing blobs
+               vector<bool>& out_training_accepted, //!< same as in_training_accepted after discarding entries too far away from any existing blobs
+               vector<Scalar>& out_training_scores, //!< store the scores of the remaining blob-like things here
+               const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
+               const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
+               const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
+               SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
+               ostream *pReportProgress = nullptr //!< report progress back to the user?
+               )
 {
-  // WLOG, assume Ri <= Rj.  Insure that below
-  if (Ri > Rj) {
-    Scalar tmp = Ri;
-    Ri = Rj;
-    Rj = tmp;
-  }
-  if (rij <= Ri) {
-    return (4*M_PI/3) * Ri*Ri*Ri;
+  // Figure out the score for each blob:
+  //   in_training_crds[i] == position of ith training set data
+  //   in_training_which_blob[i] == which blob contains this position?
+  //   in_training_score[i] = score of this blob
+
+  vector<size_t> in_training_which_blob; // which blob (sphere) contains this position?
+  vector<Scalar> in_training_scores; // what is the score of that blob?
+
+  // The next function is defined in "feather_implementation.hpp"
+  _FindBlobScores(in_training_crds,
+                  in_training_scores,
+                  in_training_which_blob,
+                  blob_crds,
+                  blob_diameters,
+                  blob_scores,
+                  sort_blob_criteria,
+                  pReportProgress);
+
+  size_t _N = in_training_crds.size();
+  assert(_N == in_training_scores.size());
+  assert(_N == in_training_accepted.size());
+
+
+  // Discard training data that was not suffiently close to one of the blobs.
+  // Store the remaining training set data in the following variables:
+  const size_t UNOCCUPIED = 0;
+  for (size_t i=0; i < _N; i++) {
+    if (in_training_which_blob[i] != UNOCCUPIED) {
+      out_training_crds.push_back(in_training_crds[i]);
+      out_training_scores.push_back(in_training_scores[i]);
+      out_training_accepted.push_back(in_training_accepted[i]);
+    }
   }
 
-  // "xi" and "xj" are the distances from the sphere centers
-  // to the plane where the two spheres intersect.
-  Scalar xi = 0.5 * (1.0/rij) * (rij*rij + Ri*Ri - Rj*Rj);
-  Scalar xj = 0.5 * (1.0/rij) * (rij*rij + Rj*Rj - Ri*Ri);
-  Scalar volume_overlap =
-    (M_PI/3)*( Ri*Ri*Ri * (2 - (xi/Ri) * (3 - SQR(xi/Ri))) +
-               Rj*Rj*Rj * (2 - (xj/Rj) * (3 - SQR(xj/Rj))) );
-  return volume_overlap;
-}
+  // N = the number of training data left after discarding datum which
+  //     do not lie within any blobs.  (not within any blob radii)
+  size_t N = out_training_crds.size();
+  assert(N == out_training_scores.size());
+  assert(N == out_training_accepted.size());
+
+} //FindBlobScores()
 
 
 
@@ -767,11 +714,11 @@ Scalar CalcSphereOverlap(Scalar rij,//!<the distance between the spheres' center
 ///
 /// @note
 ///   The "sort_blob_criteria" argument can be set to one of these choices:
-///     PRIORITIZE_HIGH_SCORES
-///     PRIORITIZE_LOW_SCORES
-///     PRIORITIZE_HIGH_MAGNITUDE_SCORES
-///     PRIORITIZE_LOW_MAGNITUDE_SCORES
-///   (As of 2019-6-15, "SortBlobCriteria" is defined in "visfd_utils.hpp")
+///     SORT_DECREASING
+///     SORT_INCREASING
+///     SORT_DECREASING_MAGNITUDE
+///     SORT_INCREASING_MAGNITUDE
+///   (As of 2021-7-07, "SortCriteria" is defined in "visfd_utils.hpp")
 
 #include <feature_implementation.hpp> // defines _FindExtrema()
 
@@ -784,7 +731,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
                         Scalar min_radial_separation_ratio, //!< discard blobs if closer than this (ratio of sum of radii)
                         Scalar max_volume_overlap_large=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the large blob (disabled by default; 1.0 would also do this)
                         Scalar max_volume_overlap_small=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the small blob (disabled by default; 1.0 would also do this)
-                        SortBlobCriteria sort_blob_criteria=PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs? (See explanation above)
+                        SortCriteria sort_blob_criteria=SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs? (See explanation above)
                         ostream *pReportProgress = nullptr, //!< report progress back to the user?
                         int scale=6 //!<occupancy_table_size shrunk by this much
                                     //!<relative to source (necessary to reduce memory usage)
@@ -1065,7 +1012,7 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
                           const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
                           Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
                           Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
-                          SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
+                          SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
                           ostream *pReportProgress = nullptr //!< report progress back to the user?
                           )
 {
@@ -1140,7 +1087,7 @@ ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_crd
                                const vector<vector<array<Scalar,3> > >& training_set_neg, //!< locations of blob-like things
                                Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
                                Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
-                               SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
+                               SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
                                ostream *pReportProgress = nullptr //!< report progress back to the user?
                                )
 {
@@ -1202,7 +1149,7 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
                               vector<Scalar>& blob_scores, //!< priority of each blob
                               const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
                               const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
-                              SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
+                              SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
                               Scalar *pthreshold_lower_bound = nullptr, //!< optional: return threshold to the caller
                               Scalar *pthreshold_upper_bound = nullptr, //!< optional: return threshold to the caller
                               ostream *pReportProgress = nullptr //!< report progress back to the user?
@@ -2667,7 +2614,7 @@ private:
             // instead of 2-dimensional surfaces (membranes, ...)
             // then the stick direction is assumed to be along the 
             // of the curve, (as opposed to perpendicular to the 2D surface).
-            // As such
+            // Consequently:
             angle_dependence2 = sin2;
           }
 
@@ -2841,7 +2788,7 @@ private:
             // instead of 2-dimensional surfaces (membranes, ...)
             // then the stick direction is assumed to be along the 
             // of the curve, (as opposed to perpendicular to the 2D surface).
-            // As such
+            // Consequently:
             angle_dependence2 = sin2;
           }
 

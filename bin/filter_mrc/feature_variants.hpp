@@ -24,6 +24,7 @@
 #include <limits>
 using namespace std;
 #include <visfd.hpp>
+#include <feature.hpp>
 #include "filter3d_variants.hpp"
 
 
@@ -130,7 +131,7 @@ BlobDogNM(int const image_size[3], //!<source image size
                           sep_ratio_thresh,
                           nonmax_max_overlap_large,
                           nonmax_max_overlap_small,
-                          PRIORITIZE_LOW_SCORES,
+                          SORT_INCREASING,
                           pReportProgress);
 
   if (pReportProgress)
@@ -143,7 +144,7 @@ BlobDogNM(int const image_size[3], //!<source image size
                           sep_ratio_thresh,
                           nonmax_max_overlap_large,
                           nonmax_max_overlap_small,
-                          PRIORITIZE_HIGH_SCORES,
+                          SORT_DECREASING,
                           pReportProgress);
 
 } //BlobDogNM()

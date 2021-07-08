@@ -34,6 +34,7 @@ using namespace std;
 #include <visfd.hpp>
 
 
+
 /// @brief This is a version of the function of the same name defined in 
 /// "filter2d.h".  This version allows the user to control the width of the 
 /// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
@@ -112,6 +113,125 @@ GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
 
 
 
+/// @brief
+/// Create a 2D filter and fill it with a difference of (generalized) Gaussians:
+/// This version requires that the caller has already created individual
+/// filters for the two gaussians.
+/// All this function does is subtract one filter from the other (and rescale).
+
+template<typename Scalar>
+
+static Filter2D<Scalar, int> 
+_GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
+                 Scalar width_b[2],  //!< "b" parameter in formula
+                 Filter2D<Scalar, int>& filterXY_A, //!< filters for the two
+                 Filter2D<Scalar, int>& filterXY_B, //!< gaussians
+                 Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
+                 Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
+                 ostream *pReportProgress = nullptr //!< optional:report filter details to the user?
+                 )
+{
+
+  Scalar A, B;
+  //A, B = height of the central peak
+  A = filterXY_A.aafH[0][0];
+  B = filterXY_B.aafH[0][0];
+
+  // The "difference of gaussians" filter is the difference between
+  // these two (generalized) gaussian filters.
+  int halfwidth[2];
+  halfwidth[0] = std::max(filterXY_A.halfwidth[0], filterXY_B.halfwidth[0]);
+  halfwidth[1] = std::max(filterXY_A.halfwidth[1], filterXY_B.halfwidth[1]);
+  Filter2D<Scalar, int> filter(halfwidth);
+
+  if (pReportProgress)
+    *pReportProgress  << "Array of 2D filter entries:" << endl;
+
+  for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
+    for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
+      filter.aafH[iy][ix] = 0.0;
+
+      // The two filters may have different widths, so we have to check
+      // that ix and iy lie within the domain of these two filters before
+      // adding or subtracting their values from the final GDOG filter.
+      if (((-filterXY_A.halfwidth[0]<=ix) && (ix<=filterXY_A.halfwidth[0])) &&
+          ((-filterXY_A.halfwidth[1]<=iy) && (iy<=filterXY_A.halfwidth[1])))
+
+        filter.aafH[iy][ix] +=filterXY_A.aafH[iy][ix]; // /(A-B); COMMENTING OUT
+                         
+      // COMMENTING OUT: (The factor of 1/(A-B) insures that the central peak has height 1)
+
+      if (((-filterXY_B.halfwidth[0]<=ix) && (ix<=filterXY_B.halfwidth[0])) &&
+          ((-filterXY_B.halfwidth[1]<=iy) && (iy<=filterXY_B.halfwidth[1])))
+
+        filter.aafH[iy][ix] -=filterXY_B.aafH[iy][ix]; // /(A-B); COMMENTING OUT
+                         
+
+
+      //FOR DEBUGGING REMOVE EVENTUALLY
+      //if (pReportProgress)
+      //  *pReportProgress << "GenDogg2D: aafH["<<iy<<"]["<<ix<<"] = "
+      //                   << filter.aafH[iy][ix] << endl;
+
+
+      // *pReportProgress  << aafH[iy][ix];
+      //if (ix == 0)
+      //  *pReportProgress << "\n";
+      //else
+      //  *pReportProgress << " ";
+
+    } // for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
+  } // for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
+
+  if (pReportProgress)
+    *pReportProgress << "\n";
+
+  // COMMENTING OUT 1/(A-B)
+  //if (pA && pB) {
+  //  *pA = A/(A-B); // Rescale A and B numbers returned to the caller
+  //  *pB = B/(A-B); // (because we divided the array entries by (A-B) earlier)
+  //}
+
+  return filter;
+
+} //_GenFilterDogg2D()
+
+
+
+template<typename Scalar>
+// Create a 2D filter and fill it with a difference of (generalized) Gaussians:
+Filter2D<Scalar, int> 
+GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
+                Scalar width_b[2],  //"b" parameter in formula
+                Scalar m_exp,       //"m" parameter in formula
+                Scalar n_exp,       //"n" parameter in formula
+                int halfwidth[2],
+                Scalar *pA = nullptr,  //optional:report A,B coeffs to user
+                Scalar *pB = nullptr,  //optional:report A,B coeffs to user
+                ostream *pReportProgress = nullptr)
+{
+  Filter2D<Scalar, int> filterXY_A =
+    GenFilterGenGauss2D(width_a,      //"a_x", "a_y" gaussian width parameters
+                        m_exp,        //"n" exponent parameter
+                        halfwidth);
+                        //pReportProgress);
+
+  Filter2D<Scalar, int> filterXY_B =
+    GenFilterGenGauss2D(width_b,      //"b_x", "b_y" gaussian width parameters
+                        n_exp,        //"n" exponent parameter
+                        halfwidth);
+                        //pReportProgress);
+
+  return _GenFilterDogg2D(width_a,
+                          width_b,
+                          filterXY_A, filterXY_B,
+                          pA,
+                          pB,
+                          pReportProgress);
+} //GenFilterDogg2D(...halfwidth...)
+
+
+
 /// @brief This is a version of the function of the same name defined in 
 /// "filter2d.h".  This version allows the user to control the width of the 
 /// interval considered for the filter in 2 ways: "filter_truncate_ratio", 
@@ -155,14 +275,181 @@ GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
 
   return _GenFilterDogg2D(width_a,
                           width_b,
-                          m_exp,
-                          n_exp,
                           filterXY_A, filterXY_B,
                           pA,
                           pB,
                           pReportProgress);
 } //GenFilterDogg2D(...,filter_truncate_ratio, filter_truncate_threshold,...)
 
+
+
+
+/// @brief  Create a 3D filter and fill it with a difference of (generalized) Gaussians 
+///
+/// This version requires that the caller has already created individual
+/// filters for the two gaussians.
+/// All this function does is subtract one filter from the other (and rescale).
+/// @note: DEPRECIATION WARNING: It's not clear if this filter is useful.
+///                              I may delete this function in the future.
+/// @note: THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
+template<typename Scalar>
+
+static Filter3D<Scalar, int> 
+_GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
+                 Scalar width_b[3],  //!< "b" parameter in formula
+                 Scalar m_exp,  //!< "m" parameter in formula
+                 Scalar n_exp,  //!< "n" parameter in formula
+                 Filter3D<Scalar, int>& filter_A, //!< filters for the two
+                 Filter3D<Scalar, int>& filter_B, //!< gaussians
+                 Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
+                 Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
+                 ostream *pReportEquation = nullptr //!< optional: report equation to the user
+                 )
+{
+  Scalar A, B;
+  //A, B = height of the central peak
+  A = filter_A.aaafH[0][0][0];
+  B = filter_B.aaafH[0][0][0];
+
+
+  // The "difference of gaussians" filter is the difference between
+  // these two (generalized) gaussian filters.
+  int halfwidth[3];
+  halfwidth[0] = std::max(filter_A.halfwidth[0], filter_B.halfwidth[0]);
+  halfwidth[1] = std::max(filter_A.halfwidth[1], filter_B.halfwidth[1]);
+  halfwidth[2] = std::max(filter_A.halfwidth[2], filter_B.halfwidth[2]);
+  Filter3D<Scalar, int> filter(halfwidth);
+
+  //FOR DEBUGGING REMOVE EVENTUALLY
+  //if (pReportEquation)
+  //  *pReportEquation << "Array of 3D filter entries:" << endl;
+
+
+  for (int iz=-halfwidth[2]; iz<=halfwidth[2]; iz++) {
+    for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
+      for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
+
+        filter.aaafH[iz][iy][ix] = 0.0;
+
+        // The two filters may have different widths, so we have to check
+        // that ix,iy and iz lie within the domain of these two filters before
+        // adding or subtracting their values from the final GDoG filter.
+        if (((-filter_A.halfwidth[0]<=ix) && (ix<=filter_A.halfwidth[0])) &&
+            ((-filter_A.halfwidth[1]<=iy) && (iy<=filter_A.halfwidth[1])) &&
+            ((-filter_A.halfwidth[2]<=iz) && (iz<=filter_A.halfwidth[2])))
+
+          filter.aaafH[iz][iy][ix] +=
+            filter_A.aaafH[iz][iy][ix];     //  /(A-B);  COMMENTING OUT
+                          
+                          
+
+        // COMMENTING OUT: (The factor of 1/(A-B) insures that the central peak has height 1)
+
+
+        if (((-filter_B.halfwidth[0]<=ix) && (ix<=filter_B.halfwidth[0])) &&
+            ((-filter_B.halfwidth[1]<=iy) && (iy<=filter_B.halfwidth[1])) &&
+            ((-filter_B.halfwidth[2]<=iz) && (iz<=filter_B.halfwidth[2])))
+
+          filter.aaafH[iz][iy][ix] -=
+            filter_B.aaafH[iz][iy][ix];     //  /(A-B);  COMMENTING OUT
+
+        //*pReportEquation << aaafH[iz][iy][ix];
+        //                         
+        //if (ix == 0) pReportEquation << "\n"; else pReportEquation << " ";
+
+      } // for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
+    } // for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
+  } // for (int iz=-halfwidth[2]; iz<=halfwidth[2]; iz++) {
+
+
+  // COMMENTING OUT the factor of 1/(A-B):
+  //A = A/(A-B);
+  //B = B/(A-B);
+
+  if (pA && pB) {
+    *pA = A; // Rescale A and B numbers returned to the caller
+    *pB = B; // (because we divided the array entries by (A-B) earlier)
+  }
+
+  if (pReportEquation) {
+    *pReportEquation << "\n";
+    *pReportEquation << " Filter Used:\n"
+      " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
+      " h_a(x,y,z) = A*exp(-((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2)^(m/2))\n"
+      " h_b(x,y,z) = B*exp(-((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2)^(n/2))\n"
+      "  ... where      A = " << A << "\n"
+      "                 B = " << B << "\n" 
+      "                 m = " << m_exp << "\n"
+      "                 n = " << n_exp << "\n" 
+      "   (a_x, a_y, a_z) = "
+                     << "(" << width_a[0]
+                     << " " << width_a[1]
+                     << " " << width_a[2] << ")\n"
+      "   (b_x, b_y, b_z) = "
+                     << "(" << width_b[0]
+                     << " " << width_b[1]
+                     << " " << width_b[2] << ")\n";
+    *pReportEquation << " You can plot a slice of this function\n"
+                     << "     in the X direction using:\n"
+      " draw_filter_1D.py -dogg " << A << " " << B
+                     << " " << width_a[0] << " " << width_b[0]
+                     << " " << m_exp << " " << n_exp << endl;
+    *pReportEquation << " and in the Y direction using:\n"
+      " draw_filter_1D.py -dogg " << A << " " << B
+                     << " " << width_a[1] << " " << width_b[1]
+                     << " " << m_exp << " " << n_exp << endl;
+    *pReportEquation << " and in the Z direction using:\n"
+      " draw_filter_1D.py -dogg " << A << " " << B
+                     << " " << width_a[2] << " " << width_b[2]
+                     << " " << m_exp << " " << n_exp << endl;
+  } //if (pReportEquation)
+  
+  return filter;
+} //_GenFilterDogg3D()
+
+
+
+
+/// @brief Create a 3D filter and fill it with a difference of (generalized) Gaussians
+///   @verbatim h(x,y,z) = A*exp(-(r/a)^m) - B*exp(-(r/b)^n)  @endverbatim
+/// where  @verbatim r = sqrt(x^2 + y^2 + z^2) @endverbatim
+///   and "A" and "B" are determined by normalization of each term independently
+/// DEPRECIATION WARNING:  It's not clear if this type if filter is useful.
+///                        I may delete this function in the future.
+
+template<typename Scalar>
+
+Filter3D<Scalar, int> 
+GenFilterDogg3D(Scalar width_a[3],   //!< "a" parameter in formula
+                Scalar width_b[3],   //!< "b" parameter in formula
+                Scalar m_exp,        //!< "m" parameter in formula
+                Scalar n_exp,        //!< "n" parameter in formula
+                int halfwidth[3],    //!< the width of the filter
+                Scalar *pA=nullptr,     //!< optional:report A,B coeffs to user
+                Scalar *pB=nullptr,     //!< optional:report A,B coeffs to user
+                ostream *pReportEquation = nullptr //!< optional: print params used?
+                )
+{
+  Filter3D<Scalar, int> filter_A =
+    GenFilterGenGauss3D(width_a,      //"a_x", "a_y" gaussian width parameters
+                        m_exp,        //"m" exponent parameter
+                        halfwidth);
+
+  Filter3D<Scalar, int> filter_B =
+    GenFilterGenGauss3D(width_b,      //"b_x", "b_y" gaussian width parameters
+                        n_exp,        //"n" exponent parameter
+                        halfwidth);
+
+  // The next function is defind in "filter3d_implementation.hpp"
+  return _GenFilterDogg3D(width_a,
+                          width_b,
+                          m_exp,
+                          n_exp,
+                          filter_A, filter_B,
+                          pA,
+                          pB,
+                          pReportEquation);
+} //GenFilterDogg3D(...halfwidth...)
 
 
 

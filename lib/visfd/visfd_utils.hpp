@@ -37,16 +37,16 @@ static int SGN(Scalar val) {
 
 
 
-/// @brief invert a permutation
-template<typename T, typename Integer>
-void
-invert_permutation(const vector<Integer>& p,
-                   vector<T>& p_inv)
-{
-  p_inv.resize(p.size());
-  for (Integer i = 0; i < p.size(); i++)
-    p_inv[p[i]] = i;
-}
+/// @brief    A variable of type "SortCriteria" is often passed as an
+///           argument to any function that needs to sort lists of numbers.
+typedef enum eSortCriteria {
+  DO_NOT_SORT,
+  SORT_DECREASING,
+  SORT_INCREASING,
+  SORT_DECREASING_MAGNITUDE,
+  SORT_INCREASING_MAGNITUDE
+} SortCriteria;
+
 
 
 
@@ -66,6 +66,49 @@ apply_permutation(const vector<Integer>& p,
   }
 }
 
+
+/// @brief invert a permutation
+template<typename T, typename Integer>
+void
+invert_permutation(const vector<Integer>& p,
+                   vector<T>& p_inv)
+{
+  p_inv.resize(p.size());
+  for (Integer i = 0; i < p.size(); i++)
+    p_inv[p[i]] = i;
+}
+
+
+
+/// @brief  Calculate the volume of overlap between two spheres of radius 
+///         Ri and Rj separated by a distance of rij.
+
+template<typename Scalar>
+
+Scalar CalcSphereOverlap(Scalar rij,//!<the distance between the spheres' centers
+                         Scalar Ri, //!< the radius of sphere i
+                         Scalar Rj  //!< the radius of sphere j
+                         )
+{
+  // WLOG, assume Ri <= Rj.  Insure that below
+  if (Ri > Rj) {
+    Scalar tmp = Ri;
+    Ri = Rj;
+    Rj = tmp;
+  }
+  if (rij <= Ri) {
+    return (4*M_PI/3) * Ri*Ri*Ri;
+  }
+
+  // "xi" and "xj" are the distances from the sphere centers
+  // to the plane where the two spheres intersect.
+  Scalar xi = 0.5 * (1.0/rij) * (rij*rij + Ri*Ri - Rj*Rj);
+  Scalar xj = 0.5 * (1.0/rij) * (rij*rij + Rj*Rj - Ri*Ri);
+  Scalar volume_overlap =
+    (M_PI/3)*( Ri*Ri*Ri * (2 - (xi/Ri) * (3 - SQR(xi/Ri))) +
+               Rj*Rj*Rj * (2 - (xj/Rj) * (3 - SQR(xj/Rj))) );
+  return volume_overlap;
+}
 
 
 
@@ -195,124 +238,6 @@ FindNearestVoxel(int const image_size[3],             //!< #voxels in xyz
 
 
 
-/// @brief sort blobs by their scores
-
-template<typename Scalar1, typename Scalar2, typename Scalar3>
-
-void
-SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
-          vector<Scalar2>& blob_diameters,  //!< the width of each blob
-          vector<Scalar3>& blob_scores,  //!< the score for each blob
-          bool ascending_order = true,
-          bool ignore_score_sign = true,
-          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
-          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
-          )
-{ 
-  size_t n_blobs = blob_crds.size();
-  assert(n_blobs == blob_diameters.size());
-  assert(n_blobs == blob_scores.size());
-  vector<tuple<Scalar3, size_t> > score_index(n_blobs);
-  for (size_t i = 0; i < n_blobs; i++) {
-    if (ignore_score_sign)
-      score_index[i] = make_tuple(std::fabs(blob_scores[i]), i);
-    else
-      score_index[i] = make_tuple(blob_scores[i], i);
-  }
-
-  if (n_blobs == 0)
-    return;
-
-  if (pReportProgress)
-    *pReportProgress << "-- Sorting blobs according to their scores... ";
-  if (ascending_order)
-    sort(score_index.begin(),
-         score_index.end());
-  else
-    sort(score_index.rbegin(),
-         score_index.rend());
-
-  vector<size_t> permutation(n_blobs);
-  for (size_t i = 0; i < score_index.size(); i++)
-    permutation[i] = get<1>(score_index[i]);
-
-  if (pPermutation != nullptr)
-    *pPermutation = permutation;
-
-  score_index.clear();
-  apply_permutation(permutation, blob_crds);
-  apply_permutation(permutation, blob_diameters);
-  apply_permutation(permutation, blob_scores);
-  if (pReportProgress)
-    *pReportProgress << "done --" << endl;
-
-} //SortBlobs()
-
-
-
-/// @brief these options tell "DiscardOverlappingBlobs" how to give
-/// priority to different blobs based on their score (ie, minima or maxima?)
-typedef enum eSortBlobCriteria {
-  DO_NOT_SORT,
-  PRIORITIZE_HIGH_SCORES,
-  PRIORITIZE_LOW_SCORES,
-  PRIORITIZE_HIGH_MAGNITUDE_SCORES,
-  PRIORITIZE_LOW_MAGNITUDE_SCORES
-} SortBlobCriteria;
-
-
-/// @brief sort blobs by their scores according to "sort_blob_criteria"
-
-template<typename Scalar1, typename Scalar2, typename Scalar3>
-
-void
-SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
-          vector<Scalar2>& blob_diameters,  //!< the width of each blob
-          vector<Scalar3>& blob_scores,  //!< the score for each blob
-          SortBlobCriteria sort_blob_criteria, //!< give priority to high or low scoring blobs?
-          bool ascending_order = true,
-          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
-          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
-          )
-{
-  if (sort_blob_criteria == PRIORITIZE_HIGH_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              ascending_order,
-              false,
-              pPermutation,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_LOW_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              ! ascending_order,
-              false,
-              pPermutation,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_HIGH_MAGNITUDE_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              ascending_order,
-              true,
-              pPermutation,
-              pReportProgress);
-  else if (sort_blob_criteria == PRIORITIZE_LOW_MAGNITUDE_SCORES)
-    SortBlobs(blob_crds,
-              blob_diameters, 
-              blob_scores,
-              ! ascending_order,
-              true,
-              pPermutation,
-              pReportProgress);
-} //SortBlobs()
-
-
-
-
-
 
 /// @brief Suppose we have already detected a list of objects ("blobs") in
 ///        an image, and recorded their locations and sizes
@@ -428,131 +353,6 @@ FindSpheres(const vector<array<Scalar,3> >& crds, //!< locations of blob-like th
 
 } // FindSpheres()
 
-
-
-/// @brief Figure out the score for blobs located at each position in crds[].
-///        Terminology:  Every blob has a position, diameter, and a score.
-///        The j'th "blob" is a sphere, centerd at blob_crds[j], with diameter
-///        blob_diameters[j].  Associated with every blob is a "score"
-///        (a number) stored in blob_scores[j].
-///        If crds[i] lies inside one of the blobs, store the corresponding
-///        score for that blob in scores[i].  (If crds[i] lies inside more
-///        than one sphere, give priority spheres occuring later in the list.)
-///        If crds[i] lies outside any of the spheres, store -infinity there.
-///
-/// @returns void.  Results are stored in "scores".
-///
-/// @note  THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
-
-template<typename Scalar, typename Integer>
-static void
-_FindBlobScores(const vector<array<Scalar,3> >& crds, //!< locations of blob-like things we are looking for
-                vector<Scalar>& scores, //!< stores the score of the blob (sphere) contains that position
-                vector<Integer>& sphere_ids, //!< which blob (sphere) contains this position?
-                const vector<array<Scalar,3> >& blob_crds, //!< location of the center of each spherical blob (sorted in order of increasing priority)
-                const vector<Scalar>& blob_diameters,  //!< diameter of each blob
-                const vector<Scalar>& blob_scores, //!< "score" of each blob (a number)
-                SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
-                ostream *pReportProgress = nullptr //!< report progress back to the user?
-                )
-{
-  // Sort the blobs by score in order of increasing priority
-  vector<array<Scalar,3> > blob_crds_sorted = blob_crds;
-  vector<Scalar> blob_diameters_sorted = blob_diameters;
-  vector<Scalar> blob_scores_sorted = blob_scores;
-
-  SortBlobs(blob_crds_sorted,
-            blob_diameters_sorted, 
-            blob_scores_sorted,
-            sort_blob_criteria,
-            true,
-            nullptr,
-            pReportProgress);
-
-  // Figure out which sphere is located at each position
-  FindSpheres(crds,
-              sphere_ids,
-              blob_crds_sorted,
-              blob_diameters_sorted,
-              pReportProgress);
-
-  assert(sphere_ids.size() == crds.size());
-  scores.resize(sphere_ids.size(),
-                -std::numeric_limits<Scalar>::infinity()); //<-impossible score
-  const size_t UNOCCUPIED = 0;
-  for (size_t i=0; i < sphere_ids.size(); i++) {
-    size_t which_blob = sphere_ids[i];
-    if (which_blob != UNOCCUPIED)
-      scores[i] = blob_scores_sorted[which_blob-1];
-  }
-} //_FindBlobScores()
-
-
-
-/// @brief  This variant of the function also takes care of discarding 
-///         training data which is not sufficiently close to any of the blobs.
-///         It also throws an exception if the remaining training data is empty.
-/// @return This function has no return value.
-///         The results are stored in:
-///           out_training_crds,
-///           out_training_accepted,
-///           out_training_scores
-
-template<typename Scalar>
-static void
-
-FindBlobScores(const vector<array<Scalar,3> >& in_training_crds, //!< locations of blob-like things in training set
-               const vector<bool>& in_training_accepted, //!< classify each blob-like thing as "accepted" (true) or "rejected" (false)
-               vector<array<Scalar,3> >& out_training_crds, //!< same as in_training_crds after discarding entries too far away from any existing blobs
-               vector<bool>& out_training_accepted, //!< same as in_training_accepted after discarding entries too far away from any existing blobs
-               vector<Scalar>& out_training_scores, //!< store the scores of the remaining blob-like things here
-               const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
-               const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
-               const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
-               SortBlobCriteria sort_blob_criteria = PRIORITIZE_HIGH_MAGNITUDE_SCORES, //!< give priority to high or low scoring blobs?
-               ostream *pReportProgress = nullptr //!< report progress back to the user?
-               )
-{
-  // Figure out the score for each blob:
-  //   in_training_crds[i] == position of ith training set data
-  //   in_training_which_blob[i] == which blob contains this position?
-  //   in_training_score[i] = score of this blob
-
-  vector<size_t> in_training_which_blob; // which blob (sphere) contains this position?
-  vector<Scalar> in_training_scores; // what is the score of that blob?
-
-  _FindBlobScores(in_training_crds,
-                  in_training_scores,
-                  in_training_which_blob,
-                  blob_crds,
-                  blob_diameters,
-                  blob_scores,
-                  sort_blob_criteria,
-                  pReportProgress);
-
-  size_t _N = in_training_crds.size();
-  assert(_N == in_training_scores.size());
-  assert(_N == in_training_accepted.size());
-
-
-  // Discard training data that was not suffiently close to one of the blobs.
-  // Store the remaining training set data in the following variables:
-  const size_t UNOCCUPIED = 0;
-  for (size_t i=0; i < _N; i++) {
-    if (in_training_which_blob[i] != UNOCCUPIED) {
-      out_training_crds.push_back(in_training_crds[i]);
-      out_training_scores.push_back(in_training_scores[i]);
-      out_training_accepted.push_back(in_training_accepted[i]);
-    }
-  }
-
-  // N = the number of training data left after discarding datum which
-  //     do not lie within any blobs.  (not within any blob radii)
-  size_t N = out_training_crds.size();
-  assert(N == out_training_scores.size());
-  assert(N == out_training_accepted.size());
-
-} //FindBlobScores()
 
 
 

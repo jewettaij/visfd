@@ -81,6 +81,7 @@ class Settings {
   string out_file_name; // name of the image file we want to create
   bool out_file_overwrite; // allow out_file_name to equal in_file_name?
   // Mask parameters are used to select (ignore) voxels from the original image.
+  bool normalize_near_boundaries; // compensate when mask boundary cuts filter?
   string mask_file_name; // name of an image file used for masking
   bool use_mask_select; // do we select voxels with a specific value?
   int mask_select; // select only voxels from the input with this value

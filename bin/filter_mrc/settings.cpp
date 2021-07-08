@@ -31,6 +31,7 @@ Settings::Settings() {
   out_file_name = "";
   out_file_overwrite = false;
   mask_file_name = "";
+  normalize_near_boundaries = true;
   mask_select = 1;
   use_mask_select = false;
   mask_out = 0.0;
@@ -309,6 +310,24 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     } // if (vArgs[i] == "-mask")
 
+
+
+    else if (vArgs[i] == "-normalize-filters")
+    {
+      InputErr arg_err("Error: The " + vArgs[i] +
+                      " argument must be followed by \"yes\" or \"no\".\n");
+      if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        throw arg_err;
+      if (vArgs[i+1] == "yes")
+        normalize_near_boundaries = true;
+      if (vArgs[i+1] == "no")
+        normalize_near_boundaries = false;
+      else
+        throw arg_err;
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-mask")
+
+    
 
     else if (vArgs[i] == "-mask-select")
     {

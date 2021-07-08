@@ -94,7 +94,7 @@ HandleDoggXY(Settings settings,
                     afIZorig,
                     afIZnew,
                     afMask,
-                    true);
+                    settings.normalize_near_boundaries);
 
       //It would be wasteful to allocate a temporary array to store this
       //Instead store the result of the convolution in the original array:
@@ -526,7 +526,7 @@ HandleBootstrapDogg(Settings settings,
           
     //Initialize the random number generator we will need later:
     RANDOM_INIT(settings.bs_random_seed);
-        
+
     for (int i_sim = 0; i_sim < settings.bs_ntests; i_sim++) {
       cerr <<
         "\n"
@@ -854,14 +854,14 @@ HandleTemplateGGauss(Settings settings,
                template_background_sigma,
                settings.filter_truncate_ratio,
                settings.filter_truncate_threshold,
-               true);
+               settings.normalize_near_boundaries);
   }
   else {
     w.Apply(tomo_in.header.nvoxels,
             tomo_in.aaafI,
             P.aaafI,    // <-- save result here
             mask.aaafI,
-            true,
+            settings.normalize_near_boundaries,
             &cerr);
   }
 

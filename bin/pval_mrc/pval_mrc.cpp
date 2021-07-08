@@ -17,7 +17,7 @@ using namespace std;
 //#include <boost/math/special_functions/gamma.hpp>
 
 #include <mrc_simple.hpp>
-#include <filter3d.hpp>
+#include <visfd.hpp>
 using namespace visfd;
 
 #include "err.hpp"
