@@ -219,6 +219,11 @@ FindExtrema(int const image_size[3],            //!< size of input image array
 
 
 
+
+
+
+
+
 } //namespace visfd
 
 

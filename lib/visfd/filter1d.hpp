@@ -112,7 +112,7 @@ public:
   /// If (normalize == false), the filter computes the convolution of h and f:
   ///        ___
   ///        \
-  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
+  /// g[i] = /__  h[j] * f[i-j] * mask[i-j]
   ///         j
   ///     (sum over the width of the filter)
   /// Otherwise, if (normalize == true) it computes:
@@ -125,7 +125,7 @@ public:
   ///        g[i] is the data after the filter has been applied
   ///        h[j] is the filter
   ///        mask[i] selects the entries we care about (usually either 0 or 1)
-  ///        Theta[i] = 1 if inside the array (0<=i<size_source), 0 otherwise
+  ///          (If not specified, assume it is 1 inside the array, 0 outside.)
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y directions)
@@ -183,9 +183,10 @@ public:
   /// where: f(i) is the original array of (source) data at position i
   ///        g(i) is the data after the filter has been applied
   ///        h(j) is the filter
-  ///        mask(i) selects the pixels we care about (usually either 0 or 1)
-  ///          (If a mask was not supplied, it is assumed to be 1 everywhere)
-  ///        d(i) is the "denominator" = sum of the filter weights after masking
+  ///        mask[i] selects the entries we care about (usually either 0 or 1)
+  ///          (If not specified, assume it is 1 inside the array, 0 outside.)
+  ///        d[i] is the "denominator" = sum of all the filter weights h[j]...
+  ///             ...considered when calculating g[i] (weighted by the mask)
   /// @endcode
   ///       
   ///  Note on mask functions:

@@ -39,9 +39,11 @@ public:
   /// If (normalize == false), the filter computes the convolution of h and f:
   ///        ___
   ///        \
-  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
+  /// g[i] = /__  h[j] * f[i-j] * mask[i-j]
   ///         j
   ///     (sum over the width of the filter)
+  ///
+  /// ...where "i", "j", and "h", "f", and "mask" are defind below.
   /// Otherwise, if (normalize == true) it computes:
   ///        ___                               /  ___
   ///        \                                /   \
@@ -55,9 +57,7 @@ public:
   ///        g[i] is the data after the filter has been applied
   ///        h[j] is the filter
   ///        mask[i] selects the pixels we care about (usually either 0 or 1)
-  ///          (If not supplied, assumed it is 1 everywhere inside, 0 outside)
-  ///        Theta[i] = 1 if i is inside the image boundaries, 0 otherwise.
-  ///          (In other words, we only consider pixels within the image.)
+  ///          (If not specified, assume it is 1 inside the image, 0 outside.)
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y directions)
@@ -103,21 +103,15 @@ public:
   ///         It also does not normalize the result (by dividing g[i] / d[i]].
   ///     
   /// @code
-  /// If afMask == nullptr, then filter computes g[i] and d[i]:
-  ///        ___
-  ///        \
-  /// g[i] = /__  h[j] * f[i-j] * Theta[i-j]
-  ///         j
-  ///        ___
-  ///        \
-  /// d[i] = /__  h[j] * Theta[i-j]
-  ///         j
-  ///     (sum over the width of the filter)
-  /// Otherwise, if afMask!=nullptr and afDenominator!=nullptr, it computes:
+  /// This function computes the convolution of h and f, defind as:
   ///        ___
   ///        \
   /// g[i] = /__  h[j] * f[i-j] * mask[i-j]
   ///         j
+  ///     (sum over the width of the filter)
+  ///
+  /// ...where "i", "j", and "h", "f", and "mask" are defind below.
+  /// If aafDenominator!=nullptr, then it also computes the "denominator":
   ///        ___
   ///        \
   /// d[i] = /__  h[j] * mask[i-j]
@@ -129,11 +123,10 @@ public:
   ///       i-j = shorthand for (ix-jx, iy-jy)
   ///        g[i] is the data after the filter has been applied
   ///        h[j] is the filter
-  ///        d[i] is the "denominator" = sum of the filter weights considered
+  ///        d[i] is the "denominator" = sum of all the filter weights h[j]...
+  ///             ...considered when calculating g[i] (weighted by the mask)
   ///        mask[i] selects the pixels we care about (usually either 0 or 1)
-  ///          (If not supplied, assumed it is 1 everywhere inside, 0 outside)
-  ///        Theta[i] = 1 if i is inside the image boundaries, 0 otherwise.
-  ///          (In other words, we only consider pixels within the image.)
+  ///          (If not specified, assume it is 1 inside the image, 0 outside.)
   /// @endcode
   ///
   /// @param size_source contains size of the source image (in the x,y directions)
