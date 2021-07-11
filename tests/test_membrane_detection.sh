@@ -10,8 +10,10 @@ test_membrane_detection() {
     assertTrue "Failure during membrane detection, tensor-voting, or voxel clustering:  File \"${OUT_FNAME_REC}\" not created" "[ -s ${OUT_FNAME_REC} ]"
     N_CLUSTERS=`grep 'Number of clusters found:' < test_log_e.txt | awk '{print $5}'`
     assertTrue "Failure: No membrane clusters detected." "[ $N_CLUSTERS -gt 0 ]"
-    SUM_VOXELS=`../bin/sum_voxels/sum_voxels "${OUT_FNAME_REC}"`
-    assertTrue "Failure during membrane detection. File \"${OUT_FNAME_REC}\" has a weird checksum." "[ $SUM_VOXELS -gt 1000 ]"
+    # Sum the number of voxels in the largest surface.
+    # These are voxels in the image we just created whose brightness equals 1.
+    SUM_VOXELS=`../bin/sum_voxels/sum_voxels -thresh4 0.98 0.99 1.01 1.02 "${OUT_FNAME_REC}"`
+    assertTrue "Failure during membrane detection. File \"${OUT_FNAME_REC}\" has a weird checksum." "[ $SUM_VOXELS -gt 50 ]"
     rm -rf "${OUT_FNAME_REC}" "${OUT_FNAME_NORMALS}" test_log_e.txt *tensor_?.rec
   cd ../
 }
