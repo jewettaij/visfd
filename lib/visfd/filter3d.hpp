@@ -1225,9 +1225,13 @@ ApplyGauss(const int image_size[3], //!< image size in x,y,z directions
 {
   Scalar A;
   int truncate_halfwidth[3];
-  if (truncate_ratio > 0)
-    for (int d=0; d < 3; d++)
+  if (truncate_ratio > 0) {
+    for (int d=0; d < 3; d++) {
       truncate_halfwidth[d] = floor(sigma[d] * truncate_ratio);
+      if (truncate_halfwidth[d] < 1)
+        truncate_halfwidth[d] = 1;
+    }
+  }
 
   A = ApplyGauss(image_size, 
                  aaafSource,

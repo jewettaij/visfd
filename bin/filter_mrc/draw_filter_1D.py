@@ -44,8 +44,25 @@ def main(argv):
             # Old method: Using a Gaussian kernel
             #p_i = np.array([A*exp(-0.5*(r/a)**2) for r in r_i])
             # New method: Using a discrete Gaussian kernel
-            p_i = np.array([exp(-a*a)*special.iv(abs(r), a*a) for r in r_i])
-            p_0 = exp(-a*a)*special.iv(0, a*a)
+            # Unfortunatley, descrete Gaussians are numerically unstable
+            # for large arguments, so we have to loop through the entries
+            # and check whether the arguments for special.iv() are too large.
+            p_i = np.zeros(r_i.size)
+            for i in range(0, r_i.size):
+                r = r_i[i]
+                if a == 0:
+                    if r == 0:
+                        p_i[i] = 1.0
+                    else:
+                        p_i[i] = 0.0
+                elif ((a <= 10.0) and (abs(r) <= 10)):
+                    p_i[i] = exp(-a*a)*special.iv(abs(r), a*a)
+                else:
+                    # otherwise, specia.iv() is probably numerically unstable
+                    # instead compute this the ordinary way
+                    p_i[i] = exp(-0.5*(r/a)**2) / sqrt(2*pi*a*a)
+                if r == 0:
+                    p_0 = p_i[i]
             # Now take into account the "A" coefficient (for normalization).
             p_i *= A / p_0
             #plt.plot(r_i, p_i)
@@ -83,15 +100,51 @@ def main(argv):
             # Old method: Using a Gaussian kernel
             #p_i = np.array([A*exp(-0.5*(r/a)**2) -
             #                B*exp(-0.5*(r/b)**2) for r in r_i])
-            # New method: Using a discrete Gaussian kernel
-            pa_i = np.array([exp(-a*a)*special.iv(abs(r), a*a) for r in r_i])
-            # Now take the "A" coefficient into account
-            pa_0 = exp(-a*a)*special.iv(0, a*a)
+            # New method: Using a discrete Gaussian kernel.
+            # I will use a for-loop here because it's really more messy to try
+            # and do this with a python-style list-comprehension one-liner.
+            # Either way, this is ugly code, and I'm too lazy to clean it.
+
+            # Calculate the first Guassian kernel
+            pa_i = np.zeros(r_i.size)
+            for i in range(0, r_i.size):
+                r = r_i[i]
+                if a == 0:
+                    if r == 0:
+                        pa_i[i] = 1.0
+                    else:
+                        pa_i[i] = 0.0
+                elif ((a <= 10.0) and (abs(i) <= 10)):
+                    pa_i[i] = exp(-a*a)*special.iv(abs(r), a*a)
+                else:
+                    # otherwise, specia.iv() is probably numerically unstable
+                    # instead compute this the ordinary way
+                    pa_i[i] = exp(-0.5*(r/a)**2) / sqrt(2*pi*a*a)
+                if r == 0:
+                    pa_0 = pa_i[i]
+            # Now take into account the "A" coefficient (for normalization).
             pa_i *= A / pa_0
-            pb_i = np.array([exp(-b*b)*special.iv(abs(r), b*b) for r in r_i])
-            # Now take the "B" coefficient into account
-            pb_0 = exp(-b*b)*special.iv(0, b*b)
+
+            # Calculate the second Guassian kernel
+            pb_i = np.zeros(r_i.size)
+            for i in range(0, r_i.size):
+                r = r_i[i]
+                if b == 0:
+                    if r == 0:
+                        pb_i[i] = 1.0
+                    else:
+                        pb_i[i] = 0.0
+                if ((b <= 10.0) and (abs(i) <= 10)):
+                    pb_i[i] = exp(-b*b)*special.iv(abs(r), b*b)
+                else:
+                    # otherwise, specia.iv() is probably numerically unstable
+                    # instead compute this the ordinary way
+                    pb_i[i] = exp(-0.5*(r/b)**2) / sqrt(2*pi*b*b)
+                if r == 0:
+                    pb_0 = pb_i[i]
+            # Now take into account the "B" coefficient (for normalization).
             pb_i *= B / pb_0
+            # Now add the two terms together
             p_i = pa_i - pb_i
             #plt.plot(r_i, p_i)
             plt.step(r_i+0.5, p_i)

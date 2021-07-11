@@ -406,7 +406,7 @@ GenFilterGauss1D(Scalar sigma,  //!< The "σ" paramgeter in the Gaussian
 {
   Filter1D<Scalar, int> filter(halfwidth);
 
-  Scalar sum = 0.0;
+  long double sum = 0.0;
   for (int i=-halfwidth; i<=halfwidth; i++) {
     if (sigma == 0.0) //(When sigma==0, use a Kronecker delta function)
       filter.afH[i] = ((i == 0) ? 1.0 : 0.0);
@@ -418,8 +418,24 @@ GenFilterGauss1D(Scalar sigma,  //!< The "σ" paramgeter in the Gaussian
       // New method, using a discrete Gaussian kernel:
       // https://en.wikipedia.org/wiki/Scale_space_implementation#The_discrete_Gaussian_kernel
 
-      filter.afH[i] = (exp(-sigma*sigma) *
-                       std::cyl_bessel_i(std::abs(i), sigma*sigma));
+      // Use long double's instead of floats during the intermediate
+      // stages of the calculation in order to increase numerical precision.
+      long double S = sigma;
+      long double I = i;
+
+      if ((S <= 10.0) && (abs(I) <= 20.0)) {
+        // For small S and I, use a discrete Gaussian kernel
+        long double h = exp(-S*S) * std::cyl_bessel_i(std::abs(I), S*S);
+        filter.afH[i] = h;
+      }
+      else {
+        // If either I or S > 10.0, then the bessel-function formula
+        // may not be numerically stable.  In these cases, it is probably
+        // it's numerically more accurate to approximate the result
+        // using the formula for an ordinary (continuous) Gaussian.
+        filter.afH[i] = std::exp(-(I*I)/(2.0*S*S)) / std::sqrt(2*S*S*M_PI);
+      }
+
 
       // (We will make sure this is normalized later.)
     }
@@ -429,6 +445,7 @@ GenFilterGauss1D(Scalar sigma,  //!< The "σ" paramgeter in the Gaussian
   // normalize:
   for (int i=-halfwidth; i<=halfwidth; i++)
     filter.afH[i] /= sum;
+
   return filter;
 } //GenFilterGauss1D(sigma, halfwidth)
 
