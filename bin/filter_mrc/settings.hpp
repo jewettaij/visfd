@@ -43,7 +43,7 @@ class Settings {
     DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary
              //   widths andarbitrary exponents, slow)
              //   and a 1D Gaussian filter (in the Z direction)
-    DOG_SCALE_FREE,  // differential version of the DOG filter (similar widths)
+    LOG_DOG,         // Approximation to Laplacian-of-Guassian using DoG
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses
     TEMPLATE_GGAUSS, // Perform a least-squares fit between a generalized
@@ -98,7 +98,7 @@ class Settings {
   //
   // A significant number of the filters used by this program
   // are all of the type "difference of generalized gaussians".
-  // (Specifically, these are: GAUSS, GGAUSS, DOG, DOGG, DOGGXY, DOG_SCALE_FREE,
+  // (Specifically, these are: GAUSS, GGAUSS, DOG, DOGG, DOGGXY, LOG_DOG,
   //                           TEMPLATE_GAUSS, TEMPLATE_GGAUSS, BOOTSTRAP_DOGG)
   // 
   // The settings for these filters all use the same parameters:
@@ -239,8 +239,8 @@ class Settings {
 
   // ---- parameters for scale free blob detection ----
 
-  float dogsf_width[3];       // width of the "DOG_SCALE_FREE" filter in x,y,z directions
-  float delta_sigma_over_sigma;  // Approximation parameter used in "DOG_SCALE_FREE" filter
+  float log_width[3];            // width of the "LOG_DOG" filter in x,y,z directions
+  float delta_sigma_over_sigma;  // Approximation parameter used in "LOG_DOG" filter
                                  // This is the square root of "delta_t/t". See:
                                  // https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian
                                  // for details.

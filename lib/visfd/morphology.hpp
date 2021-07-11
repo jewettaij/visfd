@@ -218,9 +218,270 @@ FindExtrema(int const image_size[3],            //!< size of input image array
 } // FindExtrema()
 
 
+        
+
+
+/// @brief Computes the grayscale dilation of an image as defined here:
+///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
+///        The structure factor is implemented as a vector of tuples.
+///        Each tuple contains the voxel coordinates and brightness value ("b")
+///        for the structuer factor at that location.
+template<typename Scalar, typename Integer>
+void
+Dilate(vector<tuple<Integer,Integer,Integer,Scalar> > structure_factor, // a list of (ix,iy,iz,b) values, one for each voxel
+       Integer const image_size[3],            //!< size of the image in x,y,z directions
+       Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
+       Scalar ***aaafDest,                     //!< image array aaafI[iz][iy][ix]       
+       Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+
+       ostream *pReportProgress = nullptr)
+{
+  for (Integer iz=0; iz < image_size[2]; iz++) {
+    if (pReportProgress)
+      *pReportProgress << "  z = " << iz+1 << " of " << image_size[2] << endl;
+    #pragma omp parallel for collapse(2)
+    for (Integer iy=0; iy < image_size[1]; iy++) {
+      for (Integer ix=0; ix < image_size[0]; ix++) {
+        Scalar max_f_plus_b = -std::numeric_limits<Scalar>::infinity();
+        for (auto pVoxel = structure_factor.begin();
+             pVoxel != structure_factor.end();
+             pVoxel++) {
+          Integer jx = (*pVoxel)[0];
+          Integer jy = (*pVoxel)[1];
+          Integer jz = (*pVoxel)[2];
+          if ((aaafMask) && (aaafMask[iz+jz][iy+jy][ix+jx] == 0.0))
+            continue;
+          Scalar b = (*pVoxel)[3];
+          Scalar f = aaafSource[iz+jz][iy+jy][ix+jx];
+          max_f_plus_b = std::max(max_f_plus_b, f + b);
+        }
+        aaafDest[iz][iy][ix] = max_f_plus_b;
+      }
+    }
+  }
+} // Dilate(vector<tuple<Integer,Integer,Integer,Scalar> > structure_factor,...)
 
 
 
+
+
+/// @brief Computes the grayscale erosion of an image as defined here:
+///        https://en.wikipedia.org/wiki/Erosion_(morphology)#Grayscale_erosion
+///        The structure factor is implemented as a vector of tuples.
+///        Each tuple contains the voxel coordinates and brightness value ("b")
+///        for the structuer factor at that location.
+template<typename Scalar, typename Integer>
+void
+Erode(vector<tuple<Integer,Integer,Integer,Scalar> > structure_factor, // a list of (ix,iy,iz,b) values, one for each voxel
+      Integer const image_size[3],            //!< size of the image in x,y,z directions
+      Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
+      Scalar ***aaafDest,                     //!< image array aaafI[iz][iy][ix]       
+      Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+
+      ostream *pReportProgress = nullptr)
+{
+  for (Integer iz=0; iz < image_size[2]; iz++) {
+    if (pReportProgress)
+      *pReportProgress << "  z = " << iz+1 << " of " << image_size[2] << endl;
+    #pragma omp parallel for collapse(2)
+    for (Integer iy=0; iy < image_size[1]; iy++) {
+      for (Integer ix=0; ix < image_size[0]; ix++) {
+        Scalar min_f_minus_b = -std::numeric_limits<Scalar>::infinity();
+        for (auto pVoxel = structure_factor.begin();
+             pVoxel != structure_factor.end();
+             pVoxel++) {
+          Integer jx = (*pVoxel)[0];
+          Integer jy = (*pVoxel)[1];
+          Integer jz = (*pVoxel)[2];
+          if ((aaafMask) && (aaafMask[iz+jz][iy+jy][ix+jx] == 0.0))
+            continue;
+          Scalar b = (*pVoxel)[3];
+          Scalar f = aaafSource[iz+jz][iy+jy][ix+jx];
+          min_f_minus_b = std::min(min_f_minus_b, f - b);
+        }
+        aaafDest[iz][iy][ix] = min_f_minus_b;
+      }
+    }
+  }
+} // Erode(vector<tuple<Integer,Integer,Integer,Scalar> > structure_factor,...)
+
+
+
+
+
+/// @brief Computes the grayscale dilation of an image with a flat sphere.
+///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
+///        The radius paramater can be a floating point number, but its
+///        units are in voxels.
+template<typename Scalar, typename Integer>
+void
+DilateSphere(Scalar radius,              //!< radius of the sphere
+             int const image_size[3],    //!< size of the image in x,y,z directions
+             Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
+             Scalar ***aaafDest,         //!< image array aaafI[iz][iy][ix]
+             Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+             bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+             ostream *pReportProgress = nullptr //!< report progress to the user
+             )
+{
+  vector<tuple<Integer,Integer,Integer,Scalar> > structure_factor; // a list of (ix,iy,iz,b) values, one for each voxel
+  for (Integer iz=0; iz < image_size[2]; iz++) {
+    for (Integer iy=0; iy < image_size[1]; iy++) {
+      for (Integer ix=0; ix < image_size[0]; ix++) {
+        bool add_this_voxel = false;
+        Scalar b = 0.0;
+        if (! smooth_boundary) {
+          Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
+          if (r <= radius) {
+            add_this_voxel = true;
+            b = 1.0;
+          }
+        }
+        else {
+          // Calculate the distance of all of the corners to the origin.  The
+          // corners of the cube are located at the corners of voxel ix,iy,iz
+          //   (ix +/- 0.5, iy +/- 0.5, iz +/- 0.5)
+          // If all 8 corners are within the sphere, 
+          //   then include the voxel and set b = 0.
+          // If all 8 corners are outside the sphere, ignore the voxel.
+          // If any of the 8 corners lie within the sphere, then include
+          // this voxel in the structure factor, but assign it a b value
+          // between -1 and 0.  (-1 if the voxel does not overlap significantly
+          // with the sphere. 0 if the voxel mostly overlaps with the sphere.)
+          // (There are multiple ways of doing that.
+          //  Here, I am doing it a sloppy way, but it should be good enough.)
+          Scalar r_max = -std::numeric_limits<Scalar>::infinity();
+          Scalar r_min =  std::numeric_limits<Scalar>::infinity();
+          for (Integer jz=0; jz <= 1; jz++) {
+            for (Integer jy=0; jy <= 1; jy++) {
+              for (Integer jx=0; jx <= 1 ; jx++) {
+                Scalar r = sqrt(SQR(ix+jx-0.5)+SQR(iy+jy-0.5)+SQR(iz+jz-0.5));
+                if (r < r_min)
+                  r_min = r;
+                if (r > r_max)
+                  r_max = r;
+              }
+            }
+          }
+          if (r_max < radius) {
+            add_this_voxel = true;
+            b = 1.0;
+          }
+          else if (r_min > radius) {
+            add_this_voxel = false;
+            b = 0.0;
+          }
+          else {
+            add_this_voxel = true;
+            b = (r_max - radius) / (r_max - r_min);
+            b = -b;
+          }
+        } // if (smooth_boundary)
+        if (add_this_voxel)
+          structure_factor.push_back(tuple<Integer,Integer,Integer,Scalar>(ix,iy,iz,b));
+      } // for (Integer ix=0; ix < image_size[0]; ix++)
+    } // for (Integer iy=0; iy < image_size[1]; iy++)
+  } // for (Integer iz=0; iz < image_size[2]; iz++)
+
+  if (pReportProgress)
+    *pReportProgress << "DilateSphere() progress:" << endl;
+
+  Dilate(structure_factor,
+         image_size,
+         aaafSource,
+         aaafDest,
+         aaafMask,
+         pReportProgress);
+
+} // DilateSphere()
+
+
+
+
+/// @brief Computes the grayscale dilation of an image with a flat sphere.
+///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
+///        The radius paramater can be a floating point number, but its
+///        units are in voxels.
+template<typename Scalar, typename Integer>
+void
+ErodeSphere(Scalar radius,              //!< radius of the sphere
+            int const image_size[3],    //!< size of the image in x,y,z directions
+            Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
+            Scalar ***aaafDest,         //!< image array aaafI[iz][iy][ix]
+            Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+            bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+            ostream *pReportProgress = nullptr //!< report progress to the user
+            )
+{
+  vector<tuple<Integer,Integer,Integer,Scalar> > structure_factor; // a list of (ix,iy,iz,b) values, one for each voxel
+  for (Integer iz=0; iz < image_size[2]; iz++) {
+    for (Integer iy=0; iy < image_size[1]; iy++) {
+      for (Integer ix=0; ix < image_size[0]; ix++) {
+        bool add_this_voxel = false;
+        Scalar b = 0.0;
+        if (! smooth_boundary) {
+          Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
+          if (r <= radius) {
+            add_this_voxel = true;
+            b = 1.0;
+          }
+        }
+        else {
+          // Calculate the distance of all of the corners to the origin.  The
+          // corners of the cube are located at the corners of voxel ix,iy,iz
+          //   (ix +/- 0.5, iy +/- 0.5, iz +/- 0.5)
+          // If all 8 corners are within the sphere, 
+          //   then include the voxel and set b = 0.
+          // If all 8 corners are outside the sphere, ignore the voxel.
+          // If any of the 8 corners lie within the sphere, then include
+          // this voxel in the structure factor, but assign it a b value
+          // between -1 and 0.  (-1 if the voxel does not overlap significantly
+          // with the sphere. 0 if the voxel mostly overlaps with the sphere.)
+          // (There are multiple ways of doing that.
+          //  Here, I am doing it a sloppy way, but it should be good enough.)
+          Scalar r_max = -std::numeric_limits<Scalar>::infinity();
+          Scalar r_min =  std::numeric_limits<Scalar>::infinity();
+          for (Integer jz=0; jz <= 1; jz++) {
+            for (Integer jy=0; jy <= 1; jy++) {
+              for (Integer jx=0; jx <= 1 ; jx++) {
+                Scalar r = sqrt(SQR(ix+jx-0.5)+SQR(iy+jy-0.5)+SQR(iz+jz-0.5));
+                if (r < r_min)
+                  r_min = r;
+                if (r > r_max)
+                  r_max = r;
+              }
+            }
+          }
+          if (r_max < radius) {
+            add_this_voxel = true;
+            b = 1.0;
+          }
+          else if (r_min > radius) {
+            add_this_voxel = false;
+            b = 0.0;
+          }
+          else {
+            add_this_voxel = true;
+            b = (r_max - radius) / (r_max - r_min);
+          }
+        } // if (smooth_boundary)
+        if (add_this_voxel)
+          structure_factor.push_back(tuple<Integer,Integer,Integer,Scalar>(ix,iy,iz,b));
+      } // for (Integer ix=0; ix < image_size[0]; ix++)
+    } // for (Integer iy=0; iy < image_size[1]; iy++)
+  } // for (Integer iz=0; iz < image_size[2]; iz++)
+
+  if (pReportProgress)
+    *pReportProgress << "ErodeSphere() progress:" << endl;
+
+  Erode(structure_factor,
+        image_size,
+        aaafSource,
+        aaafDest,
+        aaafMask,
+        pReportProgress);
+
+} // ErodeSphere()
 
 
 

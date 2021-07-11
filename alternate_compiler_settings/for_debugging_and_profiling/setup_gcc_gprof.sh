@@ -8,7 +8,7 @@ export L_COMP="ar rs"
 
 export LFLAGS="-static -pg"
 
-export MY_FLAGS="-std=c++11 -O2 -DNDEBUG -ffast-math -DDISABLE_OPENMP"
+export MY_FLAGS="-std=c++17 -O2 -DNDEBUG -ffast-math -DDISABLE_OPENMP"
 export CFLAGS="-c -pg $MY_FLAGS"
 export CPP_PRELINKER_COMMAND="echo"
 export COMPILER_TEMP_FILES=""

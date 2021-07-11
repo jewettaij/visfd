@@ -451,7 +451,7 @@ BlobDog(int const image_size[3], //!< source image size
 ///        reported instead of its "sigma" parameter.  Diameter is easy
 ///        to interpret.  (For comparison a blob's "sigma" parameter
 ///        represents the optimal width of the Gaussian blur that, when
-//         applied to the image maximizes this blob's visibility.)
+///        applied to the image maximizes this blob's visibility.)
 ///
 /// Algorithm described in:
 ///    Lindeberg,T., Int. J. Comput. Vision., 30(2):77-116, (1998)
@@ -527,10 +527,10 @@ BlobDogD(int const image_size[3], //!<source image size
 
 
 
+
 /// @brief sort blobs by their scores
 
 template<typename Scalar1, typename Scalar2, typename Scalar3>
-
 void
 SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
           vector<Scalar2>& blob_diameters,  //!< the width of each blob

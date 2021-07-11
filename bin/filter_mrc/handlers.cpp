@@ -93,9 +93,9 @@ HandleGauss(Settings settings,
                  settings.normalize_near_boundaries,
                  &cerr);
 
-  cerr << " Filter Used:\n"
-    " h(x,y,z)   = A*exp(-0.5*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^))\n"
-    " ... where  A = " << A << "\n" 
+  cerr << " Filter Used: A discrete Gaussian kernel, approximately equal to\n"
+    " h(x,y,z)   ≈ A*exp(-0.5*((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))\n"
+    " ... where  A = " << A << "\n"
     "   (σ_x, σ_y, σ_z) = "
        << "(" << settings.width_a[0]
        << " " << settings.width_a[1]
@@ -173,10 +173,10 @@ HandleDog(Settings settings,
            &B,
            &cerr);
 
-  cerr << " Filter Used:\n"
+  cerr << " Filter Used: The difference of two discrete Gaussian kernels ≈\n"
     " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
-    " h_a(x,y,z) = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
-    " h_b(x,y,z) = B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
+    " h_a(x,y,z) ≈ A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))  (approximately)\n"
+    " h_b(x,y,z) ≈ B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))  (approximately)\n"
     "  ... where      A = " << A << "\n"
     "                 B = " << B << "\n" 
     "   (a_x, a_y, a_z) = "
@@ -205,16 +205,15 @@ HandleDog(Settings settings,
 
 
 void
-HandleDogScaleFree(Settings settings,
-                   MrcSimple &tomo_in,
-                   MrcSimple &tomo_out,
-                   MrcSimple &mask,
-                   float voxel_width[3])
+HandleLoGDoG(Settings settings,
+             MrcSimple &tomo_in,
+             MrcSimple &tomo_out,
+             MrcSimple &mask,
+             float voxel_width[3])
 {
-  cerr << "filter_type = (Fast) Laplacian of Gaussians (LoG)\n"
+  cerr << "filter_type = Laplacian of Gaussians (LoG)\n"
        << "  (This will be approximated as a Difference of Gaussians,\n"
        << "   as explained below.)\n";
-  //cerr << "filter_type = Difference of Gaussians Scale Free (DOGSF)\n";
 
   float A, B;
 
@@ -222,7 +221,7 @@ HandleDogScaleFree(Settings settings,
            tomo_in.aaafI,
            tomo_out.aaafI,
            mask.aaafI,
-           settings.dogsf_width,
+           settings.log_width,
            settings.delta_sigma_over_sigma,
            settings.filter_truncate_ratio,
            settings.filter_truncate_threshold,
@@ -230,40 +229,40 @@ HandleDogScaleFree(Settings settings,
            &B,
            &cerr);
 
-  cerr << " Filter Used:\n"
+  cerr << " Filter Used: The difference of two discrete Gaussian kernels ≈\n"
     " h(x,y,z)   = h_a(x,y,z) - h_b(x,y,z)\n"
-    " h_a(x,y,z) = A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))\n"
-    " h_b(x,y,z) = B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))\n"
+    " h_a(x,y,z) ≈ A*exp(-0.5*((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))  (approximately)\n"
+    " h_b(x,y,z) ≈ B*exp(-0.5*((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))  (approximately)\n"
     "  ... where      A = " << A << "\n"
     "                 B = " << B << "\n" 
     "   (a_x, a_y, a_z) = "
-       << "(" << settings.dogsf_width[0]*(1-0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.dogsf_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.dogsf_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
+       << "(" << settings.log_width[0]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
        << ")\n"
     "   (b_x, b_y, b_z) = "
-       << "(" << settings.dogsf_width[0]*(1+0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.dogsf_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.dogsf_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
+       << "(" << settings.log_width[0]*(1+0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
        << ")\n";
   cerr << " You can plot a slice of this function\n"
        << "     in the X direction using:\n"
     " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.dogsf_width[0]*(1-0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.dogsf_width[0]*(1+0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[0]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[0]*(1+0.5*settings.delta_sigma_over_sigma)
        << endl;
   cerr << " and in the Y direction using:\n"
     " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.dogsf_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.dogsf_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
        << endl;
   cerr << " and in the Z direction using:\n"
     " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.dogsf_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.dogsf_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
+       << " " << settings.log_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
        << endl;
 
-} // HandleDogScaleFree()
+} // HandleLoGDoG()
 
 
 

@@ -18,11 +18,6 @@ using namespace std;
 //typedef int Int;
 typedef int32_t Int;  //An integer type gauranteed to be exactly 32 bits wide.
                       //(All integers in the header are 32 bits wide)
-                      //(As of 2015-3, if you use gcc/g++, you must compile 
-                      //using the -std=c++11 flag or later to support "int32_t")
-
-
-
 
 
 

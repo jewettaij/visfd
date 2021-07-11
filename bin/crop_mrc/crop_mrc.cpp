@@ -4,7 +4,7 @@ using namespace std;
 #include "err.hpp"
 #include "mrc_simple.hpp"
 
-// (Note: For gcc version 4.8.3, you must compile using: g++ -std=c++11)
+
 
 string g_program_name = "crop_mrc";
 

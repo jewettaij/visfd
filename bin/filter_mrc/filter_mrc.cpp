@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.27.4");
-string g_date_string("2021-7-08");
+string g_version_string("0.28.0");
+string g_date_string("2021-7-10");
 
 
 
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
     for (int d=0; d<3; d++) {
       settings.width_a[d] /= voxel_width[d];
       settings.width_b[d] /= voxel_width[d];
-      settings.dogsf_width[d] /= voxel_width[d];
+      settings.log_width[d] /= voxel_width[d];
       #ifndef DISABLE_BOOTSTRAPPING
       settings.f_bs_scramble_radius[d] /= voxel_width[d];
       settings.bs_scramble_radius[d] = ceil(settings.bs_scramble_radius[d]);
@@ -424,9 +424,9 @@ int main(int argc, char **argv) {
     #endif
 
 
-    else if (settings.filter_type == Settings::DOG_SCALE_FREE) {
+    else if (settings.filter_type == Settings::LOG_DOG) {
 
-      HandleDogScaleFree(settings, tomo_in, tomo_out, mask, voxel_width);
+      HandleLoGDoG(settings, tomo_in, tomo_out, mask, voxel_width);
 
     } //if (settings.filter_type == Settings::DOG_SCALE_FREE)
 

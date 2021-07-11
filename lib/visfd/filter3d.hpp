@@ -151,7 +151,6 @@ public:
              ostream *pReportProgress = nullptr) const
   {
 
-
     if (pReportProgress)
       *pReportProgress << "  progress: processing plane#" << endl;
 

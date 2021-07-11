@@ -28,10 +28,10 @@ namespace visfd {
 
 
 template<typename Scalar>
-static inline Scalar SQR(Scalar x) { return x*x; }
+constexpr Scalar SQR(Scalar x) { return x*x; }
 
 template <typename Scalar>
-static int SGN(Scalar val) {
+constexpr int SGN(Scalar val) {
   return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));
 }
 

@@ -9,8 +9,8 @@ export LFLAGS=""
 # COMMENTED OUT: export LFLAGS="-static"
 # http://stackoverflow.com/questions/7506134/valgrind-errors-when-linked-with-static-why
 
-export MY_FLAGS="-std=c++11 -g3 -Og -DDISABLE_OPENMP"
-#export MY_FLAGS="-std=c++11 -g3 -Og"
+export MY_FLAGS="-std=c++17 -g3 -Og -DDISABLE_OPENMP"
+#export MY_FLAGS="-std=c++17 -g3 -Og"
 export CFLAGS="-c $MY_FLAGS"
 export CPP_PRELINKER_COMMAND="echo"
 export COMPILER_TEMP_FILES=""

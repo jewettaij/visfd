@@ -45,11 +45,11 @@ HandleDog(Settings settings,
 
 
 void
-HandleDogScaleFree(Settings settings,
-                   MrcSimple &tomo_in,
-                   MrcSimple &tomo_out,
-                   MrcSimple &mask,
-                   float voxel_width[3]);
+HandleLoGDoG(Settings settings,
+             MrcSimple &tomo_in,
+             MrcSimple &tomo_out,
+             MrcSimple &mask,
+             float voxel_width[3]);
 
 
 

@@ -410,8 +410,19 @@ GenFilterGauss1D(Scalar sigma,  //!< The "σ" paramgeter in the Gaussian
   for (int i=-halfwidth; i<=halfwidth; i++) {
     if (sigma == 0.0) //(When sigma==0, use a Kronecker delta function)
       filter.afH[i] = ((i == 0) ? 1.0 : 0.0);
-    else
-      filter.afH[i] = exp(-(i*i)/(2.0*sigma*sigma)); // will normalize later
+    else {
+
+      // Old method, using an ordinary continuous Gaussian kernel:
+      //filter.afH[i] = std::exp(-(i*i)/(2.0*sigma*sigma));
+      //
+      // New method, using a discrete Gaussian kernel:
+      // https://en.wikipedia.org/wiki/Scale_space_implementation#The_discrete_Gaussian_kernel
+
+      filter.afH[i] = (exp(-sigma*sigma) *
+                       std::cyl_bessel_i(std::abs(i), sigma*sigma));
+
+      // (We will make sure this is normalized later.)
+    }
     sum += filter.afH[i];
   }
 

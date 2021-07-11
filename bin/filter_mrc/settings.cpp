@@ -77,9 +77,9 @@ Settings::Settings() {
                             //voxels up to a distance of this many sigma away
                             //(Setting this to a number < 0 disables it.)
 
-  dogsf_width[0] = 0.0;
-  dogsf_width[1] = 0.0;
-  dogsf_width[2] = 0.0;
+  log_width[0] = 0.0;
+  log_width[1] = 0.0;
+  log_width[2] = 0.0;
   delta_sigma_over_sigma = 0.02;
 
   find_minima = false;
@@ -783,12 +783,12 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (vArgs[i] == "-log-d")
           // (for a solid uniform 3-D sphere)
           blob_sigma_multiplier = 1.0/(2.0*sqrt(3.0));
-        dogsf_width[0] = stof(vArgs[i+1]) * blob_sigma_multiplier;
-        dogsf_width[1] = dogsf_width[0];
-        dogsf_width[2] = dogsf_width[0];
+        log_width[0] = stof(vArgs[i+1]) * blob_sigma_multiplier;
+        log_width[1] = log_width[0];
+        log_width[2] = log_width[0];
         m_exp = 2.0;
         n_exp = 2.0;
-        filter_type = DOG_SCALE_FREE;
+        filter_type = LOG_DOG;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -807,12 +807,12 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
             (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
           throw invalid_argument("");
-        dogsf_width[0] = stof(vArgs[i+1]);
-        dogsf_width[1] = stof(vArgs[i+2]);
-        dogsf_width[2] = stof(vArgs[i+3]);
+        log_width[0] = stof(vArgs[i+1]);
+        log_width[1] = stof(vArgs[i+2]);
+        log_width[2] = stof(vArgs[i+3]);
         m_exp = 2.0;
         n_exp = 2.0;
-        filter_type = DOG_SCALE_FREE;
+        filter_type = LOG_DOG;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
