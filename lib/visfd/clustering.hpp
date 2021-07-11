@@ -121,7 +121,7 @@ typedef enum eClusterSortCriteria {
 template<typename Scalar, typename Label, typename Coordinate, typename VectorContainer=Scalar*, typename TensorContainer=Scalar*>
 
 void
-ClusterConnected(int const image_size[3],                   //!< #voxels in xyz
+ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
                  Scalar const *const *const *aaafSaliency,  //!< intensity of each voxel
                  Label ***aaaiDest,                       //!< watershed segmentation results go here
                  Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0

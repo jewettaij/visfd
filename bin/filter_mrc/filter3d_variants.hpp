@@ -45,8 +45,8 @@ using namespace std;
 
 template<typename Scalar>
 Filter2D<Scalar, int>
-GenFilterGenGauss2D(Scalar width[2],    //!< "s_x", "s_y" parameters
-                    Scalar m_exp,       //!< "m" parameter in formula
+GenFilterGenGauss2D(const Scalar width[2], //!< "s_x", "s_y" parameters
+                    Scalar m_exp,          //!< "m" parameter in formula
                     Scalar filter_truncate_ratio, //!< controls window width
                     Scalar filter_truncate_threshold, //!< controls window width
                     Scalar *pA=nullptr,    //!< optional:report A coeff to user
@@ -67,8 +67,7 @@ GenFilterGenGauss2D(Scalar width[2],    //!< "s_x", "s_y" parameters
   return GenFilterGenGauss2D(width,
                              m_exp,
                              filter_truncate_ratio,
-                             pA,
-                             pReportEquation);
+                             pA);
 
 } //GenFilterGenGauss2D(...,filter_truncate_ratio, filter_truncate_thresh,...)
 
@@ -85,17 +84,17 @@ GenFilterGenGauss2D(Scalar width[2],    //!< "s_x", "s_y" parameters
 
 template<typename Scalar>
 Filter3D<Scalar, int>
-GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
-                    Scalar m_exp,       //!<"m" parameter in formula
+GenFilterGenGauss3D(const Scalar width[3], //!<"σ_x", "σ_y", "σ_z", parameters
+                    Scalar m_exp,          //!<"m" parameter in formula
                     Scalar filter_truncate_ratio, //!<controls window width
                     Scalar filter_truncate_threshold, //!<controls window width
-                    Scalar *pA=nullptr,    //!<optional:report A coeff to user
-                    ostream *pReportEquation = nullptr  //!< optional: print equation to the terminal
+                    Scalar *pA=nullptr    //!<optional:report A coeff to user
                     )
 {
   // choose the filter window width based on the filter_truncate_threshold
   int halfwidth[3];
   int ix = 0;
+  float A;
 
   if (filter_truncate_ratio < 0.0)
     // Choose the filter domain window based on the "truncate_threshold"
@@ -106,8 +105,8 @@ GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
   return GenFilterGenGauss3D(width,
                              m_exp,
                              filter_truncate_ratio,
-                             pA,
-                             pReportEquation);
+                             pA);
+
 } //GenFilterGenGauss3D(...,filter_truncate_ratio, filter_truncate_thresh,...)
 
 
@@ -122,13 +121,12 @@ GenFilterGenGauss3D(Scalar width[3],    //!<"σ_x", "σ_y", "σ_z", parameters
 template<typename Scalar>
 
 static Filter2D<Scalar, int> 
-_GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
-                 Scalar width_b[2],  //!< "b" parameter in formula
+_GenFilterDogg2D(const Scalar width_a[2],  //!< "a" parameter in formula
+                 const Scalar width_b[2],  //!< "b" parameter in formula
                  Filter2D<Scalar, int>& filterXY_A, //!< filters for the two
                  Filter2D<Scalar, int>& filterXY_B, //!< gaussians
                  Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
-                 Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
-                 ostream *pReportProgress = nullptr //!< optional:report filter details to the user?
+                 Scalar *pB=nullptr  //!< optional:report A,B coeffs to user
                  )
 {
 
@@ -143,9 +141,6 @@ _GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
   halfwidth[0] = std::max(filterXY_A.halfwidth[0], filterXY_B.halfwidth[0]);
   halfwidth[1] = std::max(filterXY_A.halfwidth[1], filterXY_B.halfwidth[1]);
   Filter2D<Scalar, int> filter(halfwidth);
-
-  if (pReportProgress)
-    *pReportProgress  << "Array of 2D filter entries:" << endl;
 
   for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
     for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
@@ -166,25 +161,8 @@ _GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
 
         filter.aafH[iy][ix] -=filterXY_B.aafH[iy][ix]; // /(A-B); COMMENTING OUT
                          
-
-
-      //FOR DEBUGGING REMOVE EVENTUALLY
-      //if (pReportProgress)
-      //  *pReportProgress << "GenDogg2D: aafH["<<iy<<"]["<<ix<<"] = "
-      //                   << filter.aafH[iy][ix] << endl;
-
-
-      // *pReportProgress  << aafH[iy][ix];
-      //if (ix == 0)
-      //  *pReportProgress << "\n";
-      //else
-      //  *pReportProgress << " ";
-
     } // for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
   } // for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
-
-  if (pReportProgress)
-    *pReportProgress << "\n";
 
   // COMMENTING OUT 1/(A-B)
   //if (pA && pB) {
@@ -201,33 +179,30 @@ _GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
 template<typename Scalar>
 // Create a 2D filter and fill it with a difference of (generalized) Gaussians:
 Filter2D<Scalar, int> 
-GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
-                Scalar width_b[2],  //"b" parameter in formula
-                Scalar m_exp,       //"m" parameter in formula
-                Scalar n_exp,       //"n" parameter in formula
-                int halfwidth[2],
-                Scalar *pA = nullptr,  //optional:report A,B coeffs to user
-                Scalar *pB = nullptr,  //optional:report A,B coeffs to user
-                ostream *pReportProgress = nullptr)
+GenFilterDogg2D(const Scalar width_a[2],  //"a" parameter in formula
+                const Scalar width_b[2],  //"b" parameter in formula
+                Scalar m_exp,             //"m" parameter in formula
+                Scalar n_exp,             //"n" parameter in formula
+                const int halfwidth[2],   //size of 2d array to store the filter
+                Scalar *pA = nullptr,     //optional:report A,B coeffs to user
+                Scalar *pB = nullptr      //optional:report A,B coeffs to user
+                )
 {
   Filter2D<Scalar, int> filterXY_A =
     GenFilterGenGauss2D(width_a,      //"a_x", "a_y" gaussian width parameters
                         m_exp,        //"n" exponent parameter
                         halfwidth);
-                        //pReportProgress);
 
   Filter2D<Scalar, int> filterXY_B =
     GenFilterGenGauss2D(width_b,      //"b_x", "b_y" gaussian width parameters
                         n_exp,        //"n" exponent parameter
                         halfwidth);
-                        //pReportProgress);
 
   return _GenFilterDogg2D(width_a,
                           width_b,
                           filterXY_A, filterXY_B,
                           pA,
-                          pB,
-                          pReportProgress);
+                          pB);
 } //GenFilterDogg2D(...halfwidth...)
 
 
@@ -242,15 +217,14 @@ GenFilterDogg2D(Scalar width_a[2],  //"a" parameter in formula
 
 template<typename Scalar>
 Filter2D<Scalar, int> 
-GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
-                Scalar width_b[2],  //!< "b" parameter in formula
-                Scalar m_exp,       //!< "m" parameter in formula
-                Scalar n_exp,       //!< "n" parameter in formula
+GenFilterDogg2D(const Scalar width_a[2],  //!< "a" parameter in formula
+                const Scalar width_b[2],  //!< "b" parameter in formula
+                Scalar m_exp,             //!< "m" parameter in formula
+                Scalar n_exp,             //!< "n" parameter in formula
                 Scalar filter_truncate_ratio,//how many sigma before cutoff?
                 Scalar filter_truncate_threshold,//cutoff when decay below threshold
                 Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
-                Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
-                ostream *pReportProgress = nullptr  //!< optional: print equation to the terminal
+                Scalar *pB=nullptr  //!< optional:report A,B coeffs to user
                 )
 {
   Scalar filter_truncate_ratio_A = filter_truncate_ratio;
@@ -277,8 +251,7 @@ GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
                           width_b,
                           filterXY_A, filterXY_B,
                           pA,
-                          pB,
-                          pReportProgress);
+                          pB);
 } //GenFilterDogg2D(...,filter_truncate_ratio, filter_truncate_threshold,...)
 
 
@@ -295,12 +268,12 @@ GenFilterDogg2D(Scalar width_a[2],  //!< "a" parameter in formula
 template<typename Scalar>
 
 static Filter3D<Scalar, int> 
-_GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
-                 Scalar width_b[3],  //!< "b" parameter in formula
-                 Scalar m_exp,  //!< "m" parameter in formula
-                 Scalar n_exp,  //!< "n" parameter in formula
-                 Filter3D<Scalar, int>& filter_A, //!< filters for the two
-                 Filter3D<Scalar, int>& filter_B, //!< gaussians
+_GenFilterDogg3D(const Scalar width_a[3],  //!< "a" parameter in formula
+                 const Scalar width_b[3],  //!< "b" parameter in formula
+                 Scalar m_exp,             //!< "m" parameter in formula
+                 Scalar n_exp,             //!< "n" parameter in formula
+                 const Filter3D<Scalar, int>& filter_A, //!< filters for the two
+                 const Filter3D<Scalar, int>& filter_B, //!< gaussians
                  Scalar *pA=nullptr, //!< optional:report A,B coeffs to user
                  Scalar *pB=nullptr, //!< optional:report A,B coeffs to user
                  ostream *pReportEquation = nullptr //!< optional: report equation to the user
@@ -394,14 +367,16 @@ _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
       " draw_filter_1D.py -dogg " << A << " " << B
                      << " " << width_a[0] << " " << width_b[0]
                      << " " << m_exp << " " << n_exp << endl;
-    *pReportEquation << " and in the Y direction using:\n"
-      " draw_filter_1D.py -dogg " << A << " " << B
-                     << " " << width_a[1] << " " << width_b[1]
-                     << " " << m_exp << " " << n_exp << endl;
-    *pReportEquation << " and in the Z direction using:\n"
-      " draw_filter_1D.py -dogg " << A << " " << B
-                     << " " << width_a[2] << " " << width_b[2]
-                     << " " << m_exp << " " << n_exp << endl;
+    if ((width_a[1] != width_a[0]) || (width_a[2] != width_a[0])) {
+      *pReportEquation << " and in the Y direction using:\n"
+        " draw_filter_1D.py -dogg " << A << " " << B
+                       << " " << width_a[1] << " " << width_b[1]
+                       << " " << m_exp << " " << n_exp << endl;
+      *pReportEquation << " and in the Z direction using:\n"
+        " draw_filter_1D.py -dogg " << A << " " << B
+                       << " " << width_a[2] << " " << width_b[2]
+                       << " " << m_exp << " " << n_exp << endl;
+    }
   } //if (pReportEquation)
   
   return filter;
@@ -420,11 +395,11 @@ _GenFilterDogg3D(Scalar width_a[3],  //!< "a" parameter in formula
 template<typename Scalar>
 
 Filter3D<Scalar, int> 
-GenFilterDogg3D(Scalar width_a[3],   //!< "a" parameter in formula
-                Scalar width_b[3],   //!< "b" parameter in formula
-                Scalar m_exp,        //!< "m" parameter in formula
-                Scalar n_exp,        //!< "n" parameter in formula
-                int halfwidth[3],    //!< the width of the filter
+GenFilterDogg3D(const Scalar width_a[3],   //!< "a" parameter in formula
+                const Scalar width_b[3],   //!< "b" parameter in formula
+                Scalar m_exp,              //!< "m" parameter in formula
+                Scalar n_exp,              //!< "n" parameter in formula
+                const int halfwidth[3],    //!< the width of the filter
                 Scalar *pA=nullptr,     //!< optional:report A,B coeffs to user
                 Scalar *pB=nullptr,     //!< optional:report A,B coeffs to user
                 ostream *pReportEquation = nullptr //!< optional: print params used?
@@ -464,10 +439,10 @@ GenFilterDogg3D(Scalar width_a[3],   //!< "a" parameter in formula
 template<typename Scalar>
 // Create a 3-D filter and fill it with a difference of (generalized) Gaussians:
 Filter3D<Scalar, int> 
-GenFilterDogg3D(Scalar width_a[3],  //"a" parameter in formula
-                Scalar width_b[3],  //"b" parameter in formula
-                Scalar m_exp,       //"m" parameter in formula
-                Scalar n_exp,       //"n" parameter in formula
+GenFilterDogg3D(const Scalar width_a[3],  //"a" parameter in formula
+                const Scalar width_b[3],  //"b" parameter in formula
+                Scalar m_exp,             //"m" parameter in formula
+                Scalar n_exp,             //"n" parameter in formula
                 Scalar filter_truncate_ratio,//how many sigma before cutoff?
                 Scalar filter_truncate_threshold,//cutoff when decay below threshold
                 Scalar *pA = nullptr, //optional:report A,B coeffs to user
@@ -524,7 +499,7 @@ GenFilterDogg3D(Scalar width_a[3],  //"a" parameter in formula
 
 template<typename Scalar>
 Scalar
-ApplyGauss(int const image_size[3], 
+ApplyGauss(const int image_size[3], 
            Scalar const *const* const *aaafSource,
            Scalar ***aaafDest,
            Scalar const *const *const *aaafMask,
@@ -566,12 +541,12 @@ ApplyGauss(int const image_size[3],
 
 template<typename Scalar>
 void
-ApplyDog(int const image_size[3], //source image size
+ApplyDog(const int image_size[3], //source image size
          Scalar const *const *const *aaafSource,  //source image
          Scalar ***aaafDest,     //save results here
          Scalar const *const *const *aaafMask,  //ignore voxels where mask==0
-         Scalar sigma_a[3],
-         Scalar sigma_b[3],
+         const Scalar sigma_a[3],
+         const Scalar sigma_b[3],
          Scalar filter_truncate_ratio,
          Scalar filter_truncate_threshold,
          Scalar *pA = nullptr,
@@ -632,11 +607,11 @@ ApplyDog(int const image_size[3], //source image size
 
 template<typename Scalar>
 void
-ApplyLog(int const image_size[3], //source image size
+ApplyLog(const int image_size[3], //source image size
          Scalar const *const *const *aaafSource,   //source image
          Scalar ***aaafDest,     //save results here
          Scalar const *const *const *aaafMask,     //ignore voxels where mask==0
-         Scalar const sigma[3],  //Gaussian width in x,y,z drections
+         const Scalar sigma[3],  //Gaussian width in x,y,z drections
          Scalar delta_sigma_over_sigma, //difference in Gauss widths
          Scalar filter_truncate_ratio,
          Scalar filter_truncate_threshold,
@@ -677,13 +652,13 @@ ApplyLog(int const image_size[3], //source image size
 ///        For details regarding what this function does, see the comments
 ///        for the other version of this function (located in filter3d.hpp).
 
-template<typename Scalar, typename Integer>
+template<typename Scalar>
 static void
-LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
+LocalFluctuationsByRadius(const int image_size[3], //!< number of voxels in x,y,z directions
                           Scalar const *const *const *aaafSource, //!< original image
                           Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
                           Scalar const *const *const *aaafMask, //!< optional: if not nullptr then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
-                          Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
+                          const Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
                           Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
                           Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
                           Scalar filter_truncate_threshold=0.02, //!< alternatively, specify how much the Gaussian must decay before we truncate it

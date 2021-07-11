@@ -43,7 +43,7 @@ public:
   ///  values are skipped and set to 0, without performing any filtering. This
   ///  only adds a small amount of overhead when filtering non-sparse arrays.)
 
-  void Apply(Integer const size_source, 
+  void Apply(Integer size_source, 
              Scalar const *afSource,
              Scalar *afDest)
   {
@@ -138,7 +138,7 @@ public:
   ///  not complete because some entries lie outside the mask or the boundary.)
 
 
-  void Apply(Integer const size_source, 
+  void Apply(Integer size_source, 
              Scalar const *afSource,
              Scalar *afDest,
              Scalar const *afMask,

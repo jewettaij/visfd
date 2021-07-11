@@ -5,7 +5,7 @@
 
 
 void
-HandleGGauss(Settings settings,
+HandleGGauss(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
              MrcSimple &mask,
@@ -15,7 +15,7 @@ HandleGGauss(Settings settings,
 
 
 void
-HandleGauss(Settings settings,
+HandleGauss(const Settings &settings,
             MrcSimple &tomo_in,
             MrcSimple &tomo_out,
             MrcSimple &mask,
@@ -25,7 +25,7 @@ HandleGauss(Settings settings,
 
 
 void
-HandleDogg(Settings settings,
+HandleDogg(const Settings &settings,
            MrcSimple &tomo_in,
            MrcSimple &tomo_out,
            MrcSimple &mask,
@@ -35,7 +35,7 @@ HandleDogg(Settings settings,
 
 
 void
-HandleDog(Settings settings,
+HandleDog(const Settings &settings,
           MrcSimple &tomo_in,
           MrcSimple &tomo_out,
           MrcSimple &mask,
@@ -45,7 +45,7 @@ HandleDog(Settings settings,
 
 
 void
-HandleLoGDoG(Settings settings,
+HandleLoGDoG(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
              MrcSimple &mask,
@@ -54,7 +54,7 @@ HandleLoGDoG(Settings settings,
 
 
 void
-HandleBlobsNonmaxSuppression(Settings settings,
+HandleBlobsNonmaxSuppression(const Settings &settings,
                              MrcSimple &mask,
                              float voxel_width[3],
                              vector<array<float,3> >& crds,
@@ -65,13 +65,13 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
 void
-HandleBlobScoreSupervisedMulti(Settings settings,
+HandleBlobScoreSupervisedMulti(const Settings &settings,
                                float voxel_width[3]);
 
 
 
 void
-HandleDrawSpheres(Settings settings,
+HandleDrawSpheres(const Settings &settings,
                   MrcSimple &tomo_in,
                   MrcSimple &tomo_out,
                   MrcSimple &mask,
@@ -80,7 +80,7 @@ HandleDrawSpheres(Settings settings,
 
 
 void
-HandleBlobDetector(Settings settings,
+HandleBlobDetector(const Settings &settings,
                    MrcSimple &tomo_in,
                    MrcSimple &tomo_out,
                    MrcSimple &mask,
@@ -89,7 +89,7 @@ HandleBlobDetector(Settings settings,
 
 
 void
-HandleThresholds(Settings settings,
+HandleThresholds(const Settings &settings,
                  MrcSimple &tomo_in,
                  MrcSimple &tomo_out,
                  MrcSimple &mask,
@@ -98,7 +98,7 @@ HandleThresholds(Settings settings,
 
 
 void
-HandleExtrema(Settings settings,
+HandleExtrema(const Settings &settings,
               MrcSimple &tomo_in,
               MrcSimple &tomo_out,
               MrcSimple &mask,
@@ -107,7 +107,7 @@ HandleExtrema(Settings settings,
 
 
 void
-HandleLocalFluctuations(Settings settings,
+HandleLocalFluctuations(const Settings &settings,
                         MrcSimple &tomo_in,
                         MrcSimple &tomo_out,
                         MrcSimple &mask,
@@ -115,7 +115,7 @@ HandleLocalFluctuations(Settings settings,
 
 
 void
-HandleWatershed(Settings settings,
+HandleWatershed(const Settings &settings,
                 MrcSimple &tomo_in,
                 MrcSimple &tomo_out,
                 MrcSimple &mask,
@@ -123,7 +123,7 @@ HandleWatershed(Settings settings,
 
 
 void
-HandleClusterConnected(Settings settings,
+HandleClusterConnected(const Settings &settings,
                        MrcSimple &tomo_in,
                        MrcSimple &tomo_out,
                        MrcSimple &mask,
@@ -131,7 +131,7 @@ HandleClusterConnected(Settings settings,
 
 
 void
-HandleTV(Settings settings,
+HandleTV(const Settings &settings,
          MrcSimple &tomo_in,
          MrcSimple &tomo_out,
          MrcSimple &mask,

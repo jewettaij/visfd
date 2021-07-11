@@ -35,30 +35,23 @@ using namespace visfd;
 #include "handlers_unsupported.hpp"
 
 
-void
-HandleBinning(Settings settings,
-              MrcSimple &tomo_in,
-              MrcSimple &tomo_out,
-              MrcSimple &mask,
-              float voxel_width[3])
-{
 
-}
 
 void
-HandleGGauss(Settings settings,
+HandleGGauss(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
              MrcSimple &mask,
              float voxel_width[3])
 {
+  float A; // scaling coefficient (computed by normalization)
+
   Filter3D<float, int>
     filter = GenFilterGenGauss3D(settings.width_a,
                                  settings.m_exp,
                                  settings.filter_truncate_ratio,
                                  settings.filter_truncate_threshold,
-                                 static_cast<float*>(nullptr),
-                                 &cerr);
+                                 &A);
 
   filter.Apply(tomo_in.header.nvoxels,
                tomo_in.aaafI,
@@ -67,13 +60,37 @@ HandleGGauss(Settings settings,
                settings.normalize_near_boundaries,
                &cerr);
 
+  cerr << " Filter Used:\n"
+      " h(x,y,z)   = A*exp(-((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2)^(m/2))\n"
+      "  ... where      A = " << A << "\n"
+      "                 m = " << settings.m_exp << "\n" 
+      "   (a_x, a_y, a_z) = "
+       << "(" << settings.width_a[0]
+       << " " << settings.width_a[1]
+       << " " << settings.width_a[2] << ")\n";
+    cerr << " You can plot a slice of this function\n"
+         << "     in the X direction using:\n"
+      " draw_filter_1D.py -ggauss " << A
+         << " " << settings.width_a[0]
+         << " " << settings.m_exp << endl;
+    if ((settings.width_a[1] != settings.width_a[0]) ||
+        (settings.width_a[2] != settings.width_a[0])) {
+      cerr << " and in the Y direction using:\n"
+        " draw_filter_1D.py -ggauss " << A
+           << " " << settings.width_a[1]
+           << " " << settings.m_exp << endl;
+      cerr << " and in the Z direction using:\n"
+        " draw_filter_1D.py -ggauss " << A
+           << " " << settings.width_a[2]
+           << " " << settings.m_exp << endl;
+    }
 } //HandleGGauss()
 
 
 
 
 void
-HandleGauss(Settings settings,
+HandleGauss(const Settings &settings,
             MrcSimple &tomo_in,
             MrcSimple &tomo_out,
             MrcSimple &mask,
@@ -104,20 +121,22 @@ HandleGauss(Settings settings,
        << "     in the X direction using:\n"
        << " draw_filter_1D.py -gauss "
        << A << " " << settings.width_a[0] << endl;
-  cerr << " and in the Y direction using:\n"
-       << " draw_filter_1D.py -gauss "
-       << A << " " << settings.width_a[1] << endl;
-  cerr << " and in the Z direction using:\n"
-       << " draw_filter_1D.py -gauss "
-       << A << " " << settings.width_a[2] << endl;
-
+  if ((settings.width_a[1] != settings.width_a[0]) ||
+      (settings.width_a[2] != settings.width_a[0])) {
+    cerr << " and in the Y direction using:\n"
+         << " draw_filter_1D.py -gauss "
+         << A << " " << settings.width_a[1] << endl;
+    cerr << " and in the Z direction using:\n"
+         << " draw_filter_1D.py -gauss "
+         << A << " " << settings.width_a[2] << endl;
+  }
 } //HandleGauss()
 
 
 
 
 void
-HandleDogg(Settings settings,
+HandleDogg(const Settings &settings,
            MrcSimple &tomo_in,
            MrcSimple &tomo_out,
            MrcSimple &mask,
@@ -151,7 +170,7 @@ HandleDogg(Settings settings,
 
 
 void
-HandleDog(Settings settings,
+HandleDog(const Settings &settings,
           MrcSimple &tomo_in,
           MrcSimple &tomo_out,
           MrcSimple &mask,
@@ -191,12 +210,18 @@ HandleDog(Settings settings,
        << "     in the X direction using:\n"
     " draw_filter_1D.py -dog " << A << " " << B
        << " " << settings.width_a[0] << " " << settings.width_b[0] << endl;
-  cerr << " and in the Y direction using:\n"
-    " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.width_a[1] << " " << settings.width_b[1] << endl;
-  cerr << " and in the Z direction using:\n"
-    " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.width_a[2] << " " << settings.width_b[2] << endl;
+
+  if ((settings.width_a[1] != settings.width_a[0]) ||
+      (settings.width_a[2] != settings.width_a[0]) ||
+      (settings.width_b[1] != settings.width_b[0]) ||
+      (settings.width_b[2] != settings.width_b[0])) {
+    cerr << " and in the Y direction using:\n"
+      " draw_filter_1D.py -dog " << A << " " << B
+         << " " << settings.width_a[1] << " " << settings.width_b[1] << endl;
+    cerr << " and in the Z direction using:\n"
+      " draw_filter_1D.py -dog " << A << " " << B
+         << " " << settings.width_a[2] << " " << settings.width_b[2] << endl;
+  }
 
 } //HandleDog()
 
@@ -205,7 +230,7 @@ HandleDog(Settings settings,
 
 
 void
-HandleLoGDoG(Settings settings,
+HandleLoGDoG(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
              MrcSimple &mask,
@@ -251,17 +276,19 @@ HandleLoGDoG(Settings settings,
        << " " << settings.log_width[0]*(1-0.5*settings.delta_sigma_over_sigma)
        << " " << settings.log_width[0]*(1+0.5*settings.delta_sigma_over_sigma)
        << endl;
-  cerr << " and in the Y direction using:\n"
-    " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.log_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.log_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
-       << endl;
-  cerr << " and in the Z direction using:\n"
-    " draw_filter_1D.py -dog " << A << " " << B
-       << " " << settings.log_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
-       << " " << settings.log_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
-       << endl;
-
+  if ((settings.log_width[1] != settings.log_width[0]) ||
+      (settings.log_width[2] != settings.log_width[0])) {
+    cerr << " and in the Y direction using:\n"
+      " draw_filter_1D.py -dog " << A << " " << B
+         << " " << settings.log_width[1]*(1-0.5*settings.delta_sigma_over_sigma)
+         << " " << settings.log_width[1]*(1+0.5*settings.delta_sigma_over_sigma)
+         << endl;
+    cerr << " and in the Z direction using:\n"
+      " draw_filter_1D.py -dog " << A << " " << B
+         << " " << settings.log_width[2]*(1-0.5*settings.delta_sigma_over_sigma)
+         << " " << settings.log_width[2]*(1+0.5*settings.delta_sigma_over_sigma)
+         << endl;
+  }
 } // HandleLoGDoG()
 
 
@@ -272,7 +299,7 @@ HandleLoGDoG(Settings settings,
 
 
 void
-HandleBlobsNonmaxSuppression(Settings settings,
+HandleBlobsNonmaxSuppression(const Settings &settings,
                              MrcSimple &mask,
                              float voxel_width[3],
                              vector<array<float,3> >& crds,
@@ -374,6 +401,9 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
   cerr << " " << crds.size() << " blobs remaining" << endl;
 
+  float score_lower_bound = settings.score_lower_bound;
+  float score_upper_bound = settings.score_upper_bound;
+
   // Finally, use supervised learning to discard the remaining blobs?
   // (Always do this AFTER discarding overlapping blobs.)
   if (settings.auto_thresh_score &&
@@ -383,14 +413,15 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
     cerr << "  discarding blobs based on score using training data" << endl;
 
+    
     DiscardBlobsByScoreSupervised(crds,
                                   diameters,
                                   scores,
                                   settings.training_pos_crds,
                                   settings.training_neg_crds,
                                   SORT_DECREASING_MAGNITUDE,
-                                  &settings.score_lower_bound,
-                                  &settings.score_upper_bound,
+                                  &score_lower_bound,
+                                  &score_upper_bound,
                                   &cerr);
 
     cerr << " " << crds.size() << " blobs remaining" << endl;
@@ -419,7 +450,7 @@ HandleBlobsNonmaxSuppression(Settings settings,
 
 
 void
-HandleBlobScoreSupervisedMulti(Settings settings,
+HandleBlobScoreSupervisedMulti(const Settings &settings,
                                float voxel_width[3])
 {
   float threshold_lower_bound;
@@ -464,7 +495,7 @@ HandleBlobScoreSupervisedMulti(Settings settings,
   
 
 void
-HandleDrawSpheres(Settings settings,
+HandleDrawSpheres(const Settings &settings,
                   MrcSimple &tomo_in,
                   MrcSimple &tomo_out,
                   MrcSimple &mask,
@@ -540,7 +571,7 @@ HandleDrawSpheres(Settings settings,
 
 
 void
-HandleBlobDetector(Settings settings,
+HandleBlobDetector(const Settings &settings,
                    MrcSimple &tomo_in,
                    MrcSimple &tomo_out,
                    MrcSimple &mask,
@@ -770,7 +801,7 @@ HandleBlobDetector(Settings settings,
 
 
 void
-HandleThresholds(Settings settings,
+HandleThresholds(const Settings &settings,
                  MrcSimple &tomo_in,
                  MrcSimple &tomo_out,
                  MrcSimple &mask,
@@ -786,14 +817,15 @@ HandleThresholds(Settings settings,
                                      tomo_out.aaafI,
                                      mask.aaafI);
 
-    settings.in_threshold_01_a = ave_intensity +
+    float in_threshold_01_a = ave_intensity +
       settings.in_threshold_01_a * stddev_intensity;
-    settings.in_threshold_01_b = ave_intensity +
+    float in_threshold_01_b = ave_intensity +
       settings.in_threshold_01_b * stddev_intensity;
+
     cerr << "ave="<< ave_intensity <<", stddev="<<stddev_intensity << endl;
     cerr << "  Clipping intensities between ["
-         << settings.in_threshold_01_a << ", "
-         << settings.in_threshold_01_b << "]" << endl;
+         << in_threshold_01_a << ", "
+         << in_threshold_01_b << "]" << endl;
   }
   for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
     for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
@@ -844,7 +876,7 @@ HandleThresholds(Settings settings,
 
 
 void
-HandleExtrema(Settings settings,
+HandleExtrema(const Settings &settings,
               MrcSimple &tomo_in,
               MrcSimple &tomo_out,
               MrcSimple &mask,
@@ -1008,7 +1040,7 @@ HandleExtrema(Settings settings,
 
 
 void
-HandleLocalFluctuations(Settings settings,
+HandleLocalFluctuations(const Settings &settings,
                         MrcSimple &tomo_in,
                         MrcSimple &tomo_out,
                         MrcSimple &mask,
@@ -1036,7 +1068,7 @@ HandleLocalFluctuations(Settings settings,
 
 
 void
-HandleWatershed(Settings settings,
+HandleWatershed(const Settings &settings,
                 MrcSimple &tomo_in,
                 MrcSimple &tomo_out,
                 MrcSimple &mask,
@@ -1101,13 +1133,13 @@ HandleWatershed(Settings settings,
 
 
 void
-HandleClusterConnected(Settings settings,
+HandleClusterConnected(const Settings &settings,
                        MrcSimple &tomo_in,
                        MrcSimple &tomo_out,
                        MrcSimple &mask,
                        float voxel_width[3])
 {
-  vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
+  const vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
 
   if (settings.must_link_constraints.size() > 0)
     pMustLinkConstraints = &settings.must_link_constraints;
@@ -1179,7 +1211,7 @@ HandleClusterConnected(Settings settings,
 
 
 void
-HandleTV(Settings settings,
+HandleTV(const Settings &settings,
          MrcSimple &tomo_in,
          MrcSimple &tomo_out,
          MrcSimple &mask,
@@ -1187,7 +1219,7 @@ HandleTV(Settings settings,
 {
   cerr << "filter_type = surface ridge detector\n";
 
-  vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
+  const vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
   
   if (settings.must_link_constraints.size() > 0)
     pMustLinkConstraints = &settings.must_link_constraints;
@@ -1246,13 +1278,14 @@ HandleTV(Settings settings,
   CompactMultiChannelImage3D<float> hessian_tensor(6);
   hessian_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
 
+  float filter_truncate_ratio = settings.filter_truncate_ratio;
 
   // How did the user specify how wide to make the filter window?
-  if (settings.filter_truncate_ratio <= 0) {
+  if (filter_truncate_ratio <= 0) {
     assert(settings.filter_truncate_threshold > 0.0);
     //    filter_truncate_threshold = exp(-(1/2)*filter_truncate_ratio^2);
     //    -> filter_truncate_ratio^2 = -2*log(filter_truncate_threshold)
-    settings.filter_truncate_ratio = sqrt(-2*log(settings.filter_truncate_threshold));
+    filter_truncate_ratio = sqrt(-2*log(settings.filter_truncate_threshold));
   }
 
   MrcSimple tomo_background;
@@ -1261,7 +1294,7 @@ HandleTV(Settings settings,
     tomo_background = tomo_in;
 
     int truncate_halfwidth = floor(settings.width_b[0] *
-                                   settings.filter_truncate_ratio);
+                                   filter_truncate_ratio);
 
     ApplyGauss(tomo_in.header.nvoxels,
                tomo_in.aaafI,
@@ -1273,7 +1306,7 @@ HandleTV(Settings settings,
                &cerr);
 
     truncate_halfwidth = floor(settings.width_a[0] *
-                               settings.filter_truncate_ratio);
+                               filter_truncate_ratio);
 
     ApplyGauss(tomo_in.header.nvoxels,
                tomo_in.aaafI,
@@ -1302,7 +1335,7 @@ HandleTV(Settings settings,
               hessian_tensor.aaaafI,
               mask.aaafI,
               sigma,
-              settings.filter_truncate_ratio,
+              filter_truncate_ratio,
               &cerr);
 
   cerr << "Diagonalizing the Hessians" << endl;
@@ -1508,7 +1541,7 @@ HandleTV(Settings settings,
       //
       // Hence we must calculate these features (using tensor-voting).
 
-      assert(settings.filter_truncate_ratio > 0);
+      assert(filter_truncate_ratio > 0);
 
       TV3D<float, int, array<float,3>, float* >
         tv(settings.tv_sigma,

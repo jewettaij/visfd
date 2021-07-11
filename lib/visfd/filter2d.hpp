@@ -68,7 +68,7 @@ public:
   /// (useful if the sum of your filter elements, h[j], is 1, and if the sum was
   ///  not complete because some entries lie outside the mask or the boundary.)
 
-  void Apply(Integer const size_source[2],
+  void Apply(const Integer size_source[2],
              Scalar const *const *aafSource,
              Scalar **aafDest,
              Scalar const *const *aafMask = nullptr,
@@ -135,7 +135,7 @@ public:
   /// @param aafMask[][]==0 whenever we want to ignore entries in afSource[][]. Optional.
   /// @param aafDenominator[][] will store d[i] if you supply a non-null pointer
 
-  void Apply(Integer const size_source[2],
+  void Apply(const Integer size_source[2],
              Scalar const *const *aafSource,
              Scalar **aafDest,
              Scalar const *const *aafMask = nullptr,
@@ -344,11 +344,11 @@ public:
 template<typename Scalar>
 
 Filter2D<Scalar, int>
-GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
-                    Scalar m_exp,       //"m" exponent parameter
-                    int halfwidth[2],
-                    Scalar *pA=nullptr,    //optional:report A coeff to user
-                    ostream *pReportProgress = nullptr)
+GenFilterGenGauss2D(const Scalar width[2],  //"σ_x", "σ_y" parameters
+                    Scalar m_exp,           //"m" exponent parameter
+                    const int halfwidth[2], //size of 2D array to store filter
+                    Scalar *pA=nullptr      //optional:report A coeff to user
+                    )
 {
   Scalar truncate_threshold = 1.0;
   for (int d=0; d<2; d++) {
@@ -375,17 +375,10 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
   }
 
   // normalize:
-  for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++) {
-    for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++) {
+  for (int iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+    for (int ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
       filter.aafH[iy][ix] /= total;
-                 
-      //FOR DEBUGGING REMOVE EVENTUALLY
-      //if (pReportProgress)
-      //  *pReportProgress << "GenGauss2D:" //<< truncate_threshold
-      //                   <<" aafH["<<iy<<"]["<<ix<<"] = "
-      //                   << filter.aafH[iy][ix] << endl;
-    }
-  }
+
   return filter;
 } //GenFilterGenGauss2D(width, m_exp, halfwidth)
 
@@ -394,28 +387,38 @@ GenFilterGenGauss2D(Scalar width[2],    //"σ_x", "σ_y" parameters
 
 
 
+/// @brief
+/// Create a 2D filter and fill it with a "generalized Gaussian" function.
+///
+/// @code
+///    h_xy(r) = A*exp(-r^m)
+/// where   r  = sqrt((x/σ_x)^2 + (y/σ_y)^2)
+///   and   A  is determined by normalization of the discrete sum
+/// @endcode
+/// @note "A" is equal to the value stored in the middle of the array,
+///       The caller can determine what "A" is by looking at this value.
+/// @note The width of the filter window in each direction equals the "width"
+///       in that direction multiplied by "filter_cutoff_ratio"
 template<typename Scalar>
-
 Filter2D<Scalar, int>
-GenFilterGenGauss2D(Scalar width[2],       //!< "s_x", "s_y" parameters
+GenFilterGenGauss2D(const Scalar width[2], //!< "σ_x", "σ_y" parameters
                     Scalar m_exp,          //!< "m" parameter in formula
-                    Scalar filter_cutoff_ratio, //!< cutoff distance from center (in units of width[])
-                    Scalar *pA=nullptr,    //!< optional:report A coeff to user?
-                    ostream *pReportProgress = nullptr //!< optional:report filter details to the user?
+                    Scalar filter_cutoff_ratio=2.5, //!< how many sigma (σ) before truncating?
+                    Scalar *pA=nullptr     //!< optional:report A coeff to user?
                     )
 {
   // choose the width of the filter window based on the filter_cutoff_ratio
   int halfwidth[2];
   int ix = 0;
 
-  for (int d=0; d<2; d++) {
+  for (int d=0; d<2; d++)
     halfwidth[d] = floor(width[d]*filter_cutoff_ratio);
-  }
+
   return GenFilterGenGauss2D(width,
                              m_exp,
                              halfwidth,
-                             pA,
-                             pReportProgress);
+                             pA);
+
 } //GenFilterGenGauss2D(width, m_exp, filter_cutoff_ratio)
 
 

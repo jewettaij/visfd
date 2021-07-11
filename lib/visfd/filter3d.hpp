@@ -388,12 +388,12 @@ public:
   /// @note: This is a private function, not intended for public use.
   
   Scalar ApplyToVoxel(Integer ix,
-                       Integer iy,
-                       Integer iz,
-                       Integer const size_source[3],
-                       Scalar const *const *const *aaafSource,
-                       Scalar const *const *const *aaafMask = nullptr,
-                       Scalar *pDenominator = nullptr) const
+                      Integer iy,
+                      Integer iz,
+                      Integer const size_source[3],
+                      Scalar const *const *const *aaafSource,
+                      Scalar const *const *const *aaafMask = nullptr,
+                      Scalar *pDenominator = nullptr) const
 
   {
     Scalar g = 0.0;
@@ -532,11 +532,10 @@ public:
 template<typename Scalar>
 
 Filter3D<Scalar, int>
-GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
-                    Scalar m_exp,       //!< "m" exponent parameter
-                    int truncate_halfwidth[3], //!< size of filter window
-                    Scalar *pA=nullptr,    //!< optional:report A coeff to user
-                    ostream *pReportEquation=nullptr//!< optional:report equation used to the user
+GenFilterGenGauss3D(const Scalar width[3], //!< "σ_x", "σ_y", "σ_z" parameters
+                    Scalar m_exp,          //!< "m" exponent parameter
+                    const int truncate_halfwidth[3], //!< size of filter window
+                    Scalar *pA=nullptr     //!< optional:report A coeff to user
                     )
 {
   Scalar truncate_threshold = 1.0;
@@ -572,61 +571,20 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
   }
 
   // normalize:
-  for (int iz=-filter.halfwidth[2]; iz<=filter.halfwidth[2]; iz++) {
-    for (int iy=-filter.halfwidth[1]; iy<=filter.halfwidth[1]; iy++) {
-      for (int ix=-filter.halfwidth[0]; ix<=filter.halfwidth[0]; ix++) {
-
+  for (int iz=-filter.halfwidth[2]; iz<=filter.halfwidth[2]; iz++)
+    for (int iy=-filter.halfwidth[1]; iy<=filter.halfwidth[1]; iy++)
+      for (int ix=-filter.halfwidth[0]; ix<=filter.halfwidth[0]; ix++)
         filter.aaafH[iz][iy][ix] /= total;
-
-        //FOR DEBUGGING REMOVE EVENTUALLY:
-        //if (pReportEquation)
-        //  *pReportEquation << "GenGauss3D:" //<< truncate_threshold
-        //                   << " aaafH["<<iz<<"]["<<iy<<"]["<<ix<<"] = "
-        //                   << filter.aaafH[iz][iy][ix] << endl;
-      }
-    }
-  }
 
   // The coefficient in front of the Gaussian ("A")
   // equals the height of its central peak,
   // which is located in the middle of the array
   Scalar A = filter.aaafH[0][0][0];
 
-
   if (pA) {
     *pA = A;
   }
 
-  if (pReportEquation) {
-    *pReportEquation << " Filter Used:\n"
-      " h(x,y,z)   = A*exp(-((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2)^(m/2))\n"
-      "  ... where      A = " << A << "\n"
-      "                 m = " << m_exp << "\n" 
-      "   (a_x, a_y, a_z) = "
-                     << "(" << width[0]
-                     << " " << width[1]
-                     << " " << width[2] << ")\n";
-    *pReportEquation << " You can plot a slice of this function\n"
-                     << "     in the X direction using:\n"
-      " draw_filter_1D.py -gauss " << A << " " << width[0] << endl;
-    *pReportEquation << " and in the Y direction using:\n"
-      " draw_filter_1D.py -gauss " << A << " " << width[1] << endl;
-    *pReportEquation << " and in the Z direction using:\n"
-      " draw_filter_1D.py -gauss " << A << " " << width[2] << endl;
-    *pReportEquation << " You can plot a slice of this function\n"
-                     << "     in the X direction using:\n"
-      " draw_filter_1D.py -ggauss " << A
-                     << " " << width[0]
-                     << " " << m_exp << endl;
-    *pReportEquation << " and in the Y direction using:\n"
-      " draw_filter_1D.py -ggauss " << A
-                     << " " << width[1]
-                     << " " << m_exp << endl;
-    *pReportEquation << " and in the Z direction using:\n"
-      " draw_filter_1D.py -ggauss " << A
-                     << " " << width[2]
-                     << " " << m_exp << endl;
-  }
   return filter;
 } //GenFilterGenGauss3D(width, m_exp, truncate_halfwidth)
 
@@ -642,15 +600,16 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
 ///   and  "A" is determined by normalization of the discrete sum
 /// @note "A" is equal to the value stored in the middle of the array (aaafH),
 ///       The caller can determine what "A" is by looking at aaafH there
+/// @note The width of the filter window in each direction equals the "width"
+///       in that direction multiplied by "filter_cutoff_ratio"
 
 template<typename Scalar>
 
 Filter3D<Scalar, int>
-GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
-                    Scalar m_exp,       //!< "m" parameter in formula
-                    Scalar filter_cutoff_ratio=2.5, //!< how many sigma (σ) before truncating?
-                    Scalar *pA=nullptr,    //!< optional:report A coeff to user
-                    ostream *pReportEquation = nullptr //!< optional:report equation used to the user
+GenFilterGenGauss3D(const Scalar width[3], //!< "σ_x", "σ_y", "σ_z" parameters
+                    Scalar m_exp,          //!< "m" parameter in formula
+                    const Scalar filter_cutoff_ratio=2.5, //!< how many sigma (σ) before truncating?
+                    Scalar *pA=nullptr     //!< optional:report A coeff to user
                     )
 {
   // choose the width of the filter window based on the filter_cutoff_ratio
@@ -663,8 +622,7 @@ GenFilterGenGauss3D(Scalar width[3],    //!< "σ_x", "σ_y", "σ_z" parameters
   return GenFilterGenGauss3D(width,
                              m_exp,
                              truncate_halfwidth,
-                             pA,
-                             pReportEquation);
+                             pA);
 } //GenFilterGenGauss3D(width, m_exp, filter_cutoff_ratio)
 
 
@@ -1115,12 +1073,12 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 template<typename Scalar>
 
 Scalar
-ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
+ApplyGauss(const int image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
            Scalar ***aaafDest,     //!< filtered (blurred) image stored here
            Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
            Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
-           int const truncate_halfwidth[3], //!< the filter window width
+           const int truncate_halfwidth[3], //!< the filter window width
            bool normalize = true,           //!< normalize the average?
            ostream *pReportProgress = nullptr  //!< print progress to the user?
            )
@@ -1190,12 +1148,12 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 template<typename Scalar>
 
 Scalar
-ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
+ApplyGauss(const int image_size[3], //!< image size in x,y,z directions
            Scalar const *const *const *aaafSource,   //!< source image (3D array)
            Scalar ***aaafDest,     //!< filtered (blurred) image stored here
            Scalar const *const *const *aaafMask, //!< ignore voxels if aaafMask[i][j][k]==0
            Scalar sigma,                   //!< Gaussian sigma parameter σ
-           int     truncate_halfwidth,      //!< the filter window width
+           int    truncate_halfwidth,      //!< the filter window width
 
            bool normalize = true,           //!< normalize the average?
            ostream *pReportProgress = nullptr  //!< print progress to the user?
@@ -1255,13 +1213,13 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 template<typename Scalar>
 
 Scalar
-ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
-           Scalar const *const *const *aaafSource,   //!< source image (3D array)
+ApplyGauss(const int image_size[3], //!< image size in x,y,z directions
+           Scalar const *const *const *aaafSource,  //!< source image (3D array)
            Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-           Scalar const sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
+           Scalar const *const *const *aaafMask,    //!< ignore voxels if aaafMask[i][j][k]==0
+           const Scalar sigma[3],  //!< Gaussian sigma parameters σ_x,σ_y,σ_z
            Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
-           bool normalize = true,           //!< normalize the average?
+           bool normalize = true,        //!< normalize the average?
            ostream *pReportProgress = nullptr  //!< print progress to the user?
            )
 {
@@ -1322,13 +1280,13 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 template<typename Scalar>
 
 Scalar
-ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
-           Scalar const *const *const *aaafSource,   //!< source image (3D array)
-           Scalar ***aaafDest,     //!< filtered (blurred) image stored here
-           Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
+ApplyGauss(const int image_size[3],   //!< image size in x,y,z directions
+           Scalar const *const *const *aaafSource,  //!< source image (3D array)
+           Scalar ***aaafDest,        //!< filtered (blurred) image stored here
+           Scalar const *const *const *aaafMask,    //!< ignore voxels if aaafMask[i][j][k]==0
            Scalar sigma,                 //!< Gaussian sigma parameter σ
            Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
-           bool normalize = true,           //!< normalize the average?
+           bool normalize = true,        //!< normalize the average?
            ostream *pReportProgress = nullptr  //!< print progress to the user?
            )
 {
@@ -1363,13 +1321,13 @@ ApplyGauss(int const image_size[3], //!< image size in x,y,z directions
 template<typename Scalar>
 
 void
-ApplyDog(int const image_size[3], //!< image size in x,y,z directions
+ApplyDog(const int image_size[3], //!< image size in x,y,z directions
          Scalar const *const *const *aaafSource,   //!< source image (3D array)
-         Scalar ***aaafDest,     //!< filtered image stored here
+         Scalar ***aaafDest,      //!< filtered image stored here
          Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
          Scalar const sigma_a[3], //!< (a_x, a_y, a_z) in the formula above
          Scalar const sigma_b[3], //!< (b_x, b_y, b_z) in the formula above
-         int const truncate_halfwidth[3],//!<(half the filter window width along x,y,z)
+         const int truncate_halfwidth[3],//!<(half the filter window width along x,y,z)
          Scalar *pA = nullptr, //!< Optional: report "A" (normalized coefficient) to the caller?
          Scalar *pB = nullptr, //!< Optional: report "B" (normalized coefficient) to the caller?
          ostream *pReportProgress = nullptr  //!< print progress to the user?
@@ -1456,11 +1414,11 @@ ApplyDog(int const image_size[3], //!< image size in x,y,z directions
 template<typename Scalar>
 
 void
-ApplyLog(int const image_size[3], //!< source image size
+ApplyLog(const int image_size[3], //!< source image size
          Scalar const *const *const *aaafSource,   //!< source image (3D array)
          Scalar ***aaafDest,     //!< filtered image stored here
          Scalar const *const *const *aaafMask,     //!< ignore voxels if aaafMask[i][j][k]==0
-         Scalar const sigma[3],  //!< Gaussian width in x,y,z drections
+         const Scalar sigma[3],  //!< Gaussian width in x,y,z drections
          Scalar delta_sigma_over_sigma=0.02, //δ, difference in Gauss widths (approximation to LoG)
          Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
          Scalar *pA = nullptr, //!< Optional: report "A" (normalized coefficient) to the caller?
@@ -1559,7 +1517,7 @@ ApplyLog(int const image_size[3], //!< source image size
 template<typename Scalar>
 
 void
-ApplyLog(int const image_size[3], //!< source image size
+ApplyLog(const int image_size[3], //!< source image size
          Scalar const *const *const *aaafSource, //!< source image
          Scalar ***aaafDest,     //!< save results here
          Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
@@ -1607,10 +1565,10 @@ ApplyLog(int const image_size[3], //!< source image size
 ///         the intensity fluctuations would be within a (uniformly weighted)
 ///         spherical volume of radius=sigma.)  This will slow the calculation.
 
-template<typename Scalar, typename Integer>
+template<typename Scalar>
 
 void
-LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z directions
+LocalFluctuations(const int image_size[3], //!< number of voxels in x,y,z directions
                   Scalar const *const *const *aaafSource, //!< original image
                   Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
                   Scalar const *const *const *aaafMask, //!< optional: if not nullptr then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
@@ -1626,9 +1584,8 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
     w = GenFilterGenGauss3D(sigma,
                             template_background_exponent,
                             //template_profile.halfwidth,
-                            filter_truncate_ratio,
-                            static_cast<Scalar*>(nullptr),
-                            static_cast<ostream*>(nullptr));
+                            filter_truncate_ratio);
+
   // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
@@ -1815,14 +1772,13 @@ LocalFluctuations(Integer const image_size[3], //!< number of voxels in x,y,z di
 ///        If you do this, you will have to multiply your radius arguments by
 ///        1.5549880806696572 beforehand to compensate.
 
-template<typename Scalar, typename Integer>
-
+template<typename Scalar>
 void
-LocalFluctuationsByRadius(Integer const image_size[3], //!< number of voxels in x,y,z directions
+LocalFluctuationsByRadius(const int image_size[3], //!< number of voxels in x,y,z directions
                           Scalar const *const *const *aaafSource, //!< original image
                           Scalar ***aaafDest, //!< store filtered image here (fluctuation magnitude)
                           Scalar const *const *const *aaafMask, //!< optional: if not nullptr then ignore voxel ix,iy,iz if aaafMask[iz][iy][ix]==0
-                          Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
+                          const Scalar radius[3],  //!< radius (=sigma/√3) of neighborhooed over which we search in x,y,z directions (ellipsoidal shaped search area)
                           Scalar template_background_exponent=2, //!< exponent controlling sharpness of the (generalized) Gaussian (slow if != 2)
                           Scalar filter_truncate_ratio=2.5, //!< width over which we search is this many times larger than the gaussian width parameter (sigma)
                           bool normalize = true, //!< normalize the result?

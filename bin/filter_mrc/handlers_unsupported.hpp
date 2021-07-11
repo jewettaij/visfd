@@ -17,7 +17,7 @@
 ///  A comment describing of this function is provided in "handlers_unsupported.cpp"
 
 void
-HandleTemplateGauss(Settings settings,
+HandleTemplateGauss(const Settings &settings,
                     MrcSimple &tomo_in,
                     MrcSimple &tomo_out,
                     MrcSimple &mask,
@@ -33,7 +33,7 @@ HandleTemplateGauss(Settings settings,
 ///  A comment describing of this function is provided in "handlers_unsupported.cpp"
 
 void
-HandleTemplateGGauss(Settings settings,
+HandleTemplateGGauss(const Settings &settings,
                      MrcSimple &tomo_in,
                      MrcSimple &tomo_out,
                      MrcSimple &mask,
@@ -47,7 +47,7 @@ HandleTemplateGGauss(Settings settings,
 /// @brief
 /// DEPRECIATION WARNING: This function will probably be removed in the future.
 void
-HandleBootstrapDogg(Settings settings,
+HandleBootstrapDogg(const Settings &settings,
                     MrcSimple &tomo_in,
                     MrcSimple &tomo_out,
                     MrcSimple &mask);
@@ -58,7 +58,7 @@ HandleBootstrapDogg(Settings settings,
 
 #ifndef DISABLE_DOGGXY
 void
-HandleDoggXY(Settings settings,
+HandleDoggXY(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
              MrcSimple &mask,
@@ -69,7 +69,7 @@ HandleDoggXY(Settings settings,
 
 #ifndef DISABLE_INTENSITY_PROFILES
 void
-HandleBlobIntensityProfiles(Settings settings,
+HandleBlobIntensityProfiles(const Settings &settings,
                             MrcSimple &tomo_in,
                             MrcSimple &tomo_out,
                             MrcSimple &mask);
@@ -79,7 +79,7 @@ HandleBlobIntensityProfiles(Settings settings,
 
 #ifndef DISABLE_INTENSITY_PROFILES
 void
-HandleBlobRadialIntensity(Settings settings,
+HandleBlobRadialIntensity(const Settings &settings,
                           MrcSimple &tomo_in,
                           MrcSimple &tomo_out,
                           MrcSimple &mask,
@@ -88,7 +88,7 @@ HandleBlobRadialIntensity(Settings settings,
 
 
 void
-HandleDistanceToPoints(Settings settings,
+HandleDistanceToPoints(const Settings &settings,
                        MrcSimple &tomo_in,
                        MrcSimple &tomo_out,
                        MrcSimple &mask,

@@ -19,7 +19,7 @@ using namespace visfd;
 #ifndef DISABLE_DOGGXY
 
 void
-HandleDoggXY(Settings settings,
+HandleDoggXY(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
              MrcSimple &mask,
@@ -143,13 +143,16 @@ HandleDoggXY(Settings settings,
     " draw_filter_1D.py -dogg " << A*C << " " << B*C
        << " " << settings.width_a[0] << " " << settings.width_b[0]
        << " " << settings.m_exp << " " << settings.n_exp << endl;
-  cerr << " and in the Y direction using:\n"
-    " draw_filter_1D.py -dogg " << A*C << " " << B*C
-       << " " << settings.width_a[1] << " " << settings.width_b[1]
-       << " " << settings.m_exp << " " << settings.n_exp << endl;
-  cerr << " and in the Z direction using:\n"
-    " draw_filter_1D.py -gauss " << C   // * (A-B)   <--COMMENTING OUT (A-B)
-       << " " << settings.width_a[2] << endl;
+  if ((settings.width_a[1] != settings.width_a[0]) ||
+      (settings.width_a[2] != settings.width_a[0])) {
+    cerr << " and in the Y direction using:\n"
+      " draw_filter_1D.py -dogg " << A*C << " " << B*C
+         << " " << settings.width_a[1] << " " << settings.width_b[1]
+         << " " << settings.m_exp << " " << settings.n_exp << endl;
+    cerr << " and in the Z direction using:\n"
+      " draw_filter_1D.py -gauss " << C   // * (A-B)   <--COMMENTING OUT (A-B)
+         << " " << settings.width_a[2] << endl;
+  }
 } //HandleDoggXY()
 
 
@@ -159,7 +162,7 @@ HandleDoggXY(Settings settings,
 
 #ifndef DISABLE_INTENSITY_PROFILES
 void
-HandleBlobRadialIntensity(Settings settings,
+HandleBlobRadialIntensity(const Settings &settings,
                           MrcSimple &tomo_in,
                           MrcSimple &tomo_out,
                           MrcSimple &mask,
@@ -466,7 +469,7 @@ HandleBlobRadialIntensity(Settings settings,
 #ifndef DISABLE_BOOTSTRAPPING
 
 void
-HandleBootstrapDogg(Settings settings,
+HandleBootstrapDogg(const Settings &settings,
                     MrcSimple &tomo_in,
                     MrcSimple &tomo_out,
                     MrcSimple &mask);
@@ -782,7 +785,7 @@ HandleBootstrapDogg(Settings settings,
 
 
 void
-HandleTemplateGGauss(Settings settings,
+HandleTemplateGGauss(const Settings &settings,
                      MrcSimple &tomo_in,
                      MrcSimple &tomo_out,
                      MrcSimple &mask,
@@ -795,9 +798,8 @@ HandleTemplateGGauss(Settings settings,
                             settings.n_exp,
                             //template_profile.halfwidth,
                             settings.filter_truncate_ratio,
-                            settings.filter_truncate_threshold,
-                            static_cast<float*>(nullptr),
-                            static_cast<ostream*>(nullptr));
+                            settings.filter_truncate_threshold);
+
   // GenFilterGenGauss3D() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
@@ -811,9 +813,7 @@ HandleTemplateGGauss(Settings settings,
   TemplateMatcher3D<float, int>
     Q = GenFilterGenGauss3D(settings.width_a, //"a" parameter in formula
                             settings.m_exp,   //"m" parameter in formula
-                            w.halfwidth,
-                            static_cast<float*>(nullptr),
-                            static_cast<ostream*>(nullptr));
+                            w.halfwidth);
 
   // Q_ = q_ - <q_>
   float qave = Q.Average(w.aaafH);
@@ -1059,7 +1059,7 @@ HandleTemplateGGauss(Settings settings,
 
 
 void
-HandleTemplateGauss(Settings settings,
+HandleTemplateGauss(const Settings &settings,
                     MrcSimple &tomo_in,
                     MrcSimple &tomo_out,
                     MrcSimple &mask,
@@ -1071,9 +1071,8 @@ HandleTemplateGauss(Settings settings,
                             static_cast<float>(2.0), //settings.template_background_exponent,
                             //template_profile.halfwidth,
                             settings.filter_truncate_ratio,
-                            settings.filter_truncate_threshold,
-                            static_cast<float*>(nullptr),
-                            static_cast<ostream*>(nullptr));
+                            settings.filter_truncate_threshold);
+
   // GenFilterGenGauss() creates normalized gaussians with integral 1.
   // That's not what we want for the weights, w_i:
   // The weights w_i should be 1 in the viscinity we care about, and 0 outside
@@ -1087,9 +1086,7 @@ HandleTemplateGauss(Settings settings,
   Filter3D<float, int>
     q = GenFilterGenGauss3D(settings.width_a, //"a" parameter in formula
                             static_cast<float>(2.0), //settings.m_exp,
-                            w.halfwidth,
-                            static_cast<float*>(nullptr),
-                            static_cast<ostream*>(nullptr));
+                            w.halfwidth);
 
   // Q_ = q_ - <q_>
   Filter3D<float, int> Q = q;
@@ -1394,7 +1391,7 @@ HandleTemplateGauss(Settings settings,
 
 
 void
-HandleDistanceToPoints(Settings settings,
+HandleDistanceToPoints(const Settings &settings,
                        MrcSimple &tomo_in,
                        MrcSimple &tomo_out,
                        MrcSimple &mask,
