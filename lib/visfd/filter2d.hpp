@@ -19,6 +19,11 @@ using namespace std;
 namespace visfd {
 
 
+/// @class Filter2D
+/// @brief A simple class for general linear (convolutional) filters in 2D
+///
+/// @note  In practice, this class is not used often because most operations
+///        we need can be performed with separable filters which are faster.
 
 template<typename Scalar, typename Integer>
 
@@ -271,19 +276,6 @@ public:
   }
 
 
-  Filter2D(const Filter2D<Scalar, Integer>& source) {
-    Init();
-    Resize(source.halfwidth); // allocates and initializes afH and aafH
-    //for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-    //  for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-    //    aafH[iy][ix] = source.aafH[iy][ix];
-    // -- Use std:copy() instead: --
-    std::copy(source.afH,
-              source.afH + (array_size[0] * array_size[1]),
-              afH);
-  }
-
-
   void Init() {
     halfwidth[0] = -1;
     halfwidth[1] = -1;
@@ -305,8 +297,23 @@ public:
   }
 
 
+  // destructor, copy and move constructor, swap, and assignment operator
+
   ~Filter2D() {
     Dealloc();
+  }
+
+
+  Filter2D(const Filter2D<Scalar, Integer>& source) {
+    Init();
+    Resize(source.halfwidth); // allocates and initializes afH and aafH
+    //for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+    //  for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+    //    aafH[iy][ix] = source.aafH[iy][ix];
+    // -- Use std:copy() instead: --
+    std::copy(source.afH,
+              source.afH + (array_size[0] * array_size[1]),
+              afH);
   }
 
 
@@ -317,7 +324,13 @@ public:
     std::swap(array_size, other.array_size);
   }
 
+  // Move constructor (C++11)
+  Filter2D(Filter2D<Scalar, Integer>&& other) {
+    Init();
+    this->swap(other);
+  }
 
+  // Using the "copy-swap" idiom for the assignment operator
   Filter2D<Scalar, Integer>&
     operator = (Filter2D<Scalar, Integer> source) {
     this->swap(source);

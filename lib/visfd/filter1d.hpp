@@ -18,7 +18,8 @@ namespace visfd {
 
 
 
-
+/// @class Filter1D
+/// @brief A simple class for general linear (convolutional) filters in 1D
 
 template<typename Scalar, typename Integer>
 
@@ -305,12 +306,6 @@ public:
   }
 
 
-  void Init() {
-    halfwidth = -1;
-    afH = nullptr;
-  }
-
-
   void Alloc(Integer set_halfwidth) {
     halfwidth = set_halfwidth;
     array_size = 1 + 2*halfwidth;
@@ -334,6 +329,12 @@ public:
   }
 
 
+  void Init() {
+    halfwidth = -1;
+    afH = nullptr;
+  }
+
+
   void Resize(Integer set_halfwidth) {
     Dealloc();
     Alloc(set_halfwidth);
@@ -351,6 +352,13 @@ public:
   }
 
 
+  // destructor, copy and move constructor, swap, and assignment operator
+
+  ~Filter1D() {
+    Dealloc();
+  }
+
+
   Filter1D(const Filter1D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH
@@ -360,17 +368,19 @@ public:
     std::copy(source.afH, source.afH + array_size, afH);
   }
 
-
-  ~Filter1D() {
-    Dealloc();
-  }
-
   void swap(Filter1D<Scalar, Integer> &other) {
     std::swap(afH, other.afH);
     std::swap(halfwidth, other.halfwidth);
     std::swap(array_size, other.array_size);
   }
 
+  // Move constructor (C++11)
+  Filter1D(Filter1D<Scalar, Integer>&& other) {
+    Init();
+    this->swap(other);
+  }
+
+  // Using the "copy-swap" idiom for the assignment operator
   Filter1D<Scalar, Integer>&
     operator = (Filter1D<Scalar, Integer> source) {
     this->swap(source);

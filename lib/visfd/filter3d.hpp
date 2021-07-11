@@ -23,10 +23,10 @@ namespace visfd {
 
 
 /// @class Filter3D
-/// @brief A simple class for general linear (convolutional) filters in 3D
+/// @brief A class for general linear (convolutional) filters in 3D
 ///
-/// @note  In practice, this class is not used often because separable filters
-///        based on Gaussians are much faster.
+/// @note  In practice, this class is not used often because most operations
+///        we need can be performed with separable filters which are faster.
 
 template<typename Scalar, typename Integer>
 
@@ -194,6 +194,39 @@ public:
   } // Apply()
 
 
+  /// @ brief   Make sure the sum of the filter weights (in aaafH) is 1
+  void Normalize() {
+    Scalar total = 0.0;
+    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+          total += aaafH[iz][iy][ix];
+            
+    assert(total > 0.0);
+    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+          aaafH[iz][iy][ix] /= total;
+  }
+
+
+  Filter3D(Integer const set_halfwidth[3]) {
+    Init();
+    Resize(set_halfwidth);
+  }
+
+
+  Filter3D() {
+    Init();
+  }
+
+
+  // destructor, copy and move constructor, swap, and assignment operator
+
+  ~Filter3D() {
+    Dealloc();
+  }
+
 
   Filter3D(const Filter3D<Scalar, Integer>& source) {
     Init();
@@ -209,22 +242,6 @@ public:
   }
 
 
-  Filter3D(Integer const set_halfwidth[3]) {
-    Init();
-    Resize(set_halfwidth);
-  }
-
-
-  Filter3D() {
-    Init();
-  }
-
-
-  ~Filter3D() {
-    Dealloc();
-  }
-
-
   void swap(Filter3D<Scalar, Integer> &other) {
     std::swap(afH, other.afH);
     std::swap(aaafH, other.aaafH);
@@ -232,7 +249,13 @@ public:
     std::swap(array_size, other.array_size);
   }
 
+  // Move constructor (C++11)
+  Filter3D(Filter3D<Scalar, Integer>&& other) {
+    Init();
+    this->swap(other);
+  }
 
+  // Using the "copy-swap" idiom for the assignment operator
   Filter3D<Scalar, Integer>&
     operator = (Filter3D<Scalar, Integer> source) {
     this->swap(source);
@@ -240,20 +263,11 @@ public:
   }
 
 
-  /// @ brief   Make sure the sum of the filter weights (in aaafH) is 1
-  void Normalize() {
-    Scalar total = 0.0;
-    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-          total += aaafH[iz][iy][ix];
-            
-    assert(total > 0.0);
-    for (Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-      for (Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-        for (Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-          aaafH[iz][iy][ix] /= total;
-  }
+
+  // Miscellaneous functions
+  //    (COMMENT: Most of these functions are no longer needed.
+  //              I may remove them in the future. -A 2021-7-11)
+  
 
   /// @brief Calculate the (weighted) average value of the filter array aaafH
   /// @param aaafW optional weights used when calculating the averages
