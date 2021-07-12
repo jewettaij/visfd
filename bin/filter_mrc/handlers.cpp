@@ -37,6 +37,75 @@ using namespace visfd;
 
 
 
+
+void
+HandleDilation(const Settings &settings,
+               MrcSimple &tomo_in,
+               MrcSimple &tomo_out,
+               MrcSimple &mask,
+               float voxel_width[3])
+{
+  DilateSphere(settings.thickness_morphology,
+               tomo_in.header.nvoxels,
+               tomo_in.aaafI,
+               tomo_out.aaafI,
+               mask.aaafI,
+               false,
+               &cerr);
+}
+
+
+void
+HandleErosion(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &tomo_out,
+              MrcSimple &mask,
+              float voxel_width[3])
+{
+  ErodeSphere(settings.thickness_morphology,
+              tomo_in.header.nvoxels,
+              tomo_in.aaafI,
+              tomo_out.aaafI,
+              mask.aaafI,
+              false,
+              &cerr);
+}
+
+
+void
+HandleOpening(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &tomo_out,
+              MrcSimple &mask,
+              float voxel_width[3])
+{
+  OpenSphere(settings.thickness_morphology,
+             tomo_in.header.nvoxels,
+             tomo_in.aaafI,
+             tomo_out.aaafI,
+             mask.aaafI,
+             false,
+             &cerr);
+}
+
+
+void
+HandleClosing(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &tomo_out,
+              MrcSimple &mask,
+              float voxel_width[3])
+{
+  CloseSphere(settings.thickness_morphology,
+             tomo_in.header.nvoxels,
+             tomo_in.aaafI,
+             tomo_out.aaafI,
+             mask.aaafI,
+             false,
+             &cerr);
+}
+
+
 void
 HandleGGauss(const Settings &settings,
              MrcSimple &tomo_in,
@@ -1057,8 +1126,6 @@ HandleLocalFluctuations(const Settings &settings,
                             settings.filter_truncate_threshold,
                             settings.normalize_near_boundaries,
                             &cerr);
-
-  tomo_out.FindMinMaxMean();
 }
 
 
@@ -1203,8 +1270,6 @@ HandleClusterConnected(const Settings &settings,
             &aaaiClusterId);
 
 } //HandleClusterConnected()
-
-
 
 
 

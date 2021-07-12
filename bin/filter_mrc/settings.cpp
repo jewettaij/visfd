@@ -260,6 +260,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if ((vArgs[i] == "-in") || (vArgs[i] == "-i"))
 
 
+
     else if (vArgs[i] == "-image-size")
     {
       try {
@@ -280,6 +281,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-image-size")
 
 
+
     else if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -290,6 +292,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if ((vArgs[i] == "-out") || (vArgs[i] == "-o"))
    
 
+
     else if ((vArgs[i] == "-outf") || (vArgs[i] == "-out-force"))
     {
       if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -299,6 +302,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       out_file_overwrite = true;
       num_arguments_deleted = 2;
     } // if (vArgs[i] == "-outf")
+
 
 
     else if (vArgs[i] == "-mask")
@@ -345,6 +349,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-mask-select")
 
 
+
     else if ((vArgs[i] == "-mask-rect") ||
              (vArgs[i] == "-mask-rectangle"))
     {
@@ -374,6 +379,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 7;
     } // if (vArgs[i] == "-mask-rect")
+
 
 
     else if ((vArgs[i] == "-mask-rect-subtract") ||
@@ -486,6 +492,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if (vArgs[i] == "-mask-rect-units")
 
 
+
     else if (vArgs[i] == "-mask-out")
     {
       try {
@@ -500,6 +507,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } // if (vArgs[i] == "-mask-out")
+
 
 
     else if (vArgs[i] == "-w")
@@ -544,7 +552,47 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-dilate-gauss") ||
+    else if ((vArgs[i] == "-dilation") ||
+             (vArgs[i] == "-dilate"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        thickness_morphology = stof(vArgs[i+1]);
+        filter_type = DILATION;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number (\"s\"),\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-dilation")
+
+
+
+    else if ((vArgs[i] == "-erosion") ||
+             (vArgs[i] == "-erode"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        thickness_morphology = stof(vArgs[i+1]);
+        filter_type = EROSION;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number (\"s\"),\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-erosion")
+
+
+
+    else if ((vArgs[i] == "-dilation-gauss") ||
+             (vArgs[i] == "-dilate-gauss") ||
+             (vArgs[i] == "-erosion-gauss") ||
              (vArgs[i] == "-erode-gauss"))
     {
       float blur_distance;
@@ -573,6 +621,315 @@ Settings::ParseArgs(vector<string>& vArgs)
     } // if ((vArgs[i] == "-erode-gauss") || (vArgs[i] == "-dilate-gauss"))
 
 
+
+    else if ((vArgs[i] == "-opening") ||
+             (vArgs[i] == "-open"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        thickness_morphology = stof(vArgs[i+1]);
+        filter_type = OPENING;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number (\"s\"),\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-opening")
+
+
+
+    else if ((vArgs[i] == "-closing") ||
+             (vArgs[i] == "-close"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        thickness_morphology = stof(vArgs[i+1]);
+        filter_type = CLOSING;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number (\"s\"),\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-closing")
+
+
+
+    else if (vArgs[i] == "-truncate")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        filter_truncate_ratio = stof(vArgs[i+1]);
+        filter_truncate_threshold=-1.0; //(disables)override any filter_truncate_threshold settings
+        //filter_truncate_ratio_exp = exp(-pow(filter_truncate_ratio,
+        //                                   n_exp));
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number.\n");
+      }
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-truncate")
+
+
+
+    else if (vArgs[i] == "-truncate-threshold")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        filter_truncate_threshold = stof(vArgs[i+1]);
+        filter_truncate_ratio = -1.0; //(disables) override any filter_truncate_ratio settings
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number.\n");
+      }
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-truncate-thresold")
+
+
+
+    else if (vArgs[i] == "-rescale")
+    {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_rescale_multiply = true;
+        out_rescale_multiply = stof(vArgs[i+1]);
+        out_rescale_offset = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 2 numbers:\n"
+                       " outA  outB\n"
+                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
+      }
+      num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-rescale")
+
+
+
+    else if (vArgs[i] == "-fill")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_rescale_multiply = true;
+        out_rescale_multiply = 0.0;
+        out_rescale_offset = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number.");
+      }
+      num_arguments_deleted = 2;
+    } // if (vArgs[i] == "-rescale")
+
+
+
+    else if ((vArgs[i] == "-thresh-range") ||
+             (vArgs[i] == "-thresh-range-out"))
+    {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        out_thresh_a_value = stof(vArgs[i+1]);
+        out_thresh_b_value = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 2 numbers:\n"
+                       " outA  outB\n"
+                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
+      }
+      num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-outab")
+
+
+
+    else if (vArgs[i] == "-rescale-min-max")
+    {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") ||
+            (vArgs[i+2] == ""))
+          throw invalid_argument("");
+        rescale_min_max_out = true;
+        out_rescale_max = stof(vArgs[i+1]);
+        out_rescale_min = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 2 numbers:\n"
+                       " outA  outB\n"
+                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
+      }
+      num_arguments_deleted = 3;
+    } // if (vArgs[i] == "-rescale-min-max")
+
+
+
+    else if ((vArgs[i] == "-no-rescale") || (vArgs[i] == "-norescale"))
+    {
+      rescale_min_max_out = false;
+      in_threshold_01_a = 1.0;
+      in_threshold_01_b = 1.0;
+      num_arguments_deleted = 1;
+    } // if (vArgs[i] == "-norescale")
+
+
+
+    else if ((vArgs[i] == "-invert") ||
+             (vArgs[i] == "-inv"))
+    {
+      invert_output = true;
+      num_arguments_deleted = 1;
+    } // if (vArgs[i] == "-invert")
+
+
+
+    else if ((vArgs[i] == "-thresh") ||
+             (vArgs[i] == "-thresh-out")) {
+      try {
+        if (i+1 >= vArgs.size())
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_dual_thresholds = false;
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = in_threshold_01_a;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 1 number.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+
+    else if ((vArgs[i] == "-thresh2") ||
+             (vArgs[i] == "-thresh2-out")) {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_dual_thresholds = false;
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+2]);
+        out_thresh2_use_clipping = false;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 2 numbers.\n");
+      }
+      num_arguments_deleted = 3;
+    }
+
+
+
+    else if ((vArgs[i] == "-clip") ||
+             (vArgs[i] == "-cl")) {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_dual_thresholds = false;
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+2]);
+        out_thresh2_use_clipping = true;
+        if (vArgs[i] == "-cl")
+          out_thresh2_use_clipping_sigma = true;
+        else
+          out_thresh2_use_clipping_sigma = false;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 2 numbers.\n");
+      }
+      num_arguments_deleted = 3;
+    }
+
+
+
+    else if ((vArgs[i] == "-thresh4") ||
+             (vArgs[i] == "-thresh4-out")) {
+      try {
+        if (i+4 >= vArgs.size())
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_dual_thresholds = true;
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+2]);
+        in_threshold_10_a = stof(vArgs[i+3]);
+        in_threshold_10_b = stof(vArgs[i+4]);
+        bool all_increasing = ((in_threshold_01_a <= in_threshold_01_b) &&
+                               (in_threshold_01_b <= in_threshold_10_a) &&
+                               (in_threshold_10_a <= in_threshold_10_b));
+        bool all_decreasing = ((in_threshold_01_a >= in_threshold_01_b) &&
+                               (in_threshold_01_b >= in_threshold_10_a) &&
+                               (in_threshold_10_a >= in_threshold_10_b));
+        if (! (all_increasing || all_decreasing))
+          throw invalid_argument("");
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 4 numbers\n"
+                       "       (These numbers must be either in increasing or decreasing order.)\n");
+      }
+      num_arguments_deleted = 5;
+    }
+
+
+
+    else if ((vArgs[i] == "-thresh-interval") ||
+             (vArgs[i] == "-thresh-interval-out")) {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_dual_thresholds = true;
+        in_threshold_01_a = stof(vArgs[i+1]);
+        in_threshold_01_b = stof(vArgs[i+1]);
+        in_threshold_10_a = stof(vArgs[i+2]);
+        in_threshold_10_b = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 4 numbers.\n");
+      }
+      num_arguments_deleted = 3;
+    }
+
+
+    else if ((vArgs[i] == "-thresh-gauss") ||
+             (vArgs[i] == "-thresh-gauss-out")) {
+      try {
+        if (i+2 >= vArgs.size())
+          throw invalid_argument("");
+        use_intensity_map = true;
+        use_gauss_thresholds = true;
+        out_thresh_gauss_x0 = stof(vArgs[i+1]);
+        out_thresh_gauss_sigma = stof(vArgs[i+2]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 4 numbers.\n");
+      }
+      num_arguments_deleted = 3;
+    }
 
 
 
@@ -694,6 +1051,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-dog")
 
 
+
     #ifndef DISABLE_DOGGXY
     else if (vArgs[i] == "-doggxy-aniso")
     {
@@ -799,6 +1157,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-log")
 
 
+
     else if (vArgs[i] == "-log-aniso")
     {
       try {
@@ -822,6 +1181,74 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 4;
     } //if (vArgs[i] == "-log-aniso")
+
+
+
+
+
+
+
+    else if (vArgs[i] == "-dog-delta") {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        delta_sigma_over_sigma = stof(vArgs[i+1]);
+        user_set_delta_manually = true;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by 1 positive number.\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+
+    else if ((vArgs[i] == "-exponents") ||
+             (vArgs[i] == "-gdog-exponents"))
+    {
+      try {
+        if ((i+2 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-'))
+          throw invalid_argument("");
+        m_exp = stof(vArgs[i+1]);
+        n_exp = stof(vArgs[i+2]);
+        #ifndef DISABLE_TEMPLATE_MATCHING
+        template_background_exponent = n_exp;
+        #endif
+        user_set_exponents_manually = true;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by two positive numbers.\n");
+      }
+      num_arguments_deleted = 3;
+    } //if (vArgs[i] == "-gdog-exponents")
+
+
+
+    else if ((vArgs[i] == "-gauss-exponent") ||
+             (vArgs[i] == "-exponent"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        m_exp = stof(vArgs[i+1]);
+        n_exp = m_exp;
+        #ifndef DISABLE_TEMPLATE_MATCHING
+        template_background_exponent = n_exp;
+        #endif
+        user_set_exponents_manually = true;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number.\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-gauss-exponent")
 
 
 
@@ -887,29 +1314,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-spheres-nonmax-overlap-radial")
 
-    
-
-    // REMOVE THIS CRUFT
-    //else if ((vArgs[i] == "-spheres-nonmax-separation-sigma") ||
-    //         (vArgs[i] == "-blob-s-separation"))
-    //{
-    //  try {
-    //    if (i+1 >= vArgs.size())
-    //      throw invalid_argument("");
-    //    nonmax_min_radial_separation_ratio = stof(vArgs[i+1]);
-    //    //REMOVE THIS CRUFT
-    //    //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
-    //  }
-    //  catch (invalid_argument& exc) {
-    //    throw InputErr("Error: The " + vArgs[i] +
-    //                   " argument must be followed by a number:\n"
-    //                   "       the minimum allowed separation between a pair of detected blobs\n"
-    //                   "       (as a fraction of the sum of their Gaussian widths (σ1+σ2)).");
-    //  }
-    //  num_arguments_deleted = 2;
-    //} //if (vArgs[i] == "-blob-s-separation")
-
-
 
 
     else if ((vArgs[i] == "-radial-separation") ||
@@ -934,31 +1338,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-radial-separation")
-
-
-
-
-    // REMOVE THIS CRUFT
-    //else if ((vArgs[i] == "-spheres-nonmax-separation-diameter") ||
-    //         (vArgs[i] == "-blob-d-separation") ||
-    //         (vArgs[i] == "-blob-separation"))
-    //{
-    //  try {
-    //    if (i+1 >= vArgs.size())
-    //      throw invalid_argument("");
-    //    nonmax_min_radial_separation_ratio = stof(vArgs[i+1]) * 2.0;
-    //    //REMOVE THIS CRUFT
-    //    //nonmax_min_radial_separation_ratio = stof(vArgs[i+1]) * 2.0 * sqrt(3.0);
-    //    //find_extrema_occlusion_ratio = stof(vArgs[i+1]);
-    //  }
-    //  catch (invalid_argument& exc) {
-    //    throw InputErr("Error: The " + vArgs[i] +
-    //                   " argument must be followed by a number:\n"
-    //                   "       the minimum allowed separation between a pair of detected blobs\n"
-    //                   "       (as a fraction of the sum of their diameters, estimated using d=2r≈2σ√3).");
-    //  }
-    //  num_arguments_deleted = 2;
-    //} //if (vArgs[i] == "-blobd-separation")
 
 
 
@@ -1109,6 +1488,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
+
     else if (vArgs[i] == "-auto-thresh")
     {
       auto_thresh_score = true;
@@ -1130,6 +1510,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-auto-thresh")
 
 
+
     else if (vArgs[i] == "-supervised")
     {
       try {
@@ -1147,6 +1528,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 3;
     } //if (vArgs[i] == "-supervised")
+
 
 
     else if (vArgs[i] == "-supervised-multi")
@@ -1223,6 +1605,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-supervised-multi")
 
 
+
     else if ((vArgs[i] == "-minima-threshold") ||
              (vArgs[i] == "-score-upper-bound"))
     {
@@ -1241,6 +1624,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     } //if (vArgs[i] == "-minima-threshold")
 
 
+
     else if ((vArgs[i] == "-maxima-threshold") ||
              (vArgs[i] == "-score-lower-bound"))
     {
@@ -1257,7 +1641,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-maxima-threshold")
-             
+
+
 
     else if ((vArgs[i] == "-minima-ratio") ||
              (vArgs[i] == "-score-lower-bound-ratio"))
@@ -1330,353 +1715,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 3;
     }  //if (vArgs[i] == "-spheres-nonmax-score-range")
 
-
-
-
-    else if (vArgs[i] == "-dog-delta") {
-      try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-          throw invalid_argument("");
-        delta_sigma_over_sigma = stof(vArgs[i+1]);
-        user_set_delta_manually = true;
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 1 positive number.\n");
-      }
-      num_arguments_deleted = 2;
-    }
-
-
-
-    else if ((vArgs[i] == "-exponents") ||
-             (vArgs[i] == "-gdog-exponents"))
-    {
-      try {
-        if ((i+2 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-'))
-          throw invalid_argument("");
-        m_exp = stof(vArgs[i+1]);
-        n_exp = stof(vArgs[i+2]);
-        #ifndef DISABLE_TEMPLATE_MATCHING
-        template_background_exponent = n_exp;
-        #endif
-        user_set_exponents_manually = true;
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by two positive numbers.\n");
-      }
-      num_arguments_deleted = 3;
-    } //if (vArgs[i] == "-gdog-exponents")
-
-
-    else if ((vArgs[i] == "-gauss-exponent") ||
-             (vArgs[i] == "-exponent"))
-    {
-      try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-          throw invalid_argument("");
-        m_exp = stof(vArgs[i+1]);
-        n_exp = m_exp;
-        #ifndef DISABLE_TEMPLATE_MATCHING
-        template_background_exponent = n_exp;
-        #endif
-        user_set_exponents_manually = true;
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a positive number.\n");
-      }
-      num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-gauss-exponent")
-
-
-    //Commenting out:  The user cannot set filter_truncate_halfwidth directly anymore:
-    //else if (vArgs[i] == "-window") {
-    //  if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-    //    throw InputErr("Error: The " + vArgs[i] +
-    //                   " argument must be followed by either 1 or 3 positive integers.\n");
-    //  filter_truncate_halfwidth[0] = stoi(vArgs[i+1]);
-    //  num_arguments_deleted = 2;
-    //  if ((i+4 >= vArgs.size()) && 
-    //      (vArgs[i+2][0] != '-') && (vArgs[i+2] != "") &&
-    //      (vArgs[i+3][0] != '-') && (vArgs[i+3] != "")) {
-    //    filter_truncate_halfwidth[1] = stoi(vArgs[i+2]);
-    //    filter_truncate_halfwidth[2] = stoi(vArgs[i+3]);
-    //    num_arguments_deleted = 4;
-    //  }
-    //  else {
-    //    filter_truncate_halfwidth[1] = filter_truncate_halfwidth[0];
-    //    filter_truncate_halfwidth[2] = filter_truncate_halfwidth[0];
-    //  }
-    //} //if (vArgs[i] == "-window")
-
-
-    else if (vArgs[i] == "-truncate")
-    {
-      try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-          throw invalid_argument("");
-        filter_truncate_ratio = stof(vArgs[i+1]);
-        filter_truncate_threshold=-1.0; //(disables)override any filter_truncate_threshold settings
-        //filter_truncate_ratio_exp = exp(-pow(filter_truncate_ratio,
-        //                                   n_exp));
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number.\n");
-      }
-      num_arguments_deleted = 2;
-    } // if (vArgs[i] == "-truncate")
-
-
-    else if (vArgs[i] == "-truncate-threshold")
-    {
-      try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-          throw invalid_argument("");
-        filter_truncate_threshold = stof(vArgs[i+1]);
-        filter_truncate_ratio = -1.0; //(disables) override any filter_truncate_ratio settings
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number.\n");
-      }      
-      num_arguments_deleted = 2;
-    } // if (vArgs[i] == "-truncate-thresold")
-
-
-
-
-    else if (vArgs[i] == "-rescale")
-    {
-      try {
-        if ((i+2 >= vArgs.size()) ||
-            (vArgs[i+1] == "") ||
-            (vArgs[i+2] == ""))
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_rescale_multiply = true;
-        out_rescale_multiply = stof(vArgs[i+1]);
-        out_rescale_offset = stof(vArgs[i+2]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 2 numbers:\n"
-                       " outA  outB\n"
-                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
-      }
-      num_arguments_deleted = 3;
-    } // if (vArgs[i] == "-rescale")
-
-
-    else if (vArgs[i] == "-fill")
-    {
-      try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_rescale_multiply = true;
-        out_rescale_multiply = 0.0;
-        out_rescale_offset = stof(vArgs[i+1]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number.");
-      }
-      num_arguments_deleted = 2;
-    } // if (vArgs[i] == "-rescale")
-
-
-    else if ((vArgs[i] == "-thresh-range") ||
-             (vArgs[i] == "-thresh-range-out"))
-    {
-      try {
-        if ((i+2 >= vArgs.size()) ||
-            (vArgs[i+1] == "") ||
-            (vArgs[i+2] == ""))
-          throw invalid_argument("");
-        out_thresh_a_value = stof(vArgs[i+1]);
-        out_thresh_b_value = stof(vArgs[i+2]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 2 numbers:\n"
-                       " outA  outB\n"
-                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
-      }
-      num_arguments_deleted = 3;
-    } // if (vArgs[i] == "-outab")
-
-
-
-    else if (vArgs[i] == "-rescale-min-max")
-    {
-      try {
-        if ((i+2 >= vArgs.size()) ||
-            (vArgs[i+1] == "") ||
-            (vArgs[i+2] == ""))
-          throw invalid_argument("");
-        rescale_min_max_out = true;
-        out_rescale_max = stof(vArgs[i+1]);
-        out_rescale_min = stof(vArgs[i+2]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 2 numbers:\n"
-                       " outA  outB\n"
-                       "  (the desired minimum and maximum voxel intensity values for the final image)\n");
-      }
-      num_arguments_deleted = 3;
-    } // if (vArgs[i] == "-rescale-min-max")
-
-
-    else if ((vArgs[i] == "-no-rescale") || (vArgs[i] == "-norescale"))
-    {
-      rescale_min_max_out = false;
-      in_threshold_01_a = 1.0;
-      in_threshold_01_b = 1.0;
-      num_arguments_deleted = 1;
-    } // if (vArgs[i] == "-norescale")
-
-
-    else if ((vArgs[i] == "-invert") ||
-             (vArgs[i] == "-inv"))
-    {
-      invert_output = true;
-      num_arguments_deleted = 1;
-    } // if (vArgs[i] == "-invert")
-
-
-    else if ((vArgs[i] == "-thresh") ||
-             (vArgs[i] == "-thresh-out")) {
-      try {
-        if (i+1 >= vArgs.size())
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_dual_thresholds = false;
-        in_threshold_01_a = stof(vArgs[i+1]);
-        in_threshold_01_b = in_threshold_01_a;
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 1 number.\n");
-      }
-      num_arguments_deleted = 2;
-    }
-
-
-    else if ((vArgs[i] == "-thresh2") ||
-             (vArgs[i] == "-thresh2-out")) {
-      try {
-        if (i+2 >= vArgs.size())
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_dual_thresholds = false;
-        in_threshold_01_a = stof(vArgs[i+1]);
-        in_threshold_01_b = stof(vArgs[i+2]);
-        out_thresh2_use_clipping = false;
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 2 numbers.\n");
-      }
-      num_arguments_deleted = 3;
-    }
-
-
-    else if ((vArgs[i] == "-clip") ||
-             (vArgs[i] == "-cl")) {
-      try {
-        if (i+2 >= vArgs.size())
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_dual_thresholds = false;
-        in_threshold_01_a = stof(vArgs[i+1]);
-        in_threshold_01_b = stof(vArgs[i+2]);
-        out_thresh2_use_clipping = true;
-        if (vArgs[i] == "-cl")
-          out_thresh2_use_clipping_sigma = true;
-        else
-          out_thresh2_use_clipping_sigma = false;
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 2 numbers.\n");
-      }
-      num_arguments_deleted = 3;
-    }
-
-
-    else if ((vArgs[i] == "-thresh4") ||
-             (vArgs[i] == "-thresh4-out")) {
-      try {
-        if (i+4 >= vArgs.size())
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_dual_thresholds = true;
-        in_threshold_01_a = stof(vArgs[i+1]);
-        in_threshold_01_b = stof(vArgs[i+2]);
-        in_threshold_10_a = stof(vArgs[i+3]);
-        in_threshold_10_b = stof(vArgs[i+4]);
-        bool all_increasing = ((in_threshold_01_a <= in_threshold_01_b) &&
-                               (in_threshold_01_b <= in_threshold_10_a) &&
-                               (in_threshold_10_a <= in_threshold_10_b));
-        bool all_decreasing = ((in_threshold_01_a >= in_threshold_01_b) &&
-                               (in_threshold_01_b >= in_threshold_10_a) &&
-                               (in_threshold_10_a >= in_threshold_10_b));
-        if (! (all_increasing || all_decreasing))
-          throw invalid_argument("");
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 4 numbers\n"
-                       "       (These numbers must be either in increasing or decreasing order.)\n");
-      }
-      num_arguments_deleted = 5;
-    }
-
-
-    else if ((vArgs[i] == "-thresh-interval") ||
-             (vArgs[i] == "-thresh-interval-out")) {
-      try {
-        if (i+2 >= vArgs.size())
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_dual_thresholds = true;
-        in_threshold_01_a = stof(vArgs[i+1]);
-        in_threshold_01_b = stof(vArgs[i+1]);
-        in_threshold_10_a = stof(vArgs[i+2]);
-        in_threshold_10_b = stof(vArgs[i+2]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 4 numbers.\n");
-      }
-      num_arguments_deleted = 3;
-    }
-
-
-    else if ((vArgs[i] == "-thresh-gauss") ||
-             (vArgs[i] == "-thresh-gauss-out")) {
-      try {
-        if (i+2 >= vArgs.size())
-          throw invalid_argument("");
-        use_intensity_map = true;
-        use_gauss_thresholds = true;
-        out_thresh_gauss_x0 = stof(vArgs[i+1]);
-        out_thresh_gauss_sigma = stof(vArgs[i+2]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by 4 numbers.\n");
-      }
-      num_arguments_deleted = 3;
-    }
 
 
     else if (vArgs[i] == "-bs") {

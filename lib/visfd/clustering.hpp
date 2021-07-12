@@ -66,6 +66,10 @@ typedef enum eClusterSortCriteria {
 ///         voxels which lie near a maxima (or a minima) of saliency, 
 ///         and groups voxels of similar saliency together (as well as voxels
 ///         whose vector and/or tensor directions are compatible, if applicable)
+///         Unlike the watershed algorithm, this function can cluster voxels
+///         according to their vector and tensor attributes, clustering
+///         adjacent voxels only if their directions and tensors are
+///         sufficiently similar.
 ///
 /// @return The function does not have a return value.
 ///         After the function is finished, the aaaiDest[][][] array will

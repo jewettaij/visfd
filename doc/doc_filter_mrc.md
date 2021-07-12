@@ -6,7 +6,8 @@ filter_mrc
 *(using [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523))*.
 It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
-
+*(Note: In this documentation, I use the words "image" and "tomogram"
+interchangeably.  A tomogram is a 3-D image.)*
 
 **filter_mrc** can be used local minima-finding, clustering, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed).
@@ -19,6 +20,7 @@ Several primitive filters are included including
 low-pass, high-pass,
 edge detectors,
 ridge detectors,
+morphological filters,
 thresholding,
 brightness inversions,
 [generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
@@ -38,7 +40,7 @@ The contributions from remaining voxels are normalized, so that objects located
 within narrow confined spaces can be detected accurately and without penalty.)
 Masks can also be used to give some voxels more consideration
 than others during the blurring (filtering) process.  (A.K.A. "weighting".)
-You can use a mask to to apply a filter to an image
+In this way, you can use a mask to to apply a filter to an image
 whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
 
@@ -211,9 +213,9 @@ too close to the surface.  The following command will contract the boundary
 of the surface by approximately 40 Angstroms inward, creating a new file
 "segmented_interior.rec".
 ```
-filter_mrc -i segmented.rec -o segmented_interior.rec -erode-gauss 40
+filter_mrc -i segmented.rec -o segmented_interior.rec -erosion-gauss 40
 ```
-*(See [-erode-gauss](#-erode-gauss-thickness) for details.)*
+*(See [-erosion-gauss](#-erosion-gauss-thickness) for details.)*
 
 
 **Note:**
@@ -444,26 +446,34 @@ structures which are bright on a dark background.
 The *thickness* parameter should be a number indicating
 the approximate target *thickness* for the thin membrane-like feature
 you are interested in detecting.
-(This parameter should be expressed in physical units, not voxels.  
- Membranes whose thickness within a factor of 2 of this target
- are also likely to be detected.
- Technically, the *thickness* parameter controls the width Gaussian that will
- be initially convolved with the original image, according to σ=thickness/√3.
- For details, see Steger IEEE Trans. Pattern Anal. Machine Int. 1998.)
+(This parameter should be expressed in physical units, not voxels.
+Membranes whose thickness within a factor of 2 of this target
+are also likely to be detected.
+*Technically, the "thickness" parameter controls the width Gaussian, σ,
+that will be initially convolved with the original image, according to
+σ=thickness/√3.  For details, see
+[Steger IEEE Trans. Pattern Anal. Machine Int. 1998](https://doi.org/10.1109/34.659930).*)
 
 The *output* of this filter will be bright wherever the derivative of
 the brightness varies much more rapidly in one direction than it does
 in the two orthogonal directions.
-Because this filter depends on second derivatives,
-it is prone to detect a large number of spurious fluctuations in brightness
-(in addition to the membrane-like structures you are interested in).
-Tensor-voting (using the [-tv](#-tv-σ_ratio) argument)
+Because this filter depends on second derivatives, it is prone to also
+detect a large number of unwanted spurious fluctuations in brightness.
+Tensor-voting (using the [**-tv**](#-tv-σ_ratio) argument)
 can be used to remove these spurious detected peaks
-and improve the signal-to-noise ratio.
+and greatly improve the signal-to-noise ratio.
+
+Groups of connected voxels that belong to the same surface can be
+identified using the [**-connect**](#-connect-threshold) argument,
+and their locations can be saved to a simple text file for geometric
+analysis using the
+[**-surface-normals-file**](#-surface-normals-file-PLY_FILE) argument.
 
 **WARNING**
 *This filter requires a very large amount of memory
 (enough to store at least 9 copies of the original image in 32bit-float mode).*
+
+
 
 
 #### Detection and masking
@@ -490,8 +500,9 @@ noise near this boundary instead of the surface or curve that you are seeking.
 Alternatively, to get around this problem you can dilate (expand) the size
 of the mask region to include these voxels near the periphery.
 *(One way to do this is using the 
-[-dilate-gauss](#-dilate-gauss-thickness)
-argument with a large thickness parameter.  This is discussed below.
+[-dilation](#-dilation-thickness) or
+[-dilation-gauss](#-dilation-gauss-thickness)
+arguments with a large thickness parameter.  This is discussed below.
 Alternatively, if your only goal is to reduce the computation time, you can
 use the [-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax) and
 [-mask-sphere](#-mask-sphere-x0-y0-z0-r) arguments to create a mask
@@ -502,8 +513,10 @@ It may also help to vary the *size of the region* in the mask file using
 [dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)).
 (If you are using the "-mask" argument to load a mask image file,
 you can do this by creating a new mask file using *filter_mrc* again with the
-[-erode-gauss](#-erode-gauss-thickness) or
-[-dilate-gauss](#-dilate-gauss-thickness) arguments.)
+[-erosion](#-erosion-thickness),
+[-dilation](#-dilation-thickness),
+[-erosion-gauss](#-erosion-gauss-thickness), or
+[-dilation-gauss](#-dilation-gauss-thickness) arguments.)
 Eroding the mask can elimate traces of any structure at the edge
 of the mask boundary that might otherwise confuse or distract the detector.
 But, as mentioned earlier, dilating the mask is frequently more effective
@@ -536,7 +549,7 @@ that you want to detect.
 As with **-surface** argument, the edge detection fidelity
 can be improved using tensor voting (with the [-tv](#-tv-σ_ratio) argument).
 
-(Unless the "-w 1" argument was specified, then
+(Unless the ["-w 1"](#Voxel-Width) argument was specified, then
 the *thickness* parameter should be in units of physical distance,
 such as Angstroms, not in voxels.)
 
@@ -576,7 +589,7 @@ of the curve (in physical units).
 *As with surface detection, the curve detection fidelity
 can be improved using tensor voting (with the [-tv](#-tv-σ_ratio) argument).*
 
-(Unless the "-w 1" argument was specified,
+(Unless the ["-w 1"](#Voxel-Width) argument was specified,
 the *thickness* parameter should be in units of physical distance,
 such as Angstroms, not in voxels.)
 Also see the documentation for the [-surface](#-surface-type-thickness)
@@ -681,324 +694,6 @@ The *fraction* parameter should lie in the range from 0 to 1.
  with using lower values.  If the resulting surfaces are incomplete, it may help to increase this number and try again.)
 
 
-### -connect threshold
-
-The -connect argument is a simple voxel clustering tool
-used to distinguish different bright objects in the same image.
-
-This is a two-step process.
-First, all the voxels whose brightness exceeds *threshold* are selected.
-Then, this subset of voxels is partitioned into different "islands".
-"Islands" are defined as sets of voxels which are all
-physically adjacent to (touching) eachother.
-(The "bucket-fill" tool in a paint program behaves
- in a similar way to the way islands are chosen.
- The definition of "adjacency" can be controlled using the
- [-neighbor-connectivity](#-neighbor-connectivity-nc)
- argument.)
-
-Once membership of each island has been decided,
-a new image is generated showing which
-voxels belong to each island.
-(Note: This behavior is identical to the behavior of the
- ["*-watershed maxima*"](#-watershed-type)
- argument when used together with the
- ["*-watershed-threshold*"](#-watershed-threshold-threshold)
- argument.)
-
-*If the
-["-connect"](#-connect-threshold)
-argument is used together with the
-["-surface"](#Detecting-membranes)
-argument,*
-(which is typically used for membrane detection), then it means that additional,
-*more stringent* criteria will be used to distinguish nearby thin, curved
-membrane-like objects from each other.
-In particular, surfaces are assumed to be moderately smooth.
-This means that adjacent voxels with radically different orientations
-will never be grouped together.
-Only voxels with similar orientations will be grouped into connected surfaces.
-(The degree of similarity can be set by the user.)
-In this case, the "*threshold*" parameter determines how *membrane-like*
-a voxel must be in order for it to be included.
-If the *threshold* parameter is chosen carefully, then these
-different islands will hopefully correspond to different membranes
-in the original image.
-
-This *threshold* parameter will vary from image to image
-and
-[must be chosen carefully](#determining-the--connect-threshold-parameter).
-If the *threshold* parameter is too large,
-then individual objects (eg. membranes) in the image
-will be split into multiple pieces.  
-If too small, then separate objects in the image will be joined together.
-
-Because it often takes several iterations to choose the correct
-thresholds, it is recommended that you run *filter_mrc* once in advance
-to detect the membrane, saving your progress using the
-["-save-progress"](#-save-progress-FILENAME)
-argument.  *Then* when you are ready to connect the surfaces (or curves)
-together using the "-connect" argument, use the 
-["-load-progress"](#-load-progress-FILENAME)
-argument to load the directional features of the image that you measured earlier
-(to avoid having to recalculate them again).
-(This was demonstrated in [example 1](#Example-1) and [example 3](#Example-3).)
-
-*Note:* If you are unable to find thresholds which connect all of
-the pieces together correctly, you can also use the
-["**-must-link**"](#-must-link-FILE)
-argument.
-This will manually force different bright regions in the image
-to belong to the same cluster (a.k.a. "island".  See below.)
-
-
-
-#### Determining the -connect threshold parameter
-
-To choose the *threshold* parameter,
-run membrane-detection
-(for example using
-["-surface"](#Detecting-membranes)
-and
-["-tv"](#-tv-σ_ratio)
-)
-once in advance without the
-["-connect"](#-connect-threshold)
-argument
-with the
-["-save-progress"](#-save-progress-FILENAME)
-argument
-(as we did in the membrane-detection
-[example](#Example-1)).
-Open the file created during that step
-(eg. "membranes.rec") in IMOD.
-Find a place in this image where the saliency (brightness)
-of the membrane you are interested in is weak.
-Click on voxels located near the weakest point (a.k.a. "junction point",
-or "saddle point") between two different bright blobs
-corresponding to the *same* surface you are interested in.
-These two islands will not be joined unless the *-connect* argument
-is less than the weakest link connecting these two islands.
-(and even then, they might not be joined
- if the voxel orientations are dissimilar.)
-Select "Edit"->"Point"->"Value" menu option in IMOD to
-see the "saliency" (brightness) of that voxel.
-Do this several times in different places near the junction
-write down the largest "saliency" number.
-Then reduce this number by 20% (ie. multiply it by 0.8).
-This makes a good first guess for the "*-connect*" parameter.
-
-After using the "*-connect*" argument you can can
-open the REC/MRC file we created
-(eg "*membranes_clusters.rec*")
-in IMOD, and click on different voxels (using "Edit"->"Point"->"Value")
-to see whether the voxels were clustered correctly into the same object.
-The voxel brightness values in that image should be integers
-indicating which cluster they belong to
-(reverse-sorted by cluster size, starting at 1).
-
-If some clusters are too big, you can either increase the *threshold*
-value, *or* you can alter increase angular sensitivity by decreasing
-the [*-connect-angle*](#-connect-angle-theta) from 45 degrees to 25 degrees
-(or, equivalently by increasing the
-*-cts*,*-ctn*,*-cvn*, and *-cvs* parameters from 0.707 to, say 0.9).
-
-Because it will probably take several tries to choose these parameters,
-you can use the
-["-load-progress"](#-load-progress-FILENAME)
-argument to avoid having to recalculate the directional features
-of the image that you (hopefully) measured earlier.
-This was demonstrated in [example 3](#Example-3).
-
-Also: It is a bad idea to try this on the original full-sized tomogram image.
-1) Instead try this on one or more small cropped versions of the image
-near the junction points of interest.
-(You can crop images either by using IMOD,
- or by using the "crop_mrc" program distributed with *visfd*.)
-2) Again, you can also reduce the size and resolution of the image
-(during the detection process), using the ["-bin"](#-bin-binsize) argument.
-For example, using "-bin 2" will often also produce reasonable results
-and will reduce the computation time considerably.  Any features
-detected at reduced resolution will be scaled up in size accordingly
-(along with the voxel width).
-
-
-Make sure clustering was successful *before* attempting to
-close holes in the surface using programs like *meshlab* or *PoissonRecon*.
-
-
-### -must-link FILE
-
-*WARNING: This is an experimental feature. Please report bugs.*
-
-If the "**-connect**" argument fails, you can manually force
-different regions in the image to the same object
-by specifying a text file containing the locations of pairs of voxels
-that you wish to link together.  You must prepare this text file in advance.
-
-The coordinates of each voxel in the same connected group are listed
-on separate lines in the file (which is in ASCII format).
-Blank lines are used to separate voxels belonging to different objects.
-There are two different file formats supported.
-
-
-You can define links for many different objects in the image
-in a single file by using blank-lines between different objects.
-The following examples describe two *different* connected objects.
-(For example, two different membranes.)
-
-####  Example 1: *must-link* coordinates in units of voxels (from IMOD)
-
-*If* the coordinates are enclosed in round-parenthesis ()
-and separated by spaces, (as shown below)
-*then* it is assumed that these coordinates are in units of voxels,
-and should range from 1 to Nx, Ny, or Nz (which define the image size).
-
-Considering the following text file:
-```
-(16.5 77 73)
-(134 75 73)
-
-(141.083 83.0833 62)
-(123.833 133.333 64)
-```
-*(Note: You* ***must include spaces*** between each coordinate, 
-        even if commas are also present.)*
-
-This example describes two *different* connected objects
-(separated by a blank line).
-For each of these objects, all of the voxels connected to the
-first voxel (for example, near position 16.5, 77, 73)
-will be joined with all of the voxels connected to the second voxel
-(near position 134, 75, 73).
-The voxels in the last two lines of the file
-will be connected together as well.
-
-*(Note: When using this format, coordinates are assumed to begin at 1,
-       and are rounded down to the next lowest integer.
-       These coordinates do not have to lie exactly on the object you
-       are trying to segment.  Nearby voxels should work adequately well.)*
-
-**WARNING:** *Do not forget to put spaces between each integer (not commas).*
-
-#### Suggestion: *Use IMOD (3dmod)*
-
-The text above happens to be the text format printed by IMOD.
-If you view a tomogram using "*3dmod -S*",
-left-click anywhere on the image and press the "**F**" key,
-the coordinates where you clicked will be printed to the
-*3dmod* window in this format.
-(The yellow "+" cursor, if visible, denotes this location.)
-You can click on two places in the image that you want to link together.
-Then copy the two lines printed by IMOD into your text file.
-You can use this text file with the "**-must-link**" argument.  
-
-For convenience, you can copy the entire line of text printed by IMOD
-into your text file.  (This includes the commas and the
-extra text at the beginning and end of each line:
-such as "Pixel" and "=...".  This text will be ignored.)
-
-**WARNING:** *Remember to put blank lines between voxels that you *don't*
-              want to join together.  
-              (And be warned that, depending on your thresholds,
-               they may get joined anyway.)*
-
-
-####  Example 2: *must-link* coordinates in units of *physical distance*
-
-If no parenthesis are used, then it is assumed
-that the coordinates are in physical distance units (eg Angstroms).
-```
-379.68 1923.71 1822.46
-3366.5 1873.09 1822.46
-
-3543.68 2075.58 1544.03
-3088.06 3341.18 1594.66
-```
-As with the previous example,
-this example also describes two *different* connected objects.
-For each of these objects, all of the voxels connected to the
-first voxel (for example, at position 379.68,1923.71,1822.46)
-will be joined with all of the voxels connected to the second voxel
-(at position 3366.5,1873.09,1822.46).
-
-*(Note: When using this format, voxel positions begin at 0, not 1.)*
-
-
-
-### -select-cluster cluster-ID
-### -surface-normals-file PLY_FILE
-
-Once clustering is working, you can select one of the clusters using
-the "**-select-cluster**" argument.
-(Cluster-IDs are assigned in reverse order according to their size,
- beginning with the largest cluster, which has ID *1*.)
-You can create a file which contains a list of voxels locations
-(for the voxels belonging to that cluster),
-as well as their surface orientations
-using the "**-surface-normals-file**".
-The resulting file will be in .PLY format.
-This oriented point-cloud file can be used for further processing
-(for example for hole-repair using the "PoissonRecon" program).
-
-Note: Voxel coordinates in the point-cloud file are expressed
-in physical units (ie Angstroms), not voxels,
-Consequently they are not integers (unless the
-["-w 1"](#Voxel-Width)
-argument was used).
-
-
-### -connect-angle theta
-
-The *theta* argument determines how similar the
-orientations of each voxel must be in order for a pair of neighboring voxels
-to be merged into the same cluster (ie. the same membrane or same filament).
-Neighboring voxels whose orientations differ by more than *theta* will
-not be grouped into the same cluster (ie. the same surface or same curve).
-If not specified, the default value is assumed to be 45 degrees.
-However *theta* values from 15-60 degrees are common.
-
-Note: The *-connect-angle* argument has no effect unless the
-["-surface" and "-connect"](#Detecting-membranes) arguments are also supplied.
-
-#### -cts, -ctn, -cvs, -cvn
-
-*(Warning: This is an advanced experimental feature.
-These arguments can probably be ignored by most users.)*
-
-Alternatively, if you need more detailed control over the criteria
-used to decide whether to add voxels to an existing cluster,
-then you can specify 4 different thresholds using the
-"**-cts threshold**", "**-ctn threshold**",
-"**-cvs threshold**", and "**-cvn *threshold**" arguments.
-This is an *alternative* to (specifying the "**-connect-angle**" argument).
-
-
-Motivation and explanation:
-Ideally, if tensor-voting worked, then the results of tensor voting should
-agree with the actual direction of the features located at each voxel location.
-If not, then you can exclude these voxels from consideration.
-To do that, the "*-cts*" and "*-cvs*" threshold arguments specify
-the minimum similarity between the hessian of the image brightness with the
-tensor and vector features that resulted from tensor voting, respectively.
-Additionally, the tensors from *neighboring* voxels which are part of the
-same surface or curve should be poinging in the same direction.
-So the "*-ctn*" and "*-cvn*" threshold arguments specify is the
-minimum similarity between the orientations of the tensors and vectors
-from neighboring voxels, respectively.
-All of these threshold parameters should be in the range from -1 to 1.
-A *-cvn -threshold* value of 0.707 ≈ cos(45°) and corresponds to a
-45 degree difference between orientations of neighboring voxels.
-In that case, neighboring voxels pointing in directions which
-differ by more than 45° will be assigned to different clusters (membranes).
-(This works reasonably well for phospholipid membranes.)
-
-Note that the *-cts*, *-ctn*, *-cvs*, and *-cvn* arguments
-have no effect unless the ["-surface" and "-connect"](#Detecting-membranes)
-arguments are also in use.
-
-
-
 
 ## -save-progress FILENAME
 ## -load-progress FILENAME
@@ -1035,95 +730,6 @@ of surface features to certain regions inside the image, for example.
 (It makes sense to start using a mask now because
 [masks are not typically used during the initial stages of detection](#Surface-detection-and-masking).)
 
-
-
-
-### -find-minima and -find-maxima
-
-Usage:
-```
-  -find-minima  filename
-```
-or
-```
-  -find-maxima  filename
-```
-The **-find-minima** and **-find-maxima** arguments will
-create a file containing the locations of the where the voxel brightness is either a local minima or maxima, respectively.
-A "minima" is defined as one or more connected voxels
-(of identical brightness), surrounded on all sides by neighbors of higher brightness.
-(See below for details about which voxels are considered *"neighbors"*.)
-
-This will generate a text file indicating the location of the minima.
-This file is a 5-column ascii text file.
-Each file is a 5-column ascii text file with the following format:
-```
-x1 y1 z1 numVoxels1 brightness1
-x2 y2 z2 numVoxels2 brightness2
- :  :  :   :     :
-xM yM zM numVoxelsM brightnessM
-```
-The x,y,z coordinates of each minima or maxima are in the first 3 columns,
-followed by the number of voxels in the maxima or minima (which is usually 1), and finally
-it's "score" (which is the brightness of the voxel at that location).
-*(This format is nearly identical to the format used by the
-  "-blob",  "-blob-r",  "-blob-s" and "-draw-spheres" arguments.)*
-When a minima or maxima contains multiple voxels of identical brightness,
-the position of one of the voxels among them is chosen arbitrarily.
-
-You can use the
-["**-out filename.rec**"](#Input-and-Output-files)
-to create
-an image showing which voxels belong to each minima or maxima.
-(In that image, the voxel brightness will be an integer indicating
- the minima or maxima to which the voxel belongs, if any, starting at 1.  
- When both minima and maxima are
- displayed, the minima are represented by negative integers.)
-
-*Note:* By default, local minima and maxima which lie on the boundaries
-of the image (or on the boundary of the mask region), are considered.
-To ignore these extrema (ie, to consider only voxels which are surrounded
-by other voxels) use the "**-ignore-boundary-extrema**" argument.
-
-##### -neighbor-connectivity nc
-
-*Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
-surrounding the voxel are considered by default.
-The "*nc*" parameter represents the maximum squared distance a voxel can
-be from the center voxel in order for it to be considered a "neighbor".
-(You can use the **-neighbor-connectivity nc** argument to skip
- 3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
- This may increase the number of spurious local minima and maxima discovered.)
-
-
-#### Non-max suppression: automatic disposal of minima or maxima
-
-The "**-find-minima**" and "**-find-maxima**" arguments
-are sometimes used together with the following arguments:
-```
-  -minima-threshold   threshold
-```
-or
-```
-  -maxima-threshold   threshold
-```
-This allows users to discard poor scoring minima (or maxima),
-whose "scores" (brightnesses) do not fall below (or above) "threshold".
-
-It may also be useful to discard minima which are too close together.
-This can be done using a combination of these two arguments:
-```
-  -radii    radius
-```
-and
-```
-  -radial-separation  ratio
-```
-The "**-radii** argument allows you to assign a radius for all the minima
-(or maxima).  When used together with "**-radial-separation**", it means that
-if a pair of minima (or maxima) lie within the sum of their
-radii times ratio (*2\*radius\*ratio*),
-then the poorer scoring minima will be discarded.
 
 
 
@@ -1247,8 +853,9 @@ because it can accelerate the search for blobs (by ignoring voxels outside
 the mask). However don't do this if you care about blobs near the periphery.
 Alternatively, to get around this problem you can dilate (expand) the size
 of the mask region to include these voxels near the periphery.
-*(One way to do this is using the 
-[-dilate-gauss](#-dilate-gauss-thickness) argument.)*
+*(One way to do this is using the
+[-dilation](#-dilation-thickness) or
+[-dilation-gauss](#-dilation-gauss-thickness) arguments.)*
 
 
 #### Non-max suppression: automatic disposal of blobs
@@ -1288,8 +895,6 @@ and
 [**-max-volume-overlap-small**](#Automatic-disposal-of-overlapping-blobs)
 arguments).
 
-
-
 #### Recommendation:
 
 Blob-detection is computationally expensive,
@@ -1310,8 +915,184 @@ arguments, perhaps several times with different thresholds)
 
 
 
+# Morphology
 
-## Segmentation
+### -erosion thickness
+### -dilation thickness
+
+This will apply a *grayscale*
+[image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
+[image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
+filter to your image.  This will enlarge the
+[bright](https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation)
+or
+[dark](https://en.wikipedia.org/wiki/Erosion_(morphology)#Grayscale_erosion)
+regions in the image appear by a distance of *thickness*, respectively
+(which is in physical units, not voxels, unless the
+[-w 1](#Voxel-Width) argument is used).
+*(Details: A spherical structure-factor with radius=thickness is used.)*
+
+Image dilation and erosion are useful for erasing or emphasizing
+features (or noise) in the image that are in a given size range.
+Dilation and erosion are also very useful to modify an image that
+you eventually intend to use with the "-mask" argument
+(in a future invocation of filter_mrc).
+Recall that a *mask image* is a 3-D image used with the
+["**-mask**"](#-mask-MRC_FILE) argument.
+The brightness value of each voxel in a mask image is typically either 0 or 1
+*(depending on whether the voxel is supposed to be
+ignored or considered during subsequent calculations)*.
+
+
+***WARNING:*** Dilation and erosion are slow for large *thickness* parameters.
+If you have a binary image (images whose voxels have brightnesses of
+either 0 or 1), you can use "-dilation-binary" or "-erosion-binary" instead.
+*(<--NOTE: THIS FEATURE IS NOT IMPLEMENTED YET. -A 2021-7-11.)*
+For binary images, you can also use the Gaussian dilation and erosion
+method, which is even faster, using the
+[-dilation-gauss](#-dilation-gauss-thickness) and
+[-erosion-gauss](#-erosion-gauss-thickness)
+arguments.
+*(For additional morphological filter operations, see
+[dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.dilation)
+[erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.erosion)
+[binary_dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_dilation)
+[binary_erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_erosion)
+from
+[scikit-image](https://scikit-image.org),
+along with the
+[mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
+module.)*
+
+
+### -opening thickness
+### -closing thickness
+
+This will apply a *grayscale*
+[image opening](https://en.wikipedia.org/wiki/Opening_(morphology)) and
+[image closing](https://en.wikipedia.org/wiki/Closing_(morphology))
+filter to your image.
+The morphological opening of an image is defined as an
+[erosion followed by a dilation](https://scikit-image.org/docs/dev/api/skimage.morphology.html#skimage.morphology.opening).
+Opening removes small objects, while closing removes small holes.
+The size of the objects removed is determined by the *thickness* parameter
+(which is in physical units, not voxels, unless the
+[-w 1](#Voxel-Width) argument is used).
+*(Details: A spherical structure-factor with radius=thickness is used.)*
+
+
+### -erosion-gauss thickness
+### -dilation-gauss thickness
+
+This is a fast and crude implementation of
+[image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
+[image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
+that uses fast Gaussian filters to blur an image, followed by thresholding.
+The **-dilation-gauss** and **-erosion-gauss** arguments will enlarge
+or shrink the size of the region stored in a binary image by
+a distance of roughly *thickness* (which has units of physical distance
+unless the ["-w 1"](#Voxel-Width) argument is used).
+Note that, due to blurring, features in the image which are smaller or
+narrower than *thickness* will be lost after this operation is completed.
+
+#### Details
+This is implemented by blurring the image, and then applying a threshold
+so that all voxels whose brightness are below a threshold are discarded.
+Consequently, you cannot combine these arguments with either the *-gauss*
+or *-thresh* arguments, because:
+
+- "-dilation-gauss *thickness*" is equivalent to
+"-gauss *thickness* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
+- "-erosion-gauss *thickness*" is equivalent to
+"-gauss *thickness* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
+
+These thresholds were chosen so that the selected region
+expands or shrinks by a distance of *thickness*.
+(But, technically, this is only true near a flat boundary.)
+
+
+
+### -find-minima and -find-maxima
+
+Usage:
+```
+  -find-minima  filename
+```
+or
+```
+  -find-maxima  filename
+```
+The **-find-minima** and **-find-maxima** arguments will
+create a file containing the locations of the where the voxel brightness is either a local minima or maxima, respectively.
+A "minima" is defined as one or more connected voxels
+(of identical brightness), surrounded on all sides by neighbors of higher brightness.
+(See below for details about which voxels are considered *"neighbors"*.)
+
+This will generate a text file indicating the location of the minima.
+This file is a 5-column ascii text file.
+Each file is a 5-column ascii text file with the following format:
+```
+x1 y1 z1 numVoxels1 brightness1
+x2 y2 z2 numVoxels2 brightness2
+ :  :  :   :     :
+xM yM zM numVoxelsM brightnessM
+```
+The x,y,z coordinates of each minima or maxima are in the first 3 columns,
+followed by the number of voxels in the maxima or minima (which is usually 1), and finally
+it's "score" (which is the brightness of the voxel at that location).
+*(This format is nearly identical to the format used by the
+  "-blob",  "-blob-r",  "-blob-s" and "-draw-spheres" arguments.)*
+When a minima or maxima contains multiple voxels of identical brightness,
+the position of one of the voxels among them is chosen arbitrarily.
+
+You can use the
+["**-out filename.rec**"](#Input-and-Output-files)
+to create
+an image showing which voxels belong to each minima or maxima.
+(In that image, the voxel brightness will be an integer indicating
+ the minima or maxima to which the voxel belongs, if any, starting at 1.
+ When both minima and maxima are
+ displayed, the minima are represented by negative integers.)
+
+*Note:* By default, local minima and maxima which lie on the boundaries
+of the image (or on the boundary of the mask region), are considered.
+To ignore these extrema (ie, to consider only voxels which are surrounded
+by other voxels) use the "**-ignore-boundary-extrema**" argument.
+
+
+#### Non-max suppression: automatic disposal of minima or maxima
+
+The "**-find-minima**" and "**-find-maxima**" arguments
+are sometimes used together with the following arguments:
+```
+  -minima-threshold   threshold
+```
+or
+```
+  -maxima-threshold   threshold
+```
+This allows users to discard poor scoring minima (or maxima),
+whose "scores" (brightnesses) do not fall below (or above) "threshold".
+
+It may also be useful to discard minima which are too close together.
+This can be done using a combination of these two arguments:
+```
+  -radii    radius
+```
+and
+```
+  -radial-separation  ratio
+```
+The "**-radii** argument allows you to assign a radius for all the minima
+(or maxima).  When used together with "**-radial-separation**", it means that
+if a pair of minima (or maxima) lie within the sum of their
+radii times ratio (*2\*radius\*ratio*),
+then the poorer scoring minima will be discarded.
+
+
+
+
+# Segmentation
 
 ### -watershed type
 
@@ -1399,9 +1180,360 @@ When this argument is included, these voxels will have intensities
 which are assigned to *label* instead.  (This parameter is a number.)
 
 
+### -neighbor-connectivity nc
+
+*Note:* When searching neighboring voxels, all 26 neighbors (3x3x3-1)
+surrounding the voxel are considered by default.
+The "*nc*" parameter represents the maximum squared distance a voxel can
+be from the center voxel in order for it to be considered a "neighbor".
+(You can use the **-neighbor-connectivity nc** argument to skip
+ 3D corner voxels by setting nc=2, and also 2D corners by setting nc=1.
+ This may increase the number of spurious local minima and maxima discovered.)
 
 
-## General filters:
+
+### -connect threshold
+
+The -connect argument is a voxel clustering tool
+used to distinguish different bright objects in the same image.
+This argument will cluster nearby (adjacent) bright voxels
+*(or voxels with high "saliency")* into separate islands and then
+generate a new image showing *which* island each voxel belongs to (if any).
+
+
+This is a two-step process.
+First, all the voxels whose brightness exceeds *threshold* are selected.
+Then, this subset of voxels is partitioned into different "islands".
+"Islands" are defined as sets of voxels which are all
+physically adjacent to (touching) eachother.
+(The definition of "adjacency" can be controlled using the
+[-neighbor-connectivity](#-neighbor-connectivity-nc)
+argument.)
+
+Once membership of each island has been decided,
+a new image is generated showing which
+voxels belong to each island.
+(Note: This behavior is identical to the behavior of the
+["*-watershed maxima*"](#-watershed-type)
+argument when used together with the
+["*-watershed-threshold*"](#-watershed-threshold-threshold)
+argument.  However the "-connect" argument has additional options.)
+
+*If the
+["-connect"](#-connect-threshold)
+argument is used together with the
+["-surface"](#Detecting-membranes)
+argument,*
+(which is typically used for membrane detection), then it means that additional,
+*more stringent* criteria will be used to distinguish nearby thin, curved
+membrane-like objects from each other.
+In that case, it is not the brightness of the voxel that matters, but its
+*saliency* (a number indicating how closely the region near the voxel resembles
+the feature you are trying to detect, like a curve, surface, or edge).
+In order for two neighboring voxels to be in the same island, they must
+both have high saliency above the *threshold* parameter specified by the user.
+In this case, the "*threshold*" parameter determines how *membrane-like*
+a voxel must be in order for it to be included.
+If the *threshold* parameter is chosen carefully, then these
+different islands will hopefully correspond to different membranes
+in the original image.
+
+This *threshold* parameter will vary from image to image
+and
+[must be chosen carefully](#determining-the--connect-threshold-parameter).
+If the *threshold* parameter is too large,
+then individual objects (eg. membranes) in the image
+will be split into multiple pieces.
+If too small, then separate objects in the image will be joined together.
+
+Because it often takes several iterations to choose the correct
+thresholds, it is recommended that you run *filter_mrc* once in advance
+to detect the membrane, saving your progress using the
+["-save-progress"](#-save-progress-FILENAME)
+argument.  *Then* when you are ready to connect the surfaces (or curves)
+together using the "-connect" argument, use the 
+["-load-progress"](#-load-progress-FILENAME)
+argument to load the directional features of the image that you measured earlier
+(to avoid having to recalculate them again).
+(This was demonstrated in [example 1](#Example-1) and [example 3](#Example-3).)
+
+*Note:* If you are unable to find thresholds which connect all of
+the pieces together correctly, you can also use the
+["**-must-link**"](#-must-link-FILE)
+argument.
+This will manually force different bright regions in the image
+to belong to the same cluster (a.k.a. "island".  See below.)
+
+#### Clustering based on directional similarity
+
+Some detection methods (including surface, edge, and curve detectors)
+also report *directional* features in the image (such as the curve
+direction or the surface normal direction at each location in the image).
+*(Tensor attributes, such as the second derivative (Hessian),
+are also reported.)*
+The clustering algorithm used here is aware of any directional
+*(as well as tensor)* attributes of the voxels (if applicable).
+
+These directional attributes can be used to increase clustering sensitivity.
+Directional information can be used distinguish different objects from
+each other that are otherwise touching and might be grouped together.
+For example, curves and surfaces are assumed to be moderately smooth.
+You can prevent adjacent voxels with radically different
+orientations from being grouped together (even if they both have high saliency).
+This way, only voxels with similar orientations will be grouped into
+connected surfaces.  (The degree of similarity can be set by the user
+using the [*-connect-angle*](#-connect-angle-theta) argument.)
+This strategy was used in [example 3](#Example-3).
+
+#### Determining the -connect threshold parameter
+
+Let's assume you are using the "-surface" argument to detect thin
+membrane-like surfaces in an image.
+To choose the *threshold* parameter,
+run membrane-detection
+(for example using
+["-surface"](#Detecting-membranes)
+and
+["-tv"](#-tv-σ_ratio)
+)
+once in advance without the
+["-connect"](#-connect-threshold)
+argument
+with the
+["-save-progress"](#-save-progress-FILENAME)
+argument
+(as we did in the membrane-detection
+[example](#Example-1)).
+Open the file created during that step
+(eg. "membranes.rec") in IMOD.
+Find a place in this image where the saliency (brightness)
+of the membrane you are interested in is weak.
+Click on voxels located near the weakest point (a.k.a. "junction point",
+or "saddle point") between two different bright blobs
+corresponding to the *same* surface you are interested in.
+These two islands will not be joined unless the *-connect* argument
+is less than the weakest link connecting these two islands.
+(and even then, they might not be joined
+ if the voxel orientations are dissimilar.)
+Select "Edit"->"Point"->"Value" menu option in IMOD to
+see the "saliency" (brightness) of that voxel.
+Do this several times in different places near the junction
+write down the largest "saliency" number.
+Then reduce this number by 20% (ie. multiply it by 0.8).
+This makes a good first guess for the "*-connect*" parameter.
+
+After using the "*-connect*" argument you can can
+open the REC/MRC file we created
+(eg "*membranes_clusters.rec*")
+in IMOD, and click on different voxels (using "Edit"->"Point"->"Value")
+to see whether the voxels were clustered correctly into the same object.
+The voxel brightness values in that image should be integers
+indicating which cluster they belong to
+(reverse-sorted by cluster size, starting at 1).
+
+If some clusters are too big, you can either increase the *threshold*
+value, *or* you can alter increase angular sensitivity by reducing the
+[*-connect-angle*](#-connect-angle-theta) from 45 degrees to 15 degrees
+(or, equivalently by increasing the
+*-cts*,*-ctn*,*-cvn*, and *-cvs* thresholds from 0.707 to 0.966).
+
+Because it will probably take several tries to choose these parameters,
+you can use the
+["-load-progress"](#-load-progress-FILENAME)
+argument to avoid having to recalculate the directional features
+of the image that you (hopefully) measured earlier.
+This was demonstrated in [example 3](#Example-3).
+
+Also: It is a bad idea to try this on the original full-sized tomogram image.
+1) Instead try this on one or more small cropped versions of the image
+near the junction points of interest.
+(You can crop images either by using IMOD,
+ or by using the "crop_mrc" program distributed with *visfd*.)
+2) Again, you can also reduce the size and resolution of the image
+(during the detection process), using the ["-bin"](#-bin-binsize) argument.
+For example, using "-bin 2" will often also produce reasonable results
+and will reduce the computation time considerably.  Any features
+detected at reduced resolution will be scaled up in size accordingly
+(along with the voxel width).
+
+Make sure clustering was successful *before* attempting to
+close holes in the surface using programs like *meshlab* or *PoissonRecon*.
+
+
+### -must-link FILE
+
+*WARNING: This is an experimental feature. Please report bugs.*
+
+If the "**-connect**" argument fails, you can manually force
+different regions in the image to the same object
+by specifying a text file containing the locations of pairs of voxels
+that you wish to link together.  You must prepare this text file in advance.
+
+The coordinates of each voxel in the same connected group are listed
+on separate lines in the file (which is in ASCII format).
+Blank lines are used to separate voxels belonging to different objects.
+There are two different file formats supported.
+
+
+You can define links for many different objects in the image
+in a single file by using blank-lines between different objects.
+The following examples describe two *different* connected objects.
+(For example, two different membranes.)
+
+####  Example 1: *must-link* coordinates in units of voxels (from IMOD)
+
+*If* the coordinates are enclosed in round-parenthesis ()
+and separated by spaces, (as shown below)
+*then* it is assumed that these coordinates are in units of voxels,
+and should range from 1 to Nx, Ny, or Nz (which define the image size).
+
+Considering the following text file:
+```
+(16.5 77 73)
+(134 75 73)
+
+(141.083 83.0833 62)
+(123.833 133.333 64)
+```
+*(Note: You* ***must include spaces*** between each coordinate,
+even if commas are also present.)*
+
+This example describes two *different* connected objects
+(separated by a blank line).
+For each of these objects, all of the voxels connected to the
+first voxel (for example, near position 16.5, 77, 73)
+will be joined with all of the voxels connected to the second voxel
+(near position 134, 75, 73).
+The voxels in the last two lines of the file
+will be connected together as well.
+
+*(Note: When using this format, coordinates are assumed to begin at 1,
+       and are rounded down to the next lowest integer.
+       These coordinates do not have to lie exactly on the object you
+       are trying to segment.  Nearby voxels should work adequately well.)*
+
+**WARNING:** *Do not forget to put spaces between each integer (not commas).*
+
+#### Suggestion: *Use IMOD (3dmod)*
+
+The text above happens to be the text format printed by IMOD.
+If you view a tomogram using "*3dmod -S*",
+left-click anywhere on the image and press the "**F**" key,
+the coordinates where you clicked will be printed to the
+*3dmod* window in this format.
+(The yellow "+" cursor, if visible, denotes this location.)
+You can click on two places in the image that you want to link together.
+Then copy the two lines printed by IMOD into your text file.
+You can use this text file with the "**-must-link**" argument.
+
+For convenience, you can copy the entire line of text printed by IMOD
+into your text file.  (This includes the commas and the
+extra text at the beginning and end of each line:
+such as "Pixel" and "=...".  This text will be ignored.)
+
+**WARNING:**
+*Remember to put blank lines between voxels that you *don't* want to join
+together. (And be warned that, depending on your thresholds,
+they may get joined anyway.)*
+
+
+####  Example 2: *must-link* coordinates in units of *physical distance*
+
+If no parenthesis are used, then it is assumed
+that the coordinates are in physical distance units (eg Angstroms).
+```
+379.68 1923.71 1822.46
+3366.5 1873.09 1822.46
+
+3543.68 2075.58 1544.03
+3088.06 3341.18 1594.66
+```
+As with the previous example,
+this example also describes two *different* connected objects.
+For each of these objects, all of the voxels connected to the
+first voxel (for example, at position 379.68,1923.71,1822.46)
+will be joined with all of the voxels connected to the second voxel
+(at position 3366.5,1873.09,1822.46).
+
+*(Note: When using this format, voxel positions begin at 0, not 1.)*
+
+
+
+### -select-cluster cluster-ID
+### -surface-normals-file PLY_FILE
+
+Once clustering is working, you can select one of the clusters using
+the "**-select-cluster**" argument.
+(Cluster-IDs are assigned in reverse order according to their size,
+ beginning with the largest cluster, which has ID *1*.)
+You can create a file which contains a list of voxels locations
+(for the voxels belonging to that cluster),
+as well as their surface orientations
+using the "**-surface-normals-file**".
+The resulting file will be in .PLY format.
+This oriented point-cloud file can be used for further processing
+(for example for hole-repair using the "PoissonRecon" program).
+
+Note: Voxel coordinates in the point-cloud file are expressed
+in physical units (ie Angstroms), not voxels,
+Consequently they are not integers (unless the
+["-w 1"](#Voxel-Width) argument was used).
+
+
+### -connect-angle theta
+
+The *theta* argument determines how similar the
+orientations of each voxel must be in order for a pair of neighboring voxels
+to be merged into the same cluster (ie. the same membrane or same filament).
+Neighboring voxels whose orientations differ by more than *theta* will
+not be grouped into the same cluster (ie. the same surface or same curve).
+If not specified, the default value is assumed to be 45 degrees.
+However *theta* values from 15-60 degrees are common.
+
+Note: The *-connect-angle* argument has no effect unless the
+["-surface" and "-connect"](#Detecting-membranes) arguments are also supplied.
+
+#### -cts, -ctn, -cvs, -cvn
+
+*(Warning: This is an advanced experimental feature.
+These arguments can probably be ignored by most users.)*
+
+Alternatively, if you need more detailed control over the criteria
+used to decide whether to add voxels to an existing cluster,
+then you can specify 4 different thresholds using the
+"**-cts threshold**", "**-ctn threshold**",
+"**-cvs threshold**", and "**-cvn *threshold**" arguments.
+This is an *alternative* to (specifying the "**-connect-angle**" argument).
+
+
+Motivation and explanation:
+Ideally, if tensor-voting worked, then the results of tensor voting should
+agree with the actual direction of the features located at each voxel location.
+If not, then you can exclude these voxels from consideration.
+To do that, the "*-cts*" and "*-cvs*" threshold arguments specify
+the minimum similarity between the hessian of the image brightness with the
+tensor and vector features that resulted from tensor voting, respectively.
+Additionally, the tensors from *neighboring* voxels which are part of the
+same surface or curve should be poinging in the same direction.
+So the "*-ctn*" and "*-cvn*" threshold arguments specify is the
+minimum similarity between the orientations of the tensors and vectors
+from neighboring voxels, respectively.
+All of these threshold parameters should be in the range from -1 to 1.
+A *-cvn -threshold* value of 0.707 ≈ cos(45°) and corresponds to a
+45 degree difference between orientations of neighboring voxels.
+In that case, neighboring voxels pointing in directions which
+differ by more than 45° will be assigned to different clusters (membranes).
+(This works reasonably well for phospholipid membranes.)
+
+Note that the *-cts*, *-ctn*, *-cvs*, and *-cvn* arguments
+have no effect unless the ["-surface" and "-connect"](#Detecting-membranes)
+arguments are also in use.
+
+
+
+
+
+# Filters
 
 ### -gauss and -ggauss
 The **-gauss** and **-gauss-aniso** arguments must be followed by one or more numbers specifying the width of the Gaussian filter to apply to your image:
@@ -1447,177 +1579,11 @@ and
 ["-truncate"](#Filter-Size)
 arguments if necessary (see below).
 
-### -dog
-When the "**-dog**" or "**-dog-aniso**" filter is selected, a
-[Difference-of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
-filter will be used.
-The **-dog** and **-dog-aniso** arguments must be followed by numbers indicating the width of the Gaussians you wish to convolve with your image.
-(Equivalently, the numbers indicate the band of frequencies you wish to keep from your original image.)
-```
-  -dog  a  b
-```
-or:
-```
-  -dog-aniso  a_x  a_y  a_z  b_x  b_y  b_z
-```
-In either case,
-The original image will be convolved with the following function:
-```
-  h(x,y,z) =   A*exp(-0.5 * ((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
-             - B*exp(-0.5 * ((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
-```
-When *-dog* is used,
-*a_x = a_y = a_z = a*
-and
-*b_x = b_y = b_z = b*
-
-
-### LoG filters
-### -log, -log-r, -log-d, and -log-aniso
-
-
-When the "**-log**", "**-log-r**", and "**-log-d**", or "**-log-aniso**"
-arguments are selected, a
-[Laplacian-of-a-Gaussian (LoG)](https://en.wikipedia.org/wiki/Blob_detection)
-filter is applied on the source image.
-(See implementation details below.)
-The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
-(whose width is specified by the user),
-and then calculates the Laplacian of the result.
-Features in the image of various sizes can be emphasized
-using this kind of filter, and the result can be saved as a new image using
-["**-out** filename.rec"](#Input-and-Output-files).
-The "**-log**", "**-log-aniso**", "**-log-r**", and "**-log-d**"
-arguments described here are typically only chosen when the user already
-knows the approximate size of the features they want to emphasize
-in the image.
-```
-    -log  σ
-```
-When "**-log  σ**" is used, a LoG filter will be applied
-to the image using a Gaussian width (σ).
-Alternatively, if the user wishes to specify the actual size
-(the radius or diameter) of the objects they want to emphasize,
-then they can (equivalently) use
-```
-    -log-r radius
-```
-or
-```
-    -log-d diameter
-```
-instead.
-There is also an anisotropic version of this filter as well:
-```
-    -log-aniso  σ_x  σ_y  σ_z**
-```
-The new image which is generated will *tend* to have have bright and dark spots
-wherever bright and dark objects of the corresponding size can be found.
-This image can be searched for (local) minima and maxima
-by running this program again on the new image using the
-"**-find-minima**", "**-find-maxima**" and "-radial-separation" arguments.
-These locations can be saved to a file and then a new anotated image can be
-created using the
-["**-draw-spheres**"](#-draw-spheres-filename)
-argument.  This provides a fast, sloppy,
-and unselective way to search for features in an image.
-However scale-free
-[**blob detection**](https://en.wikipedia.org/wiki/Blob_detection)
-is a more robust (and computationally expensive) way to detect objects
-of a given size within an image.
-
-*(Implementation note: The LoG filter described here is approximated internally
- using a DoG filter. You can control the accuracy of this approximation using
- the
- ["-dog-delta δ"](#Implementation-of-LoG-filters-and-blob-detectors)
- argument.)
-
-
-
-### -fluct and -fluct-aniso
-Usage:
-```
-  fluct  r
-```
-The "**-fluct**" filter calculates the magnitude of
-the voxel intensity fluctuations relative to their local surroundings.
-This is useful for finding regions in an image with nearly uniform brightness
-and regions whose brightness fluctuates wildly.
-*r* is the effective search radius.
-
-To compute this, near every voxel, a Gaussian-weighted average
-intensity is computed with the same effective radius, *r*.
-A Gaussian-weighted squared-difference between all the nearby voxel intensities
-and this local average intensity is also computed.
-A new image is generated whose voxel intensities equal this
-local average squared difference intensity of nearby voxels.
-
-The "**-fluct-aniso**" variant allows the user to control the width
-of the Gaussian independently in the x,y,z directions:
-```
-  fluct-aniso   r_x  r_y  r_z
-```
-#### Implementation detail:
- The width of the Gaussian, σ, is chosen so that the effective
- number of voxels under the 3D Gaussian,
- (which can be interpreted as the 3D integral of the unnormalized 3D Gaussian,
- (2\*π\*σ^2)^(3/2))
- equals the volume of a sphere of radius r
- (4/3)\*π\*r^3.
- This yields σ=(9π/2)^(-1/6)r.
-
- It might seem more straightforward to simply consider the fluctuations in
- brightnesses of all of the voxels which lie within a fixed radius from
- each target voxel.  However using Gaussian weighted averages instead
- accomplishes essentially the same goal and is much more
- [computationally efficient](https://en.wikipedia.org/wiki/Separable_filter).
-
- If you prefer, instead of using a Gaussian, you can instead perform the
- fluctuation calculation over a hard spherical region by using the
- "-exponent n" argument.
- (This parameter is 2 by default.  Changing it will slow down the calculation.)
- As n is increased, the region over which the fluctuations in brightness
- are calculated becomes more and more like a uniform sphere with radius σ.
- (So if you do this, be sure to multiply your radius argument, r,
-  by (9π/2)^(1/6)≈1.5549880806696572 to compensate.)
-
-
-## Resizing the image
-
-### -bin binsize
-
-Reduce the resolution of the image in each direction by a factor of *binsize*.
-(*binsize* must be a positive integer.)
-The new image will be smaller in each direction by a factof of *binsize*.
-
-Motivation: Reducing the resolution of an image can often dramatically
-reduce the computation time necessary to detect objects in the image.
-If you are detecting features in the image (such as membranes or blobs)
-that are significantly larger (or thicker) than the voxel width,
-then a reduction in resolution by a factor of 2 or so
-should not effect your ability to detect it accurately,
-(and could make tensor voting up to 64 times faster (as of 2021-6-21)).
-
-Note that you can use this argument together with other arguments.
-If you do that, the reduction of resolution occurs before all
-other operations are performed (such as "-blob" or "-surface" detection).
-This allows you to reduce the image size before
-these other expensive calculations are performed.
-
-Note that the width of each voxel will be increased accordingly,
-so that the positions of any features in the image that you detect
-should not be significantly effected by the change in resolution.
-(This includes the coordinates of the surface mesh.)
-Similarly, when using "-bin", the user does not need to alter
-any of the other parameters or arguments passed to the program
-(such as the thickness parameters or sigma parameters
-that characterize the size of the objects they want to detect).
-The software will automatically adjust these parameters
-to compensate for the change in image resolution.
-
-
-
-
+Note: By default, the image blurring that results from applying a
+Gaussian filter is adjusted near the image boundary (or *mask* boundary)
+so that the average brightness there is not effected.
+This can be disabled using the
+[-normalize-filters no](#-normalize-filters-yes/no) argument.
 
 ## Thresholding, Clipping and Rescaling (Intensity Map Filters):
 
@@ -1631,17 +1597,6 @@ They can also be used to select only voxels whose intensities lie within
 a narrow range of interest.
 
 *Note:* All threshold operations are performed *after* normal filtering operations have been applied (such as -gauss, -dog, -dogg, -fluct, or -log filters).
-
-### -invert
-
-This filter replaces bright voxels with dark ones, and visa versa,
-while keeping the average voxel brightness the same.
-(To calculate the new voxel intensity,
- the *difference* between the original voxel intensity
- and the average intensity is *subtracted* from the average intensity.)
-Inverting an image can be useful to prepare files which you plan
-to read with other programs (such as ChimeraX and IMOD).
-
 
 
 
@@ -1680,15 +1635,32 @@ image voxel intensities in the final image
 will be shifted and rescaled so that the
 minimum and maximum voxel intensities will be *outA* and *outB*.
 
-*(Note: As of 2018-6-30, the "Black" and "White" controls in *IMOD*
-  report values between 0 and 255, even if the actual voxel brightnesses
-  in the file are floating point numbers (between 0 and 1, for example).
-  Ignore those numbers.
-  You can find the brightness of a particular voxel by left-clicking
-  on that voxel (to move the yellow-cursor)
-  and then by selecting the "Edit"->"Point"->"Value" menu option within IMOD.
-  You can also use the "histogram_mrc.py" script to
-  see if your intensity values in the image lie in the range you expect.)*
+*(Note: You can use the "histogram_mrc.py" script to
+see if your intensity values in the image lie in the range you expect.
+You can find the brightness of a particular voxel in IMOD (3dmod)
+by left-clicking on that voxel (to move the yellow-cursor), and then by
+selecting the "Edit"->"Point"->"Value" menu option (or pressing the "F" key).
+However, for 8-bit MRC files, IMOD/3dmod will report the brightness values
+as unsigned integers between 0-255, shifting the brightness values upwards
+to avoid negative values.  So if you have an 8-bit MRC or REC
+file, you should use IMOD's "newstack" program to convert the image into 32-bit
+floats using "newstack -input mask_file.rec -output new_file.rec -mode 2".
+Then use 3dmod to view the 32-bit version of the image, the brightness values
+should be reported correctly.)
+
+
+
+### -invert
+
+This filter replaces bright voxels with dark ones, and visa versa,
+while keeping the average voxel brightness the same.
+(To calculate the new voxel intensity,
+ the *difference* between the original voxel intensity
+ and the average intensity is *subtracted* from the average intensity.)
+Inverting an image can be useful to prepare files which you plan
+to read with other programs (such as ChimeraX and IMOD).
+
+
 
 
 ### -clip a b
@@ -1916,9 +1888,181 @@ centered around *x0* with standard deviation σ.
        resulting voxel intensities from outA to outB (instead of from 0 to 1).*
 
 
+### -dog
+When the "**-dog**" or "**-dog-aniso**" filter is selected, a
+[Difference-of-Gaussians](https://en.wikipedia.org/wiki/Difference_of_Gaussians)
+filter will be used.
+The **-dog** and **-dog-aniso** arguments must be followed by numbers indicating the width of the Gaussians you wish to convolve with your image.
+(Equivalently, the numbers indicate the band of frequencies you wish to keep from your original image.)
+```
+  -dog  a  b
+```
+or:
+```
+  -dog-aniso  a_x  a_y  a_z  b_x  b_y  b_z
+```
+In either case,
+The original image will be convolved with the following function:
+```
+  h(x,y,z) =   A*exp(-0.5 * ((x/a_x)^2 + (y/a_y)^2 + (z/a_z)^2))
+             - B*exp(-0.5 * ((x/b_x)^2 + (y/b_y)^2 + (z/b_z)^2))
+```
+When *-dog* is used,
+*a_x = a_y = a_z = a*
+and
+*b_x = b_y = b_z = b*
 
 
-## Annotation of detected objects in an image
+### LoG filters
+### -log, -log-r, -log-d, and -log-aniso
+
+
+When the "**-log**", "**-log-r**", and "**-log-d**", or "**-log-aniso**"
+arguments are selected, a
+[Laplacian-of-a-Gaussian (LoG)](https://en.wikipedia.org/wiki/Blob_detection)
+filter is applied on the source image.
+(See implementation details below.)
+The Laplacian-of-a-Gaussian filter applies a Gaussian blur to the image
+(whose width is specified by the user),
+and then calculates the Laplacian of the result.
+Features in the image of various sizes can be emphasized
+using this kind of filter, and the result can be saved as a new image using
+["**-out** filename.rec"](#Input-and-Output-files).
+The "**-log**", "**-log-aniso**", "**-log-r**", and "**-log-d**"
+arguments described here are typically only chosen when the user already
+knows the approximate size of the features they want to emphasize
+in the image.
+```
+    -log  σ
+```
+When "**-log  σ**" is used, a LoG filter will be applied
+to the image using a Gaussian width (σ).
+Alternatively, if the user wishes to specify the actual size
+(the radius or diameter) of the objects they want to emphasize,
+then they can (equivalently) use
+```
+    -log-r radius
+```
+or
+```
+    -log-d diameter
+```
+instead.
+There is also an anisotropic version of this filter as well:
+```
+    -log-aniso  σ_x  σ_y  σ_z**
+```
+The new image which is generated will *tend* to have have bright and dark spots
+wherever bright and dark objects of the corresponding size can be found.
+This image can be searched for (local) minima and maxima
+by running this program again on the new image using the
+"**-find-minima**", "**-find-maxima**" and "-radial-separation" arguments.
+These locations can be saved to a file and then a new anotated image can be
+created using the
+["**-draw-spheres**"](#-draw-spheres-filename)
+argument.  This provides a fast, sloppy,
+and unselective way to search for features in an image.
+However scale-free
+[**blob detection**](https://en.wikipedia.org/wiki/Blob_detection)
+is a more robust (and computationally expensive) way to detect objects
+of a given size within an image.
+
+*(Implementation note: The LoG filter described here is approximated internally
+ using a DoG filter. You can control the accuracy of this approximation using
+ the
+ ["-dog-delta δ"](#Implementation-of-LoG-filters-and-blob-detectors)
+ argument.)
+
+
+
+### -fluct and -fluct-aniso
+Usage:
+```
+  -fluct  r
+```
+The "**-fluct**" filter calculates the magnitude of
+the voxel intensity fluctuations relative to their local surroundings.
+This is useful for finding regions in an image with nearly uniform brightness
+and regions whose brightness fluctuates wildly.
+*r* is the effective search radius.
+
+To compute this, near every voxel, a Gaussian-weighted average
+intensity is computed with the same effective radius, *r*.
+A Gaussian-weighted squared-difference between all the nearby voxel intensities
+and this local average intensity is also computed.
+A new image is generated whose voxel intensities equal this
+local average squared difference intensity of nearby voxels.
+
+The "**-fluct-aniso**" variant allows the user to control the width
+of the Gaussian independently in the x,y,z directions:
+```
+  -fluct-aniso   r_x  r_y  r_z
+```
+#### Implementation detail:
+ The width of the Gaussian, σ, is chosen so that the effective
+ number of voxels under the 3D Gaussian,
+ (which can be interpreted as the 3D integral of the unnormalized 3D Gaussian,
+ (2\*π\*σ^2)^(3/2))
+ equals the volume of a sphere of radius r
+ (4/3)\*π\*r^3.
+ This yields σ=(9π/2)^(-1/6)r.
+
+ It might seem more straightforward to simply consider the fluctuations in
+ brightnesses of all of the voxels which lie within a fixed radius from
+ each target voxel.  However using Gaussian weighted averages instead
+ accomplishes essentially the same goal and is much more
+ [computationally efficient](https://en.wikipedia.org/wiki/Separable_filter).
+
+ If you prefer, instead of using a Gaussian, you can instead perform the
+ fluctuation calculation over a hard spherical region by using the
+ "-exponent n" argument.
+ (This parameter is 2 by default.  Changing it will slow down the calculation.)
+ As n is increased, the region over which the fluctuations in brightness
+ are calculated becomes more and more like a uniform sphere with radius σ.
+ (So if you do this, be sure to multiply your radius argument, r,
+  by (9π/2)^(1/6)≈1.5549880806696572 to compensate.)
+
+
+
+
+
+## Resizing the image
+
+### -bin binsize
+
+Reduce the resolution of the image in each direction by a factor of *binsize*.
+(*binsize* must be a positive integer.)
+The new image will be smaller in each direction by a factof of *binsize*.
+
+Motivation: Reducing the resolution of an image can often dramatically
+reduce the computation time necessary to detect objects in the image.
+If you are detecting features in the image (such as membranes or blobs)
+that are significantly larger (or thicker) than the voxel width,
+then a reduction in resolution by a factor of 2 or so
+should not effect your ability to detect it accurately,
+(and could make tensor voting up to 64 times faster (as of 2021-6-21)).
+
+Note that you can use this argument together with other arguments.
+If you do that, the reduction of resolution occurs before all
+other operations are performed (such as "-blob" or "-surface" detection).
+This allows you to reduce the image size before
+these other expensive calculations are performed.
+
+Note that the width of each voxel will be increased accordingly,
+so that the positions of any features in the image that you detect
+should not be significantly effected by the change in resolution.
+(This includes the coordinates of the surface mesh.)
+Similarly, when using "-bin", the user does not need to alter
+any of the other parameters or arguments passed to the program
+(such as the thickness parameters or sigma parameters
+that characterize the size of the objects they want to detect).
+The software will automatically adjust these parameters
+to compensate for the change in image resolution.
+
+
+
+
+# Annotation of detected objects in an image
 
 ### (-draw-spheres filename)
 ### (-draw-hollow-spheres filename)
@@ -1952,8 +2096,8 @@ and it superimposes them upon the original image.
 Each line in the file contains information describing a different sphere.
 The first three numbers on each line are assumed to store the x,y, and z
 coordinates of the center of that sphere.
-*(Unless the "-w 1" argument is used, the coordinates and diameters
-are assumed to be in physical units (eg. Angstroms), not voxels.)*
+*(Unless the ["-w 1"](#Voxel-Width) argument is used, the coordinates and
+diameters are assumed to be in physical units (eg. Angstroms), not voxels.)*
 If the file contains a 4th column, then it is assumed to
 store the diameter of each sphere.
 (Otherwise the "spheres" will be only 1 voxel wide by default.)
@@ -1973,7 +2117,6 @@ for that blob and selecting the "Edit"->"Point"->"Value" menu option,
 or by pressing the "F" key.  The brightness of voxel at that location
 will be printed to the IMOD control window. That brightness is the score
 of the corresponding blob.)*
-
 
 #### Background voxels
 
@@ -2034,7 +2177,6 @@ the *ratio* parameter between 0 and 1 until the image looks reasonable.
 (Typical values of the *ratio* parameter are between 0.1 and 0.3.)
 
 
-
 #### Thin hollow spheres
 
 If "**-draw-hollow-spheres**" is used, then hollow spheres are drawn instead.
@@ -2044,7 +2186,7 @@ The thickness of each hollow spherical shell can be controlled using the
 In the first example, the *thickness* of the sphere is the same for all spheres,
 regardless of sphere size.  In that case, the *thickness* argument should
 be specified in physical distance units
-(*or* in voxels, if you are using the "*-w 1*" argument). 
+(*or* in voxels, if you are using the ["-w 1"](#Voxel-Width) argument).
 On the other hand, if you use the "**-spheres-shell-ratio ratio**" argument,
 the thickness is expressed as a ratio, relative to the radius of the sphere. 
 (Larger spheres will have thicker shells.) 
@@ -2147,8 +2289,7 @@ sphere. If the small sphere's volume is less than half of the larger sphere
 To prevent the small sphere from being discarded, you can use
 [**-max-volume-overlap 0.5**](#-max-volume-overlap-fraction)
 together with
-[**-max-volume-overlap-small 1**](#-max-volume-overlap-small-fraction)
-.
+[**-max-volume-overlap-small 1**](#-max-volume-overlap-small-fraction).
 
 
 #### Automatic disposal of poor scoring blobs
@@ -2370,7 +2511,6 @@ or the Gaussian width (σ) of the objects
 that you wish to detect within the image (instead of the object's diameter).
 
 
-
 ####  Visualizing blobs using the "*-draw-spheres*" argument
 
 Again, after
@@ -2387,9 +2527,7 @@ arguments.
 
 
 
-
-
-## Masking
+# Masking
 
 The optional "-mask", "-mask-select", and "-mask-out" arguments allow you to
 ignore certain voxels from the source image (tomogram).
@@ -2569,89 +2707,18 @@ The resulting mask region can be visualized using the
 
 ### -fill brightness
 
-Replace all of the voxel brightnesses with *brightness*.
-If masks are used, then voxels outside the mask will be omitted.
-When using the *-mask-rect* and *-mask-sphere* arguments,
-using "**-fill 1**" will generate a 3-D image
-(which you can view in IMOD, for example)
-This provides a way to see where the mask region is located.
+Replace all of the voxel brightnesses in the image with *brightness*.
+If a mask is in use, then voxels outside the mask will be omitted.
+*(You can specify the brightness of these voxels outside the mask using the
+[-mask-out](#-mask-out-intensity_value) argument, which is 0 by default.)*
+
+If you use "**-fill 1**", this will generate a 3-D image showing where the
+mask region is located.  (This can be useful if you are using the
+[-mask-sphere](#-mask-sphere-x0-y0-z0-r) and
+[-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax) arguments.
+You can view this image in IMOD, for example.)
 
 
-
-### -erode-gauss thickness
-### -dilate-gauss thickness
-
-
-*(Note: This is a crude implementation of
-[image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
-[image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
-For a more flexible and sophisticated implementation in python, try using
-[dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.dilation)
-[erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.erosion)
-[binary_dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_dilation)
-[binary_erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_erosion)
-from
-[scikit-image](https://scikit-image.org),
-along with the
-[mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
-module.)*
-
-The **-erode-gauss** and **-dilate-gauss** arguments are useful
-for modifying the size of an existing binary image (eg. mask),
-making the region appear bigger or smaller.
-(This is useful to modify an image that you eventually intend
-to use with the "-mask" argument in a future invocation of filter_mrc.
-But these operations work on any binary image.)
-
-Recall that a *mask image* is a 3-D image used with the
-["**-mask**"](#-mask-MRC_FILE) argument.
-The brightness value of each voxel in a mask image is typically either 0 or 1
-*(depending on whether the voxel is supposed to be
-ignored or considered during subsequent calculations)*.
-I will refer to an image (of 1s and 0s) as a "binary image".
-The **-dilate-gauss** and **-erode-gauss** arguments will enlarge
-or shrink the size of the region stored in a binary image by
-a distance of roughly *thickness* (which has units of physical distance
-unless the "*-w 1*" argument is used).
-
-Note that, due to blurring, features in the image which are smaller or
-narrower than *thickness* will be lost after this operation is completed.
-Consquently, for large distances, it might work better to
-repeat this operation multiple time with the same small *thickness* argument,
-instead of using a single large *thickness* argument.
-You will have to experiment to see what works best.
-
-#### Details
-This is implemented by blurring the image, and then applying a threshold
-so that all voxels whose brightness are below a threshold are discarded.
-Consequently, you cannot combine these arguments with either the *-gauss*
-or *-thresh* arguments, because:
-
-- "-dilate-gauss *thickness*" is equivalent to
-"-gauss *thickness* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
-- "-erode-gauss *thickness*" is equivalent to
-"-gauss *thickness* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
-
-The motivation for this strategy is outlined below:
-If you start with a binary image (consisting of 1s and 0s),
-and blur it, and discard all voxels whose brightness is less than 0.5,
-(setting their brightness to 0, and the other voxel brightnesses to 1),
-then you will get back a new binary image which strongly resembles
-the original binary image
-(with some high frequencies removed due to the blurring).
-It will have roughly the same number of bright and dark voxels
-as the original image.
-But if, after blurring, you discard all voxels with threshold brightness
-less than, say, 0.75 (instead of 0.5), then this is a more stringent
-requirement.  As a result, *fewer* voxels will remain, compared to if
-you had chosen 0.5.
-This effectively shrinks the size of the selected region (consisting of 1s)
-from the binary image.  Alternatively, if you only discard voxels whose
-brightness less than, say, 0.25, then this is a more forgiving criteria.
-This will select *more* voxels, effectively expanding the size of the
-selected region from the binary image.
-The thresholds above were chosen so that the selected region
-expands or shrinks by roughly a distance of *thickness*.
 
 
 ## Miscellaneous
@@ -2689,6 +2756,29 @@ This argument specifies the size of the 3-D filter box in x,y, directions
 However when using the "-gauss" or "-gdog" filters with default exponent settings,
 the running time is proportional to the sum of these numbers, Wx+Wy+Wz.
 Keep this in mind when specifying filter window widths.)*
+
+
+### -normalize-filters yes/no
+When a Gaussian blur filter is applied to an image, each resulting voxel has
+a brightness which is a (weighted) average of the brightnesses of nearby voxels.
+By default, voxels which are *outside* the boundaries of the image
+(or outside the *mask*), will not be included in this average.
+Averaging is only done over the voxels which *are* within
+the boundaries.  *(In other words, the weights given to the remaining voxels
+are increased when computing the average nearby brightness.)*
+Unfortunately, by averaging fewer voxels near the image boundaries,
+the resulting image is likely to be noiser at these locations.
+If this is not what you want, you can turn this feature off using
+```
+-normalize-filters no
+```
+If you do that, the image may appear artificially dark or bright
+near the image or mask boundaries.
+
+This setting effects the "-gauss" and "-ggauss" arguments.
+It also effects blob detection, surface detection, curve detection,
+and any other filters which apply a Gaussian blur to the image
+at some point during the calculation.
 
 
 ### Distance Units: Angstroms or Nanometers

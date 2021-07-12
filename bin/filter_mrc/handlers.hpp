@@ -3,6 +3,37 @@
 
 #include "settings.hpp"
 
+void
+HandleDilation(const Settings &settings,
+               MrcSimple &tomo_in,
+               MrcSimple &tomo_out,
+               MrcSimple &mask,
+               float voxel_width[3]);
+
+
+void
+HandleErosion(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &tomo_out,
+              MrcSimple &mask,
+              float voxel_width[3]);
+
+
+void
+HandleOpening(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &tomo_out,
+              MrcSimple &mask,
+              float voxel_width[3]);
+
+
+void
+HandleClosing(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &tomo_out,
+              MrcSimple &mask,
+              float voxel_width[3]);
+
 
 void
 HandleGGauss(const Settings &settings,
@@ -10,8 +41,6 @@ HandleGGauss(const Settings &settings,
              MrcSimple &tomo_out,
              MrcSimple &mask,
              float voxel_width[3]);
-
-
 
 
 void
@@ -22,16 +51,12 @@ HandleGauss(const Settings &settings,
             float voxel_width[3]);
 
 
-
-
 void
 HandleDogg(const Settings &settings,
            MrcSimple &tomo_in,
            MrcSimple &tomo_out,
            MrcSimple &mask,
            float voxel_width[3]);
-
-
 
 
 void
@@ -42,15 +67,12 @@ HandleDog(const Settings &settings,
           float voxel_width[3]);
 
 
-
-
 void
 HandleLoGDoG(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
              MrcSimple &mask,
              float voxel_width[3]);
-
 
 
 void
@@ -60,8 +82,6 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
                              vector<array<float,3> >& crds,
                              vector<float>& diameters,
                              vector<float>& scores);
-
-
 
 
 void
@@ -78,14 +98,12 @@ HandleDrawSpheres(const Settings &settings,
                   float voxel_width[3]);
 
 
-
 void
 HandleBlobDetector(const Settings &settings,
                    MrcSimple &tomo_in,
                    MrcSimple &tomo_out,
                    MrcSimple &mask,
                    float voxel_width[3]);
-
 
 
 void
@@ -103,7 +121,6 @@ HandleExtrema(const Settings &settings,
               MrcSimple &tomo_out,
               MrcSimple &mask,
               float voxel_width[3]);
-
 
 
 void

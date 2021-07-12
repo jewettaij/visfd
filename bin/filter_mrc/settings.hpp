@@ -33,28 +33,30 @@ class Settings {
   // this program.  (Some of the algorithms share the same parameters.)
 
   typedef enum eFilterType {
-    NONE,    //(the user has not selected a filter, or is using thresholding)
+    NONE,     //(The user has not selected a filter, or is using thresholding)
+    DILATION, // grayscale image dilation
+    EROSION,  // grayscale image erosion
+    OPENING,  // grayscale image opening
+    CLOSING,  // grayscale image closing
     GAUSS,   //3D Gaussian filter
     GGAUSS,  //3D Generalized Gaussian filter
-    DOG,     //3D Difference of Gaussians (arbitrary widths,
-             //                            fast, seperable Gaussians)
-    DOGG,    //3D Generaliws Difference-of-Generalized-Gaussians with arbitrary
+    DOG,     //3D Difference of Gaussians (arbitrary widths, fast)
+    DOGG,    //3D Generalized Difference-of-Generalized-Gaussians with arbitrary
              //   widths and arbitrary exponents, slow)
     DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary
-             //   widths andarbitrary exponents, slow)
-             //   and a 1D Gaussian filter (in the Z direction)
-    LOG_DOG,         // Approximation to Laplacian-of-Guassian using DoG
+             //   widths and arbitrary exponents in XY, and Gaussian blur in Z.
+    LOG_DOG,         // Approximation to Laplacian-of-Guassian using DOG (fast)
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses
     TEMPLATE_GGAUSS, // Perform a least-squares fit between a generalized
                      // Gaussian and the surrounding voxel brightnesses
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
-    BLOB,            // detect (scale-free) blobs
-    SURFACE_EDGE,    // detect the edge of a light-dark boundary (gradient)
-    SURFACE_RIDGE,   // detect 2D surface-like ridges (a thin membrane detector)
-    CURVE,           // detect 1D curve-like ridges (a filament detector)
     WATERSHED,       // Watershed segmentation
-    CLUSTER_CONNECTED,  // Similar to Watershed segmentation
+    BLOB,            // Scale-free blob detection
+    SURFACE_EDGE,    // Detect the edge of a light-dark boundary (gradient)
+    SURFACE_RIDGE,   // Detect 2D surface-like ridges (a thin membrane detector)
+    CURVE,           // Detect 1D curve-like ridges (a filament detector)
+    CLUSTER_CONNECTED,  // Watershed applied to voxels with tensor attributes
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
     SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
@@ -94,6 +96,7 @@ class Settings {
   string save_intermediate_fname_base = ""; //save progress of slow calculations
   string load_intermediate_fname_base = ""; //load progress from a previous run?
 
+  float thickness_morphology;
   // ---- parameters for "difference of generalized gaussians" filters ----
   //
   // A significant number of the filters used by this program

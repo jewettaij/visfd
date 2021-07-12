@@ -29,7 +29,7 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.28.1");
+string g_version_string("0.28.2");
 string g_date_string("2021-7-11");
 
 
@@ -367,76 +367,118 @@ int main(int argc, char **argv) {
                      "Use the -w argument to specify the voxel width.");
 
 
-    // ---- filtering ----
-    // perform an operation which generates a new image based on the old image
+
+    // ---- Select the primary operation we will perform on the image ----
+
 
 
     if (settings.filter_type == Settings::NONE) {
+
       cerr << "filter_type = Intensity Map <No convolution filter specified>\n";
-      // Not needed:
-      //for (int iz = 0; iz < size[2]; iz++)
-      //  for (int iy = 0; iy < size[1]; iy++)
-      //    for (int ix = 0; ix < size[0]; ix++)
-      //      tomo_out.aaafI[iz][iy][ix]=tomo_in.aaafI[iz][iy][ix];
-      // (We have copied the contents from tomo_in into tomo_out already.)
+
     } 
+
+
+
+    else if (settings.filter_type == Settings::DILATION) {
+
+      // Apply a greyscale dilation filter to the image.
+      HandleDilation(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+
+    else if (settings.filter_type == Settings::EROSION) {
+
+      // Apply a greyscale erosion filter to the image.
+      HandleErosion(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+
+    else if (settings.filter_type == Settings::OPENING) {
+
+      // Apply a greyscale opening filter to the image.
+      HandleOpening(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+
+    else if (settings.filter_type == Settings::CLOSING) {
+
+      // Apply a greyscale closing filter to the image.
+      HandleClosing(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
 
 
 
     else if (settings.filter_type == Settings::GAUSS) {
 
+      // Apply a Gaussian filter to the image.
       HandleGauss(settings, tomo_in, tomo_out, mask, voxel_width);
-        
-    } // if (settings.filter_type == Settings::GAUSS)
+
+    }
 
 
 
     else if (settings.filter_type == Settings::GGAUSS) {
 
+      // Apply a generalized Gaussian filter
       HandleGGauss(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    } //else if (settings.filter_type == Settings::GGAUSS)
+    }
 
 
 
     else if (settings.filter_type == Settings::DOG) {
 
+      // Apply a Difference-of-Gaussians filter
       HandleDog(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    } //if (settings.filter_type == Settings::DOG)
+    }
 
 
 
     else if (settings.filter_type == Settings::DOGG) {
 
+      // Apply a generalized DoG filter.
+      //   (Note: This kind of operation is probably not useful.
+      //          I may remove this feature in the future. -Andrew 2021-7-11)
       HandleDogg(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    } //if (settings.filter_type == Settings::DOGG)
+    }
 
 
 
     #ifndef DISABLE_DOGGXY
     else if (settings.filter_type == Settings::DOGGXY) {
 
+      // Apply a generalized DoG filter in the XY direction
+      // and a Gaussian filter in the Z direction.
       HandleDoggXY(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    } //else if (settings.filter_type = Settings::DOGGXY)
+    }
     #endif
+
 
 
     else if (settings.filter_type == Settings::LOG_DOG) {
 
+      // Apply a LoG filter (implemented using the DoG approximation).
       HandleLoGDoG(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    } //if (settings.filter_type == Settings::DOG_SCALE_FREE)
-
+    }
 
 
     else if (settings.filter_type == Settings::BLOB) {
 
       HandleBlobDetector(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    } //if (settings.filter_type == Settings::DOG)
+    }
 
 
 
@@ -444,95 +486,61 @@ int main(int argc, char **argv) {
              (settings.filter_type == Settings::SURFACE_RIDGE) ||
              (settings.filter_type == Settings::CURVE)) {
 
-      // find surface ridges (ie membranes or wide tubes)
+      // Detect 2-D surfaces or 1-D curves
       HandleTV(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 
 
+
     else if (settings.filter_type == Settings::WATERSHED) {
 
-      // perform watershed segmentation
+      // Perform watershed segmentation
       HandleWatershed(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 
 
+
     else if (settings.filter_type == Settings::CLUSTER_CONNECTED) {
 
-      // cluster adjacent nearby voxels into disconnected "islands"
-      // (this is similar to watershed segmentation)
+      // Cluster adjacent nearby voxels with high "saliency" into "islands"
+      // neighboring voxels (this is similar to watershed segmentation).
       HandleClusterConnected(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 
 
+
     else if (settings.filter_type == Settings::LOCAL_FLUCTUATIONS) {
 
+      // Apply a filter that measures the amount of brightness fluctuations
+      // in the local neighborhood.
       HandleLocalFluctuations(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    } //else if (settings.filter_type == Settings::TEMPLATE_GGAUSS)
-
-
-
-
-    // ----- template matching with error reporting (probably not useful) -----
-
-
-    else if (settings.filter_type == Settings::TEMPLATE_GGAUSS) {
-
-      #ifndef DISABLE_TEMPLATE_MATCHING
-      HandleTemplateGGauss(settings, tomo_in, tomo_out, mask, voxel_width);
-      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
-
-    } //else if (settings.filter_type == Settings::TEMPLATE_GGAUSS)
-
-
-
-    else if (settings.filter_type == Settings::TEMPLATE_GAUSS) {
-
-      #ifndef DISABLE_TEMPLATE_MATCHING
-      HandleTemplateGauss(settings, tomo_in, tomo_out, mask, voxel_width);
-      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
-
-    } //else if (settings.filter_type == Settings::TEMPLATE_GAUSS)
-
-
-    else if (settings.filter_type == Settings::BLOB_RADIAL_INTENSITY) {
-
-      #ifndef DISABLE_INTENSITY_PROFILES
-      HandleBlobRadialIntensity(settings, tomo_in, tomo_out, mask, voxel_width);
-      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
-
-    } //else if (settings.filter_type == Settings::TEMPLATE_GAUSS)
-
-
-
-
-    else if (settings.filter_type == Settings::BOOTSTRAP_DOGG) {
-
-      #ifdef DISABLE_BOOSTRAPPING
-      HandleBootstrappDogg(settings, tomo_in, tomo_out, mask, voxel_width);
-      #endif //#ifndef DISABLE_BOOTSTRAPPING
-
-    } //else if (settings.filter_type == Settings::BOOTSTRAP_DOGG) {
+    }
 
 
     // ----- distance_filter -----
 
     else if (settings.filter_type == settings.DISTANCE_TO_POINTS) {
 
+      // Apply a filter which replaces the voxel brightness with the distance
+      // to the nearest poing in a (user-supplied) point cloud.
       HandleDistanceToPoints(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
+
 
     // ----- sphere_decals_filter -----
 
     else if (settings.filter_type == settings.SPHERE_DECALS) {
 
+      // Draw a new image or annotate (draw on top of) an existing image.
       HandleDrawSpheres(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
+
 
     else if (settings.filter_type == settings.SPHERE_NONMAX_SUPPRESSION) {
 
@@ -540,6 +548,11 @@ int main(int argc, char **argv) {
       vector<float> diameters;
       vector<float> scores;
 
+      // Discard overlapping or poor scoring blobs from a (user-supplied) list.
+      // (Note: In this case, we are not analyzing the image.
+      //        The list of blobs is supplied by the user, most likely by
+      //        running this program at an earlier time using the "-blob"
+      //        argument.)
       HandleBlobsNonmaxSuppression(settings,
                                    mask,
                                    voxel_width,
@@ -549,11 +562,64 @@ int main(int argc, char **argv) {
 
     }
 
+
     else if (settings.filter_type == settings.SPHERE_NONMAX_SUPERVISED_MULTI) {
 
+      // Use training data to choose the right threshold(s) for discarding blobs
       HandleBlobScoreSupervisedMulti(settings,
                                      voxel_width);
     }
+
+
+
+
+    // ------- DEPRECIATED FEATURES -------
+
+
+    else if (settings.filter_type == Settings::TEMPLATE_GGAUSS) {
+
+      #ifndef DISABLE_TEMPLATE_MATCHING
+      // Spherical template matching with RMS error reporting.
+      // (Not very useful. I may remove this feature in the future -A 2021-7-11)
+      HandleTemplateGGauss(settings, tomo_in, tomo_out, mask, voxel_width);
+      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
+
+    }
+
+
+    else if (settings.filter_type == Settings::TEMPLATE_GAUSS) {
+
+      #ifndef DISABLE_TEMPLATE_MATCHING
+      // Spherical template matching with RMS error reporting.
+      // (Not very useful. I may remove this feature in the future -A 2021-7-11)
+      HandleTemplateGauss(settings, tomo_in, tomo_out, mask, voxel_width);
+      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
+
+    }
+
+
+    else if (settings.filter_type == Settings::BOOTSTRAP_DOGG) {
+
+      #ifdef DISABLE_BOOSTRAPPING
+      // (I may remove this feature in the future -Andrew 2021-7-11)
+      HandleBootstrappDogg(settings, tomo_in, tomo_out, mask, voxel_width);
+      #endif //#ifndef DISABLE_BOOTSTRAPPING
+
+    }
+
+
+    else if (settings.filter_type == Settings::BLOB_RADIAL_INTENSITY) {
+
+      #ifndef DISABLE_INTENSITY_PROFILES
+      // This is a feature that a user requested for a specific project.
+      // It is probably not relevant to most users.
+      // (I may remove this feature in the future -Andrew 2021-7-11)
+      HandleBlobRadialIntensity(settings, tomo_in, tomo_out, mask, voxel_width);
+      #endif //#ifndef DISABLE_TEMPLATE_MATCHING
+
+    }
+
+
 
     else {
       assert(false);  //should be one of the choices above
