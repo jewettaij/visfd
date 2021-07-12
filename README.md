@@ -53,23 +53,19 @@ This program was intended to be used for automatic
 [surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
 [edge detection](./doc/doc_filter_mrc.md#-edge-thickness)
 [filament (curve) detection](./doc/doc_filter_mrc.md#Detecting-curves)
-(*NOT WORKING YET 2021-6-12*),
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
+(*NOT WORKING YET 2021-6-12*), and
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection).
 Images can be segmented into distinct contiguous objects,
-using [simple](https://imagej.net/Classic_Watershed)
-and [advanced](./doc/doc_filter_mrc.md#-connect-threshold) algorithnms,
+using a [variety](https://imagej.net/Classic_Watershed)
+of [strategies](./doc/doc_filter_mrc.md#-connect-threshold),
 and closed compartments can be hierarchically segmented using
 [*voxelize_mesh.py*](doc/doc_voxelize_mesh.md).
-
 A list of detected objects can be sorted, clustered
-and saved to standard files for further analysis by 3rd party programs.
-*(For example, detected surfaces can be saved to a mesh file in .ply format.
-These files can then be read by external programs
-([*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon),
+and saved to standard files for further analysis by 3rd party programs,
+*(including [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon),
 [*meshlab*](http://www.meshlab.net), and
-[*voxelize_mesh.py*](doc/doc_voxelize_mesh.md))
-to generate smooth, connected, closed surface meshes
-and create new segmented images.)*
+[*voxelize_mesh.py*](doc/doc_voxelize_mesh.md)
+to generate smooth, connected, closed surface meshes.)*
 
 This program includes a manual (text-mode) 3D image editor,
 as well as a variety of filters to clean up 3D images, including
