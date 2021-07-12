@@ -11,26 +11,31 @@ interchangeably.  A tomogram is a 3-D image.)*
 
 **filter_mrc** can be used local minima-finding, clustering, and
 [classic watershed segmentation](https://imagej.net/Classic_Watershed).
-The coordinates of the objects that are detected can be saved to
-text files for processing and refinement using popular 3rd-party software tools
+The coordinates of the objects that are detected can be saved to text files
+for processing and refinement using popular 3rd-party software tools
 (including tools for surface smoothing and surface closure).
-The *filter_mrc* program can also apply simple filters to an 3D image
-(tomogram), and save the result as a new .mrc/.rec file.
-Several primitive filters are included including
+
+Before objects in the image can be detected,
+images often need to be processed or cleaned up beforehand.
+Consequently, the *filter_mrc* program also can be used to apply some
+common filters to a 3D image, and save the result as a new .mrc/.rec file.
+This includes
 low-pass, high-pass,
+dilation, erosion,
+opening, closing,
 edge detectors,
 ridge detectors,
-morphological filters,
 thresholding,
 brightness inversions,
 [generalized](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1)
 [Gaussian](https://en.wikipedia.org/wiki/Gaussian_blur),
 [Difference-of-Gaussian](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [Laplacian-of-Gaussian](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
-and fluctuation (noise) detectors are available
+and fluctuation (noise) detection filters.
 
-Lastly, the *filter_mrc* program can be used as a crude paint program
-to modify, edit, or annotate existing volumetric images.
+The *filter_mrc* program can be also used as a paint program to manually modify,
+edit, annotate, or erase problematic portions of existing volumetric images. 
+*(Caveat: filter_mrc is text-only.  It does not have a graphical interface.)*
 
 All operations support "masking".
 An image *mask* can be used to exclude certain
@@ -213,9 +218,9 @@ too close to the surface.  The following command will contract the boundary
 of the surface by approximately 40 Angstroms inward, creating a new file
 "segmented_interior.rec".
 ```
-filter_mrc -i segmented.rec -o segmented_interior.rec -erosion-gauss 40
+filter_mrc -i segmented.rec -o segmented_interior.rec -erosion 40
 ```
-*(See [-erosion-gauss](#-erosion-gauss-thickness) for details.)*
+*(See [-erosion](#-erosion-thickness) for details.)*
 
 
 **Note:**

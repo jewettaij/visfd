@@ -51,45 +51,48 @@ features of the **visfd** library.
 This program was intended to be used for automatic
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 [surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
-edge detection (*EXPERIMENTAL_2021-6-21*),
-filament (curve) detection (*EXPERIMENTAL_2021-6-21*),
+[edge detection](./doc/doc_filter_mrc.md#-edge-thickness)
+[filament (curve) detection](./doc/doc_filter_mrc.md#Detecting-curves)
+(*NOT WORKING YET 2021-6-12*),
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
-and
-[watershed segmentation](https://imagej.net/Classic_Watershed)
-A list of detected objects can be sorted, merged into contiguous regions,
+Images can be segmented into distinct contiguous objects,
+using [simple](https://imagej.net/Classic_Watershed)
+and [advanced](./doc/doc_filter_mrc.md#-connect-threshold) algorithnms,
+and closed compartments can be hierarchically segmented using
+[*voxelize_mesh.py*](doc/doc_voxelize_mesh.md).
+
+A list of detected objects can be sorted, clustered
 and saved to standard files for further analysis by 3rd party programs.
-For example, detected surfaces can be saved to a mesh file (in .ply format).
+*(For example, detected surfaces can be saved to a mesh file in .ply format.
 These files can then be read by external programs
 ([*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon),
 [*meshlab*](http://www.meshlab.net), and
 [*voxelize_mesh.py*](doc/doc_voxelize_mesh.md))
 to generate smooth, connected, closed surface meshes
-and create new segmented images.
+and create new segmented images.)*
 
-*(filter_mrc can also be used as a crude 3D image editor,
-erasing or drawing spherical features in the image.
-Users can also apply simple filters to images, including
-low-pass, high-pass,
-thresholding, clipping,
-brightness inversions,
-fluctuations,
+This program includes a manual (text-mode) 3D image editor,
+as well as a variety of filters to clean up 3D images, including
+low-pass, high-pass, dilation, erosion, opening ,closing,
+thresholding, clipping, brightness inversions, fluctuation detectors,
 [generalized Gaussian blur](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
 [DoG](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
 [LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
 [Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
 and
 [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
-filters.)*
+filters.
 
 *(As of 2021-6-21, this program does not have a graphical user interface, so
-tutorials explain how to use this software with IMOD and meshlab to display
-results and choose parameters.)*
+examples explain how to use this software with IMOD and meshlab to display
+results and choose parameters.  Hopefully these tools can eventually
+be integrated with visualizers like 3dmod, chimera, or tomviz.)*
 
 Documentation for this program is located
-[here](./doc/doc_filter_mrc.md).
+[**here**](./doc/doc_filter_mrc.md).
 The source code for the filters used by this program
 is located
-[here](./lib/visfd/).
+[**here**](./lib/visfd/).
 This program currently only supports the .mrc/.rec image file format.
 
 
