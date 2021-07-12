@@ -1227,24 +1227,23 @@ argument.  However the "-connect" argument has additional options.)
 *If the
 ["-connect"](#-connect-threshold)
 argument is used together with the
-["-surface"](#Detecting-membranes)
-argument,*
-(which is typically used for membrane detection), then it means that additional,
-*more stringent* criteria will be used to distinguish nearby thin, curved
-membrane-like objects from each other.
+["-surface"](#Detecting-membranes),
+["-edge"](#-edge-thickness), or
+["-curve"](#Detecting-curves)
+arguments,* then it means that additional, *more stringent* criteria
+will be used to distinguish nearby curved objects from each other.
 In that case, it is not the brightness of the voxel that matters, but its
-*saliency* (a number indicating how closely the region near the voxel resembles
-the feature you are trying to detect, like a curve, surface, or edge).
+"*saliency*" (a number indicating how closely the region near the voxel
+resembles the feature you are trying to detect, like a curve, surface, or edge).
 In order for two neighboring voxels to be in the same island, they must
 both have high saliency above the *threshold* parameter specified by the user.
-For example, when detecting thin surfaces, the "*threshold*" parameter
+For example, when detecting thin surfaces using
+["**-surface**"](#Detecting-membranes), the "*threshold*" parameter
 determines how *membrane-like* a voxel must be in order for it to be included.
 If the *threshold* parameter is chosen carefully, then these
-different islands will hopefully correspond to different membranes
-in the original image.
-
-This *threshold* parameter will vary from image to image
-and
+different islands will hopefully correspond to different membrane
+surfaces in the original image.
+This *threshold* parameter will vary from image to image and
 [must be chosen carefully](#determining-the--connect-threshold-parameter).
 If the *threshold* parameter is too large,
 then individual objects (eg. membranes) in the image

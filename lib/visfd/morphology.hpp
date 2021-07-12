@@ -407,7 +407,7 @@ DilateSphere(Scalar radius,              //!< radius of the sphere
   } // for (int iz=0; iz < image_size[2]; iz++)
 
   if (pReportProgress)
-    *pReportProgress << "DilateSphere() progress:" << endl;
+    *pReportProgress << "DilateSphere(r="<<radius<<"(voxels)) progress:" <<endl;
 
   Dilate(structure_factor,
          image_size,
@@ -498,7 +498,7 @@ ErodeSphere(Scalar radius,              //!< radius of the sphere
   } // for (int iz=0; iz < image_size[2]; iz++)
 
   if (pReportProgress)
-    *pReportProgress << "ErodeSphere() progress:" << endl;
+    *pReportProgress << "ErodeSphere(r="<<radius<<"(voxels)) progress:" <<endl;
 
   Erode(structure_factor,
         image_size,

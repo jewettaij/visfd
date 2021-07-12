@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.28.2");
-string g_date_string("2021-7-11");
+string g_version_string("0.28.3");
+string g_date_string("2021-7-12");
 
 
 
@@ -283,6 +283,16 @@ int main(int argc, char **argv) {
 
 
 
+    // Now that we know the voxel_width, rescale morphological filter widths
+    // At some point I was trying to be as general as possible and allowed
+    // for the possibility that voxels need not be cubes (same width x,y,z)
+    // Now, I realize that allowing for this possibility would slow down some
+    // calculations considerably, so I just assume cube-shaped voxels:
+    //assert((voxel_width[0] == voxel_width[1]) &&
+    //       (voxel_width[1] == voxel_width[2]));
+    settings.thickness_morphology /= voxel_width[0];
+
+
     // Now that we know the voxel_width, rescale any tensor-voting
     // parameters that have units of physical distance.
     settings.tv_sigma /= voxel_width[0];
@@ -303,21 +313,17 @@ int main(int argc, char **argv) {
       //                                                  settings.width_b[d]));
     }
 
-    // At some point I was trying to be as general as possible and allowed
-    // for the possibility that voxels need not be cubes (same width x,y,z)
-    // Now, I realize that allowing for this possibility would slow down some
-    // calculations considerably, so I just assume cube-shaped voxels:
-    //assert((voxel_width[0] == voxel_width[1]) &&
-    //       (voxel_width[1] == voxel_width[2]));
+
+    // Now that we know the voxel_width, rescale the blob diameters(for drawing)
+    // (and assume the voxel width is the same in the x,y,z directions)
     for (size_t ir = 0; ir < settings.blob_diameters.size(); ir++)
       settings.blob_diameters[ir] /= voxel_width[0];
-
     settings.sphere_decals_diameter /= voxel_width[0];
     if (! settings.sphere_decals_shell_thickness_is_ratio)
       settings.sphere_decals_shell_thickness /= voxel_width[0];
 
-    // now use the voxel_width (distance-to-voxel converter)
-    // to read in coordinates from various files:
+    // Now that we know the voxel_width, rescale the coordinates
+    // we have read from various files:
     if (! settings.is_training_pos_in_voxels)
       for (size_t i = 0; i < settings.training_pos_crds.size(); i++)
         for (int d = 0; d < 3; d++)
@@ -348,12 +354,18 @@ int main(int argc, char **argv) {
 
 
 
+
+
+    // (rescale the brightness of the image so it lies between 0 and 1?)
     if (settings.rescale_min_max_in) {
       tomo_in.Rescale01(mask.aaafI,
                         settings.in_rescale_min,
                         settings.in_rescale_max);
       tomo_in.FindMinMaxMean();
     }
+
+
+
 
     // ---- make an array that will store the new tomogram we will create ----
 
