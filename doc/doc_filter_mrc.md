@@ -5,7 +5,7 @@ filter_mrc
 1-D **curves** and 2-D **surfaces** in 3-D images
 *(using [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523))*.
 It can also detect point-like (or sphere-like) **blobs**.
-*(* **WARNING:** *The detection of curves is experimental as of 2021-6-21.)*
+*(* **WARNING:** *The detection of curves is experimental as of 2021-7-12.)*
 *(Note: In this documentation, I use the words "image" and "tomogram"
 interchangeably.  A tomogram is a 3-D image.)*
 
@@ -324,9 +324,9 @@ argument is used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 - The ["**-edge**"](#-edge-thickness) argument is used to detect
 surfaces at the edge of light-dark regions
-*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*
+*(<- WARNING: FEATURE NOT TESTED. 2021-7-12)*
 - The ["**-curve**"](#Detecting-curves) argument is used to detect thin curves.
-*(<- WARNING: FEATURE NOT TESTED. 2021-6-21)*.
+*(<- WARNING: FEATURE NOT TESTED. 2021-7-12)*.
 The fidelity of these three detectors can be improved by using
 a method known as [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf)
 using the ["**-tv**"](#-tv-σ_ratio) argument.
@@ -534,7 +534,7 @@ options to maximize the chance of success.
 ### -edge thickness
 
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
-2021-6-21***
+2021-7-12***
 
 If the "**-edge**" filter is selected, the program will
 attempt to detect the sharp boundary surfaces between
@@ -574,7 +574,7 @@ See [here](#Detection-and-masking) for alternative strategies.
 ### -curve type thickness
 
 ***WARNING: THIS FEATURE HAS NOT BEEN TESTED AND PROBABLY DOES NOT WORK
-2021-6-21***
+2021-7-12***
 
 When the **-curve** argument is specified, the program will
 seek out thin curvy line like features in the image.
@@ -1209,7 +1209,7 @@ generate a new image showing *which* island each voxel belongs to (if any).
 This is a two-step process.
 First, all the voxels whose brightness exceeds *threshold* are selected.
 Then, this subset of voxels is partitioned into different "islands".
-"Islands" are defined as sets of voxels which are all
+Islands are defined as sets of voxels which are all
 physically adjacent to (touching) eachother.
 (The definition of "adjacency" can be controlled using the
 [-neighbor-connectivity](#-neighbor-connectivity-nc)
@@ -1237,8 +1237,8 @@ In that case, it is not the brightness of the voxel that matters, but its
 the feature you are trying to detect, like a curve, surface, or edge).
 In order for two neighboring voxels to be in the same island, they must
 both have high saliency above the *threshold* parameter specified by the user.
-In this case, the "*threshold*" parameter determines how *membrane-like*
-a voxel must be in order for it to be included.
+For example, when detecting thin surfaces, the "*threshold*" parameter
+determines how *membrane-like* a voxel must be in order for it to be included.
 If the *threshold* parameter is chosen carefully, then these
 different islands will hopefully correspond to different membranes
 in the original image.
@@ -1267,7 +1267,7 @@ the pieces together correctly, you can also use the
 ["**-must-link**"](#-must-link-FILE)
 argument.
 This will manually force different bright regions in the image
-to belong to the same cluster (a.k.a. "island".  See below.)
+to belong to the same cluster (a.k.a. "island").
 
 #### Clustering based on directional similarity
 
@@ -2045,7 +2045,7 @@ If you are detecting features in the image (such as membranes or blobs)
 that are significantly larger (or thicker) than the voxel width,
 then a reduction in resolution by a factor of 2 or so
 should not effect your ability to detect it accurately,
-(and could make tensor voting up to 64 times faster (as of 2021-6-21)).
+(and could make tensor voting up to 64 times faster (as of 2021-7-12)).
 
 Note that you can use this argument together with other arguments.
 If you do that, the reduction of resolution occurs before all

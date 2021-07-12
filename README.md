@@ -51,9 +51,8 @@ features of the **visfd** library.
 This program was intended to be used for automatic
 [membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
 [surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
-[edge detection](./doc/doc_filter_mrc.md#-edge-thickness)
-[filament (curve) detection](./doc/doc_filter_mrc.md#Detecting-curves)
-(*NOT WORKING YET 2021-6-12*), and
+[edge detection](./doc/doc_filter_mrc.md#-edge-thickness), 
+[filament (curve) detection](./doc/doc_filter_mrc.md#Detecting-curves), 
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection).
 Images can be segmented into distinct contiguous objects,
 using a [variety](https://imagej.net/Classic_Watershed)
@@ -78,8 +77,7 @@ thresholding, clipping, brightness inversions, fluctuation detectors,
 and
 [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
 filters.
-
-*(As of 2021-6-21, this program does not have a graphical user interface, so
+*(As of 2021-7-12, this program does not have a graphical user interface, so
 examples explain how to use this software with IMOD and meshlab to display
 results and choose parameters.  Hopefully these tools can eventually
 be integrated with visualizers like 3dmod, chimera, or tomviz.)*
