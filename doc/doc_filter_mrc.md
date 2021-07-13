@@ -989,16 +989,35 @@ The size of the objects removed is determined by the *thickness* parameter
 ### -erosion-gauss thickness
 ### -dilation-gauss thickness
 
-This is a fast and crude implementation of
+These filters are only intended for use with binary images 
+(images whose voxels have brightnesses of either 0 or 1).
+
+These filters are an alternative implementation of
 [image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
 [image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
 that uses fast Gaussian filters to blur an image, followed by thresholding.
-The **-dilation-gauss** and **-erosion-gauss** arguments will enlarge
-or shrink the size of the region stored in a binary image by
-a distance of roughly *thickness* (which has units of physical distance
-unless the ["-w 1"](#Voxel-Width) argument is used).
+For binary images containing large smooth regions of bright voxels,
+the **-dilation-gauss** and **-erosion-gauss** arguments
+will enlarge or shrink the size of these bright regions
+by a distance of roughly *thickness* (which has units of
+physical distance unless the ["-w 1"](#Voxel-Width) argument is used).
 Note that, due to blurring, features in the image which are smaller or
 narrower than *thickness* will be lost after this operation is completed.
+This generally producing a smoother result,
+and avoids the sometimes undesirable sensitivity
+noise and small blemishes that ordinary
+[dilation](#-dilation-sphere-thickness) and
+[erosion](#-erosion-sphere-thickness) filters can suffer from.
+However, this blurring makes these filters unsuitable
+for some morphological tasks *(such as 
+[opening](https://en.wikipedia.org/wiki/Opening_(morphology)),
+[closing](https://en.wikipedia.org/wiki/Closing_(morphology)), and the
+[top-hat transform](https://en.wikipedia.org/wiki/Top-hat_transform))*.
+Use with caution.
+
+
+
+
 
 #### Details
 This is implemented by blurring the image, and then applying a threshold
