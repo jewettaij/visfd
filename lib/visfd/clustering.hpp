@@ -768,10 +768,15 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
   // DEBUGGING
   // All of the voxels should either be assigned to a basin or to "UNDEFINED"
   // (but not "QUEUED").  Check for that below:
-  for (int iz=0; iz<image_size[2]; iz++)
-    for (int iy=0; iy<image_size[1]; iy++)
-      for (int ix=0; ix<image_size[0]; ix++)
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
         assert(aaaiDest[iz][iy][ix] != QUEUED);
+      }
+    }
+  }
   #endif //#ifndef NDEBUG
 
 
@@ -1057,9 +1062,9 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
-        if (aaaiDest[iz][iy][ix] == UNDEFINED)
-          continue;
         if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+          continue;
+        if (aaaiDest[iz][iy][ix] == UNDEFINED)
           continue;
         ptrdiff_t basin_id = aaaiDest[iz][iy][ix];
         assert((0 <= basin_id) && (basin_id < n_basins));
@@ -1271,6 +1276,8 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
     for (int iz=0; iz<image_size[2]; iz++) {
       for (int iy=0; iy<image_size[1]; iy++) {
         for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            continue;
           if (aaaiDest[iz][iy][ix] == UNDEFINED)
             continue;
           ptrdiff_t cluster_id = aaaiDest[iz][iy][ix];

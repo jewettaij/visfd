@@ -22,13 +22,13 @@ test_watershed() {
     IN_FNAME_BASE="test_blob_detect"
     OUT_FNAME_BASE="test_image_watershed"
     OUT_FNAME_REC=${OUT_FNAME_BASE}.rec
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}.rec -o ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -gauss ${SIGMA}
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}.rec -o ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -gauss ${SIGMA}
     assertTrue "Failure during Gaussian blur:  File \"test_blob_detect_gauss_${SIGMA}.rec\" not created" "[ -s test_blob_detect_gauss_${SIGMA}.rec ]"
 
     # 1D examples:
 
     # Test -find-minima
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -find-minima ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt -o ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.rec
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -find-minima ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt -o ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.rec
     assertTrue "Failure: -find-minima failed.  File \"${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt\" not created" "[ -s ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt ]"
     assertTrue "Failure: -find-minima failed to make an image.  File \"${IN_FNAME_BASE}_gauss_${SIGMA}_minima.rec\" not created" "[ -s ${IN_FNAME_BASE}_gauss_${SIGMA}_minima.txt ]"
     # Count the number of dark minima in the image
@@ -37,7 +37,7 @@ test_watershed() {
     assertTrue "Failure: The number of minima reported by -find-minima is not consistent with the image that was created." "[ $N_MINIMA -eq $N_MINIMA_IMAGE ]"
 
     # Test watershed segmentation
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -out ${OUT_FNAME_REC} -watershed minima >& test_log_e.txt
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -out ${OUT_FNAME_REC} -watershed minima >& test_log_e.txt
     assertTrue "Failure during watershed segmentation:  File \"${OUT_FNAME_REC}\" not created" "[ -s ${OUT_FNAME_REC} ]"
     N_BASINS=`grep 'Number of basins found: ' < test_log_e.txt | awk '{print $5}'`
     assertTrue "Failure: No basins found." "[ $N_BASINS -gt 0 ]"
@@ -48,10 +48,10 @@ test_watershed() {
 
     # Now invert the image brightnesses (photo negative, dark <--> bright)
 
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -out ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -invert
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}_gauss_${SIGMA}.rec -out ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -invert
 
     # Test -find-maxima
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -find-maxima ${IN_FNAME_BASE}_gauss_${SIGMA}_inv_maxima.txt -o ${IN_FNAME_BASE}_gauss_${SIGMA}_inv_maxima.rec
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -find-maxima ${IN_FNAME_BASE}_gauss_${SIGMA}_inv_maxima.txt -o ${IN_FNAME_BASE}_gauss_${SIGMA}_inv_maxima.rec
     assertTrue "Failure: -find-maxima failed.  File \"${IN_FNAME_BASE}_gauss_${SIGMA}_maxima.txt\" not created" "[ -s ${IN_FNAME_BASE}_gauss_${SIGMA}_inv_maxima.txt ]"
     assertTrue "Failure: -find-maxima failed to make an image.  File \"${IN_FNAME_BASE}_gauss_${SIGMA}_inv_maxima.rec\" not created" "[ -s ${IN_FNAME_BASE}_gauss_${SIGMA}_inv_maxima.txt ]"
 
@@ -62,7 +62,7 @@ test_watershed() {
     assertTrue "Failure: The number of maxima reported by -find-maxima is not consistent with the image that was created." "[ $N_MAXIMA -eq $N_BASINS ]"
 
     # Test watershed segmentation on the image negative:
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -out ${OUT_FNAME_REC} -watershed maxima >& test_log_e.txt
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -out ${OUT_FNAME_REC} -watershed maxima >& test_log_e.txt
     assertTrue "Failure during watershed segmentation:  File \"${OUT_FNAME_REC}\" not created" "[ -s ${OUT_FNAME_REC} ]"
     # Count the number of bright maxima in the inverted (negative) image
     N_BASINS_INV=`grep 'Number of basins found: ' < test_log_e.txt | awk '{print $5}'`
@@ -70,7 +70,7 @@ test_watershed() {
 
     # Test "-connect" to see if it behaves like "-watershed maxima"
     
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -out ${OUT_FNAME_REC} -connect 36.75 >& test_log_e.txt
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}_gauss_${SIGMA}_inv.rec -out ${OUT_FNAME_REC} -connect 36.75 >& test_log_e.txt
     N_BASINS_INV=`grep 'Number of clusters found: ' < test_log_e.txt | awk '{print $5}'`
     assertTrue "Failure: Either \"-connect\" argument or the \"-invert\" argument is behaving in an new and unnexpected way, or the extrema finding algorithm is failing" "[ $N_BASINS_INV -eq 2 ]"
 
@@ -80,9 +80,9 @@ test_watershed() {
     echo "235.2 392 313.6   169.536" > test_spheres.txt
     echo "254.8 98  274.4   169.536" >> test_spheres.txt
 
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}.rec -out ${IN_FNAME_BASE}_spheres.rec -draw-spheres test_spheres.txt -foreground 1 -background 0 -spheres-shell-ratio 1
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}.rec -out ${IN_FNAME_BASE}_spheres.rec -draw-spheres test_spheres.txt -foreground 1 -background 0 -spheres-shell-ratio 1
 
-    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -i ${IN_FNAME_BASE}_spheres.rec -out ${OUT_FNAME_REC} -connect 0.5 >& test_log_e.txt
+    ../bin/filter_mrc/filter_mrc -w ${VOXEL_WIDTH} -mask ${IN_FNAME_BASE}_mask.rec -in ${IN_FNAME_BASE}_spheres.rec -out ${OUT_FNAME_REC} -connect 0.5 >& test_log_e.txt
     N_BASINS_UNIFORM=`grep 'Number of clusters found: ' < test_log_e.txt | awk '{print $5}'`
     assertTrue "Failure: Either \"-connect\" argument is failing to segment an image with identical adjacent voxel brightnesses" "[ $N_BASINS_UNIFORM -eq 2 ]"
 

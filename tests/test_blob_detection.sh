@@ -6,12 +6,12 @@ THRESH=-90
 test_blob_detection() {
   cd tests/
     # remove low frequencies from the image (not necessary for this tiny image)
-    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -i test_blob_detect.rec -o test_blob_detect_dog_0_500.rec -dog 0 500
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -o test_blob_detect_dog_0_500.rec -dog 0 500
 
     assertTrue "-dog argument failed.  File test_blob_detect_dog_0_500.rec file was not created" "[ -s test_blob_detect_dog_0_500.rec ]"
 
     # use clipping to remove extremely bright or dark voxels
-    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -i test_blob_detect_dog_0_500.rec -o test_blob_detect_dog_0_500_cl_-1.3_1.3.rec -cl -1.3 1.3
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect_dog_0_500.rec -o test_blob_detect_dog_0_500_cl_-1.3_1.3.rec -cl -1.3 1.3
 
     assertTrue "-cl argument failed.  File test_blob_detect_dog_0_500_cl_-1.3_1.3.rec was not created" "[ -s test_blob_detect_dog_0_500_cl_-1.3_1.3.rec ]"
 

@@ -5,8 +5,8 @@ test_membrane_detection() {
     OUT_FNAME_BASE="test_image_membrane_surface_55_tv_4_4_clust_1e+09_45deg"
     OUT_FNAME_REC=${OUT_FNAME_BASE}.rec
     OUT_FNAME_NORMALS=${OUT_FNAME_BASE}.ply
-    ../bin/filter_mrc/filter_mrc -w 19.2 -i test_image_membrane.rec -out ${OUT_FNAME_REC} -surface minima 55 -tv 4 -tv-angle-exponent 4 -bin 2 -save-progress test_image_membrane
-    ../bin/filter_mrc/filter_mrc -w 19.2 -i test_image_membrane.rec -out ${OUT_FNAME_REC} -surface minima 55 -tv 4 -tv-angle-exponent 4 -bin 2 -load-progress test_image_membrane -connect 1e+09 -connect-angle 30 -surface-normals-file ${OUT_FNAME_NORMALS} -select-cluster 1 >& test_log_e.txt
+    ../bin/filter_mrc/filter_mrc -w 19.2 -in test_image_membrane.rec -out ${OUT_FNAME_REC} -surface minima 55 -tv 4 -tv-angle-exponent 4 -bin 2 -save-progress test_image_membrane
+    ../bin/filter_mrc/filter_mrc -w 19.2 -in test_image_membrane.rec -out ${OUT_FNAME_REC} -surface minima 55 -tv 4 -tv-angle-exponent 4 -bin 2 -load-progress test_image_membrane -connect 1e+09 -connect-angle 30 -surface-normals-file ${OUT_FNAME_NORMALS} -select-cluster 1 >& test_log_e.txt
     assertTrue "Failure during membrane detection, tensor-voting, or voxel clustering:  File \"${OUT_FNAME_REC}\" not created" "[ -s ${OUT_FNAME_REC} ]"
     N_CLUSTERS=`grep 'Number of clusters found:' < test_log_e.txt | awk '{print $5}'`
     assertTrue "Failure: No membrane clusters detected." "[ $N_CLUSTERS -gt 0 ]"
