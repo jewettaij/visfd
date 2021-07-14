@@ -1136,8 +1136,7 @@ HandleWatershed(const Settings &settings,
   // Create a temporary array to store the basin membership for each voxel.
   // Because the number or clusters could (conceivably) exceed 10^6, we
   // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
-  ptrdiff_t ***aaaiBasinId = nullptr;
-  aaaiBasinId = Alloc3D<ptrdiff_t>(tomo_in.header.nvoxels);
+  ptrdiff_t ***aaaiBasinId = Alloc3D<ptrdiff_t>(tomo_in.header.nvoxels);
 
   // (Later on we will copy the contents of aaaiBasinId into tomo_out.aaafI
   //  which will be written to a file later.  This way the end-user can
@@ -1156,10 +1155,15 @@ HandleWatershed(const Settings &settings,
             &extrema_scores,
             &cerr);
 
-  for (int iz = 0; iz < image_size[2]; ++iz)
-    for (int iy = 0; iy < image_size[1]; ++iy)
-      for (int ix = 0; ix < image_size[0]; ++ix)
+  for (int iz = 0; iz < image_size[2]; ++iz) {
+    for (int iy = 0; iy < image_size[1]; ++iy) {
+      for (int ix = 0; ix < image_size[0]; ++ix) {
+        if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
+          continue;
         tomo_out.aaafI[iz][iy][ix] = aaaiBasinId[iz][iy][ix];
+      }
+    }
+  }
 
   Dealloc3D(aaaiBasinId);
 

@@ -103,6 +103,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
     // We will use neighbors[][] from now on..
   } // ...done figuring out the list of voxel neighbors
 
+  assert(neighbors);
 
   Scalar SIGN_FACTOR = 1.0;
   if (! start_from_minima) {
@@ -397,27 +398,38 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
   // All of the voxels should either be assigned to a basin,
   // OR assigned to "WATERSHED_BOUNDARY" or to "UNDEFINED"
   // (but not "QUEUED").  Check for that below:
-  for (int iz=0; iz<image_size[2]; iz++)
-    for (int iy=0; iy<image_size[1]; iy++)
-      for (int ix=0; ix<image_size[0]; ix++)
+  for (int iz=0; iz<image_size[2]; iz++) {
+    for (int iy=0; iy<image_size[1]; iy++) {
+      for (int ix=0; ix<image_size[0]; ix++) {
+        if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
         assert(aaaiDest[iz][iy][ix] != QUEUED);
+      }
+    }
+  }
   #endif //#ifndef NDEBUG
 
   if (boundary_label != 0.0) {
     // If the caller explicitly specified the brightness that voxels 
     // on the boundaries between basins should be assigned to,
     // then take care of that now.
-    for (int iz=0; iz<image_size[2]; iz++)
-      for (int iy=0; iy<image_size[1]; iy++)
-        for (int ix=0; ix<image_size[0]; ix++)
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
           if (aaaiDest[iz][iy][ix] == WATERSHED_BOUNDARY)
             aaaiDest[iz][iy][ix] = boundary_label;
+        }
+      }
+    }
   }
 
   if (pReportProgress)
     *pReportProgress << "Number of basins found: "
                      << NBASINS << endl;
 
+  delete [] neighbors;
 
 } //Watershed()
 
