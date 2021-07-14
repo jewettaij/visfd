@@ -299,7 +299,7 @@ FindSpheres(const vector<array<Scalar,3> >& crds, //!< locations of blob-like th
         image_size[d] = crds[i][d] + 1;
 
   // Now allocate the lookup table
-  Integer ***aaaiWhichBlob = Alloc3D(image_size);
+  Integer ***aaaiWhichBlob = Alloc3D<Integer>(image_size);
   const Integer UNOCCUPIED = 0;
 
   // Initialize the lookup table:

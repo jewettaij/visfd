@@ -529,7 +529,7 @@ OpenSphere(Scalar radius,             //!< radius of the sphere
 {
   float ***aaafTmp;  //temporary space to store image after erosion
 
-  aaafTmp = Alloc3D(image_size);
+  aaafTmp = Alloc3D<Scalar>(image_size);
 
   ErodeSphere(radius,
               image_size,
@@ -571,7 +571,7 @@ CloseSphere(Scalar radius,            //!< radius of the sphere
 {
   float ***aaafTmp;  //temporary space to store image after dilation
 
-  aaafTmp = Alloc3D(image_size);
+  aaafTmp = Alloc3D<Scalar>(image_size);
 
   DilateSphere(radius,
                image_size,
@@ -613,7 +613,7 @@ WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere
 {
   float ***aaafTmp;  //temporary space to store image after erosion
 
-  aaafTmp = Alloc3D(image_size);
+  aaafTmp = Alloc3D<Scalar>(image_size);
 
   // Compute the image opening
   OpenSphere(radius,
@@ -654,7 +654,7 @@ BlackTopHatSphere(Scalar radius,             //!< radius of the sphere
 {
   float ***aaafTmp;  //temporary space to store image after erosion
 
-  aaafTmp = Alloc3D(image_size);
+  aaafTmp = Alloc3D<Scalar>(image_size);
 
   // Compute the image closing
   CloseSphere(radius,

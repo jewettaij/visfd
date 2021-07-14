@@ -17,14 +17,15 @@ namespace visfd {
 ///           Then the contents of A can be accessed using A[iy][ix].)
 /// @details  This array can be deallocated using Dealloc2D().
 
-template<typename Entry>
-void Alloc2D(int size[2]           //!< size of the array (number of rows)
-             )
+template<typename Entry, typename Integer>
+Entry **
+Alloc2D(const Integer size[2]     //!< size of the array (number of rows)
+        )
 {
-  Entry **aaX = new Entry* [nrows];
-  aaX[0] = new Entry [nrows * ncols];  // 1D C array (contiguous memory)
-  for(size_t iy=0; iy<nrows; iy++)
-    aaX[iy] = aaX[0] + iy*ncols;
+  Entry **aaX = new Entry* [size[1]];
+  aaX[0] = new Entry [size[1] * size[0]];  // 1D C array (contiguous memory)
+  for(size_t iy=0; iy<size[1]; iy++)
+    aaX[iy] = aaX[0] + iy*size[0];
   return aaX;
 }
 
@@ -33,6 +34,7 @@ void Alloc2D(int size[2]           //!< size of the array (number of rows)
 /// @brief
 /// This function is the corresponding way to dellocate arrays
 /// that were created using Alloc2D()
+
 template<typename Entry>
 void Dealloc2D(Entry **aaX       //!< pointer to a 2D C-style array
                )

@@ -555,7 +555,7 @@ ApplyDog(const int image_size[3], //source image size
 {
   Scalar ***aaafTemp; //temporary array to store partially processed tomogram
 
-  aaafTemp = Alloc3D(image_size);
+  aaafTemp = Alloc3D<Scalar>(image_size);
 
   Scalar A, B;        // let the user know what A B coefficients were used
 

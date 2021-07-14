@@ -69,7 +69,7 @@ BlobDog(int const image_size[3], //!< source image size
         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
         ostream *pReportProgress = nullptr, //!< optional: report progress to the user?
-        Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images (indexable)
+        Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images
         )
 
 {
@@ -107,9 +107,9 @@ BlobDog(int const image_size[3], //!< source image size
   if (! preallocated) {
     assert(aaaafI == nullptr);
     aaaafI = new Scalar*** [3];
-    aaaafI[0] = Alloc3D(image_size);
-    aaaafI[1] = Alloc3D(image_size);
-    aaaafI[2] = Alloc3D(image_size);
+    aaaafI[0] = Alloc3D<Scalar>(image_size);
+    aaaafI[1] = Alloc3D<Scalar>(image_size);
+    aaaafI[2] = Alloc3D<Scalar>(image_size);
   }
 
 
@@ -465,8 +465,7 @@ BlobDogD(int const image_size[3], //!<source image size
          Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
          bool    use_threshold_ratios=false, //!<threshold=ratio*best_score?
          ostream *pReportProgress = nullptr, //!<report progress to the user?
-         Scalar ****aaaafI = nullptr, //!<preallocated memory for filtered images
-         Scalar **aafI = nullptr     //!<preallocated memory for filtered images (conserve memory)
+         Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images
          )
 {
 
@@ -492,8 +491,7 @@ BlobDogD(int const image_size[3], //!<source image size
           maxima_threshold,
           use_threshold_ratios,
           pReportProgress,
-          aaaafI,
-          aafI);
+          aaaafI);
 
   if (pv_minima_diameters) {
     pv_minima_diameters->resize(minima_sigma.size());
@@ -1243,7 +1241,7 @@ CalcHessian(int const image_size[3], //!< source image size
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
   Scalar ***aaafSmoothed;
-  aaafSmoothed = Alloc3D(image_size);
+  aaafSmoothed = Alloc3D<Scalar>(image_size);
 
   if (pReportProgress)
     *pReportProgress << "\n";
@@ -1407,7 +1405,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
     filter2.afW[i] *= i*i;
 
 
-  Scalar ***aaafNorm = Alloc3D(image_size);
+  Scalar ***aaafNorm = Alloc3D<Scalar>(image_size);
 
   if (aaafMask) {
     // Calculate the normalization we need by blurring the mask by the Gaussian
@@ -1433,9 +1431,9 @@ CalcMomentTensor(int const image_size[3], //!< source image size
         << " -- (If this crashes your computer, find a computer with   --\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
 
-    Scalar ***aaafIx = Alloc3D(image_size);
-    Scalar ***aaafIy = Alloc3D(image_size);
-    Scalar ***aaafIz = Alloc3D(image_size);
+    Scalar ***aaafIx = Alloc3D<Scalar>(image_size);
+    Scalar ***aaafIy = Alloc3D<Scalar>(image_size);
+    Scalar ***aaafIz = Alloc3D<Scalar>(image_size);
 
     // calculate the x moment (=x^1 * y^0 * z^0)
     aFilter[0] = filter1;  // x^1
@@ -1526,7 +1524,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
         " ------ Calculating the average of nearby voxels: ------\n";
     // P = original image (after subtracting average nearby intensities):
 
-    Scalar ***aaafP = Alloc3D(image_size);
+    Scalar ***aaafP = Alloc3D<Scalar>(image_size);
 
     ApplyGauss(image_size,
                aaafSource,
@@ -1549,12 +1547,12 @@ CalcMomentTensor(int const image_size[3], //!< source image size
         << " -- (If this crashes your computer, find a computer with   --\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
 
-    Scalar ***aaafIxx = Alloc3D(image_size);
-    Scalar ***aaafIyy = Alloc3D(image_size);
-    Scalar ***aaafIzz = Alloc3D(image_size);
-    Scalar ***aaafIxy = Alloc3D(image_size);
-    Scalar ***aaafIyz = Alloc3D(image_size);
-    Scalar ***aaafIxz = Alloc3D(image_size);
+    Scalar ***aaafIxx = Alloc3D<Scalar>(image_size);
+    Scalar ***aaafIyy = Alloc3D<Scalar>(image_size);
+    Scalar ***aaafIzz = Alloc3D<Scalar>(image_size);
+    Scalar ***aaafIxy = Alloc3D<Scalar>(image_size);
+    Scalar ***aaafIyz = Alloc3D<Scalar>(image_size);
+    Scalar ***aaafIxz = Alloc3D<Scalar>(image_size);
 
     // calculate the x*x moment of the innertia (=x^2 * y^0 * z^0)
     aFilter[0] = filter2;  // x^2
@@ -2017,10 +2015,11 @@ public:
   }
 
   TV3D(const Filter3D<Scalar, Integer>& source) {
-    Resize(source.halfwidth); // allocates and initializes afH and aaafH
-    std::copy(source.aafDisplacement,
-              source.aafDisplacement + (array_size[0] * array_size[1] * array_size[2]),
-              aafDisplacement);
+    Resize(source.halfwidth);
+    for(Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+      for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+        for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+          aaaafDisplacement[iz][iy][ix] = source.aaaafDisplacement[iz][iy][ix];
   }
 
   ~TV3D() {
@@ -2099,7 +2098,7 @@ public:
     Scalar ***aaafDenominator = nullptr;
 
     if (normalize && aaafMaskSource) {
-      aaafDenominator = Alloc3D(image_size);
+      aaafDenominator = Alloc3D<Scalar>(image_size);
     }
 
     // If the user did not specify an aaafSaliency[] array (if nullptr),
@@ -2110,7 +2109,7 @@ public:
     if (! aaafSaliency) {
       // If the caller did not specify an aaafSaliency array, then
       // infer the saliency from the magnitude of aaaafV
-      _aaafSaliency = Alloc3D(image_size);
+      _aaafSaliency = Alloc3D<Scalar>(image_size);
 
       for (Integer iz=0; iz<image_size[2]; iz++) {
         #pragma omp parallel for collapse(2)
@@ -2764,7 +2763,6 @@ private:
     std::swap(sigma, other.sigma);
     std::swap(exponent, other.exponent);
     std::swap(radial_decay_lookup, other.radial_decay_lookup);
-    std::swap(aafDisplacement, other.aafDisplacement);
     std::swap(aaaafDisplacement, other.aaaafDisplacement);
     std::swap(halfwidth, other.halfwidth);
     std::swap(array_size, other.array_size);
@@ -2788,7 +2786,6 @@ private:
     array_size[0] = -1;
     array_size[1] = -1;
     array_size[2] = -1;
-    aafDisplacement = nullptr;
     aaaafDisplacement = nullptr;
   }
 
@@ -2830,7 +2827,7 @@ private:
   void AllocDisplacement() {
     if (aaaafDisplacement)
       Dealloc3D(aaaafDisplacement);
-    aaaafDisplacement = Alloc3D(array_size);
+    aaaafDisplacement = Alloc3D<array<Scalar, 3> >(array_size);
             
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
     for (Integer iz = 0; iz < array_size[2]; iz++) {

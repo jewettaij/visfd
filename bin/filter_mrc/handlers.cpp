@@ -659,7 +659,7 @@ HandleBlobDetector(const Settings &settings,
   // Optional: Preallocate space for BlobDogNM()
   float*** aaaafI[3];
 
-  aaaafI[0] = Alloc3D(tomo_in.header.nvoxels);
+  aaaafI[0] = Alloc3D<float>(tomo_in.header.nvoxels);
 
   if (tomo_out.aaafI) {
     // Optional: Instead of allocating aaaafI[1] and aafI[1], borrow the memory
@@ -667,9 +667,9 @@ HandleBlobDetector(const Settings &settings,
     aaaafI[1] = tomo_out.aaafI;
   }
   else
-    aaaafI[1] = Alloc3D(tomo_in.header.nvoxels);
+    aaaafI[1] = Alloc3D<float>(tomo_in.header.nvoxels);
 
-  aaaafI[2] = Alloc3D(tomo_in.header.nvoxels);
+  aaaafI[2] = Alloc3D<float>(tomo_in.header.nvoxels);
 
   // This way we can save memory and also save the 
   // filtered image to a file which we can view using IMOD.
@@ -694,8 +694,7 @@ HandleBlobDetector(const Settings &settings,
              settings.nonmax_max_volume_overlap_large,
              settings.nonmax_max_volume_overlap_small,
              &cerr,
-             aaaafI,
-             aafI);
+             aaaafI);
 
 
   long n_minima = minima_crds_voxels.size();
@@ -1138,7 +1137,7 @@ HandleWatershed(const Settings &settings,
   // Because the number or clusters could (conceivably) exceed 10^6, we
   // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
   ptrdiff_t ***aaaiBasinId = nullptr;
-  aaaiBasinId = Alloc3D(tomo_in.header.nvoxels);
+  aaaiBasinId = Alloc3D<ptrdiff_t>(tomo_in.header.nvoxels);
 
   // (Later on we will copy the contents of aaaiBasinId into tomo_out.aaafI
   //  which will be written to a file later.  This way the end-user can
@@ -1205,7 +1204,7 @@ HandleClusterConnected(const Settings &settings,
   // Because the number or clusters could (conceivably) exceed 10^6, we
   // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
 
-  ptrdiff_t ***aaaiClusterId = Alloc3D(tomo_in.header.nvoxels);
+  ptrdiff_t ***aaaiClusterId = Alloc3D<ptrdiff_t>(tomo_in.header.nvoxels);
 
   // (Later on we will copy the contents of aaaiClusterId into tomo_out.aaafI
   //  which will be written to a file later.  This way the end-user can
@@ -1303,7 +1302,7 @@ HandleTV(const Settings &settings,
 
   // Now use Alloc3D() to allocate space for both aafGradient and aaaafGradient.
 
-  aaaafGradient = Alloc3D(tomo_in.header.nvoxels);
+  aaaafGradient = Alloc3D<array<float, 3> >(tomo_in.header.nvoxels);
 
   // The storage requirement for Hessians (6 floats) is large enough that
   // I decided to represent hessians using a CompactMultiChannelImage3D.
@@ -1732,7 +1731,7 @@ HandleTV(const Settings &settings,
     // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
 
     ptrdiff_t ***aaaiClusterId = nullptr;
-    aaaiClusterId = Alloc3D(tomo_in.header.nvoxels);
+    aaaiClusterId = Alloc3D<ptrdiff_t>(tomo_in.header.nvoxels);
 
     // (Later on we will copy the contents of aaaiClusterId into tomo_out.aaafI
     //  which will be written to a file later.  This way the end-user can

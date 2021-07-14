@@ -93,7 +93,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
     pv_maxima_nvoxels = &maxima_nvoxels;
 
   // 3-D array storing the plateau to which each voxel belongs (if any)
-  ptrdiff_t ***aaaiExtrema = Alloc3D(image_size);
+  ptrdiff_t ***aaaiExtrema = Alloc3D<ptrdiff_t>(image_size);
 
 
   // We will assign voxels in aaaiExtrema[][][] to the following values:

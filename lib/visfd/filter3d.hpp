@@ -84,7 +84,7 @@ public:
     Scalar *afDenominator = nullptr;
     Scalar ***aaafDenominator = nullptr;
     if (normalize)
-      aaafDenominator = Alloc3D(size_source);
+      aaafDenominator = Alloc3D<Scalar>(size_source);
 
     Apply(size_source,
           aaafSource,
@@ -462,7 +462,7 @@ public:
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    aaafH = Alloc3D(array_size);
+    aaafH = Alloc3D<Scalar>(array_size);
     for (Integer iz = 0; iz < array_size[2]; iz++)
       for (Integer iy = 0; iy < array_size[1]; iy++)
         for (Integer ix = 0; ix < array_size[0]; ix++)
@@ -724,7 +724,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 
   if (normalize) {
     if (aaafMask) {
-      aaafDenom = Alloc3D(image_size);
+      aaafDenom = Alloc3D<Scalar>(image_size);
       for (int iz = 0; iz < image_size[2]; iz++)
         for (int iy = 0; iy < image_size[1]; iy++)
           for (int ix = 0; ix < image_size[0]; ix++)
@@ -1355,7 +1355,7 @@ ApplyDog(const int image_size[3], //!< image size in x,y,z directions
       << " -- (If this crashes your computer, find a computer with\n"
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
 
-  aaafTemp = Alloc3D(image_size);
+  aaafTemp = Alloc3D<Scalar>(image_size);
 
   Scalar A, B;        // let the user know what A B coefficients were used
 
@@ -1622,8 +1622,8 @@ LocalFluctuations(const int image_size[3], //!< number of voxels in x,y,z direct
       << " -- Attempting to allocate space for two more images.       --\n"
       << " -- (If this crashes your computer, find a computer with   --\n"
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
-  Scalar ***aaafP       = Alloc3D(image_size);
-  Scalar ***aaafP_dot_P = Alloc3D(image_size);
+  Scalar ***aaafP       = Alloc3D<Scalar>(image_size);
+  Scalar ***aaafP_dot_P = Alloc3D<Scalar>(image_size);
 
   // Initially, set the contents of aaafP equal to the source image.
   for (int iz = 1; iz < image_size[2]-1; iz++)

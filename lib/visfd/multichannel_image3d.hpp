@@ -106,7 +106,7 @@ private:
         << " -- (If this crashes your computer, find a computer with\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
 
-    aaaafI = Alloc3D(image_size);
+    aaaafI = Alloc3D<Scalar*>(image_size);
 
     for (int iz = 0; iz < image_size[2]; iz++)
       for (int iy = 0; iy < image_size[1]; iy++)
@@ -161,7 +161,6 @@ public:
   }
 
   CompactMultiChannelImage3D(const CompactMultiChannelImage3D<Scalar>& source) {
-    Init();
     Resize(source.image_size);
     // copy the numbers
     std::copy(source.afI, source.afI + n_good_voxels, afI);
@@ -172,7 +171,7 @@ public:
           // We want the pointers in aaaafI to point into the afI array
           // (instead of the source.afI array), so we copy the offsets.
           if (source.aaaafI[iz][iy][ix]) {
-            offset = source.aaaafI[iz][iy][ix] - source.afI;
+            Scalar* offset = source.aaaafI[iz][iy][ix] - source.afI;
             aaaafI[iz][iy][ix] = afI + offset;
           }
           else
@@ -192,7 +191,6 @@ public:
 
   // Move constructor (C++11)
   CompactMultiChannelImage3D(CompactMultiChannelImage3D<Scalar>&& other) {
-    Init();
     this->swap(other);
   }
 

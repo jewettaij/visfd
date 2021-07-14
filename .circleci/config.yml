@@ -30,7 +30,7 @@ jobs:
       - run:
           name: Build CLANG version
           command: |
-            source setup_clang.sh
+            source alternate_compiler_settings/for_debugging_and_profiling/setup_clang_dbg.sh
             make clean
             make
       - run:

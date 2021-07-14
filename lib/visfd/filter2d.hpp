@@ -80,7 +80,7 @@ public:
   {
     Scalar **aafDenominator = nullptr;
     if (normalize)
-      aafDenominator = Alloc2D(size_source);
+      aafDenominator = Alloc2D<Scalar>(size_source);
 
     Apply(size_source,
           aafSource,
@@ -224,7 +224,7 @@ public:
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    aafH = Alloc2D(array_size);
+    aafH = Alloc2D<Scalar>(array_size);
     for (Integer iy = 0; iy < array_size[1]; iy++)
       for (Integer ix = 0; ix < array_size[0]; ix++)
         aafH[iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
@@ -262,7 +262,6 @@ public:
   void Resize(Integer const set_halfwidth[2]) {
     //Integer array_size[2];
     if (aafH) {
-      assert(afH);
       for(Integer d=0; d < 2; d++)
         array_size[d] = 1 + 2*halfwidth[d];
       Dealloc2D(aafH);
@@ -272,7 +271,7 @@ public:
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    aafH = Alloc2D(array_size);
+    aafH = Alloc2D<Scalar>(array_size);
   }
 
 

@@ -67,8 +67,7 @@ BlobDogNM(int const image_size[3], //!<source image size
           Scalar nonmax_max_overlap_small=1.0,  //!< maximum volume overlap with smaller blob
           // optional arguments
           ostream *pReportProgress = nullptr, //!< report progress to the user?
-          Scalar ****aaaafI = nullptr, //!<preallocated memory for filtered images
-          Scalar **aafI = nullptr     //!<preallocated memory for filtered images
+          Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images
           )
 {
 
@@ -107,8 +106,7 @@ BlobDogNM(int const image_size[3], //!<source image size
            maxima_threshold,
            use_threshold_ratios,
            pReportProgress,
-           aaaafI,
-           aafI);
+           aaaafI);
 
   bool discard_overlapping_blobs =
     ((sep_ratio_thresh > 0.0) ||
@@ -186,8 +184,7 @@ _BlobDogNM(int const image_size[3], //!<source image size
            Scalar nonmax_max_overlap_large=1.0,  //!<maximum volume overlap with larger blob
            Scalar nonmax_max_overlap_small=1.0,  //!<maximum volume overlap with smaller blob
            ostream *pReportProgress = nullptr,
-           Scalar ****aaaafI = nullptr, //!<preallocated memory for filtered images
-           Scalar **aafI = nullptr     //!<preallocated memory for filtered images
+           Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images
            )
 {
   
@@ -217,8 +214,7 @@ _BlobDogNM(int const image_size[3], //!<source image size
             nonmax_max_overlap_large,
             nonmax_max_overlap_small,
             pReportProgress,
-            aaaafI,
-            aafI);
+            aaaafI);
 
 } //_BlobDogNM(...,filter_truncate_ratio,filter_truncate_threshold,...)
 

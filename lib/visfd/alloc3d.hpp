@@ -24,15 +24,15 @@ namespace visfd {
 
 template<typename Entry, typename Integer>
 Entry ***
-Alloc3D(Integer const size[3]  //!< size of the array in x,y,z directions
+Alloc3D(const Integer size[3]  //!< size of the array in x,y,z directions
         )
 {
   // We need to allocate space to store both the entries of the 3-D array
   // as well as the internal pointers in the pointer->pointer-pointer structure.
   // aC points to a contiguous block of memory large enough to hold everything.
-  std::byte ac = new std::byte [sizeof(Entry**) * (size[2]) +
-                                sizeof(Entry*)  * (size[2]*size[1]) +
-                                sizeof(Entry)   * (size[2]*size[1]*size[0])];
+  std::byte *ac = new std::byte [sizeof(Entry**) * (size[2]) +
+                                 sizeof(Entry*)  * (size[2]*size[1]) +
+                                 sizeof(Entry)   * (size[2]*size[1]*size[0])];
 
   // traditional 3-D C pointer-to-pointer-to-pointer
   Entry ***aaaX = reinterpret_cast<Entry***>(ac);
@@ -71,19 +71,20 @@ Alloc3D(Integer const size[3]  //!< size of the array in x,y,z directions
 
 /// @brief   This function is the corresponding way to dellocate arrays
 ///          that were created using Alloc3D().
-template<typename Entry>
 
+template<typename Entry>
 void Dealloc3D(Entry ***aaaX   //!< a 3-D array created by Alloc3D()
                )
 {
-  assert(aaaX);
-  delete [] reinterpret_cast<std::byte*> aaaX;
-  // Note: This also seems to work:
-  //   delete [] aaaX;
-  // Instead I will use reinterpret_cast<> to make sure that the compiler
-  // realizes that the memory address at aaaX was originally allocated
-  // as an array of std::bytes (not an array of Entry**).
-  // (See Alloc3D() abovel for details.)  Probably this is not necessary.
+  if (aaaX) {
+    delete [] reinterpret_cast<std::byte*>(aaaX);
+    // Note: This also seems to work:
+    //   delete [] aaaX;
+    // Instead I will use reinterpret_cast<> to make sure that the compiler
+    // realizes that the memory address at aaaX was originally allocated
+    // as an array of std::bytes (not an array of Entry**).
+    // (See Alloc3D() abovel for details.)  Probably this is not necessary.
+  }
 }
 
 
