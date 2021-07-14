@@ -69,8 +69,7 @@ BlobDog(int const image_size[3], //!< source image size
         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
         ostream *pReportProgress = nullptr, //!< optional: report progress to the user?
-        Scalar ****aaaafI = nullptr, //!<optional: preallocated memory for filtered images (indexable)
-        Scalar **aafI = nullptr      //!<optional: preallocated memory for filtered images (contiguous)
+        Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images (indexable)
         )
 
 {
@@ -107,18 +106,10 @@ BlobDog(int const image_size[3], //!< source image size
 
   if (! preallocated) {
     assert(aaaafI == nullptr);
-    assert(aafI == nullptr);
     aaaafI = new Scalar*** [3];
-    aafI = new Scalar* [3];
-    Alloc3D(image_size,
-            &(aafI[0]),
-            &(aaaafI[0]));
-    Alloc3D(image_size,
-            &(aafI[1]),
-            &(aaaafI[1]));
-    Alloc3D(image_size,
-            &(aafI[2]),
-            &(aaaafI[2]));
+    aaaafI[0] = Alloc3D(image_size);
+    aaaafI[1] = Alloc3D(image_size);
+    aaaafI[2] = Alloc3D(image_size);
   }
 
 
@@ -428,17 +419,10 @@ BlobDog(int const image_size[3], //!< source image size
 
   if (! preallocated) {
     // Deallocate the temporary arrays we created earlier
-    Dealloc3D(image_size,
-              &aafI[0],
-              &aaaafI[0]);
-    Dealloc3D(image_size,
-              &aafI[1],
-              &aaaafI[1]);
-    Dealloc3D(image_size,
-              &aafI[2],
-              &aaaafI[2]);
+    Dealloc3D(aaaafI[0]);
+    Dealloc3D(aaaafI[1]);
+    Dealloc3D(aaaafI[2]);
     delete [] aaaafI;
-    delete [] aafI;
   }
 
 } //BlobDog()
@@ -1259,10 +1243,7 @@ CalcHessian(int const image_size[3], //!< source image size
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
   Scalar ***aaafSmoothed;
-  Scalar *afSmoothed;
-  Alloc3D(image_size,
-          &afSmoothed,
-          &aaafSmoothed);
+  aaafSmoothed = Alloc3D(image_size);
 
   if (pReportProgress)
     *pReportProgress << "\n";
@@ -1371,9 +1352,7 @@ CalcHessian(int const image_size[3], //!< source image size
     } //for (int iy = 1; iy < image_size[1]-1; iy++)
   } //for (int iz = 1; iz < image_size[2]-1; iz++)
 
-  Dealloc3D(image_size,
-            &afSmoothed,
-            &aaafSmoothed);
+  Dealloc3D(aaafSmoothed);
 
 } //CalcHessian()
 
@@ -1428,11 +1407,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
     filter2.afW[i] *= i*i;
 
 
-  Scalar ***aaafNorm;
-  Scalar *afNorm;
-  Alloc3D(image_size,
-          &afNorm,
-          &aaafNorm);
+  Scalar ***aaafNorm = Alloc3D(image_size);
 
   if (aaafMask) {
     // Calculate the normalization we need by blurring the mask by the Gaussian
@@ -1458,23 +1433,9 @@ CalcMomentTensor(int const image_size[3], //!< source image size
         << " -- (If this crashes your computer, find a computer with   --\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
 
-    Scalar ***aaafIx;
-    Scalar *afIx;
-    Alloc3D(image_size,
-            &afIx,
-            &aaafIx);
-
-    Scalar ***aaafIy;
-    Scalar *afIy;
-    Alloc3D(image_size,
-            &afIy,
-            &aaafIy);
-
-    Scalar ***aaafIz;
-    Scalar *afIz;
-    Alloc3D(image_size,
-            &afIz,
-            &aaafIz);
+    Scalar ***aaafIx = Alloc3D(image_size);
+    Scalar ***aaafIy = Alloc3D(image_size);
+    Scalar ***aaafIz = Alloc3D(image_size);
 
     // calculate the x moment (=x^1 * y^0 * z^0)
     aFilter[0] = filter1;  // x^1
@@ -1552,15 +1513,9 @@ CalcMomentTensor(int const image_size[3], //!< source image size
         }
       }
     }
-    Dealloc3D(image_size,
-              &afIx,
-              &aaafIx);
-    Dealloc3D(image_size,
-              &afIy,
-              &aaafIy);
-    Dealloc3D(image_size,
-              &afIz,
-              &aaafIz);
+    Dealloc3D(aaafIx);
+    Dealloc3D(aaafIy);
+    Dealloc3D(aaafIz);
   } //if (pFirstMoment)
 
 
@@ -1571,11 +1526,7 @@ CalcMomentTensor(int const image_size[3], //!< source image size
         " ------ Calculating the average of nearby voxels: ------\n";
     // P = original image (after subtracting average nearby intensities):
 
-    Scalar ***aaafP;
-    Scalar *afP;
-    Alloc3D(image_size,
-            &afP,
-            &aaafP);
+    Scalar ***aaafP = Alloc3D(image_size);
 
     ApplyGauss(image_size,
                aaafSource,
@@ -1598,41 +1549,12 @@ CalcMomentTensor(int const image_size[3], //!< source image size
         << " -- (If this crashes your computer, find a computer with   --\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.) --\n";
 
-    Scalar ***aaafIxx;
-    Scalar *afIxx;
-    Alloc3D(image_size,
-            &afIxx,
-            &aaafIxx);
-
-    Scalar ***aaafIyy;
-    Scalar *afIyy;
-    Alloc3D(image_size,
-            &afIyy,
-            &aaafIyy);
-
-    Scalar ***aaafIzz;
-    Scalar *afIzz;
-    Alloc3D(image_size,
-            &afIzz,
-            &aaafIzz);
-
-    Scalar ***aaafIxy;
-    Scalar *afIxy;
-    Alloc3D(image_size,
-            &afIxy,
-            &aaafIxy);
-
-    Scalar ***aaafIyz;
-    Scalar *afIyz;
-    Alloc3D(image_size,
-            &afIyz,
-            &aaafIyz);
-
-    Scalar ***aaafIxz;
-    Scalar *afIxz;
-    Alloc3D(image_size,
-            &afIxz,
-            &aaafIxz);
+    Scalar ***aaafIxx = Alloc3D(image_size);
+    Scalar ***aaafIyy = Alloc3D(image_size);
+    Scalar ***aaafIzz = Alloc3D(image_size);
+    Scalar ***aaafIxy = Alloc3D(image_size);
+    Scalar ***aaafIyz = Alloc3D(image_size);
+    Scalar ***aaafIxz = Alloc3D(image_size);
 
     // calculate the x*x moment of the innertia (=x^2 * y^0 * z^0)
     aFilter[0] = filter2;  // x^2
@@ -1768,33 +1690,17 @@ CalcMomentTensor(int const image_size[3], //!< source image size
     if (pReportProgress)
       *pReportProgress << "done ----" << endl;
 
-    Dealloc3D(image_size,
-              &afP,
-              &aaafP);
+    Dealloc3D(aaafP);
 
-    Dealloc3D(image_size,
-              &afIxx,
-              &aaafIxx);
-    Dealloc3D(image_size,
-              &afIyy,
-              &aaafIyy);
-    Dealloc3D(image_size,
-              &afIzz,
-              &aaafIzz);
-    Dealloc3D(image_size,
-              &afIxy,
-              &aaafIxy);
-    Dealloc3D(image_size,
-              &afIxz,
-              &aaafIxz);
-    Dealloc3D(image_size,
-              &afIyz,
-              &aaafIyz);
+    Dealloc3D(aaafIxx);
+    Dealloc3D(aaafIyy);
+    Dealloc3D(aaafIzz);
+    Dealloc3D(aaafIxy);
+    Dealloc3D(aaafIxz);
+    Dealloc3D(aaafIyz);
   } //if (pSecondMoment)
 
-  Dealloc3D(image_size,
-            &afNorm,
-            &aaafNorm);
+  Dealloc3D(aaafNorm);
 
 } // CalcMomentTensor()
 
@@ -2095,7 +2001,6 @@ private:
   Integer array_size[3];
   Filter3D<Scalar, Integer> radial_decay_lookup;
   array<Scalar, 3> ***aaaafDisplacement;
-  array<Scalar, 3> *aafDisplacement;
 
 public:
 
@@ -2187,31 +2092,26 @@ public:
 
     if (pReportProgress)
       *pReportProgress
-        << " -- Attempting to allocate space for one more image.\n"
+        << " -- Attempting to allocate memory for one more image.\n"
         << " -- (If this crashes your computer, find a computer with\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
 
-    Scalar *afDenominator = nullptr;
     Scalar ***aaafDenominator = nullptr;
 
     if (normalize && aaafMaskSource) {
-      Alloc3D(image_size,
-              &afDenominator,
-              &aaafDenominator);
+      aaafDenominator = Alloc3D(image_size);
     }
 
     // If the user did not specify an aaafSaliency[] array (if nullptr),
     // then we must create our own temporary saliency array.
     Scalar const *const *const *saliency_array = aaafSaliency;
-    Scalar *_afSaliency = nullptr;
     Scalar ***_aaafSaliency = nullptr;
 
     if (! aaafSaliency) {
       // If the caller did not specify an aaafSaliency array, then
       // infer the saliency from the magnitude of aaaafV
-      Alloc3D(image_size,
-              &(_afSaliency),
-              &(_aaafSaliency));
+      _aaafSaliency = Alloc3D(image_size);
+
       for (Integer iz=0; iz<image_size[2]; iz++) {
         #pragma omp parallel for collapse(2)
         for (Integer iy=0; iy<image_size[1]; iy++) {
@@ -2237,7 +2137,13 @@ public:
                  aaafDenominator,
                  pReportProgress);
 
-
+    // If we allocated a temporary "_aaafSaliency" array, then deallocate it
+    // now since we are done. (This may also deallocate "saliency_array".)
+    if (_aaafSaliency) {
+      Dealloc3D(_aaafSaliency);
+      _aaafSaliency = nullptr;
+    }
+    
     // If any of the tensor voting sums were incomplete
     // (due to image boundaries, or mask boundaries).
     // then normalize the resulting magnitudes of the filter
@@ -2268,9 +2174,8 @@ public:
             }
           }
         } //for (Integer iz=0; iz<image_size[2]; iz++)
-        Dealloc3D(image_size,
-                  &afDenominator,
-                  &aaafDenominator);
+        Dealloc3D(aaafDenominator);
+        aaafDenominator = nullptr;
 
         if (pReportProgress)
           *pReportProgress << "done." << endl;
@@ -2917,20 +2822,16 @@ private:
         aaaafDisplacement[iz] -= halfwidth[1];
       }
       aaaafDisplacement -= halfwidth[2];
-      Dealloc3D(array_size,
-                &aafDisplacement,
-                &aaaafDisplacement);
+      Dealloc3D(aaaafDisplacement);
+      aaaafDisplacement = nullptr;
     }
   }
 
   void AllocDisplacement() {
     if (aaaafDisplacement)
-      Dealloc3D(array_size,
-                &aafDisplacement,
-                &aaaafDisplacement);
-    Alloc3D(array_size,
-            &aafDisplacement,
-            &aaaafDisplacement);
+      Dealloc3D(aaaafDisplacement);
+    aaaafDisplacement = Alloc3D(array_size);
+            
     //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
     for (Integer iz = 0; iz < array_size[2]; iz++) {
       for (Integer iy = 0; iy < array_size[1]; iy++) {

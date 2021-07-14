@@ -92,12 +92,9 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
   if (pv_maxima_nvoxels == nullptr)
     pv_maxima_nvoxels = &maxima_nvoxels;
 
+  // 3-D array storing the plateau to which each voxel belongs (if any)
+  ptrdiff_t ***aaaiExtrema = Alloc3D(image_size);
 
-  ptrdiff_t ***aaaiExtrema; // 3-D array storing the plateau to which each voxel belongs (if any)
-  ptrdiff_t *aiExtrema;     // the same array, stored contiguously in 1-D
-  Alloc3D(image_size,
-          &aiExtrema,
-          &aaaiExtrema);
 
   // We will assign voxels in aaaiExtrema[][][] to the following values:
   ptrdiff_t NEITHER = 0;//(means this voxel is neither a local minima or maxima)
@@ -502,9 +499,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
     }
   }
 
-  Dealloc3D(image_size,
-            &aiExtrema,
-            &aaaiExtrema);
+  Dealloc3D(aaaiExtrema);
 
   delete [] neighbors;
 

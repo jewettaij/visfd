@@ -658,26 +658,19 @@ HandleBlobDetector(const Settings &settings,
 
   // Optional: Preallocate space for BlobDogNM()
   float*** aaaafI[3];
-  float* aafI[3];
 
-  Alloc3D(tomo_in.header.nvoxels,
-          &(aafI[0]),
-          &(aaaafI[0]));
+  aaaafI[0] = Alloc3D(tomo_in.header.nvoxels);
 
   if (tomo_out.aaafI) {
     // Optional: Instead of allocating aaaafI[1] and aafI[1], borrow the memory
     // you've already allocated to tomo_out.aaafI and afI. (Goal: Save memory.)
-    aafI[1] = tomo_out.afI;
     aaaafI[1] = tomo_out.aaafI;
-  } else {
-    Alloc3D(tomo_in.header.nvoxels,
-            &(aafI[1]),
-            &(aaaafI[1]));
   }
+  else
+    aaaafI[1] = Alloc3D(tomo_in.header.nvoxels);
 
-  Alloc3D(tomo_in.header.nvoxels,
-          &(aafI[2]),
-          &(aaaafI[2]));
+  aaaafI[2] = Alloc3D(tomo_in.header.nvoxels);
+
   // This way we can save memory and also save the 
   // filtered image to a file which we can view using IMOD.
 
@@ -844,23 +837,16 @@ HandleBlobDetector(const Settings &settings,
 
 
 
-  Dealloc3D(tomo_in.header.nvoxels,
-            &aafI[0],
-            &aaaafI[0]);
+  // Clean up.  Deallocate temporary arrays.
+  Dealloc3D(aaaafI[0]);
 
   // Optional: Instead of allocating aaaafI[1] and aafI[1], borrow the memory
   // you've already allocated to tomo_out.aaafI and afI. (Goal: Save memory.)
-  if (! tomo_out.aaafI) {  // <-- Was tomo_out.aaafI available?
+  if (! tomo_out.aaafI)  // <-- Was tomo_out.aaafI available?
     // However, if we didn't allocate it this memory, then don't delete it:
-    Dealloc3D(tomo_in.header.nvoxels,
-              &aafI[1],
-              &aaaafI[1]);
-  }
+    Dealloc3D(aaaafI[1]);
 
-  Dealloc3D(tomo_in.header.nvoxels,
-            &aafI[2],
-            &aaaafI[2]);
-
+  Dealloc3D(aaaafI[2]);
 
 } //HandleBlobDetector()
 
@@ -1151,11 +1137,9 @@ HandleWatershed(const Settings &settings,
   // Create a temporary array to store the basin membership for each voxel.
   // Because the number or clusters could (conceivably) exceed 10^6, we
   // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
-  ptrdiff_t *aiBasinId = nullptr;
   ptrdiff_t ***aaaiBasinId = nullptr;
-  Alloc3D(tomo_in.header.nvoxels,
-          &aiBasinId,
-          &aaaiBasinId);
+  aaaiBasinId = Alloc3D(tomo_in.header.nvoxels);
+
   // (Later on we will copy the contents of aaaiBasinId into tomo_out.aaafI
   //  which will be written to a file later.  This way the end-user can
   //  view the results.)
@@ -1178,9 +1162,7 @@ HandleWatershed(const Settings &settings,
       for (int ix = 0; ix < image_size[0]; ++ix)
         tomo_out.aaafI[iz][iy][ix] = aaaiBasinId[iz][iy][ix];
 
-  Dealloc3D(tomo_in.header.nvoxels,
-            &aiBasinId,
-            &aaaiBasinId);
+  Dealloc3D(aaaiBasinId);
 
   // Did the user supply a mask?
   // Watershed() intentionally does not modify voxels which lie 
@@ -1222,11 +1204,9 @@ HandleClusterConnected(const Settings &settings,
   // Create a temporary array to store the cluster membership for each voxel.
   // Because the number or clusters could (conceivably) exceed 10^6, we
   // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
-  ptrdiff_t *aiClusterId = nullptr;
-  ptrdiff_t ***aaaiClusterId = nullptr;
-  Alloc3D(tomo_in.header.nvoxels,
-          &aiClusterId,
-          &aaaiClusterId);
+
+  ptrdiff_t ***aaaiClusterId = Alloc3D(tomo_in.header.nvoxels);
+
   // (Later on we will copy the contents of aaaiClusterId into tomo_out.aaafI
   //  which will be written to a file later.  This way the end-user can
   //  view the results.)
@@ -1265,9 +1245,7 @@ HandleClusterConnected(const Settings &settings,
       for (int ix = 0; ix < image_size[0]; ++ix)
         tomo_out.aaafI[iz][iy][ix] = aaaiClusterId[iz][iy][ix];
 
-  Dealloc3D(tomo_in.header.nvoxels,
-            &aiClusterId,
-            &aaaiClusterId);
+  Dealloc3D(aaaiClusterId);
 
 } //HandleClusterConnected()
 
@@ -1323,16 +1301,9 @@ HandleTV(const Settings &settings,
   // however defining it as "array<float, 3> ***aaaafGradient;" makes it easier
   // to allocate memory for this array using "Alloc3d()" defined in "alloc3d.h".
 
-  array<float, 3> *aafGradient;
-  // The "Alloc3d()" function also needs an argument which is a pointer to
-  // a 1-D array with the contents of aaaafGradient arranged consecutively.
-  // That's what "aafGradient" is.
-
   // Now use Alloc3D() to allocate space for both aafGradient and aaaafGradient.
 
-  Alloc3D(tomo_in.header.nvoxels,
-          &(aafGradient),
-          &(aaaafGradient));
+  aaaafGradient = Alloc3D(tomo_in.header.nvoxels);
 
   // The storage requirement for Hessians (6 floats) is large enough that
   // I decided to represent hessians using a CompactMultiChannelImage3D.
@@ -1759,11 +1730,10 @@ HandleTV(const Settings &settings,
     // Create a temporary array to store the cluster membership for each voxel.
     // Because the number or clusters could (conceivably) exceed 10^6, we
     // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
-    ptrdiff_t *aiClusterId = nullptr;
+
     ptrdiff_t ***aaaiClusterId = nullptr;
-    Alloc3D(tomo_in.header.nvoxels,
-            &aiClusterId,
-            &aaaiClusterId);
+    aaaiClusterId = Alloc3D(tomo_in.header.nvoxels);
+
     // (Later on we will copy the contents of aaaiClusterId into tomo_out.aaafI
     //  which will be written to a file later.  This way the end-user can
     //  view the results.)
@@ -1802,9 +1772,7 @@ HandleTV(const Settings &settings,
         for (int ix = 0; ix < image_size[0]; ++ix)
           tomo_out.aaafI[iz][iy][ix] = aaaiClusterId[iz][iy][ix];
 
-    Dealloc3D(tomo_in.header.nvoxels,
-              &aiClusterId,
-              &aaaiClusterId);
+    Dealloc3D(aaaiClusterId);
 
   } // if (settings.cluster_connected_voxels)
 
@@ -1859,8 +1827,6 @@ HandleTV(const Settings &settings,
   //    settings.out_file_name + string(".bnpts");
 
 
-  Dealloc3D(tomo_in.header.nvoxels,
-            &(aafGradient),
-            &(aaaafGradient));
+  Dealloc3D(aaaafGradient);
 
 } //HandleTV()

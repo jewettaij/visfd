@@ -554,11 +554,8 @@ ApplyDog(const int image_size[3], //source image size
          ostream *pReportProgress = nullptr)
 {
   Scalar ***aaafTemp; //temporary array to store partially processed tomogram
-  Scalar *afTemp;     //temporary array to store partially processed tomogram
 
-  Alloc3D(image_size,
-          &afTemp,
-          &aaafTemp);
+  aaafTemp = Alloc3D(image_size);
 
   Scalar A, B;        // let the user know what A B coefficients were used
 
@@ -589,9 +586,7 @@ ApplyDog(const int image_size[3], //source image size
         aaafDest[iz][iy][ix] -= aaafTemp[iz][iy][ix];
 
   // Deallocate the temporary array
-  Dealloc3D(image_size,
-            &afTemp,
-            &aaafTemp);
+  Dealloc3D(aaafTemp);
 
   // Report the A and B normalization coefficients to the caller?
   if (pA)

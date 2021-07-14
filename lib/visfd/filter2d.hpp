@@ -29,7 +29,6 @@ template<typename Scalar, typename Integer>
 
 class Filter2D {
 public:
-  Scalar *afH;
   Scalar **aafH;
   Integer halfwidth[2]; //num pixels from filter center to edge in x,y directions
   Integer array_size[2]; //size of the array in x,y directions (in voxels)
@@ -79,10 +78,9 @@ public:
              Scalar const *const *aafMask = nullptr,
              bool normalize = false) const
   {
-    Scalar *afDenominator = nullptr;
     Scalar **aafDenominator = nullptr;
     if (normalize)
-      Alloc2D(size_source, &afDenominator, &aafDenominator);
+      aafDenominator = Alloc2D(size_source);
 
     Apply(size_source,
           aafSource,
@@ -95,7 +93,8 @@ public:
         for (Integer ix=0; ix < size_source[0]; ix++)
           if (aafDenominator[iy][ix] > 0.0)
             aafDest[iy][ix] /= aafDenominator[iy][ix];
-      Dealloc2D(size_source, &afDenominator, &aafDenominator);
+      Dealloc2D(aafDenominator);
+      aafDenominator = nullptr;
     }
   }
 
@@ -225,7 +224,7 @@ public:
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    Alloc2D(array_size, &afH, &aafH);
+    aafH = Alloc2D(array_size);
     for (Integer iy = 0; iy < array_size[1]; iy++)
       for (Integer ix = 0; ix < array_size[0]; ix++)
         aafH[iy][ix] = -1.0e38; //(if uninitiliazed memory read, we will know)
@@ -239,7 +238,6 @@ public:
 
   void Dealloc() {
     if (! aafH) {
-      assert(! afH);
       Init();
       return;
     }
@@ -252,7 +250,8 @@ public:
       aafH[iy] -= halfwidth[0];
     aafH -= halfwidth[1];
     //then deallocate
-    Dealloc2D(array_size, &afH, &aafH);
+    Dealloc2D(aafH);
+    aafH = nullptr;
     for(Integer d=0; d < 2; d++) {
       array_size[d] = -1;
       halfwidth[d] = -1;
@@ -266,13 +265,14 @@ public:
       assert(afH);
       for(Integer d=0; d < 2; d++)
         array_size[d] = 1 + 2*halfwidth[d];
-      Dealloc2D(array_size, &afH, &aafH);
+      Dealloc2D(aafH);
+      aafH = nullptr;
     }
     for(Integer d=0; d < 2; d++) {
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    Alloc2D(array_size, &afH, &aafH);
+    aafH = Alloc2D(array_size);
   }
 
 
@@ -281,7 +281,6 @@ public:
     halfwidth[1] = -1;
     array_size[0] = -1;
     array_size[1] = -1;
-    afH = nullptr;
     aafH = nullptr;
   }
 
@@ -307,18 +306,13 @@ public:
   Filter2D(const Filter2D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH and aafH
-    //for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-    //  for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-    //    aafH[iy][ix] = source.aafH[iy][ix];
-    // -- Use std:copy() instead: --
-    std::copy(source.afH,
-              source.afH + (array_size[0] * array_size[1]),
-              afH);
+    for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+      for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+        aafH[iy][ix] = source.aafH[iy][ix];
   }
 
 
   void swap(Filter2D<Scalar, Integer> &other) {
-    std::swap(afH, other.afH);
     std::swap(aafH, other.aafH);
     std::swap(halfwidth, other.halfwidth);
     std::swap(array_size, other.array_size);

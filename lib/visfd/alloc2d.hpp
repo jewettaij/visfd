@@ -1,7 +1,7 @@
 ///   @file alloc2d.hpp
 ///   @brief functions that allocate and deallocate 2D arrays
 ///   @author Andrew Jewett
-///   @date 2018-2-26
+///   @date 2021-7-13
 
 #ifndef _ALLOC2D_HPP
 #define _ALLOC2D_HPP
@@ -9,58 +9,40 @@
 
 namespace visfd {
 
-/// @brief
-/// Alloc2D() is a function for allocating 2-dimensional arrays of data
-/// (contiguous in memory, in row-major format.)
-/// (The functions in this file are used to allocate arrays for storing
-///  tomographic data, and also precomputed filter-weights.)
 
 
-template<typename Entry, typename Integer>
+/// @brief    A function for allocating C-style 2-dimensional arrays of data
+///           (contiguous in memory, in row-major format.)
+/// @returns  The array after allocation.  (Suppose A = Alloc2D(image_size).
+///           Then the contents of A can be accessed using A[iy][ix].)
+/// @details  This array can be deallocated using Dealloc2D().
 
-void Alloc2D(Integer const size[2], //!< size of the array in x,y directions
-             Entry **paX,           //!< pointer to 1-D contiguous-memory array
-             Entry ***paaX)         //!< pointer to 2-D multidimensional array
+template<typename Entry>
+void Alloc2D(int size[2]           //!< size of the array (number of rows)
+             )
 {
-  if (! paX)
-    return;
-
-  // Allocate a 2-dimensional table row-major order
-  // Optional: Also allocate a conventional 2-dimensional
-  //           pointer-to-a-pointer-to-a-pointer data structure (aaX), that
-  //           you can use to access the contents using aaX[j][i] notation.
-  *paX = new Entry [size[0] * size[1]];
-
-  if (! paaX)
-    return;
-
-  *paaX = new Entry* [size[1]];
-
-  for(Integer iy=0; iy<size[1]; iy++)
-    (*paaX)[iy] = &((*paX)[ iy*size[0] ]);
-
+  Entry **aaX = new Entry* [nrows];
+  aaX[0] = new Entry [nrows * ncols];  // 1D C array (contiguous memory)
+  for(size_t iy=0; iy<nrows; iy++)
+    aaX[iy] = aaX[0] + iy*ncols;
+  return aaX;
 }
+
 
 
 /// @brief
 /// This function is the corresponding way to dellocate arrays
 /// that were created using Alloc2D()
-
-template<typename Entry, typename Integer>
-
-void Dealloc2D(Integer const size[2], //!< size of the array in x,y directions
-               Entry **paX,          //!< pointer to 1-D contiguous-memory array
-               Entry ***paaX)        //!< pointer to 2-D multidimensional array
+template<typename Entry>
+void Dealloc2D(Entry **aaX       //!< pointer to a 2D C-style array
+               )
 {
-  if (paaX && *paaX) {
-    delete [] (*paaX);
-    *paaX = nullptr;
-  }
-  if (paX && *paX) {
-    delete [] *paX;
-    *paX = nullptr;
+  if (aaX) {
+    delete [] aaX[0];
+    delete [] aaX;
   }
 }
+
 
 
 } //namespace visfd

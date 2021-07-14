@@ -33,7 +33,6 @@ template<typename Scalar, typename Integer>
 class Filter3D {
 
 public:
-  Scalar *afH;         //!< contiguous block of memory storing the filter array
   Scalar ***aaafH;     //!< the same array which can be indexed using [i][j][k] notation
   Integer halfwidth[3]; //!< num pixels from filter center to edge in x,y,z directions
   Integer array_size[3]; //!<size of the array in x,y,z directions (2*halfwidth+1)
@@ -85,7 +84,7 @@ public:
     Scalar *afDenominator = nullptr;
     Scalar ***aaafDenominator = nullptr;
     if (normalize)
-      Alloc3D(size_source, &afDenominator, &aaafDenominator);
+      aaafDenominator = Alloc3D(size_source);
 
     Apply(size_source,
           aaafSource,
@@ -100,7 +99,8 @@ public:
           for (Integer ix=0; ix < size_source[0]; ix++)
             if (aaafDenominator[iz][iy][ix] > 0.0)
               aaafDest[iz][iy][ix] /= aaafDenominator[iz][iy][ix];
-      Dealloc3D(size_source, &afDenominator, &aaafDenominator);
+      Dealloc3D(aaafDenominator);
+      aaafDenominator = nullptr;
     }
   }
 
@@ -231,19 +231,14 @@ public:
   Filter3D(const Filter3D<Scalar, Integer>& source) {
     Init();
     Resize(source.halfwidth); // allocates and initializes afH and aaafH
-    //for(Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-    //  for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-    //    for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
-    //      aaafH[iz][iy][ix] = source.aaafH[iz][iy][ix];
-    // -- Use std:copy() instead: --
-    std::copy(source.afH,
-              source.afH + (array_size[0] * array_size[1] * array_size[2]),
-              afH);
+    for(Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
+      for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
+        for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+          aaafH[iz][iy][ix] = source.aaafH[iz][iy][ix];
   }
 
 
   void swap(Filter3D<Scalar, Integer> &other) {
-    std::swap(afH, other.afH);
     std::swap(aaafH, other.aaafH);
     std::swap(halfwidth, other.halfwidth);
     std::swap(array_size, other.array_size);
@@ -467,7 +462,7 @@ public:
       halfwidth[d] = set_halfwidth[d];
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    Alloc3D(array_size, &afH, &aaafH);
+    aaafH = Alloc3D(array_size);
     for (Integer iz = 0; iz < array_size[2]; iz++)
       for (Integer iy = 0; iy < array_size[1]; iy++)
         for (Integer ix = 0; ix < array_size[0]; ix++)
@@ -487,15 +482,14 @@ public:
   /// @brief allocate space used by the filter array
   void Dealloc() {
     if (! aaafH) {
-      assert(! afH);
       Init();
       return;
     }
-    //Integer array_size[3];
+    // Integer array_size[3];
     for(int d=0; d < 3; d++) {
       array_size[d] = 1 + 2*halfwidth[d];
     }
-    //shift pointers back to normal
+    // shift pointers back to normal
     for (Integer iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
       for (Integer iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
         aaafH[iz][iy] -= halfwidth[0];
@@ -503,8 +497,9 @@ public:
       aaafH[iz] -= halfwidth[1];
     }
     aaafH -= halfwidth[2];
-    //then deallocate
-    Dealloc3D(array_size, &afH, &aaafH);
+    // then deallocate
+    Dealloc3D(aaafH);
+    aaafH = nullptr;
     for(int d=0; d < 3; d++) {
       array_size[d] = -1;
       halfwidth[d] = -1;
@@ -525,7 +520,6 @@ public:
     array_size[0] = -1;
     array_size[1] = -1;
     array_size[2] = -1;
-    afH = nullptr;
     aaafH = nullptr;
   }
   
@@ -730,7 +724,7 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
 
   if (normalize) {
     if (aaafMask) {
-      Alloc3D(image_size, &afDenom, &aaafDenom);
+      aaafDenom = Alloc3D(image_size);
       for (int iz = 0; iz < image_size[2]; iz++)
         for (int iy = 0; iy < image_size[1]; iy++)
           for (int ix = 0; ix < image_size[0]; ix++)
@@ -993,7 +987,8 @@ ApplySeparable(int const image_size[3],              //!<number of voxels in x,y
             if (aaafDenom[iz][iy][ix] > 0.0)
               aaafDest[iz][iy][ix] /= aaafDenom[iz][iy][ix];
       // Cleanup
-      Dealloc3D(image_size, &afDenom, &aaafDenom);
+      Dealloc3D(aaafDenom);
+      aaafDenom = nullptr;
     }
     else {
       // Optimization when no mask is supplied:
@@ -1360,9 +1355,7 @@ ApplyDog(const int image_size[3], //!< image size in x,y,z directions
       << " -- (If this crashes your computer, find a computer with\n"
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
 
-  Alloc3D(image_size,
-          &afTemp,
-          &aaafTemp);
+  aaafTemp = Alloc3D(image_size);
 
   Scalar A, B;        // let the user know what A B coefficients were used
 
@@ -1393,9 +1386,8 @@ ApplyDog(const int image_size[3], //!< image size in x,y,z directions
         aaafDest[iz][iy][ix] -= aaafTemp[iz][iy][ix];
 
   // Deallocate the temporary array
-  Dealloc3D(image_size,
-            &afTemp,
-            &aaafTemp);
+  Dealloc3D(aaafTemp);
+  aaafTemp = nullptr;
 
   // Report the A and B (normalization) coefficients to the caller?
   if (pA)
@@ -1630,16 +1622,8 @@ LocalFluctuations(const int image_size[3], //!< number of voxels in x,y,z direct
       << " -- Attempting to allocate space for two more images.       --\n"
       << " -- (If this crashes your computer, find a computer with   --\n"
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
-  Scalar ***aaafP;
-  Scalar *afP;
-  Alloc3D(image_size,
-          &afP,
-          &aaafP);
-  Scalar *afP_dot_P;
-  Scalar ***aaafP_dot_P;
-  Alloc3D(image_size,
-          &afP_dot_P,
-          &aaafP_dot_P);
+  Scalar ***aaafP       = Alloc3D(image_size);
+  Scalar ***aaafP_dot_P = Alloc3D(image_size);
 
   // Initially, set the contents of aaafP equal to the source image.
   for (int iz = 1; iz < image_size[2]-1; iz++)
@@ -1742,12 +1726,10 @@ LocalFluctuations(const int image_size[3], //!< number of voxels in x,y,z direct
     } //for(int iy=0; iy<image_size[1]; iy++)
   } //for(int iz=0; iz<image_size[2]; iz++)
 
-  Dealloc3D(image_size,
-            &afP,
-            &aaafP);
-  Dealloc3D(image_size,
-            &afP_dot_P,
-            &aaafP_dot_P);
+  Dealloc3D(aaafP);
+  aaafP = nullptr;
+  Dealloc3D(aaafP_dot_P);
+  aaafP_dot_P = nullptr;
 } //LocalFluctuations()
 
 

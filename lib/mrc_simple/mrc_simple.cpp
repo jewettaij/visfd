@@ -53,9 +53,9 @@ MrcSimple(int const set_nvoxels[3],
 
 
 void MrcSimple::Alloc() {
-  Alloc3D(header.nvoxels,
-          &afI,
-          &aaafI);
+
+  aaafI = Alloc3D(header.nvoxels);
+
   for (int iz = 0; iz < header.nvoxels[2]; iz++) {
     for (int iy = 0; iy < header.nvoxels[1]; iy++) {
       for (int ix = 0; ix < header.nvoxels[0]; ix++) {
@@ -68,9 +68,7 @@ void MrcSimple::Alloc() {
 
 
 void MrcSimple::Dealloc() {
-  Dealloc3D(header.nvoxels,
-            &afI,
-            &aaafI);
+  Dealloc3D(aaafI);
 }
 
 

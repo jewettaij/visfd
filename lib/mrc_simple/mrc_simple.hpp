@@ -53,10 +53,6 @@ public:
                         ///<    header.cellA[] stores the physical size of
                         ///<                    the tomographic reconstruction)
 
-  float *afI;           ///< pointer to a (contiguous) 1-D array containing 
-                        ///< the entire tomogram. The data at x,y,z is located
-                        ///<   at  afI[ix + iy*sizex + iz*sizex*sizey]
-
   float ***aaafI;       ///< Useful if you prefer to use 3-index notation:
                         ///<    aafI[iz][iy][ix] =
                         ///<     afI[ix + iy*sizex + iz*sizex*sizey]
@@ -121,11 +117,8 @@ public:
   /// @brief  Print information about the tomogram size and format
   void PrintStats(ostream &out) { header.PrintStats(out); }
 
-  // ------ Constructors, destructors, memory-allocation ------
-
 private:
   void Init() {
-    afI = nullptr;
     aaafI = nullptr;
     header.mode = MrcHeader::MRC_MODE_FLOAT;
   }
@@ -134,11 +127,6 @@ public:
   MrcSimple() {
     Init();
   }
-
-  ~MrcSimple() {
-    Dealloc();
-  }
-
 
   /// @brief  Change the size (number of voxels) in the image.
 
@@ -157,10 +145,16 @@ public:
   }
 
 
-  MrcSimple(int const set_nvoxels[3],//!< number of voxels in the xyz directions
+  MrcSimple(const int set_nvoxels[3],//!< number of voxels in the xyz directions
             float ***aaaf_contents //!< a 3D array of voxel values
             );
 
+
+  // destructor, copy and move constructor, swap, and assignment operator
+
+  ~MrcSimple() {
+    Dealloc();
+  }
 
   MrcSimple(const MrcSimple& source):
     MrcSimple(source.header.nvoxels,
@@ -171,11 +165,17 @@ public:
 
   void swap(MrcSimple &other) {
     std::swap(header, other.header);
-    std::swap(afI, other.afI);
     std::swap(aaafI, other.aaafI);
     // (do I need to do something fancier for multidimensional arrays (aaafI)?)
   }
 
+  // Move constructor (C++11)
+  MrcSimple(MrcSimple&& other) {
+    Init();
+    this->swap(other);
+  }
+
+  // Using the "copy-swap" idiom for the assignment operator
   MrcSimple&
     operator = (MrcSimple source) {
     this->swap(source);

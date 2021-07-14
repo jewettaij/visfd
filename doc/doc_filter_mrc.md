@@ -995,7 +995,7 @@ These filters are only intended for use with binary images
 These filters are an alternative implementation of
 [image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
 [image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
-that uses fast Gaussian filters to blur an image, followed by thresholding.
+that uses fast Gaussian filters to blur an image followed by thresholding.
 For binary images containing large smooth regions of bright voxels,
 the **-dilation-gauss** and **-erosion-gauss** arguments
 will enlarge or shrink the size of these bright regions
@@ -1005,7 +1005,7 @@ Note that, due to blurring, features in the image which are smaller or
 narrower than *thickness* will be lost after this operation is completed.
 This generally producing a smoother result,
 and avoids the sometimes undesirable sensitivity
-noise and small blemishes that ordinary
+to noise and small blemishes that ordinary
 [dilation](#-dilation-sphere-thickness) and
 [erosion](#-erosion-sphere-thickness) filters can suffer from.
 However, this blurring makes these filters unsuitable

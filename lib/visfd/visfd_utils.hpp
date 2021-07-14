@@ -299,11 +299,7 @@ FindSpheres(const vector<array<Scalar,3> >& crds, //!< locations of blob-like th
         image_size[d] = crds[i][d] + 1;
 
   // Now allocate the lookup table
-  Integer ***aaaiWhichBlob;
-  Integer *afWhichBlob;
-  Alloc3D(image_size,
-          &afWhichBlob,
-          &aaaiWhichBlob);
+  Integer ***aaaiWhichBlob = Alloc3D(image_size);
   const Integer UNOCCUPIED = 0;
 
   // Initialize the lookup table:
@@ -350,6 +346,8 @@ FindSpheres(const vector<array<Scalar,3> >& crds, //!< locations of blob-like th
     ptrdiff_t which_blob = aaaiWhichBlob[iz][iy][ix];
     sphere_ids.push_back(which_blob);
   }
+
+  Dealloc3D(aaaiWhichBlob);
 
 } // FindSpheres()
 

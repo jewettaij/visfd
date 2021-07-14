@@ -527,12 +527,9 @@ OpenSphere(Scalar radius,             //!< radius of the sphere
            ostream *pReportProgress = nullptr //!< report progress to the user
            )
 {
-  float *afTmp;      //temporary space to store image after erosion
   float ***aaafTmp;  //temporary space to store image after erosion
 
-  Alloc3D(image_size,
-          &afTmp,
-          &aaafTmp);
+  aaafTmp = Alloc3D(image_size);
 
   ErodeSphere(radius,
               image_size,
@@ -550,9 +547,7 @@ OpenSphere(Scalar radius,             //!< radius of the sphere
                smooth_boundary,
                pReportProgress);
 
-  Dealloc3D(image_size,
-            &afTmp,
-            &aaafTmp);
+  Dealloc3D(aaafTmp);
 
 } // OpenSphere()
 
@@ -574,12 +569,9 @@ CloseSphere(Scalar radius,            //!< radius of the sphere
             ostream *pReportProgress = nullptr //!< report progress to the user
             )
 {
-  float *afTmp;      //temporary space to store image after dilation
   float ***aaafTmp;  //temporary space to store image after dilation
 
-  Alloc3D(image_size,
-          &afTmp,
-          &aaafTmp);
+  aaafTmp = Alloc3D(image_size);
 
   DilateSphere(radius,
                image_size,
@@ -597,11 +589,92 @@ CloseSphere(Scalar radius,            //!< radius of the sphere
               smooth_boundary,
               pReportProgress);
 
-  Dealloc3D(image_size,
-            &afTmp,
-            &aaafTmp);
+  Dealloc3D(aaafTmp);
 
 } // CloseSphere()
+
+
+
+/// @brief Computes the grayscale white top-hat transform of an image
+///        using a flat spherical structure factor.
+///        https://en.wikipedia.org/wiki/Top-hat_transform
+///        The radius paramater can be a floating point number, but its
+///        units are in voxels.
+template<typename Scalar>
+void
+WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere
+                  const int image_size[3],   //!< size of the image in x,y,z directions
+                  Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
+                  Scalar ***aaafDest,        //!< image array aaafI[iz][iy][ix]
+                  Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+                  bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+                  ostream *pReportProgress = nullptr //!< report progress to the user
+                  )
+{
+  float ***aaafTmp;  //temporary space to store image after erosion
+
+  aaafTmp = Alloc3D(image_size);
+
+  // Compute the image opening
+  OpenSphere(radius,
+             image_size,
+             aaafSource,
+             aaafTmp,  //<--save the resulting image in aaafTmp
+             aaafMask,
+             smooth_boundary,
+             pReportProgress);
+
+  // Subtract it from the original image brightness
+  for (int iz = 0; iz < image_size[2]; iz++)
+    for (int iy = 0; iy < image_size[1]; iy++)
+      for (int ix = 0; ix < image_size[0]; ix++)
+        aaafDest[iz][iy][ix] -= aaafTmp[iz][iy][ix];
+
+  Dealloc3D(aaafTmp);
+
+} // WhiteTopHatSphere()
+
+
+
+/// @brief Computes the grayscale black top-hat transform of an image
+///        using a flat spherical structure factor.
+///        https://en.wikipedia.org/wiki/Top-hat_transform
+///        The radius paramater can be a floating point number, but its
+///        units are in voxels.
+template<typename Scalar>
+void
+BlackTopHatSphere(Scalar radius,             //!< radius of the sphere
+                  const int image_size[3],   //!< size of the image in x,y,z directions
+                  Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
+                  Scalar ***aaafDest,        //!< image array aaafI[iz][iy][ix]
+                  Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+                  bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+                  ostream *pReportProgress = nullptr //!< report progress to the user
+                  )
+{
+  float ***aaafTmp;  //temporary space to store image after erosion
+
+  aaafTmp = Alloc3D(image_size);
+
+  // Compute the image closing
+  CloseSphere(radius,
+              image_size,
+              aaafSource,
+              aaafTmp,  //<--save the resulting image in aaafTmp
+              aaafMask,
+              smooth_boundary,
+              pReportProgress);
+
+  // Subtract the original image brightness
+  for (int iz = 0; iz < image_size[2]; iz++)
+    for (int iy = 0; iy < image_size[1]; iy++)
+      for (int ix = 0; ix < image_size[0]; ix++)
+        aaafDest[iz][iy][ix] = aaafTmp[iz][iy][ix] - aaafDest[iz][iy][ix];
+
+  Dealloc3D(aaafTmp);
+
+} // BlackTopHatSphere()
+
 
 
 

@@ -43,15 +43,14 @@ class CompactMultiChannelImage3D
 
 private:
 
-  Scalar **aafI;
-  Scalar *afI;
+  Scalar *afI;       // a 1-D array storing all the numbers 
   size_t n_good_voxels;
   int n_channels_per_voxel;
   int image_size[3];
 
 public:
 
-  Scalar ****aaaafI; // Stores the image data
+  Scalar ****aaaafI; // a 3D array of pointers into the afI array
 
 
   int
@@ -88,10 +87,6 @@ public:
     Alloc(set_image_size, aaafMask, pReportProgress);
   }
 
-  ~CompactMultiChannelImage3D() {
-    Dealloc();
-  }
-
 private:
 
   void
@@ -110,9 +105,9 @@ private:
         << n_channels_per_voxel << "-channel image\n"
         << " -- (If this crashes your computer, find a computer with\n"
         << " --  more RAM and use \"ulimit\", OR use a smaller image.)\n";
-    Alloc3D(image_size,
-            &aafI,
-            &aaaafI);
+
+    aaaafI = Alloc3D(image_size);
+
     for (int iz = 0; iz < image_size[2]; iz++)
       for (int iy = 0; iy < image_size[1]; iy++)
         for (int ix = 0; ix < image_size[0]; ix++)
@@ -146,19 +141,66 @@ private:
         << "        done\n" << endl;
   } //Alloc()
 
-
   void
   Dealloc()
   {
     delete [] afI;
 
     // Now delete the array of pointers (aaaafI, which pointed to afI)
-    Dealloc3D(image_size,
-              &aafI,
-              &aaaafI);
+    Dealloc3D(aaaafI);
     afI = nullptr;
-    aafI = nullptr;
     aaaafI = nullptr;
+  }
+
+public:
+
+  // destructor, copy and move constructor, swap, and assignment operator
+
+  ~CompactMultiChannelImage3D() {
+    Dealloc();
+  }
+
+  CompactMultiChannelImage3D(const CompactMultiChannelImage3D<Scalar>& source) {
+    Init();
+    Resize(source.image_size);
+    // copy the numbers
+    std::copy(source.afI, source.afI + n_good_voxels, afI);
+    // copy the pointers
+    for (int iz = 0; iz < image_size[2]; iz++) {
+      for (int iy = 0; iy < image_size[1]; iy++) {
+        for (int ix = 0; ix < image_size[0]; ix++) {
+          // We want the pointers in aaaafI to point into the afI array
+          // (instead of the source.afI array), so we copy the offsets.
+          if (source.aaaafI[iz][iy][ix]) {
+            offset = source.aaaafI[iz][iy][ix] - source.afI;
+            aaaafI[iz][iy][ix] = afI + offset;
+          }
+          else
+            aaaafI[iz][iy][ix] = nullptr;
+        }
+      }
+    }
+  }
+
+  void swap(CompactMultiChannelImage3D<Scalar> &other) {
+    std::swap(n_good_voxels, other.n_good_voxels);
+    std::swap(n_channels_per_voxel, other.n_channels_per_voxel);
+    std::swap(image_size, other.image_size);
+    std::swap(afI, other.afI);
+    std::swap(aaaafI, other.aaaafI);
+  }
+
+  // Move constructor (C++11)
+  CompactMultiChannelImage3D(CompactMultiChannelImage3D<Scalar>&& other) {
+    Init();
+    this->swap(other);
+  }
+
+  // Using the "copy-swap" idiom for the assignment operator
+  CompactMultiChannelImage3D<Scalar>&
+    operator = (CompactMultiChannelImage3D<Scalar> source) {
+    this->swap(source);
+    return *this;
   }
 
 }; //class CompactMultiChannelImage3D
