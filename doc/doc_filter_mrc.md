@@ -49,12 +49,12 @@ In this way, you can use a mask to to apply a filter to an image
 whose boundaries are smooth and gradual as opposed to jagged and rectangular,
 
 
-### Alternatives to filter_mrc
+### *Alternatives to filter_mrc*
 Many of the features of **filter_mrc** are also available
 from popular python libraries, including:
 [scikit-image](https://scikit-image.org)
 and
-[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html)
+[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 MRC files can be read in python using the
 [mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
 module.
@@ -210,17 +210,21 @@ image processing, allowing you to segment the contents of the cell
 or segment concentric compartments inside larger compartments
 (eg. organelles inside cells).
 
-Optional: The file "segmented.rec" includes voxels all the way to the
-membrane boundary.  Hence, some of these voxels at the surface are actually
-in the membrane itself, which is typically darker than the interior.
-In order to exclude these membrane voxels, you may want to discard voxels that
-too close to the surface.  The following command will contract the boundary
-of the surface by approximately 40 Angstroms inward, creating a new file
-"segmented_interior.rec".
+Keep in mind that the file "segmented.rec" includes voxels extending
+all the way to the center of the membrane boundary.  Hence, some of
+these voxels at the surface are actually part of the membrane itself.
+We can optionally cleanup of the segmented volume to exclude voxels
+that are too close to the membrane surface.
+The [-erosion](#-erosion-thickness) 
+argument will contract the boundary of a segmented
+surface by approximately 50.0 Angstroms inward,
+creating a new file "segmented_interior.rec".
 ```
-filter_mrc -i segmented.rec -o segmented_interior.rec -erosion 40
+filter_mrc -i segmented.rec -o segmented_interior.rec -erosion 50.0
 ```
-*(See [-erosion](#-erosion-thickness) for details.)*
+(You will have to play with this distance parameter, eg "50.0"
+to see what works best.)
+
 
 
 **Note:**

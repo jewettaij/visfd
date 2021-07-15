@@ -25,12 +25,12 @@ Multiprocessor support is implemented using
 [OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
 
 
-## Alternatives to VISFD
+## *Alternatives to VISFD*
 Some of the features of VISFD are also available
 from popular python libraries, including:
 [scikit-image](https://scikit-image.org)
 and
-[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html)
+[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 *(MRC files can be read in python using the
 [mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
 module.)*
