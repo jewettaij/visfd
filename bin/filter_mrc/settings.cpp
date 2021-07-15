@@ -660,6 +660,42 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
+    else if (vArgs[i] == "-top-hat-white")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        thickness_morphology = stof(vArgs[i+1]);
+        filter_type = TOP_HAT_WHITE;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number (\"s\"),\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-top-hat-white")
+
+
+
+    else if (vArgs[i] == "-top-hat-black")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        thickness_morphology = stof(vArgs[i+1]);
+        filter_type = TOP_HAT_BLACK;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number (\"s\"),\n");
+      }
+      num_arguments_deleted = 2;
+    } //if (vArgs[i] == "-top-hat-black")
+
+
+
     else if (vArgs[i] == "-truncate")
     {
       try {

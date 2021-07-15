@@ -428,6 +428,24 @@ int main(int argc, char **argv) {
 
 
 
+    else if (settings.filter_type == Settings::TOP_HAT_WHITE) {
+
+      // Apply a greyscale "white top-hat" filter to the image.
+      HandleTopHatWhite(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+
+    else if (settings.filter_type == Settings::TOP_HAT_BLACK) {
+
+      // Apply a greyscale "black top-hat" filter to the image.
+      HandleTopHatBlack(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+
     else if (settings.filter_type == Settings::GAUSS) {
 
       // Apply a Gaussian filter to the image.

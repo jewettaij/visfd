@@ -36,11 +36,19 @@ HandleClosing(const Settings &settings,
 
 
 void
-HandleGGauss(const Settings &settings,
-             MrcSimple &tomo_in,
-             MrcSimple &tomo_out,
-             MrcSimple &mask,
-             float voxel_width[3]);
+HandleTopHatWhite(const Settings &settings,
+                  MrcSimple &tomo_in,
+                  MrcSimple &tomo_out,
+                  MrcSimple &mask,
+                  float voxel_width[3]);
+
+
+void
+HandleTopHatBlack(const Settings &settings,
+                  MrcSimple &tomo_in,
+                  MrcSimple &tomo_out,
+                  MrcSimple &mask,
+                  float voxel_width[3]);
 
 
 void
@@ -52,11 +60,11 @@ HandleGauss(const Settings &settings,
 
 
 void
-HandleDogg(const Settings &settings,
-           MrcSimple &tomo_in,
-           MrcSimple &tomo_out,
-           MrcSimple &mask,
-           float voxel_width[3]);
+HandleGGauss(const Settings &settings,
+             MrcSimple &tomo_in,
+             MrcSimple &tomo_out,
+             MrcSimple &mask,
+             float voxel_width[3]);
 
 
 void
@@ -65,6 +73,14 @@ HandleDog(const Settings &settings,
           MrcSimple &tomo_out,
           MrcSimple &mask,
           float voxel_width[3]);
+
+
+void
+HandleDogg(const Settings &settings,
+           MrcSimple &tomo_in,
+           MrcSimple &tomo_out,
+           MrcSimple &mask,
+           float voxel_width[3]);
 
 
 void

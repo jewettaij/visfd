@@ -925,7 +925,7 @@ arguments, perhaps several times with different thresholds)
 ### -erosion thickness
 ### -dilation thickness
 
-This will apply a *grayscale*
+These arguments will apply a *grayscale*
 [image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
 [image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
 filter to your image.  This will enlarge the
@@ -951,16 +951,12 @@ ignored or considered during subsequent calculations)*.
 
 ***WARNING:*** Dilation and erosion are slow for large *thickness* parameters.
 If you have a binary image (images whose voxels have brightnesses of
-either 0 or 1), you can use "-dilation-binary" or "-erosion-binary" instead.
-*(<--NOTE: THIS FEATURE IS NOT IMPLEMENTED YET. -A 2021-7-11.)*
-For binary images, you can also use the Gaussian dilation and erosion
-method, which is even faster, using the
+either 0 or 1), you can try using the fast Gaussian dilation and erosion
+method, using the
 [-dilation-gauss](#-dilation-gauss-thickness) and
 [-erosion-gauss](#-erosion-gauss-thickness)
 arguments.
 *(For additional morphological filter operations, see
-[dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.dilation)
-[erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.erosion)
 [binary_dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_dilation)
 [binary_erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_erosion)
 from
@@ -973,7 +969,7 @@ module.)*
 ### -opening thickness
 ### -closing thickness
 
-This will apply a *grayscale*
+These arguments will apply a *grayscale*
 [image opening](https://en.wikipedia.org/wiki/Opening_(morphology)) and
 [image closing](https://en.wikipedia.org/wiki/Closing_(morphology))
 filter to your image.
@@ -986,16 +982,37 @@ The size of the objects removed is determined by the *thickness* parameter
 *(Details: A spherical structure-factor with radius=thickness is used.)*
 
 
+### -white-top-hat thickness
+### -black-top-hat thickness
+
+These arguments will apply a *grayscale*
+[top-hat](https://en.wikipedia.org/wiki/Opening_(morphology))
+transform to your image.
+The white top-hat filter emphasizes small bright objects on a dark background.
+The black top-hat filter emphasizes small dark objects on a bright background.
+The size of the objects preserved is determined by the *thickness* parameter
+(which is in physical units, not voxels, unless the
+[-w 1](#Voxel-Width) argument is used).
+*(Details: A spherical structure-factor with radius=thickness is used.)*
+
+*Note: As an alternative, you can also use a
+[difference-of-gaussians](#https://en.wikipedia.org/wiki/Difference_of_Gaussians)
+filter to remove low frequencies from an image.  To do that use the
+[-dog a b](#-dog) argument, setting a=0, and setting b to 
+a distance which is similar to the size of the large objects
+or gradients that you want removed from the image.*
+
+
 ### -erosion-gauss thickness
 ### -dilation-gauss thickness
-
-These filters are only intended for use with binary images 
-(images whose voxels have brightnesses of either 0 or 1).
 
 These filters are an alternative implementation of
 [image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
 [image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
 that uses fast Gaussian filters to blur an image followed by thresholding.
+
+*Note: These arguments use filters that are only intended for use with
+binary images (images whose voxels have brightnesses of either 0 or 1).*
 For binary images containing large smooth regions of bright voxels,
 the **-dilation-gauss** and **-erosion-gauss** arguments
 will enlarge or shrink the size of these bright regions
@@ -1567,11 +1584,22 @@ or
 ```
    -gauss-aniso  σ_x  σ_y  σ_z
 ```
-In either case, the original image is convolved with:
+In either case, the original image is convolved (ie. "blurred")
+with a filter whose profile is *similar to* a Gaussian:
 ```
    h(x,y,z) = A*exp(-0.5 * ((x/σ_x)^2 + (y/σ_y)^2 + (z/σ_z)^2))
 ```
-When *-gauss* is used, *σ_x = σ_y = σ_z = σ*
+When *-gauss* is used, *σ_x = σ_y = σ_z = σ*.
+
+#### *Details*
+*The actual filter used is the product of three
+[discrete Gaussian filters](https://en.wikipedia.org/wiki/Scale_space_implementation#The_discrete_Gaussian_kernel),
+(one in the X, Y, and Z directions, with *t=σ^2*).
+Discrete Gaussian filters are almost identical to ordinary Gaussian filters
+(in the limit of large σ).  However a discrete Guassian filter may be more
+suitable when used with small σ, to detect features that are only a couple
+of voxels wide.*
+
 
 If **-ggauss** or **-ggauss-aniso** is used,
 then the image is instead convolved with

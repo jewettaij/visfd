@@ -38,6 +38,8 @@ class Settings {
     EROSION,  // grayscale image erosion
     OPENING,  // grayscale image opening
     CLOSING,  // grayscale image closing
+    TOP_HAT_WHITE, // top hat transforms
+    TOP_HAT_BLACK, // (see https://en.wikipedia.org/wiki/Top-hat_transform)
     GAUSS,   //3D Gaussian filter
     GGAUSS,  //3D Generalized Gaussian filter
     DOG,     //3D Difference of Gaussians (arbitrary widths, fast)

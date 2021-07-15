@@ -107,6 +107,43 @@ HandleClosing(const Settings &settings,
 
 
 void
+HandleTopHatWhite(const Settings &settings,
+                  MrcSimple &tomo_in,
+                  MrcSimple &tomo_out,
+                  MrcSimple &mask,
+                  float voxel_width[3])
+{
+  WhiteTopHatSphere(settings.thickness_morphology,
+                    tomo_in.header.nvoxels,
+                    tomo_in.aaafI,
+                    tomo_out.aaafI,
+                    mask.aaafI,
+                    false,
+                    &cerr);
+}
+
+
+void
+HandleTopHatBlack(const Settings &settings,
+                  MrcSimple &tomo_in,
+                  MrcSimple &tomo_out,
+                  MrcSimple &mask,
+                  float voxel_width[3])
+{
+  BlackTopHatSphere(settings.thickness_morphology,
+                    tomo_in.header.nvoxels,
+                    tomo_in.aaafI,
+                    tomo_out.aaafI,
+                    mask.aaafI,
+                    false,
+                    &cerr);
+}
+
+
+
+
+
+void
 HandleGGauss(const Settings &settings,
              MrcSimple &tomo_in,
              MrcSimple &tomo_out,
