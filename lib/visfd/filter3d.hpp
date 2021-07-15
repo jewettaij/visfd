@@ -11,6 +11,10 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <algorithm>
+#ifndef CXX17_UNSUPPORTED
+  #include <execution>
+#endif
 using namespace std;
 #include <alloc3d.hpp>    // defines Alloc3D() and Dealloc3D()
 #include <filter1d.hpp>   // defines "Filter1D" (used in ApplySeparable())
@@ -1554,6 +1558,122 @@ ApplyLog(const int image_size[3], //!< source image size
 
 
 
+
+#ifndef CXX17_UNSUPPORTED
+
+/// @brief Computes the median filter of an image
+///        using a spherical footprint, as defined here:
+///        https://en.wikipedia.org/wiki/Median_filter
+///        The "footprint" defines the nearby region over which the median
+///        is calculated.  It is implemented as a vector of tuples.
+///        Each tuple contains the relative coordinates of a voxel that
+///        should be added to the set of voxels whose median brightness
+///        will be calculated.  (A version of this function using a spherical
+///        footprint is defined elsewhere.)
+/// @note  This function has not been optimized for speed.
+template<typename Scalar>
+void
+Median(vector<tuple<int,int,int> > footprint, // a list of (ix,iy,iz,b) values, one for each voxel
+      const int image_size[3],                //!< size of the image in x,y,z directions
+      Scalar const *const *const *aaafSource, //!< source image array
+      Scalar ***aaafDest,                     //!< filter results stored here
+      Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+
+      ostream *pReportProgress = nullptr)
+{
+  vector<Scalar> brightnesses(footprint.size());
+  for (int iz=0; iz < image_size[2]; iz++) {
+    if (pReportProgress)
+      *pReportProgress << "  z = " << iz+1 << " of " << image_size[2] << endl;
+    #pragma omp parallel for collapse(2)
+    for (int iy=0; iy < image_size[1]; iy++) {
+      for (int ix=0; ix < image_size[0]; ix++) {
+        if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
+        size_t n_brightnesses = 0;
+        aaafDest[iz][iy][ix] = 0.0;
+        auto pVoxel=footprint.begin();
+        auto pBrightness=brightnesses.begin();
+        while(pVoxel != footprint.end()) {
+          assert(pBrightness != brightnesses.end());
+          int jx = std::get<0>(*pVoxel);
+          int jy = std::get<1>(*pVoxel);
+          int jz = std::get<2>(*pVoxel);
+          int Ix = ix + jx;
+          int Iy = iy + jy;
+          int Iz = iz + jz;
+          if ((Ix < 0) || (Ix >= image_size[0]) ||
+              (Iy < 0) || (Iy >= image_size[1]) ||
+              (Iz < 0) || (Iz >= image_size[2]))
+            continue;
+          if ((aaafMask) && (aaafMask[Iz][Iy][Ix] == 0.0))
+            continue;
+          *pBrightness = aaafSource[Iz][Iy][Ix];
+          n_brightnesses++;
+          pVoxel++;
+          pBrightness++;
+        }
+        if (n_brightnesses > 0)
+          // Now find the median of the first "n_brightnesses"
+          // numbers in "brightnesses"
+          aaafDest[iz][iy][ix] =
+            std::nth_element(std::execution::seq,
+                             brightnesses.begin(),
+                             n_brightnesses/2,
+                             brightnesses.begin() + n_brightnesses);
+      }
+    }
+  }
+} // Median(vector<tuple<int,int,int> > footprint,...)
+
+
+
+
+
+/// @brief Computes the median filter of an image
+///        using a spherical footprint, as defined here:
+///        https://en.wikipedia.org/wiki/Median_filter
+///        The radius paramater can be a floating point number, but its
+///        units are in voxels.
+template<typename Scalar>
+void
+MedianSphere(Scalar radius,              //!< radius of the sphere
+             int const image_size[3],    //!< size of the image in x,y,z directions
+             Scalar const *const *const *aaafSource, //!< source image array
+             Scalar ***aaafDest,             //!< filter results stored here
+             Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+             bool smooth_boundary = false, //!< attempt to produce a rounder smoother structure factor that varies between 0 and -1 at its boundary voxels
+             ostream *pReportProgress = nullptr //!< report progress to the user
+             )
+{
+  // footprint = a vector of (ix,iy,iz,b) values, one for each voxel
+  vector<tuple<int,int,int> > footprint;
+
+  int Ri = ceil(radius);
+  for (int iz = -Ri; iz <= Ri; iz++) {
+    for (int iy = -Ri; iy <= Ri; iy++) {
+      for (int ix = -Ri; ix <= Ri; ix++) {
+        bool add_this_voxel = false;
+        Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
+        if (r <= radius)
+          footprint.push_back(tuple<int,int,int>(ix,iy,iz));
+      } // for (int ix=0; ix < image_size[0]; ix++)
+    } // for (int iy=0; iy < image_size[1]; iy++)
+  } // for (int iz=0; iz < image_size[2]; iz++)
+
+  if (pReportProgress)
+    *pReportProgress << "MedianSphere(r="<<radius<<"(voxels)) progress:" <<endl;
+
+  Median(footprint,
+         image_size,
+         aaafSource,
+         aaafDest,
+         aaafMask,
+         pReportProgress);
+
+} // MedianSphere()
+
+#endif //#ifndef CXX17_UNSUPPORTED
 
 
 

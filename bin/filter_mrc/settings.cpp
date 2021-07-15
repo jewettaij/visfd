@@ -44,6 +44,9 @@ Settings::Settings() {
   save_intermediate_fname_base = "";
   load_intermediate_fname_base = "";
 
+  float median_radius = 0.0;
+  float thickness_morphology = 0.0;
+
   // The code is a little bit confusing because I tried to cram as much
   // functionality into the smallest number of parameters possible:
   // The "difference of gaussians" (dog) filter used here requires
@@ -966,6 +969,36 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 3;
     }
+
+
+
+
+
+    else if (vArgs[i] == "-median")
+    {
+      #ifndef CXX17_UNSUPPORTED
+      try {
+        if ((i+1 >= vArgs.size()) ||
+          (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        median_radius = stof(vArgs[i+1]);
+        filter_type = MEDIAN;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+          " argument must be followed by a positive number (\"s\"),\n");
+      }
+      num_arguments_deleted = 2;
+      #else //#ifndef CXX17_UNSUPPORTED
+      throw InputErr("Error: The " + vArgs[i] +
+                     " argument is not supported\n"
+                     "       by this version of " + g_program_name + ".\n"
+                     "       You must obtain a fully C++17 compliant C++ compiler, and\n"
+                     "       edit your compiler settings (eg, in the \"setup_...\" files), delete the\n"
+                     "       \"-DCXX17_UNSUPPORTED\" compiler flag, and recompile the source code.\n"
+                     "       This feature has never been tested and it might not work.\n");
+      #endif
+    } //if (vArgs[i] == "-median")
 
 
 

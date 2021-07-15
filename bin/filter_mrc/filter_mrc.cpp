@@ -446,9 +446,20 @@ int main(int argc, char **argv) {
 
 
 
+    else if (settings.filter_type == Settings::MEDIAN) {
+
+      #ifndef CXX17_UNSUPPORTED
+      // Apply a median filter to the image.
+      HandleMedian(settings, tomo_in, tomo_out, mask, voxel_width);
+      #endif
+
+    }
+
+
+
     else if (settings.filter_type == Settings::GAUSS) {
 
-      // Apply a Gaussian filter to the image.
+      // Apply a Gaussian blur filter to the image.
       HandleGauss(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
@@ -484,15 +495,15 @@ int main(int argc, char **argv) {
 
 
 
-    #ifndef DISABLE_DOGGXY
     else if (settings.filter_type == Settings::DOGGXY) {
 
+      #ifndef DISABLE_DOGGXY
       // Apply a generalized DoG filter in the XY direction
       // and a Gaussian filter in the Z direction.
       HandleDoggXY(settings, tomo_in, tomo_out, mask, voxel_width);
+      #endif
 
     }
-    #endif
 
 
 
@@ -591,6 +602,7 @@ int main(int argc, char **argv) {
                                    scores);
 
     }
+
 
 
     else if (settings.filter_type == settings.SPHERE_NONMAX_SUPERVISED_MULTI) {

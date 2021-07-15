@@ -3,6 +3,7 @@
 
 #include "settings.hpp"
 
+
 void
 HandleDilation(const Settings &settings,
                MrcSimple &tomo_in,
@@ -49,6 +50,17 @@ HandleTopHatBlack(const Settings &settings,
                   MrcSimple &tomo_out,
                   MrcSimple &mask,
                   float voxel_width[3]);
+
+
+
+#ifndef CXX17_UNSUPPORTED
+void
+HandleMedian(const Settings &settings,
+             MrcSimple &tomo_in,
+             MrcSimple &tomo_out,
+             MrcSimple &mask,
+             float voxel_width[3]);
+#endif
 
 
 void

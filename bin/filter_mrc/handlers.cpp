@@ -35,9 +35,6 @@ using namespace visfd;
 #include "handlers_unsupported.hpp"
 
 
-
-
-
 void
 HandleDilation(const Settings &settings,
                MrcSimple &tomo_in,
@@ -140,6 +137,24 @@ HandleTopHatBlack(const Settings &settings,
 }
 
 
+
+#ifndef CXX17_UNSUPPORTED
+void
+HandleMedian(const Settings &settings,
+             MrcSimple &tomo_in,
+             MrcSimple &tomo_out,
+             MrcSimple &mask,
+             float voxel_width[3])
+{
+  MedianSphere(settings.median_radius,
+               tomo_in.header.nvoxels,
+               tomo_in.aaafI,
+               tomo_out.aaafI,
+               mask.aaafI,
+               false,
+               &cerr);
+}
+#endif
 
 
 

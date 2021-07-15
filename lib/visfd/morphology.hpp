@@ -229,12 +229,13 @@ FindExtrema(int const image_size[3],            //!< size of input image array
 ///        for the structuer factor at that location.
 ///        (A version of this function using a spherical structure factors
 ///        is defined elsewhere.)
+/// @note  This function has not been optimized for speed.
 template<typename Scalar>
 void
 Dilate(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,iz,b) values, one for each voxel
        const int image_size[3],                //!< size of the image in x,y,z directions
-       Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-       Scalar ***aaafDest,                     //!< image array aaafI[iz][iy][ix]       
+       Scalar const *const *const *aaafSource, //!< source image array
+       Scalar ***aaafDest,                     //!< filter results stored here
        Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
 
        ostream *pReportProgress = nullptr)
@@ -245,6 +246,8 @@ Dilate(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,
     #pragma omp parallel for collapse(2)
     for (int iy=0; iy < image_size[1]; iy++) {
       for (int ix=0; ix < image_size[0]; ix++) {
+        if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
         Scalar max_f_plus_b = -std::numeric_limits<Scalar>::infinity();
         for (auto pVoxel = structure_factor.begin();
              pVoxel != structure_factor.end();
@@ -283,12 +286,13 @@ Dilate(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,
 ///        for the structuer factor at that location.
 ///        (A version of this function using a spherical structure factors
 ///        is defined elsewhere.)
+/// @note  This function has not been optimized for speed.
 template<typename Scalar>
 void
 Erode(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,iz,b) values, one for each voxel
       const int image_size[3],                //!< size of the image in x,y,z directions
-      Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-      Scalar ***aaafDest,                     //!< image array aaafI[iz][iy][ix]       
+      Scalar const *const *const *aaafSource, //!< source image array
+      Scalar ***aaafDest,                     //!< filter results stored here
       Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
 
       ostream *pReportProgress = nullptr)
@@ -299,6 +303,8 @@ Erode(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,i
     #pragma omp parallel for collapse(2)
     for (int iy=0; iy < image_size[1]; iy++) {
       for (int ix=0; ix < image_size[0]; ix++) {
+        if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
         Scalar min_f_minus_b = std::numeric_limits<Scalar>::infinity();
         for (auto pVoxel = structure_factor.begin();
              pVoxel != structure_factor.end();
@@ -337,8 +343,8 @@ template<typename Scalar>
 void
 DilateSphere(Scalar radius,              //!< radius of the sphere
              int const image_size[3],    //!< size of the image in x,y,z directions
-             Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-             Scalar ***aaafDest,         //!< image array aaafI[iz][iy][ix]
+             Scalar const *const *const *aaafSource, //!< source image array
+             Scalar ***aaafDest,         //!< filter results stored here
              Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
              bool smooth_boundary = false, //!< attempt to produce a rounder smoother structure factor that varies between 0 and -1 at its boundary voxels
              ostream *pReportProgress = nullptr //!< report progress to the user
@@ -429,8 +435,8 @@ template<typename Scalar>
 void
 ErodeSphere(Scalar radius,              //!< radius of the sphere
             int const image_size[3],    //!< size of the image in x,y,z directions
-            Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-            Scalar ***aaafDest,         //!< image array aaafI[iz][iy][ix]
+            Scalar const *const *const *aaafSource, //!< source image array
+            Scalar ***aaafDest,         //!< filter results stored here
             Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
             bool smooth_boundary = false, //!< attempt to produce a rounder smoother structure factor that varies between 0 and -1 at its boundary voxels
             ostream *pReportProgress = nullptr //!< report progress to the user
@@ -520,8 +526,8 @@ template<typename Scalar>
 void
 OpenSphere(Scalar radius,             //!< radius of the sphere
            const int image_size[3],   //!< size of the image in x,y,z directions
-           Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-           Scalar ***aaafDest,        //!< image array aaafI[iz][iy][ix]
+           Scalar const *const *const *aaafSource, //!< source image array
+           Scalar ***aaafDest,        //!< filter results stored here
            Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
            bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
            ostream *pReportProgress = nullptr //!< report progress to the user
@@ -562,8 +568,8 @@ template<typename Scalar>
 void
 CloseSphere(Scalar radius,            //!< radius of the sphere
             const int image_size[3],  //!< size of the image in x,y,z directions
-            Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-            Scalar ***aaafDest,       //!< image array aaafI[iz][iy][ix]
+            Scalar const *const *const *aaafSource, //!< source image array
+            Scalar ***aaafDest,         //!< filter results stored here
             Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
             bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
             ostream *pReportProgress = nullptr //!< report progress to the user
@@ -604,8 +610,8 @@ template<typename Scalar>
 void
 WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere
                   const int image_size[3],   //!< size of the image in x,y,z directions
-                  Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-                  Scalar ***aaafDest,        //!< image array aaafI[iz][iy][ix]
+                  Scalar const *const *const *aaafSource, //!<source image array
+                  Scalar ***aaafDest,         //!< filter results stored here
                   Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
                   bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
                   ostream *pReportProgress = nullptr //!< report progress to the user
@@ -645,8 +651,8 @@ template<typename Scalar>
 void
 BlackTopHatSphere(Scalar radius,             //!< radius of the sphere
                   const int image_size[3],   //!< size of the image in x,y,z directions
-                  Scalar const *const *const *aaafSource, //!< image array aaafI[iz][iy][ix]
-                  Scalar ***aaafDest,        //!< image array aaafI[iz][iy][ix]
+                  Scalar const *const *const *aaafSource,//!< source image array
+                  Scalar ***aaafDest,         //!< filter results stored here
                   Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
                   bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
                   ostream *pReportProgress = nullptr //!< report progress to the user

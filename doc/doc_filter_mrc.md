@@ -356,7 +356,29 @@ including cropping and [binning](#-bin-binwidth) your 3-D image (tomogram).
 
 
 
-Other, simpler filters are also provided:
+Other, simpler filters and operations are also provided
+
+
+
+The
+["**-dilation**"](#-dilate-thickness) and
+["**-erosion**"](#-erosion-thickness)
+filters are used for
+[enlarging](https://en.wikipedia.org/wiki/Dilation_(morphology)) or
+[shrinking](https://en.wikipedia.org/wiki/Erosion_(morphology))
+the bright regions in an image.
+The
+["**-opening**"](#-opening-thickness)
+["**-closing**"](#-closing-thickness)
+filters are used for the removal of small
+[bright](https://en.wikipedia.org/wiki/Opening_(morphology))
+or
+[dark](https://en.wikipedia.org/wiki/Closing_(morphology))
+features from an image.
+
+
+The [-bin](#-bin-binwidth) argument can be used to reduce the size
+and resolution of the image through binning.
 
 
 The
@@ -384,14 +406,6 @@ argument.)
 
 
 The
-["**-watershed**"](#-watershed-type)
-argument will generate a new image which has been
-segmented using the
-[classic watershed](https://imagej.net/Classic_Watershed)
-algorithm.
-
-
-The
 ["**-fluct**"](#-fluct-and--fluct-aniso)
 and
 ["**-fluct-aniso**"](#-fluct-and--fluct-aniso)
@@ -415,6 +429,14 @@ using
 
 
 The
+["**-watershed**"](#-watershed-type)
+argument will generate a new image which has been
+segmented using the
+[classic watershed](https://imagej.net/Classic_Watershed)
+algorithm.
+
+
+The
 ["**-invert**"](#-invert)
 filter exchanges bright and dark voxels.
 The ["**-rescale**"](#-rescale-m-b)
@@ -429,8 +451,6 @@ and
 filters are used to use clip voxel intensities and to select voxels
 whose intensities lie within in a range specified by the user.
 
-The [-bin](#-bin-binwidth) argument can be used to reduce the size
-and resolution of the image.
 
 
 
@@ -950,6 +970,7 @@ ignored or considered during subsequent calculations)*.
 
 
 ***WARNING:*** Dilation and erosion are slow for large *thickness* parameters.
+These filters have not been optimized for speed.
 If you have a binary image (images whose voxels have brightnesses of
 either 0 or 1), you can try using the fast Gaussian dilation and erosion
 method, using the
@@ -980,25 +1001,31 @@ The size of the objects removed is determined by the *thickness* parameter
 (which is in physical units, not voxels, unless the
 [-w 1](#Voxel-Width) argument is used).
 *(Details: A spherical structure-factor with radius=thickness is used.)*
+These operations have not been optimized for speed.
 
 
 ### -white-top-hat thickness
 ### -black-top-hat thickness
 
+*(WARNING: This feature has not been tested. -Andrew 2021-7-14)*
+
 These arguments will apply a *grayscale*
 [top-hat](https://en.wikipedia.org/wiki/Opening_(morphology))
 transform to your image.
-The white top-hat filter emphasizes small bright objects on a dark background.
-The black top-hat filter emphasizes small dark objects on a bright background.
+The white top-hat transform emphasizes
+small bright objects on a dark background.
+The black top-hat transform emphasizes
+small dark objects on a bright background.
 The size of the objects preserved is determined by the *thickness* parameter
 (which is in physical units, not voxels, unless the
 [-w 1](#Voxel-Width) argument is used).
 *(Details: A spherical structure-factor with radius=thickness is used.)*
+These transforms have not been optimized for speed.
 
 *Note: As an alternative, you can also use a
 [difference-of-gaussians](#https://en.wikipedia.org/wiki/Difference_of_Gaussians)
 filter to remove low frequencies from an image.  To do that use the
-[-dog a b](#-dog) argument, setting a=0, and setting b to 
+[-dog a b](#-dog) argument, setting a=0, and setting b to
 a distance which is similar to the size of the large objects
 or gradients that you want removed from the image.*
 
@@ -1575,6 +1602,7 @@ arguments are also in use.
 
 # Filters
 
+
 ### -gauss and -ggauss
 The **-gauss** and **-gauss-aniso** arguments must be followed by one or more numbers specifying the width of the Gaussian filter to apply to your image:
 ```
@@ -1600,6 +1628,7 @@ Discrete Gaussian filters are almost identical to ordinary Gaussian filters
 suitable when used with small σ, to detect features that are only a couple
 of voxels wide.*
 
+#### Generalized gaussians
 
 If **-ggauss** or **-ggauss-aniso** is used,
 then the image is instead convolved with
@@ -1635,6 +1664,20 @@ Gaussian filter is adjusted near the image boundary (or *mask* boundary)
 so that the average brightness there is not effected.
 This can be disabled using the
 [-normalize-filters no](#-normalize-filters-yes/no) argument.
+
+### -median radius
+
+*(WARNING: This untested feature requires a modern C++17 compliant compiler,
+and is not enabled by default.)*
+
+This argument will apply a
+[median filter](https://en.wikipedia.org/wiki/Median_filter)
+filter to your image.
+At each location in the image, the median brightness of the
+voxels that lie within a distance of *radius* from that location
+will be calculated.
+*Warning:* This is a very slow operation for large *radius* parameters.
+
 
 ## Thresholding, Clipping and Rescaling (Intensity Map Filters):
 

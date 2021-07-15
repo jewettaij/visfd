@@ -34,6 +34,7 @@ class Settings {
 
   typedef enum eFilterType {
     NONE,     //(The user has not selected a filter, or is using thresholding)
+    MEDIAN,   // a median filter (https://en.wikipedia.org/wiki/Median_filter)
     DILATION, // grayscale image dilation
     EROSION,  // grayscale image erosion
     OPENING,  // grayscale image opening
@@ -48,23 +49,26 @@ class Settings {
     DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary
              //   widths and arbitrary exponents in XY, and Gaussian blur in Z.
     LOG_DOG,         // Approximation to Laplacian-of-Guassian using DOG (fast)
+    LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
+    WATERSHED,       // Watershed segmentation
+    CLUSTER_CONNECTED,  // Watershed applied to voxels with tensor attributes
+    BLOB,            // Scale-free blob detection
+    CURVE,           // Detect 1D curve-like ridges (a filament detector)
+    SURFACE_EDGE,    // Detect the edge of a light-dark boundary (gradient)
+    SURFACE_RIDGE,   // Detect 2D surface-like ridges (a thin membrane detector)
+    SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
+    SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
+    //   Require the user to supply a list of points:
+    SPHERE_DECALS,      //voxel intensity= 1 if within R from the nearest point
+    DISTANCE_TO_POINTS, //voxel intensity= distance to nearest point in the set
+
+    //   DEPRECIATED:
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses
     TEMPLATE_GGAUSS, // Perform a least-squares fit between a generalized
                      // Gaussian and the surrounding voxel brightnesses
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
-    WATERSHED,       // Watershed segmentation
-    BLOB,            // Scale-free blob detection
-    SURFACE_EDGE,    // Detect the edge of a light-dark boundary (gradient)
-    SURFACE_RIDGE,   // Detect 2D surface-like ridges (a thin membrane detector)
-    CURVE,           // Detect 1D curve-like ridges (a filament detector)
-    CLUSTER_CONNECTED,  // Watershed applied to voxels with tensor attributes
-    LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
-    SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
-    SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
-    DISTANCE_TO_POINTS, //voxel intensity= distance to nearest object
-    SPHERE_DECALS,      //voxel intensity= 1 if within R from the nearest object
-    BLOB_RADIAL_INTENSITY // Report intensity-vs-radius for each blob
+    BLOB_RADIAL_INTENSITY // Report brightness-vs-radius for each blob
   } FilterType; 
   
   FilterType filter_type; // The user must select one of these filter types
@@ -98,7 +102,9 @@ class Settings {
   string save_intermediate_fname_base = ""; //save progress of slow calculations
   string load_intermediate_fname_base = ""; //load progress from a previous run?
 
-  float thickness_morphology;
+  float median_radius;        // radius used for the median filter
+  float thickness_morphology; // distance parameter for morphological operations
+
   // ---- parameters for "difference of generalized gaussians" filters ----
   //
   // A significant number of the filters used by this program
