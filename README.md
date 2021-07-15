@@ -55,7 +55,7 @@ This program was intended to be used for automatic
 [filament (curve) detection](./doc/doc_filter_mrc.md#Detecting-curves), and
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection).
 Images can be segmented into distinct contiguous objects,
-using a [variety](https://imagej.net/Classic_Watershed)
+using a [variety](https://imagej.net/plugins/classic-watershed#introduction)
 of [strategies](./doc/doc_filter_mrc.md#-connect-threshold),
 and closed compartments can be hierarchically segmented using
 [*voxelize_mesh.py*](doc/doc_voxelize_mesh.md).

@@ -10,7 +10,7 @@ It can also detect point-like (or sphere-like) **blobs**.
 interchangeably.  A tomogram is a 3-D image.)*
 
 **filter_mrc** can be used local minima-finding, clustering, and
-[classic watershed segmentation](https://imagej.net/Classic_Watershed).
+[classic watershed segmentation](https://imagej.net/plugins/classic-watershed#introduction).
 The coordinates of the objects that are detected can be saved to text files
 for processing and refinement using popular 3rd-party software tools
 (including tools for surface smoothing and surface closure).
@@ -245,7 +245,7 @@ then try increasing the "--scale" parameter.
 
 ## WARNING: Use *ulimit*
 Some operations, such as tensor-voting and voxelization, consume a large
-amount of RAM.  Consequently, I recommend using the 
+amount of memory.  Consequently, I recommend using the 
 [ulimit -v SIZE_IN_KB](https://ss64.com/bash/ulimit.html)
 command to prevent system lockup, especially if you are on a shared computer.
 (If my understanding is correct, running "ulimit -v 14000000" beforehand
@@ -432,7 +432,7 @@ The
 ["**-watershed**"](#-watershed-type)
 argument will generate a new image which has been
 segmented using the
-[classic watershed](https://imagej.net/Classic_Watershed)
+[classic watershed](https://imagej.net/plugins/classic-watershed#introduction)
 algorithm.
 
 
@@ -1166,7 +1166,7 @@ then the poorer scoring minima will be discarded.
 
 If the "**-watershed**" argument is selected, the image will be segmented
 using the
-[classic watershed](https://imagej.net/Classic_Watershed)
+[classic watershed](https://imagej.net/plugins/classic-watershed#introduction)
 algorithm.
 This algorithm divides the image into different "valleys" or "basins".
 The "*type*" argument must be either "*minima*" or "*maxima*".
