@@ -29,7 +29,7 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.29.2");
+string g_version_string("0.29.3");
 string g_date_string("2021-7-16");
 
 
@@ -166,10 +166,10 @@ int main(int argc, char **argv) {
       } //if (settings.tv_sigma > 0)
       else if (settings.blob_diameters.size() > 0)
       {
-        if (settings.blob_diameters[0] > 8.0*voxel_width[0])
+        if (settings.blob_diameters[0] > 15.0*voxel_width[0])
         {
           settings.resize_with_binning = int(ceil(settings.blob_diameters[0] /
-                                                  (8.0*voxel_width[0])));
+                                                  (15.0*voxel_width[0])));
           cerr <<
             "------------------------------------------------------------------\n"
             "------------------------------------------------------------------\n"
