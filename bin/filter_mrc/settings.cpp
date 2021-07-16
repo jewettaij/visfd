@@ -2457,7 +2457,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "--membrane-normals-file") {
       throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] +
                      " argument has been renamed.\n"
-                     "       It is now called \"-normals-file\", and it requires an additional argument.\n"
+                     "       It is now called \"-normals-file\".\n"
                      "       See documentation for details.\n");
     }
 
