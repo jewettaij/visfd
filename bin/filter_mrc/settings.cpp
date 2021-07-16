@@ -126,7 +126,8 @@ Settings::Settings() {
   // ---- parameters used by the curve and surface detectors ----
   out_normals_fname = "";
   ridges_are_maxima = false;
-  hessian_score_threshold = 0.0; //don't discard any voxels before TV
+  max_distance_to_feature = std::sqrt(3.0)/2;
+  hessian_score_threshold = 0.05; //discard voxels which are not the best 5%
   hessian_score_threshold_is_a_fraction = false;
   tv_score_threshold = 0.0;
   tv_sigma = 0.0;
@@ -143,14 +144,14 @@ Settings::Settings() {
   // ---- parameters for the clustering of connected voxels into islands ----
   cluster_connected_voxels = false;
   connect_threshold_saliency = std::numeric_limits<float>::infinity();
-  //connect_threshold_vector_saliency = M_SQRT1_2; //45 degree change maximum
-  //connect_threshold_vector_neighbor = M_SQRT1_2; //45 degree change maximum
-  //connect_threshold_tensor_saliency = M_SQRT1_2;
-  //connect_threshold_tensor_neighbor = M_SQRT1_2;
-  connect_threshold_vector_saliency = -std::numeric_limits<float>::infinity();
-  connect_threshold_vector_neighbor = -std::numeric_limits<float>::infinity();
-  connect_threshold_tensor_saliency = -std::numeric_limits<float>::infinity();
-  connect_threshold_tensor_neighbor = -std::numeric_limits<float>::infinity();
+  //connect_threshold_vector_saliency = -std::numeric_limits<float>::infinity();
+  //connect_threshold_vector_neighbor = -std::numeric_limits<float>::infinity();
+  //connect_threshold_tensor_saliency = -std::numeric_limits<float>::infinity();
+  //connect_threshold_tensor_neighbor = -std::numeric_limits<float>::infinity();
+  connect_threshold_vector_saliency = std::cos(M_PI*15/180.0);//15 degree change
+  connect_threshold_vector_neighbor = std::cos(M_PI*15/180.0);//allowed between
+  connect_threshold_tensor_saliency = std::cos(M_PI*15/180.0);//neighboring
+  connect_threshold_tensor_neighbor = std::cos(M_PI*15/180.0);//voxels
   must_link_constraints.clear();
   is_must_link_constraints_in_voxels = false;
   select_cluster = 0;
@@ -567,7 +568,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a positive number (\"s\"),\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-dilation")
@@ -586,7 +587,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a positive number (\"s\"),\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-erosion")
@@ -600,13 +601,14 @@ Settings::ParseArgs(vector<string>& vArgs)
     {
       float blur_distance;
       try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         blur_distance = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number.\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       filter_type = GAUSS;
       width_a[0] = blur_distance;
@@ -637,7 +639,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a positive number (\"s\"),\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-opening")
@@ -656,7 +658,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a positive number (\"s\"),\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-closing")
@@ -674,7 +676,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a positive number (\"s\"),\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-top-hat-white")
@@ -692,7 +694,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a positive number (\"s\"),\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-top-hat-black")
@@ -702,7 +704,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-truncate")
     {
       try {
-        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_truncate_ratio = stof(vArgs[i+1]);
         filter_truncate_threshold=-1.0; //(disables)override any filter_truncate_threshold settings
@@ -986,7 +989,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-          " argument must be followed by a positive number (\"s\"),\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
       #else //#ifndef CXX17_UNSUPPORTED
@@ -1506,13 +1509,9 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((vArgs[i] == "-blob-radii") || (vArgs[i] == "-blob-r") || (vArgs[i] == "-blobr"))
           // (for a solid uniform 3-D sphere)
           blob_width_multiplier = 2.0;
-          //REMOVE THIS CRUFT
-          //blob_width_multiplier = 1.0/sqrt(3.0);
         else if ((vArgs[i] == "-blob-diameters") || (vArgs[i] == "-blob-d"))
           // (for a solid uniform 3-D sphere)
           blob_width_multiplier = 1.0;
-          //REMOVE THIS CRUFT
-          //blob_width_multiplier = 1.0/(2.0*sqrt(3.0));
         blob_diameters[0] = blob_width_min * blob_width_multiplier;
         for (int n = 1; n < N; n++) {
           blob_diameters[n] = blob_diameters[n-1] * growth_ratio;
@@ -2360,11 +2359,18 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+    else if (vArgs[i] == "-surface") {
+      throw InputErr("Error: As of 2021-7-15, the " + vArgs[i] +
+          
+                     " argument has been renamed.\n"
+                     "       It is now called \"-membrane\".\n"
+                     "       See documentation for details.\n");
+    }
 
     else if (vArgs[i] == "-planar") {
       throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] +
                      " argument has been renamed.\n"
-                     "       It is now called \"-surface\", and it requires an additional argument.\n"
+                     "       It is now called \"-membrane\", and it requires an additional argument.\n"
                      "       See documentation for details.\n");
     }
 
@@ -2378,11 +2384,12 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-surface") || (vArgs[i] == "-surface-thin") ||
+    else if ((vArgs[i] == "-membrane") || (vArgs[i] == "-surface-ridge") ||
              (vArgs[i] == "-edge") || (vArgs[i] == "-surface-edge") ||
              (vArgs[i] == "-curve"))
     {
-      if (vArgs[i] == "-surface")
+      if ((vArgs[i] == "-membrane") ||
+          (vArgs[i] == "-surface-ridge"))
         filter_type = SURFACE_RIDGE;
       else if ((vArgs[i] == "-edge") || (vArgs[i] == "-surface-edge"))
         filter_type = SURFACE_EDGE;
@@ -2400,7 +2407,10 @@ Settings::ParseArgs(vector<string>& vArgs)
           ridges_are_maxima = true;
         else
           throw invalid_argument("");
-        width_a[0] = stof(vArgs[i+2]) / sqrt(3.0);
+        float thickness = stof(vArgs[i+2]);
+        //max_distance_to_feature = thickness / 2.0;
+        // Now choose the "sigma" parameter of the Gaussians we will use:
+        width_a[0] = thickness / sqrt(3.0);
         width_a[1] = width_a[0];
         width_a[2] = width_a[0];
         width_b[0] = 0.0;
@@ -2420,7 +2430,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if ((vArgs[i] == "-detection-background") ||
-             (vArgs[i] == "-surface-background") ||
+             (vArgs[i] == "-membrane-background") ||
              (vArgs[i] == "-curve-background"))
     {
       filter_type = SURFACE_RIDGE;
@@ -2446,7 +2456,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-detection-threshold") {
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         hessian_score_threshold = stof(vArgs[i+1]);
         hessian_score_threshold_is_a_fraction = false;
@@ -2459,10 +2469,12 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    else if (vArgs[i] == "-best") {
+
+    else if (vArgs[i] == "-best")
+    {
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         hessian_score_threshold = stof(vArgs[i+1]);
         hessian_score_threshold_is_a_fraction = true;
@@ -2486,19 +2498,22 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-tv") ||
-             (vArgs[i] == "-surface-tv")) {
-      if (filter_type != SURFACE_RIDGE)
-        throw InputErr("Error: the -tv argument must appear in the argument list\n"
-                       "       after the -surface argument.  It does not make sense to use\n"
-                       "       -tv refinement if you are not using the -surface or -curve filters.\n");
+    else if (vArgs[i] == "-tv")
+    {
+      if ((filter_type != SURFACE_RIDGE) &&
+          (filter_type != SURFACE_EDGE) &&
+          (filter_type != CURVE))
+        throw InputErr("Error: The -tv argument must appear in the argument list after the\n"
+                       "       -membrane, -edge, or -curve arguments.  (It does not make sense to use\n"
+                       "       tensor voting unless you are using one of these directional detectors.)\n");
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         tv_sigma = stof(vArgs[i+1]);
-        if (tv_sigma < 1.0)
-          throw InputErr("Error: the -tv argument must be >= 1.0\n");
+        //if (tv_sigma < 1.0)
+        //  throw InputErr("Error: the -tv argument must be >= 1.0\n");
+        //  (This is probably a good idea, but I no longer require it.)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2509,11 +2524,11 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-tv-angle-exponent") ||
-             (vArgs[i] == "-surface-tv-angle-exponent")) {
+    else if (vArgs[i] == "-tv-angle-exponent")
+    {
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         tv_exponent = stoi(vArgs[i+1]);
       }
@@ -2526,8 +2541,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-tv-threshold") ||
-             (vArgs[i] == "-surface-tv-threshold")) {
+    else if (vArgs[i] == "-tv-threshold")
+    {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == ""))
@@ -2542,12 +2557,26 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+    else if (vArgs[i] == "-tv-truncate-ratio")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        tv_truncate_ratio = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number: the\n"
+                       "       distance (in units σ_tv) over which tensor votes are cast. (See docs.)\n");
+      }
+      num_arguments_deleted = 2;
+    }
 
     // CRUFT
     //   I can't remember what this code was supposed to be used for.
     // COMMENTING OUT:
-    //else if ((vArgs[i] == "-tv-iter") ||
-    //         (vArgs[i] == "-surface-tv-iter")) {
+    //else if (vArgs[i] == "-tv-iter") {
     //  try {
     //    if ((i+1 >= vArgs.size()) ||
     //        (vArgs[i+1] == ""))
@@ -2562,7 +2591,9 @@ Settings::ParseArgs(vector<string>& vArgs)
     //}
 
 
-    else if (vArgs[i] == "-surface-normals-file") {
+    else if ((vArgs[i] == "-normals-file") ||
+             (vArgs[i] == "-surface-normals-file"))
+    {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
@@ -2576,6 +2607,31 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+
+    else if ((vArgs[i] == "-max-distance-to-feature") ||
+             (vArgs[i] == "-max-distance-to-surface") ||
+             (vArgs[i] == "-max-distance-to-membrane") ||
+             (vArgs[i] == "-max-distance-to-edge") ||
+             (vArgs[i] == "-max-distance-to-curve"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        if ((vArgs[i+1] == "inf") ||
+            (vArgs[i+1] == "infinity") ||
+            (vArgs[i+1] == "disable"))
+          // max_distance_to_feature = std::numeric_limits<float>::infinity()
+          max_distance_to_feature = 0.0; // either 0 or infinity() disables this
+        else
+          max_distance_to_feature = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number\n");
+      }
+      num_arguments_deleted = 2;
+    }
 
 
     else if (vArgs[i] == "-save-progress")
@@ -2650,30 +2706,12 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-connect-vector-saliency") ||
-             (vArgs[i] == "-cvs"))
-    {
-      cluster_connected_voxels = true;
-      try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
-          throw invalid_argument("");
-        connect_threshold_vector_saliency = stof(vArgs[i+1]);
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number\n");
-      }
-      num_arguments_deleted = 2;
-    }
-
-
     else if (vArgs[i] == "-connect-angle")
     {
       cluster_connected_voxels = true;
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         double theta = stof(vArgs[i+1]);
         connect_threshold_vector_saliency = cos(theta*M_PI/180.0);
@@ -2683,7 +2721,25 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number\n");
+                       " argument must be followed by a nonnegative number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if ((vArgs[i] == "-connect-vector-saliency") ||
+             (vArgs[i] == "-cvs"))
+    {
+      cluster_connected_voxels = true;
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        connect_threshold_vector_saliency = stof(vArgs[i+1]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     }
@@ -2694,13 +2750,13 @@ Settings::ParseArgs(vector<string>& vArgs)
       cluster_connected_voxels = true;
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         connect_threshold_vector_neighbor = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     }
@@ -2711,13 +2767,13 @@ Settings::ParseArgs(vector<string>& vArgs)
       cluster_connected_voxels = true;
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         connect_threshold_tensor_saliency = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     }
@@ -2728,13 +2784,13 @@ Settings::ParseArgs(vector<string>& vArgs)
       cluster_connected_voxels = true;
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         connect_threshold_tensor_neighbor = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a number\n");
+                       " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
     }
@@ -2744,7 +2800,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     {
       try {
         if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == ""))
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         select_cluster = stoi(vArgs[i+1]);
         if (select_cluster < 0)
@@ -3114,16 +3170,13 @@ Settings::ParseArgs(vector<string>& vArgs)
   }
 
 
-  if (cluster_connected_voxels && (filter_type != SURFACE_RIDGE))
+  if (cluster_connected_voxels &&
+      (filter_type != SURFACE_RIDGE) &&
+      (filter_type != SURFACE_EDGE) &&
+      (filter_type != CURVE))
   {
     assert(connect_threshold_saliency!=std::numeric_limits<float>::infinity());
     filter_type = CLUSTER_CONNECTED;
-
-    // REMOVE THIS CRUFT
-    //throw InputErr("Error: The \"-connect\" argument is currently only supported when used\n"
-    //               "       simultaneously with the \"-surface\" (and \"surface-tv\") arguments.\n"
-    //               "           (This may change in the future.  -andrew 2019-3-04)\n"
-    //               "       You can use the \"-watershed\" argument instead.  (See documentation.)\n");
   }
 
 

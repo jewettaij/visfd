@@ -380,7 +380,6 @@ WriteOrientedPointCloudPLY(string filename,
 
 
 template<typename Scalar>
-
 static void
 WriteOrientedPointCloudOBJ(string filename,
                            vector<array<Scalar,3> > coords,
@@ -449,7 +448,6 @@ WriteOrientedPointCloudBNPTS(string filename,
 
 
 template<typename Scalar, typename VectorContainer>
-
 static void
 WriteOrientedPointCloud(string pointcloud_file_name,
                         const int image_size[3],

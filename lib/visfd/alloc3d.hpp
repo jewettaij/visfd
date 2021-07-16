@@ -80,10 +80,6 @@ void Dealloc3D(Entry ***aaaX   //!< a 3-D array created by Alloc3D()
     delete [] reinterpret_cast<std::byte*>(aaaX);
     // Note: This also seems to work:
     //   delete [] aaaX;
-    // Instead I will use reinterpret_cast<> to make sure that the compiler
-    // realizes that the memory address at aaaX was originally allocated
-    // as an array of std::bytes (not an array of Entry**).
-    // (See Alloc3D() abovel for details.)  Probably this is not necessary.
   }
 }
 

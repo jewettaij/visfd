@@ -183,4 +183,18 @@ HandleTV(const Settings &settings,
          float voxel_width[3]);
 
 
+void
+HandleBinning(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &mask,
+              float voxel_width[3]);
+
+
+void
+DetermineVoxelWidth(const Settings &settings,
+                    MrcSimple &tomo_in,
+                    MrcSimple &mask,
+                    float voxel_width[3]);
+
+
 #endif //#ifndef _HANDLERS_H

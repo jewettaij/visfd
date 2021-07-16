@@ -516,7 +516,8 @@ ChooseThreshold1D(const vector<Scalar>& training_scores, //!< a list of scores i
 ///         It is the responsibility of the caller to smooth the source image
 ///         (if necessary) before this function is called.
 /// @note   You must insure that ix,iy,iz (and their neighbors!) lie within
-///         the boundaries of the image.  THERE IS NO BOUNDS CHECKING.
+///         the boundaries of the image.  There is no bounds checking.
+///         For this reason, this function was not intended for public use.
 template<typename Scalar>
 void
 CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source image
@@ -565,7 +566,6 @@ CalcHessianFiniteDifferences(Scalar const *const *const *aaafSource, //!< source
 /// @note   This version of the function provides bounds checking for ix,iy,iz.
 ///         (At the boundaries of the image, it will substitute the voxel
 ///          brightnesses from the nearest neighbor.)
-/// @note   This function was not intended for public use.
 
 template<typename Scalar>
 void

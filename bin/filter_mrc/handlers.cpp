@@ -1358,7 +1358,7 @@ HandleTV(const Settings &settings,
 
   // Now use Alloc3D() to allocate space for both aafGradient and aaaafGradient.
 
-  aaaafGradient = Alloc3D<array<float, 3> >(tomo_in.header.nvoxels);
+  aaaafGradient = Alloc3D<array<float, 3> >(image_size);
 
   // The storage requirement for Hessians (6 floats) is large enough that
   // I decided to represent hessians using a CompactMultiChannelImage3D.
@@ -1367,7 +1367,7 @@ HandleTV(const Settings &settings,
   // (ie voxels for which the mask is non-zero).  This can reduce memory usage
   // by a factor of up to 3 (assuming floats) for this array.
   CompactMultiChannelImage3D<float> hessian_tensor(6);
-  hessian_tensor.Resize(tomo_in.header.nvoxels, mask.aaafI, &cerr);
+  hessian_tensor.Resize(image_size, mask.aaafI, &cerr);
 
   float filter_truncate_ratio = settings.filter_truncate_ratio;
 
@@ -1387,7 +1387,7 @@ HandleTV(const Settings &settings,
     int truncate_halfwidth = floor(settings.width_b[0] *
                                    filter_truncate_ratio);
 
-    ApplyGauss(tomo_in.header.nvoxels,
+    ApplyGauss(image_size,
                tomo_in.aaafI,
                tomo_background.aaafI,
                mask.aaafI,
@@ -1399,7 +1399,7 @@ HandleTV(const Settings &settings,
     truncate_halfwidth = floor(settings.width_a[0] *
                                filter_truncate_ratio);
 
-    ApplyGauss(tomo_in.header.nvoxels,
+    ApplyGauss(image_size,
                tomo_in.aaafI,
                tomo_out.aaafI,
                mask.aaafI,
@@ -1412,7 +1412,7 @@ HandleTV(const Settings &settings,
   // Using this blurred image, calculate the 2nd derivative matrix everywhere:
 
   cerr << "Applying a Gaussian blur of width sigma="
-       << sigma*voxel_width[0] << " voxels" << endl;
+       << sigma*voxel_width[0] << " (physical distance)" << endl;
 
   if ((image_size[0] < 3) ||
       (image_size[1] < 3) ||
@@ -1420,7 +1420,7 @@ HandleTV(const Settings &settings,
     throw VisfdErr("Error: Ridge-detection requires an image that is at least 3 voxels\n"
                    "       wide in the x,y,z directions.\n");
 
-  CalcHessian(tomo_in.header.nvoxels,
+  CalcHessian(image_size,
               tomo_in.aaafI,
               aaaafGradient,
               hessian_tensor.aaaafI,
@@ -1519,26 +1519,26 @@ HandleTV(const Settings &settings,
 
         tomo_out.aaafI[iz][iy][ix] = score;
 
+
         #if 0
-        //I will use this code eventually, but not yet
-        float gradient_along_v1 = DotProduct3(grad, eivects[0]);
-        float distance_to_ridge;
-        if (lambda1 != 0)
-          distance_to_ridge = abs(gradient_along_v1 / lambda1);
-        else
-          distance_to_ridge = std::numeric_limits<float>::infinity();
-
-        bool ridge_located_in_same_voxel = true;
-        for (int d=0; d<3; d++) {
-          float ridge_voxel_location = eivects[0][d] * distance_to_ridge;
-          if (abs(ridge_voxel_location) > 0.5)
-            ridge_located_in_same_voxel = false;
-        }
-        //if ((distance_to_ridge < settings.ridge_detector_search_width*0.5) &&
-
-        if (! ridge_located_in_same_voxel)
-          out_tomo.aaafI[iz][iy][ix] = 0.0;  //then ignore discard this voxel
+        //COMMENTING OUT
+        //I might use this code eventually, but not before testing it first.
+        if (settings.discard_voxels_not_on_ridge) {
+          float gradient_along_v1 = DotProduct3(grad, eivects[0]);
+          float distance_to_ridge;
+          if (lambda1 != 0)
+            distance_to_ridge = abs(gradient_along_v1 / lambda1);
+          else
+            distance_to_ridge = std::numeric_limits<float>::infinity();
+          bool ridge_nearby = true;
+          if ((settings.max_distance_to_feature > 0.0) &&
+              (abs(distance_to_ridge) > settings.max_distance_to_feature))
+            ridge_nearby = false;
+          if (! ridge_nearby)
+            out_tomo.aaafI[iz][iy][ix] = 0.0;  //then ignore discard this voxel
+        } //if (settings.discard_voxels_not_on_ridge)
         #endif
+
 
 
         if (settings.filter_type != Settings::SURFACE_EDGE) {
@@ -1639,7 +1639,7 @@ HandleTV(const Settings &settings,
            settings.tv_exponent,
            settings.tv_truncate_ratio);
 
-      tv.TVDenseStick(tomo_in.header.nvoxels,
+      tv.TVDenseStick(image_size,
                       tomo_out.aaafI,
                       aaaafDirection,
                       aaaafVoteTensor,
@@ -1754,12 +1754,16 @@ HandleTV(const Settings &settings,
   } //if (settings.save_intermediate_fname_base != "")
 
 
+  float ***aaafSaliency = nullptr;
 
   if (settings.cluster_connected_voxels)
   {
+    // Later on, I will overwrite the contents of tomo_out.
+    // So I need to copy it somewhere before this happens.
+    // Unfortunately, memory is scarce due to all the arrays we have allocated.
     tomo_in = tomo_out; // (horrible hack.  I should not modify tomo_in.  I
                         // should allocate a new 3D array to store the saliency)
-
+    aaafSaliency = tomo_in.aaafI;
     // Copy the principal eigenvector of vote_tensor into aaaafDirection
     for(int iz=0; iz < image_size[2]; iz++) {
       for(int iy=0; iy < image_size[1]; iy++) {
@@ -1787,14 +1791,14 @@ HandleTV(const Settings &settings,
     // should not make this a table of ints or floats.  Instead use "ptrdiff_t".
 
     ptrdiff_t ***aaaiClusterId = nullptr;
-    aaaiClusterId = Alloc3D<ptrdiff_t>(tomo_in.header.nvoxels);
+    aaaiClusterId = Alloc3D<ptrdiff_t>(image_size);
 
     // (Later on we will copy the contents of aaaiClusterId into tomo_out.aaafI
     //  which will be written to a file later.  This way the end-user can
     //  view the results.)
 
-    ClusterConnected(tomo_in.header.nvoxels, //image size
-                     tomo_in.aaafI, //<-saliency
+    ClusterConnected(image_size, //image size
+                     aaafSaliency,
                      aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
                      mask.aaafI,
                      settings.connect_threshold_saliency,
@@ -1836,41 +1840,127 @@ HandleTV(const Settings &settings,
   //Did the user ask us to generate output files containing surface orientation?
   if (settings.out_normals_fname != "")
   {
-
-    // define the set of voxels we will use
-    float ***aaafSelectedVoxels;
-
+    vector<array<float,3> > coords;
+    vector<array<float,3> > norms;
     // where is the lookup table to indicate which cluster a voxel belongs to?
     float ***aaafVoxel2Cluster = nullptr;
     if (settings.cluster_connected_voxels)
       aaafVoxel2Cluster = tomo_out.aaafI; //tomo_out set by ClusterConnected()
 
-    // (horrible hack.  I should not modify tomo_in.
-    aaafSelectedVoxels = tomo_in.aaafI;
-    //  Instead I should allocate a new 3D array to store the selected voxels.
-
     for (int iz = 0; iz < image_size[2]; ++iz) {
       for (int iy = 0; iy < image_size[1]; ++iy) {
         for (int ix = 0; ix < image_size[0]; ++ix) {
-          aaafSelectedVoxels[iz][iy][ix] = 0.0;
           if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
             continue;
-          if (! settings.cluster_connected_voxels)
-            aaafSelectedVoxels[iz][iy][ix] = 1.0;
-          else {
-            assert(aaafVoxel2Cluster);
-            if (settings.select_cluster == aaafVoxel2Cluster[iz][iy][ix])
-              aaafSelectedVoxels[iz][iy][ix] = 1.0;
+          if (! settings.cluster_connected_voxels) {
+            // Then include all of the voxels in the image
+            array<float,3> xyz;
+            xyz[0] = ix * voxel_width[0];
+            xyz[1] = iy * voxel_width[1];
+            xyz[2] = iz * voxel_width[2];
+            coords.push_back(xyz);
+            array<float,3> normal;
+            for (int d = 0; d < 3; d++)
+              normal[d] = aaaafDirection[iz][iy][ix][d];
+            norms.push_back(normal);
+            continue;
           }
-        }
-      }
-    }
+          else if (settings.select_cluster != aaafVoxel2Cluster[iz][iy][ix])
+            continue;
 
-    WriteOrientedPointCloud(settings.out_normals_fname,
-                            image_size,
-                            aaaafDirection,
-                            aaafSelectedVoxels,
-                            voxel_width);
+
+          // If we are here then the user wanted us to cluster the voxels,
+          // only select voxels from one of these clusters,
+          // and this voxel is one of the voxels from that cluster.
+          // In that case the cluster is supposed to consist of voxels which
+          // lie on one of the surfaces detected in this image.
+
+          // The surface is supposed to be flat and 2-dimensional.
+          // But some of these selected voxels lie quite far from the surface.
+          //
+          // (Example:
+          //  For lipid bilayers in cryo-EM tomogramd, after tensor-voting
+          //  is finished, the resulting surfaces can be up to 15 voxels thick.
+          //  It's because all of those voxels have saliencies above the cutoff,
+          //  even though the actual membrane in the image is much thinner.)
+          //
+          // We need to figure out where the memrane surface actually is,
+          // discard voxels that are far away from it, and place the positions
+          // of the remaining voxels somewhere on the surface itself.
+          // The points on the pointcloud should lie on this surface.
+          //
+          // I assume it is located at the ridges of the saliency.
+          // So figure out where those ridges are, discard voxels that
+          // are too far away from them, and project the positions of
+          // the remaining voxels onto the nearest point on the ridge surface.
+
+          // Calculate the gradient and hessian of the saliency
+          float hessian[3][3];
+          float gradient[3];
+          assert(aaafSaliency);
+          CalcHessianFiniteDifferences(aaafSaliency,
+                                       ix, iy, iz,
+                                       hessian,
+                                       image_size);
+          CalcGradientFiniteDifferences(aaafSaliency,
+                                        ix, iy, iz,
+                                        gradient,
+                                        image_size);
+          float eivects[3][3]; // eivect[0]=direction of largest 2nd derivative
+          float eivals[3];     // eivals[0]=the 2nd derivative in that direction
+          DiagonalizeSym3(hessian,
+                          eivals,
+                          eivects,
+                          selfadjoint_eigen3::DECREASING_ABS_EIVALS);
+          float gradient_along_v1 = DotProduct3(gradient, eivects[0]);
+          // Now deal with sign ambiguity of the eigenvectors.
+          // Choose the sign of the eigenvector that points along the gradient.
+          if (gradient_along_v1 < 0.0) {
+            // We want the dot product to be > 0
+            gradient_along_v1 = -gradient_along_v1;
+            for (int d = 0; d < 3; d++)
+              eivects[0][d] = -eivects[0][d];
+          }
+          else if (gradient_along_v1 == 0.0)
+            continue; // then ignore this voxel
+          float distance_to_ridge;
+          if (eivals[0] != 0)
+            distance_to_ridge = gradient_along_v1 / eivals[0];
+          else
+            distance_to_ridge = std::numeric_limits<float>::infinity();
+          // Only select voxels that lie near the saliency ridge.
+          // If we are too far away from the ridge, discard this voxel
+          if ((settings.max_distance_to_feature > 0.0) &&
+              (abs(distance_to_ridge) > settings.max_distance_to_feature))
+            continue;
+          array<float,3> xyz;
+          xyz[0] = ix - distance_to_ridge * eivects[0][0];
+          xyz[1] = iy - distance_to_ridge * eivects[0][1];
+          xyz[2] = iz - distance_to_ridge * eivects[0][2];
+          // make sure the point lies within the image boundaries
+          if ((xyz[0] < 0.0) || (image_size[0] < xyz[0]) ||
+              (xyz[1] < 0.0) || (image_size[1] < xyz[1]) ||
+              (xyz[2] < 0.0) || (image_size[2] < xyz[2]))
+            continue; // if not, ignore this point
+          coords.push_back(xyz); // add it to the point cloud
+          // Note that eivects[0][] and aaaafDirection[] are both
+          // vectors that store the surface normal.
+          // I am guessing that aaaafDirection[] is presumably more accurate
+          // choice because it comes directly from tensor-voting (although
+          // the magnitude is hard to interpret, so you can't use it for
+          // finding the ridge position).
+          // So we set the surface normal to aaaafDirection[], not eivects[0][]
+          array<float,3> normal;
+          for (int d = 0; d < 3; d++)
+            normal[d] = aaaafDirection[iz][iy][ix][d];
+          norms.push_back(normal);
+        } //for (int ix = 0; ix < image_size[0]; ++ix)
+      } //for (int iy = 0; iy < image_size[1]; ++iy)
+    } //for (int iz = 0; iz < image_size[2]; ++iz)
+
+    WriteOrientedPointCloudPLY(settings.out_normals_fname,
+                               coords,
+                               norms);
 
   } //if (settings.out_normals_fname != "")
 
@@ -1885,3 +1975,143 @@ HandleTV(const Settings &settings,
   Dealloc3D(aaaafGradient);
 
 } //HandleTV()
+
+
+
+void
+HandleBinning(const Settings &settings,
+              MrcSimple &tomo_in,
+              MrcSimple &mask,
+              float voxel_width[3])
+{
+  int nvoxels_resized[3];
+  for (int d=0; d < 3; d++)
+    nvoxels_resized[d] = (tomo_in.header.nvoxels[d] /
+                          settings.resize_with_binning);
+  double _voxel_width;
+  if (settings.voxel_width > 0)
+    _voxel_width = settings.voxel_width;
+  else
+    _voxel_width = tomo_in.header.cellA[0]/tomo_in.header.nvoxels[0];
+
+  MrcSimple tomo_tmp = tomo_in;
+  tomo_tmp.Resize(nvoxels_resized);
+  // Now bin the original image, and save the result in tomo_tmp.aaafI
+  BinArray3D(tomo_in.header.nvoxels,
+             nvoxels_resized,
+             tomo_in.aaafI,   // <-- source
+             tomo_tmp.aaafI); // <-- dest
+
+  _voxel_width *= settings.resize_with_binning;
+  voxel_width[0] = _voxel_width;
+  voxel_width[1] = _voxel_width;
+  voxel_width[2] = _voxel_width;
+
+  // Now update the voxel size related information
+  // in the header section of "tomo_tmp".
+  tomo_tmp.header.cellA[0] = _voxel_width * nvoxels_resized[0];
+  tomo_tmp.header.cellA[1] = _voxel_width * nvoxels_resized[1];
+  tomo_tmp.header.cellA[2] = _voxel_width * nvoxels_resized[2];
+
+  // Now copy the contents of tomo_tmp into tomo_in.
+  tomo_in.swap(tomo_tmp);
+  // (Note: The old contents of "tomo_in.aaafI" will be freed
+  //  when tomo_tmp is destroyed or modified with Resize().)
+
+  // Did the user supply a mask?
+  // If so, we should resize (bin) the mask as well.
+  if (mask.header.nvoxels[0] > 0) {
+    // Since we swapped tomo_in <--> tomo_tmp,
+    // the tomo_tmp.aaafI array is no longer the correct size.
+    // We can fix that by invoking Resize() again.
+    tomo_tmp.Resize(nvoxels_resized);
+    // Now bin the mask, and save the result in tomo_tmp.aaafI
+    BinArray3D(mask.header.nvoxels,
+               nvoxels_resized,
+               mask.aaafI,      // <-- source
+               tomo_tmp.aaafI); // <-- dest
+    // Now update the voxel size related information
+    // in the header section of "tomo_tmp".
+    tomo_tmp.header.cellA[0] = _voxel_width * nvoxels_resized[0];
+    tomo_tmp.header.cellA[1] = _voxel_width * nvoxels_resized[1];
+    tomo_tmp.header.cellA[2] = _voxel_width * nvoxels_resized[2];
+
+    // Copy the contents of tomo_tmp into mask.
+    mask.swap(tomo_tmp);
+
+    //(The old contents of "mask" will be freed when tomo_tmp is destroyed.)
+  }
+} // HandleBinning()
+
+
+
+void
+DetermineVoxelWidth(const Settings &settings,
+                    MrcSimple &tomo_in,
+                    MrcSimple &mask,
+                    float voxel_width[3])
+{
+  voxel_width[0] = 1.0;
+  voxel_width[1] = 1.0;
+  voxel_width[2] = 1.0;
+
+  int image_size[3];
+  image_size[0] = tomo_in.header.nvoxels[0];
+  image_size[1] = tomo_in.header.nvoxels[1];
+  image_size[2] = tomo_in.header.nvoxels[2];
+
+  if (settings.voxel_width > 0.0) {
+    // Did the user manually specify the width of each voxel?
+    voxel_width[0] = settings.voxel_width;
+    voxel_width[1] = settings.voxel_width;
+    voxel_width[2] = settings.voxel_width;
+    // If the user altered the size of the voxel width by grouping
+    // multiple voxels into single voxels (through binning),
+    // then the effective size of the new voxels is larger than
+    // the original voxels.  It is assumed that the voxel_width specified
+    // by the user is the voxel width of the original image, not the binned
+    // image.  So we must increase this voxel width to compensate.
+    // (We don't have to do this if the voxel width is stored
+    //  header of the MRC file, because that width is inferred from the
+    //  header.cellA[] and image_size[] numbers, which are currently correct.)
+    if (settings.resize_with_binning > 0) {
+      for (int d=0; d < 3; d++)
+        voxel_width[d] *= settings.resize_with_binning;
+    }
+  }
+  else {
+    // Otherwise, infer it from the header of the MRC file
+    voxel_width[0] = tomo_in.header.cellA[0]/image_size[0];
+    voxel_width[1] = tomo_in.header.cellA[1]/image_size[1];
+    voxel_width[2] = tomo_in.header.cellA[2]/image_size[2];
+    if (settings.voxel_width_divide_by_10) {
+      voxel_width[0] *= 0.1;
+      voxel_width[1] *= 0.1;
+      voxel_width[2] *= 0.1;
+    }
+    cerr << "voxel width in physical units = ("
+         << voxel_width[0] << ", "
+         << voxel_width[1] << ", "
+         << voxel_width[2] << ")\n";
+  }
+
+  if ((abs((voxel_width[0] - voxel_width[1]) /
+           (0.5*(voxel_width[0] + voxel_width[1]))) > 0.0001) ||
+      (abs((voxel_width[0] - voxel_width[2]) /
+           (0.5*(voxel_width[0] + voxel_width[2]))) > 0.0001))
+  {
+    stringstream err_msg;
+    err_msg << "Error in tomogram header: Unequal voxel widths in the x, y and z directions:\n"
+      "  voxel_width_x = " << voxel_width[0] << "\n"
+      "  voxel_width_y = " << voxel_width[1] << "\n"
+      "  voxel_width_z = " << voxel_width[2] << "\n"
+      "Tomograms with non-cubic voxels are not supported.\n"
+      "Use interpolation to stretch the image in the shorter\n"
+      "directions so that all 3 voxel widths agree.\n"
+      "Alternatively, use the \"-w WIDTH\" argument to specify the same voxel width for\n"
+      "all 3 directions.  (For example \"-w "<<voxel_width[0]<<"\")\n";
+    throw VisfdErr(err_msg.str());
+  }
+} //DetermineVoxelWidth()
+
+

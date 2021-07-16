@@ -70,22 +70,22 @@ module.
 
 filter_mrc -in tomogram.rec \
   -out membranes.rec \
-  -surface minima 60.0 -best 0.06 \
-  -tv 5.0 -tv-angle-exponent 4 \
+  -membrane minima 70.0 -best 0.05 \
+  -tv 4.0 -tv-angle-exponent 4 \
   -bin 2 \
   -save-progress temporary_file.rec
 ```
 
-This searches for dark surfaces of thickness approximately 60 (Angstroms), and
+This searches for dark surfaces of thickness approximately 70 (Angstroms), and
 creates a new image file ("membranes.rec") with the membranes emphasized.
 View this file (eg. using IMOD) to see if the membranes are successfully
 detected.  You may need to adjust this thickness parameter
 (and the other parameters) until the membrane is clearly visible.
 **This is extremely slow, so try this on a small, cropped image first.**
-(In my experience, "60" is a reasonable default thickness parameter to
-detect lipid bilayers, assuming the voxel widths are in units of Angstroms.
-Incidentally, you can specify the physical width of each voxel using the
-[-w argument](#Voxel-Width).)
+(In my experience, 60-70 Angstroms is a reasonable default thickness parameter
+to detect lipid bilayers.  Most Cryo-EM tomogram files have voxel widths
+in units of Angstroms.  You can override this by specifying
+the physical width of each voxel using the [-w argument](#Voxel-Width).)
 
 Note: After the membrane features are detected, they must be analyzed.
 This typically requires running the "filter_mrc" program multiple times.
@@ -166,17 +166,17 @@ membrane first.  To do that, first try the procedure in [example 1](#Example-1)
 on your tomogram.  Try that on a small cropped image.
 View the newly created image, and if the membranes are clearly visible.
 If so, then you are ready to try the example below.
-(If not, adjust the -surface thickness parameter.)
+(If not, adjust the -membrane thickness parameter.)
 
 ```
 filter_mrc -in tomogram.rec \
   -out membranes_clusters.rec \
-  -surface minima 60.0 \
+  -membrane minima 60.0 \
   -tv 5.0 -tv-angle-exponent 4 \
   -bin 2 \
   -load-progress temporary_file.rec \
-  -connect 1.0e+09 -connect-angle 45 \
-  -select-cluster 1 -surface-normals-file largest_membrane_pointcloud.ply
+  -connect 1.0e+09 -connect-angle 15 \
+  -select-cluster 1 -normals-file largest_membrane_pointcloud.ply
 ```
 Note:
 Here I assumed that the user has already followed the instructions in
@@ -323,7 +323,7 @@ Again, this program is most frequently used for detecting
 2-D **surfaces**, 1-D **curves**, and point-like **blobs** in images.
 
 
-- The ["**-surface**"](#Detecting-membranes)
+- The ["**-membrane**"](#Detecting-membranes)
 argument is used to detect thin, membrane-like structures using
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection)
 - The ["**-edge**"](#-edge-thickness) argument is used to detect
@@ -339,7 +339,7 @@ can be grouped together using using the
 ["**-connect**"](#-connect-threshold) argument.
 Voxels belonging to the same surface can be analyzed and their locations
 and orientations can be saved to a file for further analysis using the
-["**-surface-normals-file**"](#-surface-normals-file-PLY_FILE)
+["**-normals-file**"](#-normals-file-PLY_FILE)
 argument.
 - The
 ["**-blob**"](#Blob-detection)
@@ -462,9 +462,9 @@ whose intensities lie within in a range specified by the user.
 
 ## Detecting surfaces
 
-### -surface type thickness
+### -membrane type thickness
 
-If the "**-surface**" filter is selected, the program will detect
+If the "**-membrane**" filter is selected, the program will detect
 thin membrane-like surfaces which are either brighter or darker
 than their surroundings.
 The "*type*" argument must be either "*minima*" or "*maxima*".
@@ -496,7 +496,7 @@ Groups of connected voxels that belong to the same surface can be
 identified using the [**-connect**](#-connect-threshold) argument,
 and their locations can be saved to a simple text file for geometric
 analysis using the
-[**-surface-normals-file**](#-surface-normals-file-PLY_FILE) argument.
+[**-normals-file**](#-normals-file-PLY_FILE) argument.
 
 **WARNING**
 *This filter requires a very large amount of memory
@@ -515,7 +515,7 @@ You can do this using the ["**-mask**"](#-mask-MRC_FILE) argument
 and [other similar arguments](#Masking).
 
 You can use an image mask during the initial stages of detection
-(for example, using the [-surface](#-surface-type-thickness),
+(for example, using the [-membrane](#-membrane-type-thickness),
 [-curve](#-curve-type-thickness),
 [-edge](#-edge-thickness), and
 [-tv](#-tv-σ_ratio) arguments).
@@ -523,7 +523,7 @@ However since detection is very sensitive to noise near the mask boundary,
 it may be better to refrain from using a mask until later on,
 (for example, when using the 
 [-connect](#-connect-threshold) and
-["-surface-normals-file"](#-surface-normals-file-PLY_FILE)
+["-normals-file"](#-normals-file-PLY_FILE)
 arguments).  Otherwise, you may detect many faint, minor objects or spurious
 noise near this boundary instead of the surface or curve that you are seeking.
 Alternatively, to get around this problem you can dilate (expand) the size
@@ -575,7 +575,7 @@ Using a larger *thickness* will reduce the noise in the image, but may also
 smooth over small (high-frequency) features in boundary surface
 that you want to detect.
 
-As with **-surface** argument, the edge detection fidelity
+As with **-membrane** argument, the edge detection fidelity
 can be improved using tensor voting (with the [-tv](#-tv-σ_ratio) argument).
 
 (Unless the ["-w 1"](#Voxel-Width) argument was specified, then
@@ -607,7 +607,7 @@ The detection of (linear, filamentous) curves
 in images is much like the detection of surfaces.
 (Both detectors use
 [3D ridge detection](https://en.wikipedia.org/wiki/Ridge_detection).)
-As with the **-surface** argument, the user must specify
+As with the **-membrane** argument, the user must specify
 the *type* of the curve, which can be either "*maxima*" or "*minima*",
 depending on whether the curve is bright with a dark background,
 or dark with a bright background, respectively.
@@ -621,7 +621,7 @@ can be improved using tensor voting (with the [-tv](#-tv-σ_ratio) argument).*
 (Unless the ["-w 1"](#Voxel-Width) argument was specified,
 the *thickness* parameter should be in units of physical distance,
 such as Angstroms, not in voxels.)
-Also see the documentation for the [-surface](#-surface-type-thickness)
+Also see the documentation for the [-membrane](#-membrane-type-thickness)
 argument.
 
 **WARNING**
@@ -636,7 +636,7 @@ See [here](#Detection-and-masking) for alternative strategies.
 
 
 ### -tv σ_ratio
-The "**-tv**" argument enables refinement of (*-surface*) results using
+The "**-tv**" argument enables refinement of (*-membrane*) results using
 [3D tensor voting](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf).
 It performs a kind of directional blurring which reinforces regions in the image
 where detected ridges in the image point in the same or similar directions.
@@ -650,7 +650,7 @@ ratio when detecting curves and surfaces.
 Tensor-voting refinement is not done by default
 because it can be a very expensive computation.
 
-Note: The tensor-voting algorithm selected the "-tv" argument
+Note: The tensor-voting algorithm used (as a result of using the "-tv" argument)
 is **extremely slow**.  Croping the tomogram and/or reducing the resolution
 of the 3D image (using the ["-bin"](#-bin-binsize) argument)
 will dramatically reduce computation time.  This recommended
@@ -667,7 +667,7 @@ so that you don't need to repeat the slow tensor-voting calculation each time.
 
 *(Note: -tv is not an independent filter.
 It enables refinement of existing results from the
-"-surface", "-edge", and "-curve" filters.
+"-membrane", "-edge", and "-curve" filters.
 Hence, the "-tv" argument is ignored unless one of these
 three filters has been selected.)
 
@@ -675,7 +675,7 @@ three filters has been selected.)
 function used in tensor voting has a width of
 σ_tv = σ_ratio ⨉ σ,
 where "σ" is the *thickess* parameter specified in the
-[-surface](#-surface-type-thickness),
+[-membrane](#-membrane-type-thickness),
 [-edge](#-edge-thickness),
 or
 [-curve](#-curve-type-thickness), arguments
@@ -683,13 +683,22 @@ The *σ_ratio* parameter has a value of 1/√3.)*
 
 
 ### -tv-angle-exponent n
+*(This argument is optional.)*
 The "**-tv-angle-exponent**" parameter (*n*)
 controls the penalty applied to membrane-like regions which are pointing
 in incompatible directions.  It is 4 by default.
 
 
-### -detection-threshold threshold
+### -tv-truncate-ratio ratio
+*(This argument is optional.)*
+The "**-tv-truncate-ratio**" parameter (*ratio*) is the distance
+(in units *σ_tv*) over which tensor votes are cast. (It is √2 by default.
+Increasing this number will slow down the calculation considerably,
+but may result in a modest increase in detection sensitivity.)
 
+
+### -detection-threshold threshold
+*(This argument is optional.)*
 This will discard voxels whose
 [saliency](https://www.pyimagesearch.com/2018/07/16/opencv-saliency-detection)
 (ie. membrane-ness after ridge detection)
@@ -697,7 +706,7 @@ falls below *threshold*.
 This will make subsequent steps in the calculation
 **(such as tensor voting)** faster.
 Users can choose this threshold by running **filter_mrc** using only
-the "-surface" filter argument, and then visualizing the resulting file.
+the "-membrane" filter argument, and then visualizing the resulting file.
 *(In IMOD, you can click on the image and
  select the "Edit"->"Point"->"Value" menu option to
  see the saliency of voxels of interest.)*
@@ -709,7 +718,10 @@ argument, because no intermediate visualization step is required.
 
 ### -best fraction
 
-The vast majority of voxels in an image do not resemble the feature you are searching for (ie membranes).  The "-best" argument will discard all but the most salient voxels in the image.  It discards voxels from future consideration
+*(This argument is optional.)*
+The vast majority of voxels in an image do not resemble the feature you are
+searching for (ie membranes).  The "-best" argument will discard all but the
+most salient voxels in the image.  It discards voxels from future consideration
 unless their
 [saliency](https://www.pyimagesearch.com/2018/07/16/opencv-saliency-detection)
 is in the top *fraction* of all of the voxel saliencies from the entire image
@@ -719,8 +731,9 @@ for any subsequent steps in the calculation
 **(such as tensor voting)**
 by a factor which is roughly proportional to this number.
 The *fraction* parameter should lie in the range from 0 to 1.
-(Using *0.1* is a conservative choice, but you can often get away
- with using lower values.  If the resulting surfaces are incomplete, it may help to increase this number and try again.)
+(This number is 0.05 by default.
+Using *0.05* is a conservative choice, but you can often get away
+with using lower values.  If the resulting surfaces are incomplete, it may help to increase this number and try again.)
 
 
 
@@ -749,7 +762,7 @@ a substantial amount of disk space.  You should delete them eventually.
 Note that when using "-load-progress", you must again specify
 all the same arguments that you used earlier when you used
 "-save-progress"
-(including the "-in" "-surface", "-edge", and "-curve", and "-tv" arguments).
+(including the "-in" "-membrane", "-edge", and "-curve", and "-tv" arguments).
 When you do this, you are permitted to make some changes which are listed below.
 When you use "-load-progress", you are permitted to change the "-out" argument.
 You can also add an image mask (or change the mask, for example
@@ -1294,7 +1307,7 @@ argument.  However the "-connect" argument has additional options.)
 *If the
 ["-connect"](#-connect-threshold)
 argument is used together with the
-["-surface"](#Detecting-membranes),
+["-membrane"](#Detecting-membranes),
 ["-edge"](#-edge-thickness), or
 ["-curve"](#Detecting-curves)
 arguments,* then it means that additional, *more stringent* criteria
@@ -1305,7 +1318,7 @@ resembles the feature you are trying to detect, like a curve, surface, or edge).
 In order for two neighboring voxels to be in the same island, they must
 both have high saliency above the *threshold* parameter specified by the user.
 For example, when detecting thin surfaces using
-["**-surface**"](#Detecting-membranes), the "*threshold*" parameter
+["**-membrane**"](#Detecting-membranes), the "*threshold*" parameter
 determines how *membrane-like* a voxel must be in order for it to be included.
 If the *threshold* parameter is chosen carefully, then these
 different islands will hopefully correspond to different membrane
@@ -1358,12 +1371,12 @@ This strategy was used in [example 3](#Example-3).
 
 #### Determining the -connect threshold parameter
 
-Let's assume you are using the "-surface" argument to detect thin
+Let's assume you are using the "-membrane" argument to detect thin
 membrane-like surfaces in an image.
 To choose the *threshold* parameter,
 run membrane-detection
 (for example using
-["-surface"](#Detecting-membranes)
+["-membrane"](#Detecting-membranes)
 and
 ["-tv"](#-tv-σ_ratio)
 )
@@ -1531,7 +1544,7 @@ will be joined with all of the voxels connected to the second voxel
 
 
 ### -select-cluster cluster-ID
-### -surface-normals-file PLY_FILE
+### -normals-file PLY_FILE
 
 Once clustering is working, you can select one of the clusters using
 the "**-select-cluster**" argument.
@@ -1540,7 +1553,7 @@ the "**-select-cluster**" argument.
 You can create a file which contains a list of voxels locations
 (for the voxels belonging to that cluster),
 as well as their surface orientations
-using the "**-surface-normals-file**".
+using the "**-normals-file**".
 The resulting file will be in .PLY format.
 This oriented point-cloud file can be used for further processing
 (for example for hole-repair using the "PoissonRecon" program).
@@ -1551,18 +1564,40 @@ Consequently they are not integers (unless the
 ["-w 1"](#Voxel-Width) argument was used).
 
 
+### -max-distance-to-feature *num_voxels*
+
+*(This argument is optional.)*
+
+The *num_voxels* parameter specifies how far a voxel can be from the surface
+(or curve) you are detecting in order for it to be excluded from the
+file containing the coordinates of that surface (or curve).
+For example, suppose you are using the "-membrane" or "-edge" arguments
+together with the "-normals-file" argument.
+Voxels that are further than *num_voxels* away from the surface will
+*not* be included in the PLY file that is generated.
+*(This parameter is measured in units of voxels, not physical distance.
+By default this number is (√3)/2≈0.8660254.
+Setting it to "inf" disables this feature.
+The remaining voxels will have their coordinates projected onto the surface
+(or curve), regardless of how far away they are.)*
+
+
 ### -connect-angle theta
+
+*(This argument is optional.)*
 
 The *theta* argument determines how similar the
 orientations of each voxel must be in order for a pair of neighboring voxels
 to be merged into the same cluster (ie. the same membrane or same filament).
 Neighboring voxels whose orientations differ by more than *theta* will
 not be grouped into the same cluster (ie. the same surface or same curve).
-If not specified, the default value is assumed to be 45 degrees.
-However *theta* values from 15-60 degrees are common.
+If not specified, the default value is assumed to be 15 degrees.
+However *theta* values from 10-60 degrees are common.
 
 Note: The *-connect-angle* argument has no effect unless the
-["-surface" and "-connect"](#Detecting-membranes) arguments are also supplied.
+"-connect" argument is also supplied,
+along with the "-membrane", "-edge", or "-curve" arguments.
+
 
 #### -cts, -ctn, -cvs, -cvn
 
@@ -1597,7 +1632,7 @@ differ by more than 45° will be assigned to different clusters (membranes).
 (This works reasonably well for phospholipid membranes.)
 
 Note that the *-cts*, *-ctn*, *-cvs*, and *-cvn* arguments
-have no effect unless the ["-surface" and "-connect"](#Detecting-membranes)
+have no effect unless the ["-membrane" and "-connect"](#Detecting-membranes)
 arguments are also in use.
 
 
@@ -2142,7 +2177,7 @@ should not effect your ability to detect it accurately,
 
 Note that you can use this argument together with other arguments.
 If you do that, the reduction of resolution occurs before all
-other operations are performed (such as "-blob" or "-surface" detection).
+other operations are performed (such as "-blob" or "-membrane" detection).
 This allows you to reduce the image size before
 these other expensive calculations are performed.
 

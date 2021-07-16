@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.28.4");
-string g_date_string("2021-7-14");
+string g_version_string("0.29.0");
+string g_date_string("2021-7-15");
 
 
 
@@ -109,120 +109,99 @@ int main(int argc, char **argv) {
     }
 
 
-    // Reduce the size of the input image (using binning)?
-    if (settings.resize_with_binning > 1) {
-      int nvoxels_resized[3];
-      for (int d=0; d < 3; d++)
-        nvoxels_resized[d] = (tomo_in.header.nvoxels[d] /
-                              settings.resize_with_binning);
-      double voxel_width = tomo_in.header.cellA[0]/tomo_in.header.nvoxels[0];
-      if (settings.voxel_width > 0)
-        voxel_width = settings.voxel_width;
-
-      MrcSimple tomo_tmp = tomo_in;
-      tomo_tmp.Resize(nvoxels_resized);
-      // Now bin the original image, and save the result in tomo_tmp.aaafI
-      BinArray3D(tomo_in.header.nvoxels,
-                 nvoxels_resized,
-                 tomo_in.aaafI,
-                 tomo_tmp.aaafI);
-
-      // Now update the voxel size related information
-      // in the header section of "tomo_tmp".
-      tomo_tmp.header.cellA[0] = voxel_width * nvoxels_resized[0];
-      tomo_tmp.header.cellA[1] = voxel_width * nvoxels_resized[1];
-      tomo_tmp.header.cellA[2] = voxel_width * nvoxels_resized[2];
-
-      // Now copy the contents of tomo_tmp into tomo_in.
-      tomo_in.swap(tomo_tmp);
-      // (Note: The old contents of "tomo_in.aaafI" will be freed
-      //  when tomo_tmp is destroyed or modified with Resize().)
-
-      // Did the user supply a mask?
-      // If so, we should resize (bin) the mask as well.
-      if (mask.header.nvoxels[0] > 0) {
-        // Since we swapped tomo_in <--> tomo_tmp,
-        // the tomo_tmp.aaafI array is no longer the correct size.
-        // We can fix that by invoking Resize() again.
-        tomo_tmp.Resize(nvoxels_resized);
-        // Now bin the mask, and save the result in tomo_tmp.aaafI
-        BinArray3D(mask.header.nvoxels,
-                   nvoxels_resized,
-                   mask.aaafI,
-                   tomo_tmp.aaafI);
-        // Copy the contents of tomo_tmp into mask.
-        mask.swap(tomo_tmp);
-        //(The old contents of "mask" will be freed when tomo_tmp is destroyed.)
-      }
-    } //if (settings.resize_with_binning > 0)
-
-
-
-
     // ---- How many voxels are in the image we will be processing? ----
     int image_size[3]; // <-- store here
     for (int d = 0; d < 3; d++)
       image_size[d] = tomo_in.header.nvoxels[d];
 
 
-
     // ---- Voxel width? ----
-    float voxel_width[3] = {1.0, 1.0, 1.0};
-    if (settings.voxel_width > 0.0) {
-      // Did the user manually specify the width of each voxel?
-      voxel_width[0] = settings.voxel_width;
-      voxel_width[1] = settings.voxel_width;
-      voxel_width[2] = settings.voxel_width;
-      // If the user altered the size of the voxel width by grouping
-      // multiple voxels into single voxels (through binning),
-      // then the effective size of the new voxels is larger than
-      // the original voxels.  It is assumed that the voxel_width specified
-      // by the user is the voxel width of the original image, not the binned
-      // image.  So we must increase this voxel width to compensate.
-      // (We don't have to do this if the voxel width is stored
-      //  header of the MRC file, because that width is inferred from the
-      //  header.cellA[] and image_size[] numbers, which are currently correct.)
-      if (settings.resize_with_binning > 0) {
-        for (int d=0; d < 3; d++)
-          voxel_width[d] *= settings.resize_with_binning;
-      }
-    }
-    else {
-      // Otherwise, infer it from the header of the MRC file
-      voxel_width[0] = tomo_in.header.cellA[0]/image_size[0];
-      voxel_width[1] = tomo_in.header.cellA[1]/image_size[1];
-      voxel_width[2] = tomo_in.header.cellA[2]/image_size[2];
-      if (settings.voxel_width_divide_by_10) {
-        voxel_width[0] *= 0.1;
-        voxel_width[1] *= 0.1;
-        voxel_width[2] *= 0.1;
-      }
-      cerr << "voxel width in physical units = ("
-           << voxel_width[0] << ", "
-           << voxel_width[1] << ", "
-           << voxel_width[2] << ")\n";
-    }
-
-    if ((abs((voxel_width[0] - voxel_width[1]) /
-             (0.5*(voxel_width[0] + voxel_width[1]))) > 0.0001) ||
-        (abs((voxel_width[0] - voxel_width[2]) /
-             (0.5*(voxel_width[0] + voxel_width[2]))) > 0.0001))
-    {
-      stringstream err_msg;
-      err_msg << "Error in tomogram header: Unequal voxel widths in the x, y and z directions:\n"
-        "  voxel_width_x = " << voxel_width[0] << "\n"
-        "  voxel_width_y = " << voxel_width[1] << "\n"
-        "  voxel_width_z = " << voxel_width[2] << "\n"
-        "Tomograms with non-cubic voxels are not supported.\n"
-        "Use interpolation to stretch the image in the shorter\n"
-        "directions so that all 3 voxel widths agree.\n"
-        "Alternatively, use the \"-w WIDTH\" argument to specify the same voxel width for\n"
-        "all 3 directions.  (For example \"-w "<<voxel_width[0]<<"\")\n";
-      throw VisfdErr(err_msg.str());
-    }
+    float voxel_width[3];
+    DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
 
 
-    // Now that we know voxel_size, rescale coordinates
+    // ---- Reduce the size of the input image (using binning)? ----
+
+    if (settings.resize_with_binning > 1) {
+      HandleBinning(settings, tomo_in, mask, voxel_width);
+      // Since we reduced the resolution, we should increase voxel width
+      DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
+    } //if (settings.resize_with_binning > 0)
+
+    // If the user did not ask us to bin the image, perhaps we should anyway?
+    else if (settings.resize_with_binning == 0) {
+      settings.resize_with_binning = 1;
+      if (settings.tv_sigma > 0) {
+        float feature_detection_sigma = settings.width_a[0];
+        float voting_distance = settings.tv_sigma * feature_detection_sigma;
+        if (feature_detection_sigma > 4*voxel_width[0])
+        {
+          settings.resize_with_binning = int(ceil(feature_detection_sigma /
+                                                  (4*voxel_width[0])));
+          cerr <<
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------\n"
+            "---  WARNING: Tensor-voting requested with a feature width of\n"
+            "---           sigma = " << feature_detection_sigma/voxel_width[0]
+               << ",\n"
+            "---           and a voting distance of\n"
+            "--- voting_distance = " << voting_distance/voxel_width[0]
+               << "  IN VOXELS\n"
+            "---           This will be very slow unless binning is used.\n"
+            "--- BINNING THE IMAGE BY A FACTOR OF " <<settings.resize_with_binning
+               << "\n"
+            "---           This may reduce the precision of the detected features.\n"
+            "---           To prevent this, use the \"-bin 1\" argument.\n"
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------"
+               << endl;
+          // perhaps later, I'll change the criteria to something like this:
+          // if (voting_distance > 10.0*voxel_width[0]) ...
+          HandleBinning(settings, tomo_in, mask, voxel_width);
+          // Since we reduced the resolution, we should recalculate voxel width
+          DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
+        }
+      } //if (settings.tv_sigma > 0)
+      else if (settings.blob_diameters.size() > 0)
+      {
+        if (settings.blob_diameters[0] > 10.0*voxel_width[0])
+        {
+          settings.resize_with_binning = int(ceil(settings.blob_diameters[0] /
+                                                  (10.0*voxel_width[0])));
+          cerr <<
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------\n"
+            "---  WARNING: Blob detection requested with a minimum sigma of\n"
+            "---           sigma = " <<settings.blob_diameters[0]/voxel_width[0]
+               << "   IN VOXELS\n"
+            "---           This will be very slow unless binning is used.\n"
+            "--- BINNING THE IMAGE BY A FACTOR OF " <<settings.resize_with_binning
+               << "\n"
+            "---           This may reduce the precision of the detected blobs.\n"
+            "---           To prevent this, use the \"-bin 1\" argument.\n"
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------\n"
+            "------------------------------------------------------------------"
+               << endl;
+          // perhaps later, I'll change the criteria to something like this:
+          // if (voting_distance > 10.0*voxel_width[0]) ...
+          HandleBinning(settings, tomo_in, mask, voxel_width);
+          // Since we reduced the resolution, we should recalculate voxel width
+          DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
+        } //if (settings.blob_diameters[0] > 10.0*voxel_width[0])
+      } //else if (settings.blob_diameters.size() > 0)
+    } //else if (settings.resize_with_binning == 0)
+
+
+
+
+    // --- Rescale parameter coordinates according to voxel_width ---
+
+
+    // Now that we know voxel_width, rescale coordinates
     // of the regions that define the image mask (if applicable).
     if (settings.vMaskRegions.size() > 0) {
 
@@ -291,6 +270,12 @@ int main(int argc, char **argv) {
     //assert((voxel_width[0] == voxel_width[1]) &&
     //       (voxel_width[1] == voxel_width[2]));
     settings.thickness_morphology /= voxel_width[0];
+
+
+    // Mote: max_distance_to_feature is specified by the user in units of voxels
+    // (not physical distance).  So we don't have to divide it by voxel_width.
+    // Consequently, I'm commenting out the next line:
+    //settings.max_distance_to_feature /= voxel_width[0];
 
 
     // Now that we know the voxel_width, rescale any tensor-voting

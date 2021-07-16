@@ -240,6 +240,7 @@ class Settings {
 
   string out_normals_fname;
   bool  ridges_are_maxima;
+  float max_distance_to_feature;
   float hessian_score_threshold;
   bool  hessian_score_threshold_is_a_fraction;
   float tv_score_threshold;
