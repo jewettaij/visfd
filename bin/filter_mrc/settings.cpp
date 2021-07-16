@@ -2442,18 +2442,22 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-surface") {
-      throw InputErr("Error: As of 2021-7-15, the " + vArgs[i] +
-          
+
+    else if ((vArgs[i] == "-surface") ||
+             (vArgs[i] == "-planar"))
+    {
+      throw InputErr("Error: As of 2021-7-15, the " + vArgs[i] +          
                      " argument has been renamed.\n"
                      "       It is now called \"-membrane\".\n"
                      "       See documentation for details.\n");
     }
 
-    else if (vArgs[i] == "-planar") {
+
+
+    else if (vArgs[i] == "--membrane-normals-file") {
       throw InputErr("Error: As of 2019-4-11, the " + vArgs[i] +
                      " argument has been renamed.\n"
-                     "       It is now called \"-membrane\", and it requires an additional argument.\n"
+                     "       It is now called \"-normals-file\", and it requires an additional argument.\n"
                      "       See documentation for details.\n");
     }
 
