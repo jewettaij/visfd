@@ -128,7 +128,7 @@ Settings::Settings() {
   ridges_are_maxima = false;
   max_distance_to_feature = std::sqrt(3.0)/2;
   hessian_score_threshold = 0.05; //discard voxels which are not the best 5%
-  hessian_score_threshold_is_a_fraction = false;
+  hessian_score_threshold_is_a_fraction = true;
   tv_score_threshold = 0.0;
   tv_sigma = 0.0;
   tv_exponent = 4;
@@ -249,6 +249,89 @@ Settings::ParseArgs(vector<string>& vArgs)
   vector<string> multi_training_neg_fnames;
   vector<string> multi_training_pos_fnames;
 
+  // PASS 1: Parse all the arguments that alter the argument list.
+  for (int i=1; i < vArgs.size(); ++i)
+  {
+    if (vArgs[i] == "-save-progress")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        save_intermediate_fname_base = vArgs[i+1];
+        int nf = save_intermediate_fname_base.size();
+        string fname_suffix = "";
+        if (nf > 4)
+          fname_suffix = save_intermediate_fname_base.substr(nf-4, nf);
+        string fname_base = save_intermediate_fname_base;
+        if ((fname_suffix == ".mrc") || (fname_suffix == ".rec") ||
+            (fname_suffix == ".MRC") || (fname_suffix == ".REC"))
+          fname_base = save_intermediate_fname_base.substr(0, nf-4);
+        save_intermediate_fname_base = fname_base;
+        string save_intermediate_fname_info = fname_base + "_info.txt";
+        // Now save all the current command line arguments into the INFO file.
+        fstream f;
+        f.open(save_intermediate_fname_info, ios::out);
+        for (int j = 1; j < vArgs.size(); j++) {
+          if ((j == i) || (j == i+1))
+            continue;  // omit the "-save-progress filename" arguments
+          f << vArgs[j] << "\n";
+        }
+        f.close();
+        vArgs.erase(vArgs.begin()+i,
+                    vArgs.begin()+i+2);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a file name\n"
+                       "       (The suffix at the end of the file (eg \".mrc\" or \".rec\") is optional.)\n");
+      }
+    } //if (vArgs[i] == "-save-progress")
+
+    else if (vArgs[i] == "-load-progress")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        load_intermediate_fname_base = vArgs[i+1];
+        int nf = load_intermediate_fname_base.size();
+        string fname_suffix = "";
+        if (nf > 4)
+          fname_suffix = load_intermediate_fname_base.substr(nf-4, nf);
+        string fname_base = load_intermediate_fname_base;
+        if ((fname_suffix == ".mrc") || (fname_suffix == ".rec") ||
+            (fname_suffix == ".MRC") || (fname_suffix == ".REC"))
+          fname_base = load_intermediate_fname_base.substr(0, nf-4);
+        load_intermediate_fname_base = fname_base;
+        string load_intermediate_fname_info = fname_base + "_info.txt";
+        // Now load the arguments that were in the INFO file.
+        fstream f;
+        f.open(load_intermediate_fname_info, ios::in);
+        vector<string> new_args;
+        string line;
+        while (getline(f, line, '\n'))
+          if (line.size() > 0)
+            new_args.push_back(line);
+        f.close();
+        vArgs.erase(vArgs.begin() + i,
+                    vArgs.begin() + i + 2);
+        vArgs.insert(vArgs.begin() + 1,
+                     new_args.begin(),
+                     new_args.end());
+      } // try
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a file name\n");
+      }
+    } // else if (vArgs[i] == "-load-progress")
+  } // for (int i=1; i < vArgs.size(); ++i)  (PASS 1)
+
+
+
+
+  // PASS 2: Parse all of the ordinary arguments.
+  //         (that don't alter with the argument list)
   for (int i=1; i < vArgs.size(); ++i)
   {
 
@@ -2629,40 +2712,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a positive number\n");
-      }
-      num_arguments_deleted = 2;
-    }
-
-
-    else if (vArgs[i] == "-save-progress")
-    {
-      save_intermediate_fname_base = vArgs[i+1];
-      try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-          throw invalid_argument("");
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a file name\n"
-                       "       (The suffix at the end of the file (eg \".mrc\" or \".rec\") is optional.)\n");
-      }
-      num_arguments_deleted = 2;
-    }
-
-
-    else if (vArgs[i] == "-load-progress")
-    {
-      load_intermediate_fname_base = vArgs[i+1];
-      try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
-          throw invalid_argument("");
-      }
-      catch (invalid_argument& exc) {
-        throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a file name\n"
-                       "       (The suffix at the end of the file (eg \".mrc\" or \".rec\") is optional.)\n");
       }
       num_arguments_deleted = 2;
     }

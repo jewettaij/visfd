@@ -1431,17 +1431,6 @@ HandleTV(const Settings &settings,
 
   cerr << "Diagonalizing the Hessians" << endl;
 
-
-  // DELETE THIS DEBUGGING CRUFT
-  //for(int iz=0; iz < image_size[2]; iz++)
-  //  for(int iy=0; iy < image_size[1]; iy++)
-  //    for(int ix=0; ix < image_size[0]; ix++)
-  //      tomo_out.aaafI[iz][iy][ix] =
-  //        FrobeniusNormSqdSym3(hessian_tensor.aaaafI[iz][iy][ix]);
-  //return;
-  // DELETE THIS DEBUGGING CRUFT
-
-
   // We need to store the direction of the most important eigenvector
   // somewhere.  To save space, why not store it in the aaaafGradient
   // array?  (At this point, we are no longer using it).
@@ -1662,18 +1651,11 @@ HandleTV(const Settings &settings,
       // If the "settings.load_intermediate_fname_base" file name ends in
       // ".rec" or ".mrc", then remove these these suffixes.
       // First figure out the file name(s) we are going to use.
-      int nf = settings.load_intermediate_fname_base.size();
-      string fname_suffix = "";
-      if (nf > 4)
-        fname_suffix = settings.load_intermediate_fname_base.substr(nf-4, nf);
-      string fname_prefix = settings.load_intermediate_fname_base;
-      if ((fname_suffix == ".mrc") || (fname_suffix == ".rec") ||
-          (fname_suffix == ".MRC") || (fname_suffix == ".REC"))
-        fname_prefix = settings.load_intermediate_fname_base.substr(0, nf-4);
+      string fname_base = settings.load_intermediate_fname_base;
       // Then load the files corresponding to the tensor
       for (int d = 0; d < 6; d++) {
         stringstream fname_ss;
-        fname_ss << fname_prefix << "_tensor_" << d << ".rec";
+        fname_ss << fname_base << "_tensor_" << d << ".rec";
         cerr << "loading \"" << fname_ss.str() << "\"" << endl;
         MrcSimple tomo_tmp;
         tomo_tmp.Read(fname_ss.str(), false);
@@ -1728,18 +1710,11 @@ HandleTV(const Settings &settings,
     // First figure out the file name(s) we are going to use.
     // If the "settings.save_intermediate_fname_base" file name ends in
     // ".rec" or ".mrc", then remove these these suffixes.
-    int nf = settings.save_intermediate_fname_base.size();
-    string fname_suffix = "";
-    if (nf > 4)
-      fname_suffix = settings.save_intermediate_fname_base.substr(nf-4, nf);
-    string fname_prefix = settings.save_intermediate_fname_base;
-    if ((fname_suffix == ".mrc") || (fname_suffix == ".rec") ||
-        (fname_suffix == ".MRC") || (fname_suffix == ".REC"))
-      fname_prefix = settings.save_intermediate_fname_base.substr(0, nf-4);
+    string fname_base = settings.save_intermediate_fname_base;
     // Then save the files corresponding to the tensor
     for (int d = 0; d < 6; d++) {
       stringstream fname_ss;
-      fname_ss << fname_prefix << "_tensor_" << d << ".rec";
+      fname_ss << fname_base << "_tensor_" << d << ".rec";
       cerr << "allocating space for \"" << fname_ss.str() << "\"" << endl;
       MrcSimple tomo_tmp = tomo_out;
       for(int iz=0; iz < image_size[2]; iz++)
