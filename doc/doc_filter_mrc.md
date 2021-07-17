@@ -238,6 +238,10 @@ If a suitable parameter can not be found, you can also use the
 ["**-must-link**"](#-must-link-FILE)
 argument to manually force connections between
 disconnected regions. (See below.)
+You can also *modify* the image to erase or mask problematic regions (using the
+[-draw-spheres](#-draw-spheres-filename), or
+[-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax), and
+[-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r) arguments).
 
 Note:
 If the resulting surface is *not closed*,
@@ -954,7 +958,7 @@ or
 regions in the image appear by a distance of *thickness*, respectively
 (which is in physical units, not voxels, unless the
 [-w 1](#Voxel-Width) argument is used).
-*(Details: A spherical structure-factor with radius=thickness is used.)*
+*(Details: A flat spherical structure-factor with radius=thickness is used.)*
 
 Image dilation and erosion are useful for erasing or emphasizing
 features (or noise) in the image that are in a given size range.
@@ -995,11 +999,12 @@ These arguments will apply a *grayscale*
 filter to your image.
 The morphological opening of an image is defined as an
 [erosion followed by a dilation](https://scikit-image.org/docs/dev/api/skimage.morphology.html#skimage.morphology.opening).
-Opening removes small objects, while closing removes small holes.
+*(Similarly, the closing is defind by dilation followed by erosion.)*
+Opening removes small bright regions, while closing removes dark holes.
 The size of the objects removed is determined by the *thickness* parameter
 (which is in physical units, not voxels, unless the
 [-w 1](#Voxel-Width) argument is used).
-*(Details: A spherical structure-factor with radius=thickness is used.)*
+*(Details: A flat spherical structure-factor with radius=thickness is used.)*
 These operations have not been optimized for speed.
 
 
@@ -1011,14 +1016,13 @@ These operations have not been optimized for speed.
 These arguments will apply a *grayscale*
 [top-hat](https://en.wikipedia.org/wiki/Opening_(morphology))
 transform to your image.
-The white top-hat transform emphasizes
-small bright objects on a dark background.
-The black top-hat transform emphasizes
-small dark objects on a bright background.
+Recall that the opening and closing filters remove small objects from an image.
+For comparison, the top-hat transforms remove large features.
+The white top-hat transform removes large bright objects on a dark background.
+The black top-hat transform removes large dark objects on a bright background.
 The size of the objects preserved is determined by the *thickness* parameter
 (which is in physical units, not voxels, unless the
 [-w 1](#Voxel-Width) argument is used).
-*(Details: A spherical structure-factor with radius=thickness is used.)*
 These transforms have not been optimized for speed.
 
 *Note: As an alternative, you can also use a
@@ -1026,7 +1030,7 @@ These transforms have not been optimized for speed.
 filter to remove low frequencies from an image.  To do that use the
 [-dog a b](#-dog) argument, setting a=0, and setting b to
 a distance which is similar to the size of the large objects
-or gradients that you want removed from the image.*
+(or gradients) that you want removed from the image.*
 
 
 ### -erosion-gauss thickness
@@ -2026,6 +2030,16 @@ When *-dog* is used,
 *a_x = a_y = a_z = a*
 and
 *b_x = b_y = b_z = b*
+
+The "-dog" argument can be used to remove low frequencies from an image.
+This is useful to get rid of slowly changing brightness gradients,
+and to set the average image brightness to 0.
+To do that use the [-dog a b](#-dog) argument, setting *a=0*, and setting *b* to
+a large distance which is similar to the features in the background that you
+want removed (such as slowly changing brightness variations in the background),
+or the size of the image.
+*(Unless the "-w 1" argument is used, the a and b parameters are in units
+of physical distance, not voxels.)*
 
 
 ### LoG filters

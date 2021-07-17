@@ -88,12 +88,12 @@ For example:
 
 
 ### NOT-gates
-  This can be used to invert the image intensities so that bright voxels
-  are replaced by 0, and dark voxels are replaced by 1.
+This can be used to invert the image intensities so that bright voxels
+are replaced by 0, and dark voxels are replaced by 1.
 
+You can also apply thresholding to the *output image*, as demonstrated
+[below](#NAND-gate example:)
 
-
-You can also apply thresholding to the *output image*, as demonstrated below.
 
 #### OR-gate example:
 
@@ -114,6 +114,9 @@ output voxel intensity will be 0.
 ```
 
 #### NAND-gate example:
+This version will invert the output of the AND-gate by applying a "1,0"
+threshold filter to the output voxel brightnesses.
+("0.52,0.48" would also work.)
 ```
    combine_mrc file1.mrc,0.4999,0.5 "*" file2.mrc,0.4999,0.5 out_file.mrc,1,0
 ```

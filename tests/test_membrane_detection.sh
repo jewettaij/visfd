@@ -2,7 +2,7 @@
 
 test_membrane_detection() {
     cd tests/
-    OUT_FNAME_BASE="test_image_membrane_surface_55_tv_4_4_clust_1e+09_45deg"
+    OUT_FNAME_BASE="test_image_membrane_surface_55_tv_4_4_clust_1e+09_30deg"
     OUT_FNAME_REC=${OUT_FNAME_BASE}.rec
     OUT_FNAME_NORMALS=${OUT_FNAME_BASE}.ply
     ../bin/filter_mrc/filter_mrc -w 19.2 -in test_image_membrane.rec -out ${OUT_FNAME_REC} -membrane minima 55 -tv 4 -tv-angle-exponent 4 -bin 2 -save-progress test_image_membrane

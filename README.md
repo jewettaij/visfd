@@ -8,7 +8,7 @@ visfd
 
 ## Volumetric Image toolkit for Simple Feature Detection
 
-This is a C++ template library for 3D image processing
+This is a general C++ template library for 3D image processing
 ("[visfd.hpp](./lib/visfd/visfd.hpp)")
 as well as reading & writing image files using the the MRC file format
 ("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
