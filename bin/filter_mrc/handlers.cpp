@@ -1917,6 +1917,9 @@ HandleTV(const Settings &settings,
               (xyz[1] < 0.0) || (image_size[1] < xyz[1]) ||
               (xyz[2] < 0.0) || (image_size[2] < xyz[2]))
             continue; // if not, ignore this point
+          for (int d = 0; d < 3; d++)
+            // We want to export coordinates in units of physical distance
+            xyz[d] *= voxel_width[d];
           coords.push_back(xyz); // add it to the point cloud
           // Note that eivects[0][] and aaaafDirection[] are both
           // vectors that store the surface normal.

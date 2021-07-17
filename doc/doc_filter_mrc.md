@@ -1029,8 +1029,9 @@ These transforms have not been optimized for speed.
 [difference-of-gaussians](#https://en.wikipedia.org/wiki/Difference_of_Gaussians)
 filter to remove low frequencies from an image.  To do that use the
 [-dog a b](#-dog) argument, setting a=0, and setting b to
-a distance which is similar to the size of the large objects
-(or gradients) that you want removed from the image.*
+a distance which is similar to a distance which is smaller than
+the size of the large objects that you want removed from the image
+(in physical distance units, not in voxels).*
 
 
 ### -erosion-gauss thickness
@@ -2031,15 +2032,13 @@ When *-dog* is used,
 and
 *b_x = b_y = b_z = b*
 
-The "-dog" argument can be used to remove low frequencies from an image.
-This is useful to get rid of slowly changing brightness gradients,
-and to set the average image brightness to 0.
+The "-dog" argument can be used to remove low frequencies from an image.  *(This
+is useful for removing slowly changing brightness gradients in the background.)*
 To do that use the [-dog a b](#-dog) argument, setting *a=0*, and setting *b* to
-a large distance which is similar to the features in the background that you
-want removed (such as slowly changing brightness variations in the background),
-or the size of the image.
-*(Unless the "-w 1" argument is used, the a and b parameters are in units
-of physical distance, not voxels.)*
+a large number (such as the width of the image).
+
+*(Note: Unless the "-w 1" argument is used, the a and b parameters
+should both be expressed in units of physical distance, not voxels.)*
 
 
 ### LoG filters

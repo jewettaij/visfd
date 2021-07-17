@@ -8,8 +8,8 @@ visfd
 
 ## Volumetric Image toolkit for Simple Feature Detection
 
-This is a general C++ template library for 3D image processing
-("[visfd.hpp](./lib/visfd/visfd.hpp)")
+This is a C++ template library for general 3D image processing
+("[visfd.hpp](./lib/visfd/visfd.hpp)"),
 as well as reading & writing image files using the the MRC file format
 ("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
 It is also a collection of stand-alone programs
@@ -26,14 +26,15 @@ Multiprocessor support is implemented using
 
 
 ## *Alternatives to VISFD*
-Some of the features of VISFD are also available
-from popular python libraries, including:
+Comprehensive libraries for 3-D image processing in python can be found at
 [scikit-image](https://scikit-image.org)
 and
 [scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
-*(MRC files can be read in python using the
+*(MRC files can be read into python arrays using the
 [mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
-module.)*
+module.)
+But these python libraries currently lack some of VISFD's features for
+detecting curve and surface geometry, and closed surface segmentation.
 
 
 ## programs included with this repository:
