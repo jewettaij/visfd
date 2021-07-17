@@ -1561,8 +1561,7 @@ ApplyLog(const int image_size[3], //!< source image size
 
 #ifndef CXX17_UNSUPPORTED
 
-/// @brief Computes the median filter of an image
-///        using a spherical footprint, as defined here:
+/// @brief Computes the median filter with an arbitrary "footprint" (see below),///        as defind here:
 ///        https://en.wikipedia.org/wiki/Median_filter
 ///        The "footprint" defines the nearby region over which the median
 ///        is calculated.  It is implemented as a vector of tuples.
@@ -1633,11 +1632,9 @@ Median(vector<tuple<int,int,int> > footprint, // a list of (ix,iy,iz,b) values, 
 /// @brief Computes the median filter of an image
 ///        using a spherical footprint, as defined here:
 ///        https://en.wikipedia.org/wiki/Median_filter
-///        The radius paramater can be a floating point number, but its
-///        units are in voxels.
 template<typename Scalar>
 void
-MedianSphere(Scalar radius,              //!< radius of the sphere
+MedianSphere(Scalar radius,              //!< radius of the sphere (in voxels)
              int const image_size[3],    //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafSource, //!< source image array
              Scalar ***aaafDest,             //!< filter results stored here

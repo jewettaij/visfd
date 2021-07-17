@@ -10,12 +10,12 @@
 // higher level functions and classes are defined in these header files:
 
 #include <feature.hpp>       // feature detectors (blob, surface, edge, curve..)
-#include <segmentation.hpp>  // functions used for segmentation (eg watershed)
 #include <morphology.hpp>    // functions relevant to image morphology
-#include <clustering.hpp>    // functions for clustering nearby voxels (useful
-                             // to distinguish different objects in an image)
+#include <segmentation.hpp>  // functions used for segmentation (eg watershed)
+#include <clustering.hpp>    // functions for clustering nearby voxels (also
+                             // useful for image segmentation)
 #include <draw.hpp>          // functions for drawing and annotation
-#include <filter3d.hpp>      // common 3D (linear) filters
+#include <filter3d.hpp>      // common 3D filters (mostly simple linear filters)
 #include <resample.hpp>      // resize the image
 
 // lower level functions and classes (upon which the files above depend):

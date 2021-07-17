@@ -64,7 +64,7 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
             vector<IntegerIndex> *pv_minima_nvoxels, //!< store number of voxels in each minima (usually 1)
             vector<IntegerIndex> *pv_maxima_nvoxels, //!< store number of voxels in each maxima (usually 1)
             Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
-            Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
+            Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lower than this
             int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
             bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
             Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
@@ -337,11 +337,9 @@ Erode(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,i
 
 /// @brief Computes the grayscale dilation of an image with a flat sphere.
 ///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
-///        The radius paramater can be a floating point number, but its
-///        units are in voxels.
 template<typename Scalar>
 void
-DilateSphere(Scalar radius,              //!< radius of the sphere
+DilateSphere(Scalar radius,              //!< radius of the sphere (in voxels)
              int const image_size[3],    //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafSource, //!< source image array
              Scalar ***aaafDest,         //!< filter results stored here
@@ -429,11 +427,9 @@ DilateSphere(Scalar radius,              //!< radius of the sphere
 
 /// @brief Computes the grayscale dilation of an image with a flat sphere.
 ///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
-///        The radius paramater can be a floating point number, but its
-///        units are in voxels.
 template<typename Scalar>
 void
-ErodeSphere(Scalar radius,              //!< radius of the sphere
+ErodeSphere(Scalar radius,              //!< radius of the sphere (in voxels)
             int const image_size[3],    //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafSource, //!< source image array
             Scalar ***aaafDest,         //!< filter results stored here
@@ -520,11 +516,9 @@ ErodeSphere(Scalar radius,              //!< radius of the sphere
 
 /// @brief Computes the grayscale opening of an image with a flat sphere.
 ///        https://en.wikipedia.org/wiki/Opening_(morphology)
-///        The radius paramater can be a floating point number, but its
-///        units are in voxels.
 template<typename Scalar>
 void
-OpenSphere(Scalar radius,             //!< radius of the sphere
+OpenSphere(Scalar radius,             //!< radius of the sphere (in voxels)
            const int image_size[3],   //!< size of the image in x,y,z directions
            Scalar const *const *const *aaafSource, //!< source image array
            Scalar ***aaafDest,        //!< filter results stored here
@@ -562,11 +556,9 @@ OpenSphere(Scalar radius,             //!< radius of the sphere
 
 /// @brief Computes the grayscale closing of an image with a flat sphere.
 ///        https://en.wikipedia.org/wiki/Closing_(morphology)
-///        The radius paramater can be a floating point number, but its
-///        units are in voxels.
 template<typename Scalar>
 void
-CloseSphere(Scalar radius,            //!< radius of the sphere
+CloseSphere(Scalar radius,            //!< radius of the sphere (in voxels)
             const int image_size[3],  //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafSource, //!< source image array
             Scalar ***aaafDest,         //!< filter results stored here
@@ -604,11 +596,9 @@ CloseSphere(Scalar radius,            //!< radius of the sphere
 /// @brief Computes the grayscale white top-hat transform of an image
 ///        using a flat spherical structure factor.
 ///        https://en.wikipedia.org/wiki/Top-hat_transform
-///        The radius paramater can be a floating point number, but its
-///        units are in voxels.
 template<typename Scalar>
 void
-WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere
+WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxels)
                   const int image_size[3],   //!< size of the image in x,y,z directions
                   Scalar const *const *const *aaafSource, //!<source image array
                   Scalar ***aaafDest,         //!< filter results stored here
@@ -645,11 +635,9 @@ WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere
 /// @brief Computes the grayscale black top-hat transform of an image
 ///        using a flat spherical structure factor.
 ///        https://en.wikipedia.org/wiki/Top-hat_transform
-///        The radius paramater can be a floating point number, but its
-///        units are in voxels.
 template<typename Scalar>
 void
-BlackTopHatSphere(Scalar radius,             //!< radius of the sphere
+BlackTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxels)
                   const int image_size[3],   //!< size of the image in x,y,z directions
                   Scalar const *const *const *aaafSource,//!< source image array
                   Scalar ***aaafDest,         //!< filter results stored here

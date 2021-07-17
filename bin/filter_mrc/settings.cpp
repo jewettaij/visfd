@@ -2496,8 +2496,24 @@ Settings::ParseArgs(vector<string>& vArgs)
           throw invalid_argument("");
         float thickness = stof(vArgs[i+2]);
         //max_distance_to_feature = thickness / 2.0;
+
         // Now choose the "sigma" parameter of the Gaussians we will use:
-        width_a[0] = thickness / sqrt(3.0);
+        float sigma;
+        switch (filter_type) {
+        case SURFACE_EDGE:
+          sigma = thickness;
+          break;
+        case SURFACE_RIDGE:
+          sigma = thickness / sqrt(3.0);
+          break;
+        case CURVE:
+          sigma = thickness / sqrt(3.0);  //CONTINUEHERE: <-- IS THIS CORRECT?
+          break;
+        default:
+          assert(false);
+          break;
+        }
+        width_a[0] = sigma;
         width_a[1] = width_a[0];
         width_a[2] = width_a[0];
         width_b[0] = 0.0;
