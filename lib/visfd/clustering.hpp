@@ -52,26 +52,39 @@ typedef enum eClusterSortCriteria {
 
 /// @brief  WARNING: EXPERIMENTAL CODE.
 ///        THIS FUNCTION'S ARGUMENT LIST MAY CHANGE SIGNIFICANTLY IN THE FUTURE.
-///         This function is used to cluster voxels of high saliency
-///         into islands which are connected together by adjacent voxels,
-///         and are separated by regions of low saliency
-///         (or, if aaaafVector or aaaafSymmetricTensor are not nullptr,
-///          regions where the voxels point in incompatible directions
-///          from their neighbors).
+///         This function is used to cluster voxels of high brightness (or
+///         saliency) into islands in a sea of other voxels of low brightness
+///             (...or incompatible directions, as explained below).
 ///         These different islands may correspond to different objects
-///         in the source image.
-///         Based on the watershed algorithm, this algorithm starts with
-///         voxels which lie near a maxima (or a minima) of saliency, 
-///         and groups voxels of similar saliency together (as well as voxels
-///         whose vector and/or tensor directions are compatible, if applicable)
-///         Unlike the watershed algorithm, this function can cluster voxels
-///         according to their vector and tensor attributes, clustering
-///         adjacent voxels only if their directions and tensors are
-///         sufficiently similar.
+///         in the source image.  This function has an optional feature:
+///         it can cluster voxels according to their vector and tensor
+///         attributes (if present), merging adjacent voxels only if
+///         their directions and tensors are sufficiently similar.
+///
+/// @details   Based on the watershed algorithm, this function first
+///         finds the locations of all of the local maxima in brightness (a.k.a.
+///         "saliency") in the image.  These form the peaks of the islands.
+///         Then, starting from these locations of high brightness, it
+///         searches outwards for adjacent (neighboring) voxels which are also
+///         bright and adds them to the "island" (also known as "cluster" or
+///         "watershed basin").  The islands continue to grow until they reach
+///         voxel brightnesses (or saliencies) which fall below some threshold
+///         specified by the caller.  This is the "shoreline" of the island.
+///         If during this outward-search two islands collide with each other
+///         they will be merged into one island.  However there is one
+///         exception:  If the voxels in the image are imbued with directional
+///         attributes (ie. if "aaaafDirection" or "aaaafSymmetricTensor"
+///         are non-NULL), then the directions of the voxels in these islands
+///         will be considered.  If the neighboring voxels from either island
+///         are not pointing in sufficiently similar directions (as specified
+///         by directional thresholds supplied by the caller), then the islands
+///         will not be merged into one island, even if they are both bright.
+///         This is a form of agglomerative clustering of voxels that
+///         considers voxel direction and brightness.
 ///
 /// @return The function does not have a return value.
-///         After the function is finished, the aaaiDest[][][] array will
-///         store the cluster-ID associated with each voxel.
+///         After the function is finished, the aaaiDest[][][] array will store
+///         the cluster-ID (a.k.a. "island-ID") associated with each voxel.
 ///         The clusters are sorted by their size (by default), and this is
 ///         relfected in their cluster-IDs.  (The largest cluster has ID 1)
 ///         (Cluster-ID numbers begin at 1, not 0.)
@@ -124,7 +137,7 @@ template<typename Scalar, typename Label, typename Coordinate, typename VectorCo
 
 void
 ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
-                 Scalar const *const *const *aaafSaliency,  //!< intensity of each voxel
+                 Scalar const *const *const *aaafSaliency,  //!< brightness or saliency of each voxel
                  Label ***aaaiDest,                       //!< watershed segmentation results go here
                  Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
                  Scalar threshold_saliency=-std::numeric_limits<Scalar>::infinity(), //!< don't consider voxels with saliencies below this value

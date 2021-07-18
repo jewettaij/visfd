@@ -82,7 +82,7 @@ filters.
 *(As of 2021-7-12, this program does not have a graphical user interface, so
 examples explain how to use this software with IMOD and meshlab to display
 results and choose parameters.  Hopefully these tools can eventually
-be integrated with visualizers like 3dmod, chimera, or tomviz.)*
+be integrated with visualizers like 3dmod, chimerax, or tomviz.)*
 
 Documentation for this program is located
 [**here**](./doc/doc_filter_mrc.md).
