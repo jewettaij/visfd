@@ -42,12 +42,13 @@ HandleDilation(const Settings &settings,
                MrcSimple &mask,
                float voxel_width[3])
 {
-  DilateSphere(settings.thickness_morphology,
+  DilateSphere(settings.morphology_r,
                tomo_in.header.nvoxels,
                tomo_in.aaafI,
                tomo_out.aaafI,
                mask.aaafI,
-               settings.thickness_morpholoby_soft_penalty,
+               settings.morphology_rmax,
+               settings.morphology_bmax,
                &cerr);
 }
 
@@ -59,12 +60,13 @@ HandleErosion(const Settings &settings,
               MrcSimple &mask,
               float voxel_width[3])
 {
-  ErodeSphere(settings.thickness_morphology,
+  ErodeSphere(settings.morphology_r,
               tomo_in.header.nvoxels,
               tomo_in.aaafI,
               tomo_out.aaafI,
               mask.aaafI,
-              settings.thickness_morpholoby_soft_penalty,
+              settings.morphology_rmax,
+              settings.morphology_bmax,
               &cerr);
 }
 
@@ -76,12 +78,13 @@ HandleOpening(const Settings &settings,
               MrcSimple &mask,
               float voxel_width[3])
 {
-  OpenSphere(settings.thickness_morphology,
+  OpenSphere(settings.morphology_r,
              tomo_in.header.nvoxels,
              tomo_in.aaafI,
              tomo_out.aaafI,
              mask.aaafI,
-             settings.thickness_morpholoby_soft_penalty,
+             settings.morphology_rmax,
+             settings.morphology_bmax,
              &cerr);
 }
 
@@ -93,13 +96,14 @@ HandleClosing(const Settings &settings,
               MrcSimple &mask,
               float voxel_width[3])
 {
-  CloseSphere(settings.thickness_morphology,
-             tomo_in.header.nvoxels,
-             tomo_in.aaafI,
-             tomo_out.aaafI,
-             mask.aaafI,
-             settings.thickness_morpholoby_soft_penalty,
-             &cerr);
+  CloseSphere(settings.morphology_r,
+              tomo_in.header.nvoxels,
+              tomo_in.aaafI,
+              tomo_out.aaafI,
+              mask.aaafI,
+              settings.morphology_rmax,
+              settings.morphology_bmax,
+              &cerr);
 }
 
 
@@ -110,12 +114,13 @@ HandleTopHatWhite(const Settings &settings,
                   MrcSimple &mask,
                   float voxel_width[3])
 {
-  WhiteTopHatSphere(settings.thickness_morphology,
+  WhiteTopHatSphere(settings.morphology_r,
                     tomo_in.header.nvoxels,
                     tomo_in.aaafI,
                     tomo_out.aaafI,
                     mask.aaafI,
-                    settings.thickness_morpholoby_soft_penalty,
+                    settings.morphology_rmax,
+                    settings.morphology_bmax,
                     &cerr);
 }
 
@@ -127,12 +132,13 @@ HandleTopHatBlack(const Settings &settings,
                   MrcSimple &mask,
                   float voxel_width[3])
 {
-  BlackTopHatSphere(settings.thickness_morphology,
+  BlackTopHatSphere(settings.morphology_r,
                     tomo_in.header.nvoxels,
                     tomo_in.aaafI,
                     tomo_out.aaafI,
                     mask.aaafI,
-                    settings.thickness_morpholoby_soft_penalty,
+                    settings.morphology_rmax,
+                    settings.morphology_bmax,
                     &cerr);
 }
 

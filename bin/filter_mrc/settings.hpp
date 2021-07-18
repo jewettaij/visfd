@@ -102,10 +102,10 @@ class Settings {
   string save_intermediate_fname_base = ""; //save progress of slow calculations
   string load_intermediate_fname_base = ""; //load progress from a previous run?
 
-  float median_radius;        // radius used for the median filter
-  float thickness_morphology; // distance parameter for morphological operations
-  float thickness_morpholoby_soft_max;
-  float thickness_morpholoby_soft_penalty;
+  float median_radius;       // radius used for the median filter
+  float morphology_r;        // distance parameter for morphological operations
+  float morphology_rmax;     // distance parameter for morphological operations
+  float morphology_bmax;     // maximum b value used in soft structure factors
 
   // ---- parameters for "difference of generalized gaussians" filters ----
   //

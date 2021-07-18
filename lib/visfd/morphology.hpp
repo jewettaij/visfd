@@ -56,7 +56,7 @@ template<typename Scalar, typename Coordinate, typename IntegerIndex, typename L
 void
 FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
-            Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+            Scalar const *const *const *aaafMask, //!< ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
             vector<array<Coordinate, 3> > *pva_minima_crds, //!< store minima locations (ix,iy,iz) here (if not nullptr)
             vector<array<Coordinate, 3> > *pva_maxima_crds, //!< store maxima locations (ix,iy,iz) here (if not nullptr)
             vector<Scalar> *pv_minima_scores, //!< store corresponding minima aaafI[iz][iy][ix] values here (if not nullptr)
@@ -67,8 +67,8 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
             Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lower than this
             int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
             bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-            Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
-            ostream *pReportProgress=nullptr   //!< optional: print progress to the user?
+            Label ***aaaiDest=nullptr,  //!< OPTIONAL: create an image showing where the extrema are?
+            ostream *pReportProgress=nullptr   //!< OPTIONAL: print progress to the user?
                    )
 {
   bool find_minima = (pva_minima_crds != nullptr);
@@ -167,8 +167,8 @@ FindExtrema(int const image_size[3],            //!< size of input image array
             Scalar threshold=std::numeric_limits<Scalar>::infinity(), // Ignore minima or maxima which are not sufficiently low or high
             int connectivity=3,       //!< square root of search radius around each voxel (1=nearest_neighbors, 2=diagonal2D, 3=diagonal3D)
             bool allow_borders=true,  //!< if true, plateaus that touch the image border (or mask boundary) are valid extrema
-            Label ***aaaiDest=nullptr,  //!< optional: create an image showing where the extrema are?
-            ostream *pReportProgress=nullptr)  //!< print progress to the user?
+            Label ***aaaiDest=nullptr,  //!< OPTIONAL: create an image showing where the extrema are?
+            ostream *pReportProgress=nullptr)  //!< OPTIONAL: print progress to the user?
 {
   // NOTE:
   // C++ will not allow us to supply nullptr to a function that expects a pointer 
@@ -236,9 +236,9 @@ Dilate(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,
        const int image_size[3],                //!< size of the image in x,y,z directions
        Scalar const *const *const *aaafSource, //!< source image array
        Scalar ***aaafDest,                     //!< filter results stored here
-       Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-
-       ostream *pReportProgress = nullptr)
+       Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+       ostream *pReportProgress = nullptr      //!< OPTIONAL: print progress to the user?
+       )
 {
   for (int iz=0; iz < image_size[2]; iz++) {
     if (pReportProgress)
@@ -293,9 +293,9 @@ Erode(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,i
       const int image_size[3],                //!< size of the image in x,y,z directions
       Scalar const *const *const *aaafSource, //!< source image array
       Scalar ***aaafDest,                     //!< filter results stored here
-      Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-
-      ostream *pReportProgress = nullptr)
+      Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+      ostream *pReportProgress = nullptr      //!< OPTIONAL: print progress to the user?
+      )
 {
   for (int iz=0; iz < image_size[2]; iz++) {
     if (pReportProgress)
@@ -339,28 +339,38 @@ Erode(vector<tuple<int,int,int,Scalar> > structure_factor, // a list of (ix,iy,i
 ///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
 template<typename Scalar>
 void
-DilateSphere(Scalar radius,              //!< radius of the sphere (in voxels)
-             int const image_size[3],    //!< size of the image in x,y,z directions
+DilateSphere(Scalar radius,           //!< radius of the sphere (in voxels)
+             int const image_size[3], //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafSource, //!< source image array
              Scalar ***aaafDest,         //!< filter results stored here
-             Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-             Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
-             ostream *pReportProgress = nullptr //!< report progress to the user
+             Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+             Scalar radius_max = 0.0,  //!< OPTIONAL: smoothly vary between two radii?
+             Scalar bmax = 0.0, //!< OPTIONAL: structure factor b varies between 0 and this value
+             ostream *pReportProgress = nullptr //!< OPTIONAL: report progress to the user
              )
 {
   // structure_factor = a vector of (ix,iy,iz,b) values, one for each voxel
   vector<tuple<int,int,int,Scalar> > structure_factor;
-  int Ri = ceil(radius);
+  int Ri = ceil(std::max(radius, radius_max));
   for (int iz = -Ri; iz <= Ri; iz++) {
     for (int iy = -Ri; iy <= Ri; iy++) {
       for (int ix = -Ri; ix <= Ri; ix++) {
         bool add_this_voxel = false;
         Scalar b = 0.0;
-        if (smooth_boundary_penalty == std::numeric_limits<Scalar>::infinity())
-        {
+        if (bmax == 0.0) {
           Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
           if (r <= radius)
             add_this_voxel = true;
+        }
+        else if (radius_max > radius) {
+          Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
+          if (r <= radius)
+            add_this_voxel = true;
+          else if (r <= radius_max) {
+            add_this_voxel = true;
+            b = -(r - radius) / (radius_max - radius);
+            b *= bmax;
+          }
         }
         else {
           // Calculate the distance of all of the corners to the origin.  The
@@ -394,11 +404,10 @@ DilateSphere(Scalar radius,              //!< radius of the sphere (in voxels)
             add_this_voxel = false;
           else {
             add_this_voxel = true;
-            b = (r_max - radius) / (r_max - r_min);
-            b = -b;
-            b *= smooth_boundary_penalty;
+            b = -(r_max - radius) / (r_max - r_min);
+            b *= bmax;
           }
-        } // if (smooth_boundary)
+        } // if ((bmax != 0) && (radius_max > radius))
         if (add_this_voxel)
           structure_factor.push_back(tuple<int,int,int,Scalar>(ix,iy,iz,b));
       } // for (int ix=0; ix < image_size[0]; ix++)
@@ -406,7 +415,8 @@ DilateSphere(Scalar radius,              //!< radius of the sphere (in voxels)
   } // for (int iz=0; iz < image_size[2]; iz++)
 
   if (pReportProgress)
-    *pReportProgress << "DilateSphere(r="<<radius<<"(voxels)) progress:" <<endl;
+    *pReportProgress << "DilateSphere(r="<<radius
+                     <<" voxels, rmax="<<radius_max<<") progress:" <<endl;
 
   Dilate(structure_factor,
          image_size,
@@ -424,28 +434,38 @@ DilateSphere(Scalar radius,              //!< radius of the sphere (in voxels)
 ///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
 template<typename Scalar>
 void
-ErodeSphere(Scalar radius,              //!< radius of the sphere (in voxels)
-            int const image_size[3],    //!< size of the image in x,y,z directions
+ErodeSphere(Scalar radius,            //!< radius of the sphere (in voxels)
+            int const image_size[3],  //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafSource, //!< source image array
             Scalar ***aaafDest,         //!< filter results stored here
-            Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-            Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
-            ostream *pReportProgress = nullptr //!< report progress to the user
+            Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+            Scalar radius_max = 0.0,  //!< OPTIONAL: smoothly vary between two radii?
+            Scalar bmax = 0.0, //!< OPTIONAL: structure factor b varies between 0 and this value
+            ostream *pReportProgress = nullptr //!< OPTIONAL: report progress to the user
             )
 {
   // structure_factor = a vector of (ix,iy,iz,b) values, one for each voxel
   vector<tuple<int,int,int,Scalar> > structure_factor;
-  int Ri = ceil(radius);
+  int Ri = ceil(std::max(radius, radius_max));
   for (int iz = -Ri; iz <= Ri; iz++) {
     for (int iy = -Ri; iy <= Ri; iy++) {
       for (int ix = -Ri; ix <= Ri; ix++) {
         bool add_this_voxel = false;
         Scalar b = 0.0;
-        if (smooth_boundary_penalty == std::numeric_limits<Scalar>::infinity())
-        {
+        if (bmax == 0.0) {
           Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
           if (r <= radius)
             add_this_voxel = true;
+        }
+        else if (radius_max > radius) {
+          Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
+          if (r <= radius)
+            add_this_voxel = true;
+          else if (r <= radius_max) {
+            add_this_voxel = true;
+            b = -(r - radius) / (radius_max - radius);
+            b *= bmax;
+          }
         }
         else {
           // Calculate the distance of all of the corners to the origin.  The
@@ -479,11 +499,10 @@ ErodeSphere(Scalar radius,              //!< radius of the sphere (in voxels)
             add_this_voxel = false;
           else {
             add_this_voxel = true;
-            b = (r_max - radius) / (r_max - r_min);
-            b = -b;
-            b *= smooth_boundary_penalty;
+            b = -(r_max - radius) / (r_max - r_min);
+            b *= bmax;
           }
-        } // if (smooth_boundary)
+        } // if ((bmax != 0) && (radius_max > radius))
         if (add_this_voxel)
           structure_factor.push_back(tuple<int,int,int,Scalar>(ix,iy,iz,b));
       } // for (int ix=0; ix < image_size[0]; ix++)
@@ -491,7 +510,8 @@ ErodeSphere(Scalar radius,              //!< radius of the sphere (in voxels)
   } // for (int iz=0; iz < image_size[2]; iz++)
 
   if (pReportProgress)
-    *pReportProgress << "ErodeSphere(r="<<radius<<"(voxels)) progress:" <<endl;
+    *pReportProgress << "ErodeSphere(r="<<radius
+                     <<" voxels, rmax="<<radius_max<<") progress:" <<endl;
 
   Erode(structure_factor,
         image_size,
@@ -513,9 +533,10 @@ OpenSphere(Scalar radius,             //!< radius of the sphere (in voxels)
            const int image_size[3],   //!< size of the image in x,y,z directions
            Scalar const *const *const *aaafSource, //!< source image array
            Scalar ***aaafDest,        //!< filter results stored here
-           Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-           Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
-           ostream *pReportProgress = nullptr //!< report progress to the user
+           Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+           Scalar radius_max = 0.0,  //!< OPTIONAL: smoothly vary between two radii?
+           Scalar bmax = 0.0, //!< OPTIONAL: structure factor b varies between 0 and this value
+           ostream *pReportProgress = nullptr //!< OPTIONAL: report progress to the user
            )
 {
   float ***aaafTmp;  //temporary space to store image after erosion
@@ -527,7 +548,8 @@ OpenSphere(Scalar radius,             //!< radius of the sphere (in voxels)
               aaafSource,
               aaafTmp,  //<--save the resulting image in aaafTmp
               aaafMask,
-              smooth_boundary_penalty,
+              radius_max,
+              bmax,
               pReportProgress);
 
   DilateSphere(radius,
@@ -535,7 +557,8 @@ OpenSphere(Scalar radius,             //!< radius of the sphere (in voxels)
                aaafTmp,  //<--use aaafTmp as the source image
                aaafDest, //<--save the resulting image in aaafDest
                aaafMask,
-               smooth_boundary_penalty,
+               radius_max,
+               bmax,
                pReportProgress);
 
   Dealloc3D(aaafTmp);
@@ -553,9 +576,10 @@ CloseSphere(Scalar radius,            //!< radius of the sphere (in voxels)
             const int image_size[3],  //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafSource, //!< source image array
             Scalar ***aaafDest,         //!< filter results stored here
-            Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-            Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
-            ostream *pReportProgress = nullptr //!< report progress to the user
+            Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+            Scalar radius_max = 0.0,  //!< OPTIONAL: smoothly vary between two radii?
+            Scalar bmax = 0.0, //!< OPTIONAL: structure factor b varies between 0 and this value
+            ostream *pReportProgress = nullptr //!< OPTIONAL: report progress to the user
             )
 {
   float ***aaafTmp;  //temporary space to store image after dilation
@@ -567,7 +591,8 @@ CloseSphere(Scalar radius,            //!< radius of the sphere (in voxels)
                aaafSource,
                aaafTmp,  //<--save the resulting image in aaafTmp
                aaafMask,
-               smooth_boundary_penalty,
+               radius_max,
+               bmax,
                pReportProgress);
 
   ErodeSphere(radius,
@@ -575,7 +600,8 @@ CloseSphere(Scalar radius,            //!< radius of the sphere (in voxels)
               aaafTmp,  //<--use aaafTmp as the source image
               aaafDest, //<--save the resulting image in aaafDest
               aaafMask,
-              smooth_boundary_penalty,
+              radius_max,
+              bmax,
               pReportProgress);
 
   Dealloc3D(aaafTmp);
@@ -593,9 +619,10 @@ WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
                   const int image_size[3],   //!< size of the image in x,y,z directions
                   Scalar const *const *const *aaafSource, //!<source image array
                   Scalar ***aaafDest,         //!< filter results stored here
-                  Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-                  Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
-                  ostream *pReportProgress = nullptr //!< report progress to the user
+                  Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+                  Scalar radius_max = 0.0,  //!< OPTIONAL: smoothly vary between two radii?
+                  Scalar bmax = 0.0, //!< OPTIONAL: structure factor b varies between 0 and this value
+                  ostream *pReportProgress = nullptr //!< OPTIONAL: report progress to the user
                   )
 {
   float ***aaafTmp;  //temporary space to store image after erosion
@@ -608,7 +635,8 @@ WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
              aaafSource,
              aaafTmp,  //<--save the resulting image in aaafTmp
              aaafMask,
-             smooth_boundary_penalty,
+             radius_max,
+             bmax,
              pReportProgress);
 
   // Subtract it from the original image brightness
@@ -632,9 +660,10 @@ BlackTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
                   const int image_size[3],   //!< size of the image in x,y,z directions
                   Scalar const *const *const *aaafSource,//!< source image array
                   Scalar ***aaafDest,         //!< filter results stored here
-                  Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-                  Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
-                  ostream *pReportProgress = nullptr //!< report progress to the user
+                  Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+                  Scalar radius_max = 0.0,  //!< OPTIONAL: smoothly vary between two radii?
+                  Scalar bmax = 0.0, //!< OPTIONAL: structure factor b varies between 0 and this value
+                  ostream *pReportProgress = nullptr //!< OPTIONAL: report progress to the user
                   )
 {
   float ***aaafTmp;  //temporary space to store image after erosion
@@ -647,7 +676,8 @@ BlackTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
               aaafSource,
               aaafTmp,  //<--save the resulting image in aaafTmp
               aaafMask,
-              smooth_boundary_penalty,
+              radius_max,
+              bmax,
               pReportProgress);
 
   // Subtract the original image brightness

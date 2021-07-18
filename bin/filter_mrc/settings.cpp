@@ -44,8 +44,9 @@ Settings::Settings() {
   load_intermediate_fname_base = "";
 
   median_radius = 0.0;
-  thickness_morphology = 0.0;
-  thickness_morpholoby_soft_penalty = std::numeric_limits<float>::infinity();
+  morphology_r = 0.0;
+  morphology_rmax = 0.0;
+  morphology_bmax = 0.0;
 
   // The code is a little bit confusing because I tried to cram as much
   // functionality into the smallest number of parameters possible:
@@ -646,7 +647,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
+        morphology_r = stof(vArgs[i+1]);
         filter_type = DILATION;
       }
       catch (invalid_argument& exc) {
@@ -665,7 +666,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
+        morphology_r = stof(vArgs[i+1]);
         filter_type = EROSION;
       }
       catch (invalid_argument& exc) {
@@ -683,18 +684,19 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if ((i+2 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-'))
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
-        //thickness_morphology_soft_max = stof(vArgs[i+2]);
-        thickness_morpholoby_soft_penalty = stof(vArgs[i+2]);
+        morphology_r = stof(vArgs[i+1]);
+        morphology_rmax = stof(vArgs[i+2]);
+        morphology_bmax = stof(vArgs[i+3]);
         filter_type = DILATION;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by nonnegative numbers\n");
       }
-      num_arguments_deleted = 3;
+      num_arguments_deleted = 4;
     } //(vArgs[i] == "-dilation-binary-soft")
 
 
@@ -703,20 +705,21 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-erode-binary-soft"))
     {
       try {
-        if ((i+2 >= vArgs.size()) ||
+        if ((i+3 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-') ||
-            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-'))
+            (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+            (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
-        //thickness_morphology_soft_max = stof(vArgs[i+2]);
-        thickness_morpholoby_soft_penalty = stof(vArgs[i+2]);
+        morphology_r = stof(vArgs[i+1]);
+        morphology_rmax = stof(vArgs[i+2]);
+        morphology_bmax = stof(vArgs[i+3]);
         filter_type = EROSION;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by nonnegative numbers\n");
       }
-      num_arguments_deleted = 3;
+      num_arguments_deleted = 4;
     } //(vArgs[i] == "-erosion-binary-soft")
 
 
@@ -763,7 +766,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
+        morphology_r = stof(vArgs[i+1]);
         filter_type = OPENING;
       }
       catch (invalid_argument& exc) {
@@ -782,7 +785,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
+        morphology_r = stof(vArgs[i+1]);
         filter_type = CLOSING;
       }
       catch (invalid_argument& exc) {
@@ -800,7 +803,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
+        morphology_r = stof(vArgs[i+1]);
         filter_type = TOP_HAT_WHITE;
       }
       catch (invalid_argument& exc) {
@@ -818,7 +821,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        thickness_morphology = stof(vArgs[i+1]);
+        morphology_r = stof(vArgs[i+1]);
         filter_type = TOP_HAT_BLACK;
       }
       catch (invalid_argument& exc) {

@@ -1036,16 +1036,16 @@ the size of the large objects that you want removed from the image
 (in physical distance units, not in voxels).*
 
 
-### -erosion-gauss thickness
 ### -dilation-gauss thickness
+### -erosion-gauss thickness
 
 These filters are an alternative implementation of
 [image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
 [image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
 that uses fast Gaussian filters to blur an image followed by thresholding.
 
-*Note: These arguments use filters that are only intended for use with
-binary images (images whose voxels have brightnesses of either 0 or 1).*
+*Note: These arguments are only intended for use with binary images
+(images whose voxels have brightnesses of either 0 or 1).*
 For binary images containing large smooth regions of bright voxels,
 the **-dilation-gauss** and **-erosion-gauss** arguments
 will enlarge or shrink the size of these bright regions
@@ -1065,10 +1065,6 @@ for some morphological tasks *(such as
 [top-hat transform](https://en.wikipedia.org/wiki/Top-hat_transform))*.
 Use with caution.
 
-
-
-
-
 #### Details
 This is implemented by blurring the image, and then applying a threshold
 so that all voxels whose brightness are below a threshold are discarded.
@@ -1084,6 +1080,28 @@ These thresholds were chosen so that the selected region
 expands or shrinks by a distance of *thickness*.
 (But, technically, this is only true near a flat boundary.)
 
+
+### -dilation-binary-soft r1 r2 bmax
+### -erosion-binary-soft r1 r2 bmax
+
+These arguments will perform a morphological
+[dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
+[erosion](https://en.wikipedia.org/wiki/Erosion_(morphology)).
+Unlike traditional dilation and erosion operations which have a hard distance
+cutoff, this version has a cutoff that varies gradually from *r1* to *r2*.
+(Unless the "-w 1" argument is used, both *r1* and *r2* are expressed in
+units of physical distance, not voxels.  *Special case: If r2=0*,
+a soft edge is used which is only 1-voxel wide.)
+
+***Note:*** These "binary-soft" arguments are only intended for use with
+*binary* images or grayscale images whose voxels have brightness
+in the range from *0* to *bmax*.  (Typically *bmax=1*.)
+
+*(Technical details: This version uses a soft spherical structure factor,
+*b(r)* that varies from *0*, when *r=r1*, up to to *-bmax*, when
+*r=r2*, and -∞, when *r>r2*.  Setting *r2=0* results in a
+spherical structure factor whose brightness varies from *0* to *-bmax*
+on a thin 1-voxel wide shell at the sphere's boundary.)*
 
 
 ### -find-minima and -find-maxima
