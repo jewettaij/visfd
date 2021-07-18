@@ -748,9 +748,11 @@ Settings::ParseArgs(vector<string>& vArgs)
       width_a[2] = width_a[0];
       // Then append a post-processing threshold filter:
       use_intensity_map = true;
-      if (vArgs[i] == "-dilate-gauss")
+      if ((vArgs[i] == "-dilation-gauss") ||
+          (vArgs[i] == "-dilate-gauss"))
         in_threshold_01_a = 0.1572992070502851; // ≈ 1-erf(1)
-      else if (vArgs[i] == "-erode-gauss")
+      else if ((vArgs[i] == "-erosion-gauss") ||
+               (vArgs[i] == "-erode-gauss"))
         in_threshold_01_a = 0.8427007929497149;  // ≈ erf(1)
       in_threshold_01_b = in_threshold_01_a;
 
