@@ -1639,7 +1639,6 @@ MedianSphere(Scalar radius,              //!< radius of the sphere (in voxels)
              Scalar const *const *const *aaafSource, //!< source image array
              Scalar ***aaafDest,             //!< filter results stored here
              Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-             bool smooth_boundary = false, //!< attempt to produce a rounder smoother structure factor that varies between 0 and -1 at its boundary voxels
              ostream *pReportProgress = nullptr //!< report progress to the user
              )
 {

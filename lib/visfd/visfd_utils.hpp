@@ -30,6 +30,7 @@ namespace visfd {
 template<typename Scalar>
 constexpr Scalar SQR(Scalar x) { return x*x; }
 
+
 template <typename Scalar>
 constexpr int SGN(Scalar val) {
   return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));

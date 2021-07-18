@@ -344,25 +344,23 @@ DilateSphere(Scalar radius,              //!< radius of the sphere (in voxels)
              Scalar const *const *const *aaafSource, //!< source image array
              Scalar ***aaafDest,         //!< filter results stored here
              Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-             bool smooth_boundary = false, //!< attempt to produce a rounder smoother structure factor that varies between 0 and -1 at its boundary voxels
+             Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
              ostream *pReportProgress = nullptr //!< report progress to the user
              )
 {
   // structure_factor = a vector of (ix,iy,iz,b) values, one for each voxel
   vector<tuple<int,int,int,Scalar> > structure_factor;
-
   int Ri = ceil(radius);
   for (int iz = -Ri; iz <= Ri; iz++) {
     for (int iy = -Ri; iy <= Ri; iy++) {
       for (int ix = -Ri; ix <= Ri; ix++) {
         bool add_this_voxel = false;
         Scalar b = 0.0;
-        if (! smooth_boundary) {
+        if (smooth_boundary_penalty == std::numeric_limits<Scalar>::infinity())
+        {
           Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
-          if (r <= radius) {
+          if (r <= radius)
             add_this_voxel = true;
-            b = 1.0;
-          }
         }
         else {
           // Calculate the distance of all of the corners to the origin.  The
@@ -390,18 +388,15 @@ DilateSphere(Scalar radius,              //!< radius of the sphere (in voxels)
               }
             }
           }
-          if (r_max < radius) {
+          if (r_max < radius)
             add_this_voxel = true;
-            b = 1.0;
-          }
-          else if (r_min > radius) {
+          else if (r_min > radius)
             add_this_voxel = false;
-            b = 0.0;
-          }
           else {
             add_this_voxel = true;
             b = (r_max - radius) / (r_max - r_min);
             b = -b;
+            b *= smooth_boundary_penalty;
           }
         } // if (smooth_boundary)
         if (add_this_voxel)
@@ -434,25 +429,23 @@ ErodeSphere(Scalar radius,              //!< radius of the sphere (in voxels)
             Scalar const *const *const *aaafSource, //!< source image array
             Scalar ***aaafDest,         //!< filter results stored here
             Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-            bool smooth_boundary = false, //!< attempt to produce a rounder smoother structure factor that varies between 0 and -1 at its boundary voxels
+            Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
             ostream *pReportProgress = nullptr //!< report progress to the user
             )
 {
   // structure_factor = a vector of (ix,iy,iz,b) values, one for each voxel
   vector<tuple<int,int,int,Scalar> > structure_factor;
-
   int Ri = ceil(radius);
   for (int iz = -Ri; iz <= Ri; iz++) {
     for (int iy = -Ri; iy <= Ri; iy++) {
       for (int ix = -Ri; ix <= Ri; ix++) {
         bool add_this_voxel = false;
         Scalar b = 0.0;
-        if (! smooth_boundary) {
+        if (smooth_boundary_penalty == std::numeric_limits<Scalar>::infinity())
+        {
           Scalar r = sqrt(SQR(ix) + SQR(iy) + SQR(iz));
-          if (r <= radius) {
+          if (r <= radius)
             add_this_voxel = true;
-            b = 1.0;
-          }
         }
         else {
           // Calculate the distance of all of the corners to the origin.  The
@@ -480,17 +473,15 @@ ErodeSphere(Scalar radius,              //!< radius of the sphere (in voxels)
               }
             }
           }
-          if (r_max < radius) {
+          if (r_max < radius)
             add_this_voxel = true;
-            b = 1.0;
-          }
-          else if (r_min > radius) {
+          else if (r_min > radius)
             add_this_voxel = false;
-            b = 0.0;
-          }
           else {
             add_this_voxel = true;
             b = (r_max - radius) / (r_max - r_min);
+            b = -b;
+            b *= smooth_boundary_penalty;
           }
         } // if (smooth_boundary)
         if (add_this_voxel)
@@ -523,7 +514,7 @@ OpenSphere(Scalar radius,             //!< radius of the sphere (in voxels)
            Scalar const *const *const *aaafSource, //!< source image array
            Scalar ***aaafDest,        //!< filter results stored here
            Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-           bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+           Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
            ostream *pReportProgress = nullptr //!< report progress to the user
            )
 {
@@ -536,7 +527,7 @@ OpenSphere(Scalar radius,             //!< radius of the sphere (in voxels)
               aaafSource,
               aaafTmp,  //<--save the resulting image in aaafTmp
               aaafMask,
-              smooth_boundary,
+              smooth_boundary_penalty,
               pReportProgress);
 
   DilateSphere(radius,
@@ -544,7 +535,7 @@ OpenSphere(Scalar radius,             //!< radius of the sphere (in voxels)
                aaafTmp,  //<--use aaafTmp as the source image
                aaafDest, //<--save the resulting image in aaafDest
                aaafMask,
-               smooth_boundary,
+               smooth_boundary_penalty,
                pReportProgress);
 
   Dealloc3D(aaafTmp);
@@ -563,7 +554,7 @@ CloseSphere(Scalar radius,            //!< radius of the sphere (in voxels)
             Scalar const *const *const *aaafSource, //!< source image array
             Scalar ***aaafDest,         //!< filter results stored here
             Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-            bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+            Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
             ostream *pReportProgress = nullptr //!< report progress to the user
             )
 {
@@ -576,7 +567,7 @@ CloseSphere(Scalar radius,            //!< radius of the sphere (in voxels)
                aaafSource,
                aaafTmp,  //<--save the resulting image in aaafTmp
                aaafMask,
-               smooth_boundary,
+               smooth_boundary_penalty,
                pReportProgress);
 
   ErodeSphere(radius,
@@ -584,7 +575,7 @@ CloseSphere(Scalar radius,            //!< radius of the sphere (in voxels)
               aaafTmp,  //<--use aaafTmp as the source image
               aaafDest, //<--save the resulting image in aaafDest
               aaafMask,
-              smooth_boundary,
+              smooth_boundary_penalty,
               pReportProgress);
 
   Dealloc3D(aaafTmp);
@@ -603,7 +594,7 @@ WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
                   Scalar const *const *const *aaafSource, //!<source image array
                   Scalar ***aaafDest,         //!< filter results stored here
                   Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-                  bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+                  Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
                   ostream *pReportProgress = nullptr //!< report progress to the user
                   )
 {
@@ -617,7 +608,7 @@ WhiteTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
              aaafSource,
              aaafTmp,  //<--save the resulting image in aaafTmp
              aaafMask,
-             smooth_boundary,
+             smooth_boundary_penalty,
              pReportProgress);
 
   // Subtract it from the original image brightness
@@ -642,7 +633,7 @@ BlackTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
                   Scalar const *const *const *aaafSource,//!< source image array
                   Scalar ***aaafDest,         //!< filter results stored here
                   Scalar const *const *const *aaafMask = nullptr,   //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
-                  bool smooth_boundary = false, //!< attempt to produce a round and smooth structure factor that varies between 0 and -1 at its boundary voxels
+                  Scalar smooth_boundary_penalty = std::numeric_limits<Scalar>::infinity(), //!< structure factor b varies between 0 and this value
                   ostream *pReportProgress = nullptr //!< report progress to the user
                   )
 {
@@ -656,7 +647,7 @@ BlackTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
               aaafSource,
               aaafTmp,  //<--save the resulting image in aaafTmp
               aaafMask,
-              smooth_boundary,
+              smooth_boundary_penalty,
               pReportProgress);
 
   // Subtract the original image brightness

@@ -47,7 +47,7 @@ HandleDilation(const Settings &settings,
                tomo_in.aaafI,
                tomo_out.aaafI,
                mask.aaafI,
-               false,
+               settings.thickness_morpholoby_soft_penalty,
                &cerr);
 }
 
@@ -64,7 +64,7 @@ HandleErosion(const Settings &settings,
               tomo_in.aaafI,
               tomo_out.aaafI,
               mask.aaafI,
-              false,
+              settings.thickness_morpholoby_soft_penalty,
               &cerr);
 }
 
@@ -81,7 +81,7 @@ HandleOpening(const Settings &settings,
              tomo_in.aaafI,
              tomo_out.aaafI,
              mask.aaafI,
-             false,
+             settings.thickness_morpholoby_soft_penalty,
              &cerr);
 }
 
@@ -98,7 +98,7 @@ HandleClosing(const Settings &settings,
              tomo_in.aaafI,
              tomo_out.aaafI,
              mask.aaafI,
-             false,
+             settings.thickness_morpholoby_soft_penalty,
              &cerr);
 }
 
@@ -115,7 +115,7 @@ HandleTopHatWhite(const Settings &settings,
                     tomo_in.aaafI,
                     tomo_out.aaafI,
                     mask.aaafI,
-                    false,
+                    settings.thickness_morpholoby_soft_penalty,
                     &cerr);
 }
 
@@ -132,7 +132,7 @@ HandleTopHatBlack(const Settings &settings,
                     tomo_in.aaafI,
                     tomo_out.aaafI,
                     mask.aaafI,
-                    false,
+                    settings.thickness_morpholoby_soft_penalty,
                     &cerr);
 }
 
@@ -151,7 +151,6 @@ HandleMedian(const Settings &settings,
                tomo_in.aaafI,
                tomo_out.aaafI,
                mask.aaafI,
-               false,
                &cerr);
 }
 #endif

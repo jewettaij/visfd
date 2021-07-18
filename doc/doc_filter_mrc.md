@@ -366,8 +366,10 @@ Other, simpler filters and operations are also provided
 
 
 The
-["**-dilation**"](#-dilate-thickness) and
-["**-erosion**"](#-erosion-thickness)
+["**-dilation**"](#-dilate-thickness),
+["**-erosion**"](#-erosion-thickness),
+["**-dilation-gauss**"](#-dilate-thickness), and
+["**-erosion-gauss**"](#-erosion-thickness)
 filters are used for
 [enlarging](https://en.wikipedia.org/wiki/Dilation_(morphology)) or
 [shrinking](https://en.wikipedia.org/wiki/Erosion_(morphology))
@@ -971,15 +973,15 @@ The brightness value of each voxel in a mask image is typically either 0 or 1
 *(depending on whether the voxel is supposed to be
 ignored or considered during subsequent calculations)*.
 
-
 ***WARNING:*** Dilation and erosion are slow for large *thickness* parameters.
 These filters have not been optimized for speed.
-If you have a binary image (images whose voxels have brightnesses of
-either 0 or 1), you can try using the fast Gaussian dilation and erosion
-method, using the
+
+If you have a binary image (images whose voxels have brightnesses 
+in the range from 0 to 1), you can try using the
 [-dilation-gauss](#-dilation-gauss-thickness) and
 [-erosion-gauss](#-erosion-gauss-thickness)
 arguments.
+(These fast filters are insensitive to small features in the image.)
 *(For additional morphological filter operations, see
 [binary_dilate](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_dilation)
 [binary_erode](https://scikit-image.org/docs/dev/api/skimage.morphology.html?highlight=skeletonize#skimage.morphology.binary_erosion)
