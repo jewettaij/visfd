@@ -1893,11 +1893,14 @@ HandleTV(const Settings &settings,
             array<float, 3> drds;
             array<int, 3> ixyz = {ix, iy, iz};
             s = 0.0;
-            while (//(std::abs(s) <= settings.max_distance_to_feature) &&
+            while ((0 <= ixyz[0]) && (ixyz[0] < image_size[0]) &&
+                   (0 <= ixyz[1]) && (ixyz[1] < image_size[1]) &&
+                   (0 <= ixyz[2]) && (ixyz[2] < image_size[2]) &&
+                   //(std::abs(s) <= settings.max_distance_to_feature) &&
                    //(aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]] >=
                    // settings.connect_threshold_saliency))
-                   aaafVoxel2Cluster[ixyz[2]][ixyz[1]][ixyz[0]] ==
-                   aaafVoxel2Cluster[iz][iy][ix])
+                   (aaafVoxel2Cluster[ixyz[2]][ixyz[1]][ixyz[0]] ==
+                    aaafVoxel2Cluster[iz][iy][ix]))
             {
               vS.push_back(s);
               vxyz.push_back(r);
@@ -1928,6 +1931,10 @@ HandleTV(const Settings &settings,
                 r[d] -= ds * drds[d];
                 ixyz[d] = int(round(r[d]));
               }
+              if ((ixyz[0] < 0) || (image_size[0] <= ixyz[0]) ||
+                  (ixyz[1] < 0) || (image_size[1] <= ixyz[0]) ||
+                  (ixyz[2] < 0) || (image_size[2] <= ixyz[0]))
+                break;
               //if ((std::abs(s) > settings.max_distance_to_feature) ||
               //    (aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]] <
               //     settings.connect_threshold_saliency))

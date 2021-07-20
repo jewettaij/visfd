@@ -1582,18 +1582,20 @@ The *distance* parameter specifies how far a voxel can be from the surface
 (or curve) that you are detecting in order for it to be excluded from the
 file containing the coordinates of that surface (or curve).
 For example, suppose you are using the "-membrane" or "-edge" arguments
-to detect a surface, as well as the "-normals-file" argument
+to detect a surface, in addition to the "-normals-file" argument
 to save that surface to a PLY file.
-Voxels that are further than *distance* away from the detected
+If you also use "-max-distance-to-feature distance",
+it means that voxels that are further than *distance* away from the detected
 surface will *not* be included in the PLY file that is generated.
-(The *distance* parameter has units of physical distance, *not* voxels.
+
+The *distance* parameter has units of physical distance, *not* voxels.
 By default, it is equal to 1.5 times the *thickness* parameter
 used with the "-membrane", "-edge", or "-curve" arguments.
-Setting it to "inf" disables this feature.)
+Setting it to "inf" disables this feature.
 
 *Note that voxels which are not excluded will have their coordinates
-projected onto the surface (or curve), regardless of how far away
-they are from it.*
+projected onto the surface (or curve), in an attempt to make it
+as smooth as possible.*
 
 
 ### -max-voxels-to-feature *num_voxels*
