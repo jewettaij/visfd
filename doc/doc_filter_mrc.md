@@ -1571,29 +1571,39 @@ Consequently they are not integers (unless the
 ["-w 1"](#Voxel-Width) argument was used).
 
 
+
+
+
+### -max-distance-to-feature *distance*
+
+*(This argument is optional.)*
+
+The *distance* parameter specifies how far a voxel can be from the surface
+(or curve) that you are detecting in order for it to be excluded from the
+file containing the coordinates of that surface (or curve).
+For example, suppose you are using the "-membrane" or "-edge" arguments
+to detect a surface, as well as the "-normals-file" argument
+to save that surface to a PLY file.
+Voxels that are further than *distance* away from the detected
+surface will *not* be included in the PLY file that is generated.
+(The *distance* parameter has units of physical distance, *not* voxels.
+By default, it is equal to 1.5 times the *thickness* parameter
+used with the "-membrane", "-edge", or "-curve" arguments.
+Setting it to "inf" disables this feature.)
+
+*Note that voxels which are not excluded will have their coordinates
+projected onto the surface (or curve), regardless of how far away
+they are from it.*
+
+
 ### -max-voxels-to-feature *num_voxels*
 
 *(This argument is optional.)*
 
-The *num_voxels* parameter specifies how far a voxel can be from the surface
-(or curve) you are detecting in order for it to be excluded from the
-file containing the coordinates of that surface (or curve).
-For example, suppose you are using the "-membrane" or "-edge" arguments
-together with the "-normals-file" argument.
-Voxels that are further than *num_voxels* away from the surface will
-*not* be included in the PLY file that is generated.
-*(This parameter is measured in units of voxels, not physical distance.
-By default this number is (√3)/2≈0.8660254.
-Setting it to "inf" disables this feature.
-The remaining voxels will have their coordinates projected onto the surface
-(or curve), regardless of how far away they are.)*
-
-
-### -max-distance-to-feature *distance*
 This argument is identical to
-[-max-voxels-to-feature](#-max-voxels-to-feature-num_voxels),
-except that the distance is expressed in units of physical distance
-(not voxels).
+[-max-distance-to-feature](#-max-distance-to-feature-num_voxels),
+except that the distance is expressed in units of voxels
+(not physical distance).
 
 
 ### -connect-angle theta
