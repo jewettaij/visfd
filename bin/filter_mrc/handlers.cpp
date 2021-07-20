@@ -1896,6 +1896,8 @@ HandleTV(const Settings &settings,
             while ((0 <= ixyz[0]) && (ixyz[0] < image_size[0]) &&
                    (0 <= ixyz[1]) && (ixyz[1] < image_size[1]) &&
                    (0 <= ixyz[2]) && (ixyz[2] < image_size[2]) &&
+                   ((! mask.aaafI) ||
+                    (mask.aaafI[ixyz[2]][ixyz[1]][ixyz[0]] != 0.0)) &&
                    //(std::abs(s) <= settings.max_distance_to_feature) &&
                    //(aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]] >=
                    // settings.connect_threshold_saliency))
@@ -1934,6 +1936,9 @@ HandleTV(const Settings &settings,
               if ((ixyz[0] < 0) || (image_size[0] <= ixyz[0]) ||
                   (ixyz[1] < 0) || (image_size[1] <= ixyz[0]) ||
                   (ixyz[2] < 0) || (image_size[2] <= ixyz[0]))
+                break;
+              if (mask.aaafI &&
+                  (mask.aaafI[ixyz[2]][ixyz[1]][ixyz[0]] == 0.0))
                 break;
               //if ((std::abs(s) > settings.max_distance_to_feature) ||
               //    (aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]] <
