@@ -36,6 +36,11 @@ constexpr int SGN(Scalar val) {
   return (static_cast<Scalar>(0) < val) - (val < static_cast<Scalar>(0));
 }
 
+template <typename Scalar, typename Vect3>
+constexpr Scalar length3(Vect3 v) {
+  return std::sqrt(SQR(v[0]) + SQR(v[1]) + SQR(v[2]));
+}
+
 
 
 /// @brief    A variable of type "SortCriteria" is often passed as an

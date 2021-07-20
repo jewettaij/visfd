@@ -1571,7 +1571,7 @@ Consequently they are not integers (unless the
 ["-w 1"](#Voxel-Width) argument was used).
 
 
-### -max-distance-to-feature *num_voxels*
+### -max-voxels-to-feature *num_voxels*
 
 *(This argument is optional.)*
 
@@ -1587,6 +1587,13 @@ By default this number is (√3)/2≈0.8660254.
 Setting it to "inf" disables this feature.
 The remaining voxels will have their coordinates projected onto the surface
 (or curve), regardless of how far away they are.)*
+
+
+### -max-distance-to-feature *distance*
+This argument is identical to
+[-max-voxels-to-feature](#-max-voxels-to-feature-num_voxels),
+except that the distance is expressed in units of physical distance
+(not voxels).
 
 
 ### -connect-angle theta

@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.29.6");
-string g_date_string("2021-7-18");
+string g_version_string("0.29.7");
+string g_date_string("2021-7-19");
 
 
 
@@ -274,10 +274,11 @@ int main(int argc, char **argv) {
     settings.morphology_rmax /= voxel_width[0];
 
 
-    // Mote: max_distance_to_feature is specified by the user in units of voxels
-    // (not physical distance).  So we don't have to divide it by voxel_width.
-    // Consequently, I'm commenting out the next line:
-    //settings.max_distance_to_feature /= voxel_width[0];
+    // Note: If it is a positive number, max_distance_to_feature is specified
+    // by the user in units of voxels (not physical distance).
+    // But it is a negative number, we need to convert the distance units.
+    if (settings.max_distance_to_feature < 0.0)
+      settings.max_distance_to_feature /= -voxel_width[0];
 
 
     // Now that we know the voxel_width, rescale any tensor-voting

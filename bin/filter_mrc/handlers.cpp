@@ -1868,74 +1868,205 @@ HandleTV(const Settings &settings,
           // discard voxels that are far away from it, and place the positions
           // of the remaining voxels somewhere on the surface itself.
           // The points on the pointcloud should lie on this surface.
-          //
-          // I assume it is located at the ridges of the saliency.
-          // So figure out where those ridges are, discard voxels that
-          // are too far away from them, and project the positions of
-          // the remaining voxels onto the nearest point on the ridge surface.
 
-          // Calculate the gradient and hessian of the saliency
-          float hessian[3][3];
-          float gradient[3];
-          assert(aaafSaliency);
-          CalcHessianFiniteDifferences(aaafSaliency,
-                                       ix, iy, iz,
-                                       hessian,
-                                       image_size);
-          CalcGradientFiniteDifferences(aaafSaliency,
-                                        ix, iy, iz,
-                                        gradient,
-                                        image_size);
-          float eivects[3][3]; // eivect[0]=direction of largest 2nd derivative
-          float eivals[3];     // eivals[0]=the 2nd derivative in that direction
-          DiagonalizeSym3(hessian,
-                          eivals,
-                          eivects,
-                          selfadjoint_eigen3::DECREASING_ABS_EIVALS);
-          float gradient_along_v1 = DotProduct3(gradient, eivects[0]);
-          // Now deal with sign ambiguity of the eigenvectors.
-          // Choose the sign of the eigenvector that points along the gradient.
-          if (gradient_along_v1 < 0.0) {
-            // We want the dot product to be > 0
-            gradient_along_v1 = -gradient_along_v1;
-            for (int d = 0; d < 3; d++)
-              eivects[0][d] = -eivects[0][d];
-          }
-          else if (gradient_along_v1 == 0.0)
-            continue; // then ignore this voxel
-          float distance_to_ridge;
-          if (eivals[0] != 0)
-            distance_to_ridge = gradient_along_v1 / eivals[0];
-          else
-            distance_to_ridge = std::numeric_limits<float>::infinity();
-          // Only select voxels that lie near the saliency ridge.
-          // If we are too far away from the ridge, discard this voxel
-          if ((settings.max_distance_to_feature > 0.0) &&
-              (abs(distance_to_ridge) > settings.max_distance_to_feature))
-            continue;
-          array<float,3> xyz;
-          xyz[0] = ix - distance_to_ridge * eivects[0][0];
-          xyz[1] = iy - distance_to_ridge * eivects[0][1];
-          xyz[2] = iz - distance_to_ridge * eivects[0][2];
-          // make sure the point lies within the image boundaries
-          if ((xyz[0] < 0.0) || (image_size[0] < xyz[0]) ||
-              (xyz[1] < 0.0) || (image_size[1] < xyz[1]) ||
-              (xyz[2] < 0.0) || (image_size[2] < xyz[2]))
-            continue; // if not, ignore this point
-          for (int d = 0; d < 3; d++)
-            // We want to export coordinates in units of physical distance
-            xyz[d] *= voxel_width[d];
-          coords.push_back(xyz); // add it to the point cloud
-          // Note that eivects[0][] and aaaafDirection[] are both
-          // vectors that store the surface normal.
-          // I am guessing that aaaafDirection[] is presumably more accurate
-          // choice because it comes directly from tensor-voting (although
-          // the magnitude is hard to interpret, so you can't use it for
-          // finding the ridge position).
-          // So we set the surface normal to aaaafDirection[], not eivects[0][]
+          array<float, 3> xyz;
+          xyz[0] = ix;
+          xyz[1] = iy;
+          xyz[2] = iz;
           array<float,3> normal;
-          for (int d = 0; d < 3; d++)
-            normal[d] = aaaafDirection[iz][iy][ix][d];
+          float norm=length3<float,array<float,3> >(aaaafDirection[iz][iy][ix]);
+          for (int d = 0; d < 3; d++) {
+            normal[d] = aaaafDirection[iz][iy][ix][d] / norm;
+            normal[d] *= aaafSaliency[iz][iy][ix];
+          }
+
+          if (settings.surface_normal_curve_ds > 0.0) {
+            vector<float> vS;
+            vector<float> vWeights;
+            vector<array<float,3> > vxyz;
+            float ds = settings.surface_normal_curve_ds;//=integration step-size
+            // s = length of the curve so far
+            float s;
+            // r = 3D position on the curve
+            array<float, 3> r = {float(ix), float(iy), float(iz)};
+            // drds = tangent (direction) of the curve
+            array<float, 3> drds;
+            array<int, 3> ixyz = {ix, iy, iz};
+            s = 0.0;
+            while (//(std::abs(s) <= settings.max_distance_to_feature) &&
+                   //(aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]] >=
+                   // settings.connect_threshold_saliency))
+                   aaafVoxel2Cluster[ixyz[2]][ixyz[1]][ixyz[0]] ==
+                   aaafVoxel2Cluster[iz][iy][ix])
+            {
+              vS.push_back(s);
+              vxyz.push_back(r);
+              vWeights.push_back(aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]]);
+              norm=length3<float,array<float,3> >(aaaafDirection[ixyz[2]][ixyz[1]][ixyz[0]]);
+              for (int d = 0; d < 3; d++)
+                drds[d] = aaaafDirection[ixyz[2]][ixyz[1]][ixyz[0]][d] / norm;
+              s += ds;
+              for (int d = 0; d < 3; d++) {
+                r[d] += ds * drds[d];
+                ixyz[d] = int(round(r[d]));
+              }
+            }
+            // Now do the same in the opposite (-s) direction.
+            vector<float> _vS;
+            vector<float> _vWeights;
+            vector<array<float,3> > _vxyz;
+            r = {float(ix), float(iy), float(iz)};
+            ixyz = {ix, iy, iz};
+            s = 0.0;
+            while (true)
+            {
+              norm=length3<float,array<float,3> >(aaaafDirection[ixyz[2]][ixyz[1]][ixyz[0]]);
+              for (int d = 0; d < 3; d++)
+                drds[d] = aaaafDirection[ixyz[2]][ixyz[1]][ixyz[0]][d] / norm;
+              s -= ds;
+              for (int d = 0; d < 3; d++) {
+                r[d] -= ds * drds[d];
+                ixyz[d] = int(round(r[d]));
+              }
+              //if ((std::abs(s) > settings.max_distance_to_feature) ||
+              //    (aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]] <
+              //     settings.connect_threshold_saliency))
+              //  break;
+              if (aaafVoxel2Cluster[ixyz[2]][ixyz[1]][ixyz[0]] !=
+                  aaafVoxel2Cluster[iz][iy][ix])
+                break;
+              _vS.push_back(s);
+              _vxyz.push_back(r);
+              _vWeights.push_back(aaafSaliency[ixyz[2]][ixyz[1]][ixyz[0]]);
+            }
+            // Now insert the contents from _vS at the beginning of vS.
+            // making sure the the "s" values will be in increasing order.
+            vS.insert(vS.begin(), _vS.rbegin(), _vS.rend());
+            // Do the same for the other arrays.
+            vxyz.insert(vxyz.begin(), _vxyz.rbegin(), _vxyz.rend());
+            vWeights.insert(vWeights.begin(), _vWeights.rbegin(), _vWeights.rend());
+            // Find the (weighteD) average S value and determine where it is.
+            float sum_s = 0.0;
+            float sum_w = 0.0;
+            assert(vS.size() == vxyz.size());
+            assert(vS.size() == vWeights.size());
+            for (int i = 0; i < vS.size(); i++) {
+              sum_s += vWeights[i] * vS[i];
+              sum_w += vWeights[i];
+            }
+            float ave_s = sum_s / sum_w;
+            int i = 0;
+            while (i+1 < vS.size()) {
+              i++;
+              if ((vS[i-1] <= ave_s) && (ave_s <= vS[i]))
+                break;
+            }
+            assert(i < vS.size());
+            // i is now the index into the vxyz array indicating the
+            // coordinates of the voxel which lies closest to the average
+            // position along this curve.
+            // Now store the coordinates of that voxel in xyz[]
+            // so we can add it to the point cloud later.
+            for (int d = 0; d < 3; d++)
+              ixyz[d] = int(round(vxyz[i][d]));
+            float norm = length3<float,array<float,3> >(aaaafDirection[ixyz[2]][ixyz[1]][ixyz[0]]);
+            for (int d = 0; d < 3; d++)
+              normal[d] = aaaafDirection[ixyz[2]][ixyz[1]][ixyz[0]][d] / norm;
+            for (int d = 0; d < 3; d++) {
+              if (i+1 < vS.size()) {
+                xyz[d] = (vxyz[i][d] +
+                          (vxyz[i+1][d]-vxyz[i][d])*((ave_s-vS[i]) /
+                                                     (vS[i+1]-vS[i])));
+              }
+              else
+                xyz[d] = vxyz[i][d];
+              // We also want to use the normal direction at that location.
+              // But scale the direction so that the normal magnitude is
+              // proportional to the saliency at the --original-- voxel's
+              // location (at ix, iy, iz).
+              // (We will eventually include it with the point-cloud data also.)
+              normal[d] *= aaafSaliency[iz][iy][ix];
+            }
+          } //if (settings.surface_normal_curve_ds > 0.0)
+
+
+          // Do we want to futher refine the surface using the local Hessian?
+          // (Comment: Most of the time, this makes the resulting surface
+          //  -slightly- smoother.  However in some cases, at surface edges
+          //  or other places where the ridge is not well defined, it
+          //  causes more problems than it solves.  So I might leave this
+          //  feature disabled by default -Andrew 2021-7-19)
+          if (settings.surface_find_ridge) {
+            int ix0 = int(round(xyz[0]));
+            int iy0 = int(round(xyz[1]));
+            int iz0 = int(round(xyz[2]));
+            // For sub-voxel accuracy, try to find the closest ridge
+            // to the current voxel location.
+            // I assume it is located at the ridges of the saliency.
+            // So figure out where those ridges are, discard voxels that
+            // are too far away from them, and project the positions of
+            // the remaining voxels onto the nearest point on the ridge surface.
+            //
+            // Calculate the gradient and hessian of the saliency
+            float hessian[3][3];
+            float gradient[3];
+            assert(aaafSaliency);
+            CalcHessianFiniteDifferences(aaafSaliency,
+                                         ix0, iy0, iz0,
+                                         hessian,
+                                         image_size);
+            CalcGradientFiniteDifferences(aaafSaliency,
+                                          ix0, iy0, iz0,
+                                          gradient,
+                                          image_size);
+            float eivects[3][3]; // eivect[0]=direction of largest 2nd derivative
+            float eivals[3];     // eivals[0]=the 2nd derivative in that direction
+            DiagonalizeSym3(hessian,
+                            eivals,
+                            eivects,
+                            selfadjoint_eigen3::DECREASING_ABS_EIVALS);
+            float gradient_along_v1 = DotProduct3(gradient, eivects[0]);
+            // Now deal with sign ambiguity of the eigenvectors.
+            // Choose the sign of the eigenvector that points along the gradient.
+            if (gradient_along_v1 < 0.0) {
+              // We want the dot product to be > 0
+              gradient_along_v1 = -gradient_along_v1;
+              for (int d = 0; d < 3; d++)
+                eivects[0][d] = -eivects[0][d];
+            }
+            else if (gradient_along_v1 == 0.0)
+              continue; // then ignore this voxel
+            float distance_to_ridge;
+            if (eivals[0] != 0)
+              distance_to_ridge = gradient_along_v1 / eivals[0];
+            else
+              distance_to_ridge = std::numeric_limits<float>::infinity();
+            // Only select voxels that lie near the saliency ridge.
+            // If we are too far away from the ridge, discard this voxel
+            if ((settings.max_distance_to_feature > 0.0) &&
+                (abs(distance_to_ridge) > settings.max_distance_to_feature))
+              continue;
+            xyz[0] = ix0 - distance_to_ridge * eivects[0][0];
+            xyz[1] = iy0 - distance_to_ridge * eivects[0][1];
+            xyz[2] = iz0 - distance_to_ridge * eivects[0][2];
+            // make sure the point lies within the image boundaries
+            if ((xyz[0] < 0.0) || (image_size[0] < xyz[0]) ||
+                (xyz[1] < 0.0) || (image_size[1] < xyz[1]) ||
+                (xyz[2] < 0.0) || (image_size[2] < xyz[2]))
+              continue; // if not, ignore this point
+            for (int d = 0; d < 3; d++)
+              // We want to export coordinates in units of physical distance
+              xyz[d] *= voxel_width[d];
+            // Note that eivects[0][] and aaaafDirection[] are both
+            // vectors that store the surface normal.
+            // I am guessing that aaaafDirection[] is presumably more accurate
+            // choice because it comes directly from tensor-voting (although
+            // the magnitude is hard to interpret, so you can't use it for
+            // finding the ridge position).
+            // So we set the surface normal to aaaafDirection[],not eivects[0][]
+          } //if (settings.surface_find_ridge)
+
+          coords.push_back(xyz); // add it to the point cloud
           norms.push_back(normal);
         } //for (int ix = 0; ix < image_size[0]; ++ix)
       } //for (int iy = 0; iy < image_size[1]; ++iy)

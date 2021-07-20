@@ -384,7 +384,7 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
   int voxel_discarded_due_to_polarity_iy = -1; // an impossible value
   int voxel_discarded_due_to_polarity_iz = -1; // an impossible value
   #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
- 
+
   // Loop over all the voxels on the periphery
   // of the voxels with lower intensity (brightness).
   // This is a priority-queue of voxels which lie adjacent to 
@@ -1030,9 +1030,12 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
         for (int ix=0; ix<image_size[0]; ix++) {
           if ((aaafMask && aaafMask[iz][iy][ix] == 0.0) ||
               (aaaiDest[iz][iy][ix] == UNDEFINED)) {
-            aaaafVectorStandardized[iz][iy][ix][0] = 0.0;
-            aaaafVectorStandardized[iz][iy][ix][1] = 0.0;
-            aaaafVectorStandardized[iz][iy][ix][2] = 0.0;
+            // I used to clear these directions.  But it's conceivable
+            // the caller might want us to leave those voxels alone,
+            // so I no longer do this.
+            //aaaafVectorStandardized[iz][iy][ix][0] = 0.0;
+            //aaaafVectorStandardized[iz][iy][ix][1] = 0.0;
+            //aaaafVectorStandardized[iz][iy][ix][2] = 0.0;
           }
           else {
             ptrdiff_t basin_id = aaaiDest[iz][iy][ix];

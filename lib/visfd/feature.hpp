@@ -1192,8 +1192,8 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
 /// @brief  Calculate matrix of 2nd derivatives (the hessian)
 ///         as well as the the vector of 1st derivatives (the gradient)
 ///         of the source image (aaafSource), at every location where aaafMask
-///         is non-zero (or everywhere if aaafMask is nullptr)
-///         Apply a Gaussian blur to the image (of width sigma) beforehand,
+///         is non-zero (or everywhere if aaafMask is nullptr).  This function
+///         will apply a Gaussian blur to the image (of width sigma) beforehand
 ///         (truncating the blur filter at a distance of truncate_ratio*sigma
 ///          voxels from the center of the Gaussian).
 ///         Hessians and Gradients are saved in 3-dimensional arrays of

@@ -127,13 +127,15 @@ Settings::Settings() {
   // ---- parameters used by the curve and surface detectors ----
   out_normals_fname = "";
   ridges_are_maxima = false;
+  //max_distance_to_feature = std::numeric_limits<float>::infinity();
   max_distance_to_feature = std::sqrt(3.0)/2;
+  surface_normal_curve_ds = 0.2;
+  surface_find_ridge = false; // it's slightly robust if we disable this feature
   hessian_score_threshold = 0.05; //discard voxels which are not the best 5%
   hessian_score_threshold_is_a_fraction = true;
   tv_score_threshold = 0.0;
   tv_sigma = 0.0;
   tv_exponent = 4;
-  //tv_num_iters = 0;  <-- CRUFT.  REMOVE THIS LINE LATER
   tv_truncate_ratio = sqrt(2.0);
 
   // ---- parameters for watershed segmentation (and clustering) ----
@@ -2546,7 +2548,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         else
           throw invalid_argument("");
         float thickness = stof(vArgs[i+2]);
-        //max_distance_to_feature = thickness / 2.0;
+        max_distance_to_feature = 1.5*thickness;
 
         // Now choose the "sigma" parameter of the Gaussians we will use:
         float sigma;
@@ -2762,11 +2764,12 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if ((vArgs[i] == "-max-distance-to-feature") ||
-             (vArgs[i] == "-max-distance-to-surface") ||
-             (vArgs[i] == "-max-distance-to-membrane") ||
-             (vArgs[i] == "-max-distance-to-edge") ||
-             (vArgs[i] == "-max-distance-to-curve"))
+
+    else if ((vArgs[i] == "-max-voxels-to-feature") ||
+             (vArgs[i] == "-max-voxels-to-surface") ||
+             (vArgs[i] == "-max-voxels-to-membrane") ||
+             (vArgs[i] == "-max-voxels-to-edge") ||
+             (vArgs[i] == "-max-voxels-to-curve"))
     {
       try {
         if ((i+1 >= vArgs.size()) ||
@@ -2786,6 +2789,34 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     }
+
+
+
+    else if ((vArgs[i] == "-max-distance-to-feature") ||
+             (vArgs[i] == "-max-distance-to-surface") ||
+             (vArgs[i] == "-max-distance-to-membrane") ||
+             (vArgs[i] == "-max-distance-to-edge") ||
+             (vArgs[i] == "-max-distance-to-curve"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        if ((vArgs[i+1] == "inf") ||
+            (vArgs[i+1] == "infinity") ||
+            (vArgs[i+1] == "disable"))
+          // max_distance_to_feature = std::numeric_limits<float>::infinity()
+          max_distance_to_feature = 0.0; // either 0 or infinity() disables this
+        else
+          max_distance_to_feature = -stof(vArgs[i+1]); //(will flip sign later)
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a positive number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
 
 
     else if ((vArgs[i] == "-connect") ||
