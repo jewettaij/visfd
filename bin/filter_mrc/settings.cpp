@@ -130,7 +130,7 @@ Settings::Settings() {
   //max_distance_to_feature = std::numeric_limits<float>::infinity();
   max_distance_to_feature = std::sqrt(3.0)/2;
   surface_normal_curve_ds = 0.2;
-  surface_find_ridge = false; // it's slightly robust if we disable this feature
+  surface_find_ridge = true;
   hessian_score_threshold = 0.05; //discard voxels which are not the best 5%
   hessian_score_threshold_is_a_fraction = true;
   tv_score_threshold = 0.0;

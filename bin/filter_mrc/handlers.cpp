@@ -1994,8 +1994,8 @@ HandleTV(const Settings &settings,
           // (Comment: Most of the time, this makes the resulting surface
           //  -slightly- smoother.  However in some cases, at surface edges
           //  or other places where the ridge is not well defined, it
-          //  causes more problems than it solves.  So I might leave this
-          //  feature disabled by default -Andrew 2021-7-19)
+          //  causes more problems than it solves.  So I haven't decided if
+          //  I should keep this feature or disable it.  -Andrew 2021-7-19)
           if (settings.surface_find_ridge) {
             int ix0 = int(round(xyz[0]));
             int iy0 = int(round(xyz[1]));
