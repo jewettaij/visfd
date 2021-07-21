@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
             if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0))
               continue;
 	    out_tomo.aaafI[iz][iy][ix] =
-	      Threshold4(2-out_tomo.aaafI[iz][iy][ix],
+	      Threshold4(out_tomo.aaafI[iz][iy][ix],
 			 settings.out_threshold_01_a,
 			 settings.out_threshold_01_b,
 			 settings.out_threshold_10_a,

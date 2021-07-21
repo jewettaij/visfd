@@ -100,7 +100,7 @@ You can also apply thresholding to the *output image*, as demonstrated
 For example, the following command will clip the output intensities
 between 0 and 1.
 ```
-   combine_mrc file1.mrc,0.4999,0.5 + file2.mrc,0.4999,0.5 out_file.mrc,0,1
+   combine_mrc file1.mrc,0,1 + file2.mrc,0,1 out_file.mrc,0,1
 ```
 This operation is similar to an *OR-gate*.
 If either of the voxel intensities are above 0.5,
@@ -110,20 +110,20 @@ output voxel intensity will be 0.
 
 #### AND-gate example:
 ```
-   combine_mrc file1.mrc,0.4999,0.5 "*" file2.mrc,0.4999,0.5 out_file.mrc,0,1
+   combine_mrc file1.mrc,0,1 "*" file2.mrc,0,1 out_file.mrc,0,1
 ```
 
 #### NAND-gate example:
 This version will invert the output of the AND-gate by applying a "1,0"
 threshold filter to the output voxel brightnesses.
-("0.52,0.48" would also work.)
+*(Note that "0.52,0.48" would also work.)*
 ```
-   combine_mrc file1.mrc,0.4999,0.5 "*" file2.mrc,0.4999,0.5 out_file.mrc,1,0
+   combine_mrc file1.mrc,0,1 "*" file2.mrc,0,1 out_file.mrc,1,0
 ```
 
 #### NOR-gate example:
 ```
-   combine_mrc file1.mrc,0.4999,0.5 + file2.mrc,0.4999,0.5 out_file.mrc,1,0
+   combine_mrc file1.mrc,0,1 + file2.mrc,0,1 out_file.mrc,1,0
 ```
 
 Sometimes it is useful to select a ***narrow range of voxel intensities***.
