@@ -50,10 +50,11 @@ namespace visfd {
 ///          can be ignored by setting allow_borders=false.  The number of
 ///          neighbors around every voxel which are considered (eg, 6, 18, 26)
 ///          can be controlled using the "connectivity" argument.
+/// @return  Returns the number of extrema (minima or maxima) found.
 
 template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
 
-void
+size_t
 FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
             Scalar const *const *const *aaafI,    //!< image array aaafI[iz][iy][ix]
             Scalar const *const *const *aaafMask, //!< ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
@@ -92,21 +93,22 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
   }
 
   // This function is defined in visfd_utils_implementation.hpp
-  _FindExtrema(image_size,
-               aaafI,
-               aaafMask,
-               pv_minima_indices,
-               pv_maxima_indices,
-               pv_minima_scores,
-               pv_maxima_scores,
-               pv_minima_nvoxels,
-               pv_maxima_nvoxels,
-               minima_threshold,
-               maxima_threshold,
-               connectivity,
-               allow_borders,
-               aaaiDest,
-               pReportProgress);
+  size_t num_extrema =
+    _FindExtrema(image_size,
+                 aaafI,
+                 aaafMask,
+                 pv_minima_indices,
+                 pv_maxima_indices,
+                 pv_minima_scores,
+                 pv_maxima_scores,
+                 pv_minima_nvoxels,
+                 pv_maxima_nvoxels,
+                 minima_threshold,
+                 maxima_threshold,
+                 connectivity,
+                 allow_borders,
+                 aaaiDest,
+                 pReportProgress);
 
   // Now convert the indices back to x,y,z coordinates
   if (pva_minima_crds) {
@@ -143,6 +145,9 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
       (*pva_maxima_crds)[n][2] = iz;
     }
   }
+
+  return num_extrema;
+
 } //FindExtrema()
 
 
@@ -156,7 +161,7 @@ FindExtrema(int const image_size[3],          //!< size of the image in x,y,z di
 
 template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
 
-void
+size_t
 FindExtrema(int const image_size[3],            //!< size of input image array
             Scalar const *const *const *aaafI,   //!< input image array
             Scalar const *const *const *aaafMask, //!< if not nullptr then zero entries indicate which voxels to ignore
@@ -178,43 +183,48 @@ FindExtrema(int const image_size[3],            //!< size of input image array
   vector<array<Coordinate, 3> > *null_vai3 = nullptr;  
   vector<Scalar> *null_vf = nullptr;  
   vector<IntegerIndex> *null_vi = nullptr;  
+  size_t num_extrema;
 
   if (seek_minima) {
-    FindExtrema(image_size,
-                aaafI,
-                aaafMask,
-                &extrema_crds,    // store minima locations here
-                null_vai3,        // <-- don't search for maxima
-                &extrema_scores,  // store minima values here
-                null_vf,          // <-- don't search for maxima
-                &extrema_nvoxels, // store number of voxels in each minima
-                null_vi,          // <-- don't search for maxima
-                threshold,
-                -std::numeric_limits<Scalar>::infinity(),
-                connectivity,
-                allow_borders,
-                aaaiDest,
-                pReportProgress);
+    num_extrema =
+      FindExtrema(image_size,
+                  aaafI,
+                  aaafMask,
+                  &extrema_crds,    // store minima locations here
+                  null_vai3,        // <-- don't search for maxima
+                  &extrema_scores,  // store minima values here
+                  null_vf,          // <-- don't search for maxima
+                  &extrema_nvoxels, // store number of voxels in each minima
+                  null_vi,          // <-- don't search for maxima
+                  threshold,
+                  -std::numeric_limits<Scalar>::infinity(),
+                  connectivity,
+                  allow_borders,
+                  aaaiDest,
+                  pReportProgress);
   }
   else {
     if (threshold == std::numeric_limits<Scalar>::infinity())
       threshold = -std::numeric_limits<Scalar>::infinity();
-    FindExtrema(image_size,
-                aaafI,
-                aaafMask,
-                null_vai3,        // <-- don't search for minima
-                &extrema_crds,    // store maxima locations here
-                null_vf,          // <-- don't search for minima
-                &extrema_scores,  // store maxima values here
-                null_vi,          // <-- don't search for minima
-                &extrema_nvoxels, // store number of voxels in each maxima
-                std::numeric_limits<Scalar>::infinity(),
-                threshold,
-                connectivity,
-                allow_borders,
-                aaaiDest,
-                pReportProgress);
+    num_extrema =
+      FindExtrema(image_size,
+                  aaafI,
+                  aaafMask,
+                  null_vai3,        // <-- don't search for minima
+                  &extrema_crds,    // store maxima locations here
+                  null_vf,          // <-- don't search for minima
+                  &extrema_scores,  // store maxima values here
+                  null_vi,          // <-- don't search for minima
+                  &extrema_nvoxels, // store number of voxels in each maxima
+                  std::numeric_limits<Scalar>::infinity(),
+                  threshold,
+                  connectivity,
+                  allow_borders,
+                  aaaiDest,
+                  pReportProgress);
   }
+  return num_extrema;
+
 } // FindExtrema()
 
 

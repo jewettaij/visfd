@@ -33,8 +33,10 @@ Settings::Settings() {
   normalize_near_boundaries = true;
   mask_select = 1;
   use_mask_select = false;
-  mask_out = 0.0;
-  use_mask_out = true;
+  specify_masked_brightness = true;
+  masked_voxel_brightness = 0.0;
+  undefined_voxel_brightness = -1.0;
+  undefined_voxels_are_max = true;
   vMaskRegions.resize(0);
   is_mask_crds_in_voxels = true; //are mask crds in units of voxels or physical distance?
 
@@ -588,8 +590,8 @@ Settings::ParseArgs(vector<string>& vArgs)
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
-        use_mask_out = true;
-        mask_out = stof(vArgs[i+1]);
+        specify_masked_brightness = true;
+        masked_voxel_brightness = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -1949,7 +1951,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         bs_threshold = stof(vArgs[i+5]);
         bs_threshold_sign = stof(vArgs[i+6]);
         bs_random_seed = stof(vArgs[i+7]);
-        //mask_out = 1.0;
+        //masked_voxel_brightness = 1.0;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -1976,8 +1978,8 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-'))
           throw invalid_argument("");
         filter_type = TEMPLATE_GAUSS;
-        mask_out = 0.0;
-        use_mask_out = true;
+        masked_voxel_brightness = 0.0;
+        specify_masked_brightness = true;
         width_a[0] = stof(vArgs[i+1]);
         width_a[1] = width_a[0];
         width_a[2] = width_a[0];
@@ -2015,8 +2017,8 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+6] == "") || (vArgs[i+6][0] == '-'))
           throw invalid_argument("");
         filter_type = TEMPLATE_GAUSS;
-        mask_out = 0.0;
-        use_mask_out = true;
+        masked_voxel_brightness = 0.0;
+        specify_masked_brightness = true;
         width_a[0] = stof(vArgs[i+1]);
         width_a[1] = stof(vArgs[i+2]);
         width_a[2] = stof(vArgs[i+3]);
@@ -2050,8 +2052,8 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
           throw invalid_argument("");
         filter_type = LOCAL_FLUCTUATIONS;
-        mask_out = 0.0;
-        use_mask_out = true;
+        masked_voxel_brightness = 0.0;
+        specify_masked_brightness = true;
         template_background_radius[0] = stof(vArgs[i+1]);
         template_background_radius[1] = stof(vArgs[i+2]);
         template_background_radius[2] = stof(vArgs[i+3]);
@@ -2080,8 +2082,8 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = LOCAL_FLUCTUATIONS;
-        mask_out = 0.0;
-        use_mask_out = true;
+        masked_voxel_brightness = 0.0;
+        specify_masked_brightness = true;
         template_background_radius[0] = stof(vArgs[i+1]);
         template_background_radius[1] = template_background_radius[0];
         template_background_radius[2] = template_background_radius[0];
@@ -2461,6 +2463,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+
     else if (vArgs[i] == "-watershed-show-boundaries")
     {
       filter_type = WATERSHED;
@@ -2469,12 +2472,14 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+
     else if (vArgs[i] == "-watershed-hide-boundaries")
     {
       filter_type = WATERSHED;
       watershed_show_boundaries = false;
       num_arguments_deleted = 1;
     }
+
 
 
     else if (vArgs[i] == "-watershed-boundary")
@@ -2490,7 +2495,28 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
-      
+      num_arguments_deleted = 2;
+    }
+
+
+
+    else if (vArgs[i] == "-undefined-out")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        if (vArgs[i+1] == "max")
+          undefined_voxels_are_max = true;
+        else {
+          undefined_voxels_are_max = false;
+          undefined_voxel_brightness = stof(vArgs[i+1]);
+        }
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number or \"max\"\n");
+      }
       num_arguments_deleted = 2;
     }
 
@@ -3057,8 +3083,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     //                   " argument must be followed by 2 numbers:\n"
     //                   "       template_radius background_radius\n");
     //  filter_type = TEMPLATE_GGAUSS;
-    //  mask_out = 0.0;
-    //  use_mask_out = true;
+    //  masked_voxel_brightness = 0.0;
+    //  specify_masked_brightness = true;
     //  width_a[0] = stof(vArgs[i+1]);
     //  width_a[1] = width_a[0];
     //  width_a[2] = width_a[0];

@@ -12,6 +12,7 @@
 #include <limits>
 #include <ostream>
 #include <vector>
+#include <map>
 #include <tuple>
 #include <set>
 #include <queue>
@@ -37,37 +38,51 @@ namespace visfd {
 ///         will be assigned an integer which is one of 4 types:
 ///      1) an integer between 1 and N_BASINS (the number of local minima in
 ///         the image, indicating the basin to which the voxel belongs)
-///      2) 0
+///      2) label_boundary (which is 0 by default)
 ///         (if show_boundaries == true, and if
 ///          the voxel is located at the boundary between 2 or more basins)
-///      3) N_BASINS + 1
+///      3) label_undefined (which is -1 by default)
 ///         (when the voxel's intensity passes the threshold set by the caller)
 ///      4) left unmodified (if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0)
+///
+///      If aaafMarkers != nullptr, then the voxels in this image (if > 0)
+///      are assumed to correspond to the labels that the caller wants
+///      these voxels to have.
+///
+/// @returns  The number of watershed basins found.
+/// @note  Users can specify the labels they want to apply and their location
+///        in the aaaiMarkers[][][] array.  Entries in this array which are
+///        strictly larger than 0 will be considered labels and are used to
+///        to specify the labels of the voxels in the basin at that location.
+///        If this array is unspecified (ie. if aaaiMarkers == nullptr),
+///        then the local minima or maxima will be used
+///        as the initial watershed basins by default,
+///        (depending on the "start_from_minima" argument).
 /// @note  If the "halt_threshold" argument is not supplied by the caller,
-///         then std::numeric_limits::infinity is used by default.
-/// @note  If aaafMask!=nullptr then voxels in aaaiDest are not modified if
-///        their corresponding entry in aaafMask equals 0.
+///        then std::numeric_limits::infinity is used by default.
 
 template<typename Scalar, typename Label, typename Coordinate>
 
-void
-Watershed(int const image_size[3],                 //!< #voxels in xyz
-          Scalar const *const *const *aaafSource,  //!< intensity of each voxel
-          Label ***aaaiDest,                       //!< watershed segmentation results go here
-          Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
-          Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< don't segment voxels exceeding this height
-          bool start_from_minima=true,             //!< start from local minima? (if false, maxima will be used)
-          int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
-          bool show_boundaries=true,     //!< should voxels on the boundary between two basins be labelled?
-          Scalar boundary_label=0,       //!< if so, what intensity (ie. label) should boundary voxels be assigned to?
-          vector<array<Coordinate, 3> > *pv_extrema_locations=nullptr, //!< optional: the location of each minima or maxima
-          vector<Scalar> *pv_extrema_scores=nullptr, //!< optional: the voxel intensities (brightnesses) at these locations
-          ostream *pReportProgress=nullptr)  //!< print progress to the user?
+size_t
+Watershed(int const image_size[3],                   //!< #voxels in xyz
+          Scalar const *const *const *aaafSource,    //!< intensity of each voxel
+          Label ***aaaiDest,                         //!< watershed segmentation results will go here.
+          Scalar const *const *const *aaafMask,      //!< OPTIONAL: Ignore voxels whose mask value is 0
+          Label const *const *const *aaaiMarkers,    //!< OPTIONAL: If not NULL, users can specify locations and labels of basins. Entries <= 0 are ignored.
+          Scalar halt_threshold=std::numeric_limits<Scalar>::infinity(), //!< OPTIONAL: voxels with brightness exceeding this threshold are assigned "label_undefined"
+          bool start_from_minima=true,               //!< OPTIONAL: start from local minima? (if false, maxima will be used)
+          int connectivity=1,                        //!< OPTIONAL: square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
+          bool show_boundaries=true,                 //!< OPTIONAL: should voxels on the boundary between two basins be labelled differently?
+          Label label_boundary=0,                   //!< OPTIONAL: if so, what label should boundary voxels be assigned to?
+          Label label_undefined=-1,                 //!< OPTIONAL: assign this label to masked voxels or to voxels with brightness exceeding the halt_threshold
+          vector<array<Coordinate, 3> > *pv_basin_locations=nullptr, //!< OPTIONAL: store the location of each minima or maxima
+          vector<Scalar> *pv_basin_scores=nullptr, //!< OPTIONAL: store the voxel intensities (brightnesses) at these locations here
+          ostream *pReportProgress=nullptr           //!< OPTIONAL: print progress to the user?
+          )
 {
   assert(image_size);
   assert(aaafSource);
   assert(aaaiDest);
-
 
   // Figure out which neighbors to consider when searching neighboring voxels
   int (*neighbors)[3] = nullptr; //a pointer to a fixed-length array of 3 ints
@@ -117,42 +132,100 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
       halt_threshold = -std::numeric_limits<Scalar>::infinity();
   }
 
-  vector<array<Coordinate, 3> > extrema_locations;
-  if (pv_extrema_locations == nullptr)
-    pv_extrema_locations = &extrema_locations;
+  vector<array<Coordinate, 3> > basin_locations;
+  if (pv_basin_locations == nullptr)
+    pv_basin_locations = &basin_locations;
 
-  vector<Scalar> extrema_scores;
-  if (pv_extrema_scores == nullptr)
-    pv_extrema_scores = &extrema_scores;
+  vector<Scalar> basin_scores;
+  if (pv_basin_scores == nullptr)
+    pv_basin_scores = &basin_scores;
 
-  vector<size_t> extrema_nvoxels;
-  vector<size_t> *pv_extrema_nvoxels = &extrema_nvoxels;
+  vector<size_t> basin_nvoxels;
+  vector<size_t> *pv_basin_nvoxels = &basin_nvoxels;
 
-  // Find all the local minima (or maxima?) in the image.
-  FindExtrema(image_size,
-              aaafSource,
-              aaafMask,
-              *pv_extrema_locations,
-              *pv_extrema_scores,
-              *pv_extrema_nvoxels,
-              start_from_minima, //<-- minima or maxima?
-              halt_threshold,
-              connectivity,
-              true,
-              static_cast<Label***>(nullptr),
-              pReportProgress);
 
   ptrdiff_t WATERSHED_BOUNDARY = 0; //an impossible value
-  ptrdiff_t NBASINS = pv_extrema_locations->size(); //number of basins found
-  ptrdiff_t UNDEFINED = NBASINS + 1; //an impossible value
-  ptrdiff_t QUEUED = NBASINS + 2; //an impossible value
+  ptrdiff_t UNDEFINED = -1; //an impossible value
+  size_t num_basins; // keep track of the number of watershed basins found
+  ptrdiff_t max_label = 0;
+
+  // Did the caller already specify the labels they want us to use?
+  // If so, start with these labels (instead of the minima or maxima).
+  if (aaaiMarkers) {
+    num_basins = 0;
+    set<ptrdiff_t> labels_so_far;
+    // NOT NEEDED (pv_basin_nvoxels), so commenting out:
+    // map<ptrdiff_t, size_t> labels_2_basin_id;
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+            continue;
+          ptrdiff_t label = aaaiMarkers[iz][iy][ix];
+          if (label > 0) {
+            //aaaiDest[iz][iy][ix] = label;
+            if (labels_so_far.find(label) == labels_so_far.end()) {
+              num_basins++;
+              labels_so_far.insert(label);
+              max_label = std::max(max_label, label);
+              if (pv_basin_locations) {
+                array<Coordinate,3> ixyz;
+                ixyz[0] = ix;
+                ixyz[1] = iy;
+                ixyz[2] = iz;
+                (*pv_basin_locations).push_back(ixyz);
+              }
+              if (pv_basin_scores)
+                (*pv_basin_scores).push_back(aaafSource[iz][iy][ix]);
+              // NOT NEEDED (pv_basin_nvoxels), so commenting out:
+              //if (pv_basin_nvoxels) {
+              //  labels_2_basin_id[label] = (*pv_basin_nvoxels).size();
+              //  (*pv_basin_nvoxels).push_back(1);
+              //}
+            } //if (labels_so_far.find(label) != labels_so_far.end()) {
+            // NOT NEEDED (pv_basin_nvoxels), so commenting out:
+            //else if (pv_basin_nvoxels) {
+            //  assert(labels_2_basin_id.find(label)!=labels_2_basin_id.end());
+            //  size_t label_id = labels_2_basin_id[label];
+            //  pv_basin_nvoxels[label_id]++;
+            //}
+          } // if (label > 0)
+          //else
+          //  aaaiDest[iz][iy][ix] = UNDEFINED;
+        } // for (int ix=0; ix<image_size[0]; ix++)
+      } // for (int iy=0; iy<image_size[1]; iy++)
+    } // for (int iz=0; iz<image_size[2]; iz++)
+  } // if (aaaiMarkers)
+
+  else // if (! aaaiMarkers)
+  {
+    // Find all the local minima (or maxima?) in the image.
+    num_basins =
+      FindExtrema(image_size,
+                  aaafSource,
+                  aaafMask,
+                  *pv_basin_locations,
+                  *pv_basin_scores,
+                  *pv_basin_nvoxels,
+                  start_from_minima, //<-- minima or maxima?
+                  halt_threshold,
+                  connectivity,
+                  true,
+                  static_cast<Label***>(nullptr),
+                  pReportProgress);
+    max_label = num_basins;
+  } // if (! aaaiMarkers)
+
+  ptrdiff_t QUEUED = max_label + 1; //an impossible value
+  //OLD VERSION: ptrdiff_t UNDEFINED = max_label + 1; //an impossible value
+  //OLD VERSION: ptrdiff_t QUEUED = max_label + 2; //an impossible value
 
   //initialize aaaiDest[][][]
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
-        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
-          continue;
+        //if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+        //  continue;
         aaaiDest[iz][iy][ix] = UNDEFINED;
       }
     }
@@ -175,26 +248,26 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
   if (pReportProgress)
     *pReportProgress <<
       " ---- Watershed segmentation algorithm ----\n"
-      "starting from " << NBASINS << " different local "
+      "starting from " << num_basins << " different local "
                      << (start_from_minima ? "minima" : "maxima") << endl;
 
   // Initialize the queue so that it only contains voxels which lie
   // at the location of a local minima (or maxima).
   // Also keep track of which minima (which "basin") they belong to.
 
-  for (size_t i=0; i < NBASINS; i++) {
+  for (size_t i=0; i < num_basins; i++) {
     // Create an entry in q for each of the local minima (or maxima)
 
     // Assign a different integer to each of these minima, starting at 1
     ptrdiff_t which_basin = i;
 
-    int ix = (*pv_extrema_locations)[i][0];
-    int iy = (*pv_extrema_locations)[i][1];
-    int iz = (*pv_extrema_locations)[i][2];
+    int ix = (*pv_basin_locations)[i][0];
+    int iy = (*pv_basin_locations)[i][1];
+    int iz = (*pv_basin_locations)[i][2];
 
     // These entries in the priority queue will be sorted by "score"
     // which is the intensity of the image at this voxel location.
-    Scalar score = (*pv_extrema_scores)[i];
+    Scalar score = (*pv_basin_scores)[i];
     assert(score == aaafSource[iz][iy][ix]);
     score *= SIGN_FACTOR; //(enable search for either local minima OR maxima)
 
@@ -218,7 +291,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
     assert(aaaiDest[iz][iy][ix] == UNDEFINED);
     aaaiDest[iz][iy][ix] = QUEUED;
 
-  } // for (size_t i=0; i < NBASINS; i++)
+  } // for (size_t i=0; i < num_basins; i++)
 
 
   // Count the number of voxels in the image we will need to consider.
@@ -360,7 +433,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
 
         aaaiDest[iz_jz][iy_jy][ix_jx] = QUEUED;
 
-        // and push this neighboring voxels onto the queue.
+        // and push this neighboring voxel onto the queue.
         // (...if they have not been assigned to a basin yet.  This
         //  insures that the same voxel is never pushed more than once.)
         array<Coordinate, 3> neighbor_crds;
@@ -409,7 +482,7 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
   }
   #endif //#ifndef NDEBUG
 
-  if (boundary_label != 0.0) {
+  if (label_boundary != WATERSHED_BOUNDARY) {
     // If the caller explicitly specified the brightness that voxels 
     // on the boundaries between basins should be assigned to,
     // then take care of that now.
@@ -419,17 +492,68 @@ Watershed(int const image_size[3],                 //!< #voxels in xyz
           if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
             continue;
           if (aaaiDest[iz][iy][ix] == WATERSHED_BOUNDARY)
-            aaaiDest[iz][iy][ix] = boundary_label;
+            aaaiDest[iz][iy][ix] = label_boundary;
         }
       }
     }
   }
 
+  if (label_undefined != UNDEFINED) {
+    // If the caller explicitly specified the brightness that "undefind" voxels
+    // (ie. voxels whose brightnesses are disqualified for being too bright
+    //      or not bright enough)
+    // ...should have, then take care of that now.
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
+          if (aaaiDest[iz][iy][ix] == UNDEFINED)
+            aaaiDest[iz][iy][ix] = label_undefined;
+        }
+      }
+    }
+  }
+
+  if (aaaiMarkers) {
+    map<ptrdiff_t, ptrdiff_t> labels_old2new;
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          ptrdiff_t label_old = aaaiDest[iz][iy][ix];
+          ptrdiff_t label_new = aaaiMarkers[iz][iy][ix];
+          if ((label_new > 0) &&
+              (label_old != label_boundary) &&
+              (label_old != label_undefined))
+            labels_old2new[label_old] = label_new;
+        }
+      }
+    }
+    for (int iz=0; iz<image_size[2]; iz++) {
+      for (int iy=0; iy<image_size[1]; iy++) {
+        for (int ix=0; ix<image_size[0]; ix++) {
+          if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
+            continue;
+          if ((aaaiDest[iz][iy][ix] == label_boundary) ||
+              (aaaiDest[iz][iy][ix] == label_undefined))
+            continue;
+          if (labels_old2new.find(aaaiDest[iz][iy][ix])!=labels_old2new.end()) {
+            aaaiDest[iz][iy][ix] = labels_old2new[aaaiDest[iz][iy][ix]];
+          }
+          else
+            aaaiDest[iz][iy][ix] = label_undefined;
+        }
+      }
+    }
+  } //if (aaaiMarkers)
+
   if (pReportProgress)
     *pReportProgress << "Number of basins found: "
-                     << NBASINS << endl;
+                     << num_basins << endl;
 
   delete [] neighbors;
+
+  return num_basins;
 
 } //Watershed()
 

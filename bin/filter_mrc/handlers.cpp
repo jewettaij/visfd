@@ -1199,25 +1199,64 @@ HandleWatershed(const Settings &settings,
   //  which will be written to a file later.  This way the end-user can
   //  view the results.)
 
-  Watershed(tomo_in.header.nvoxels,
-            tomo_in.aaafI,
-            aaaiBasinId,
-            mask.aaafI,
-            settings.watershed_threshold,
-            (! settings.clusters_begin_at_maxima),
-            settings.neighbor_connectivity,
-            settings.watershed_show_boundaries,
-            settings.watershed_boundary_label,
-            &extrema_crds,
-            &extrema_scores,
-            &cerr);
+  
+  ptrdiff_t undefined_voxel_brightness = settings.undefined_voxel_brightness;
+  if (settings.undefined_voxels_are_max)
+    undefined_voxel_brightness = -1;
 
+
+  //** DEBUGGING THE aaaiMarkers FEATURE.
+  //** REMOVE THIS CODE EVENTUALLY.
+  //** ptrdiff_t ***aaaiDebugMarkers = Alloc3D<ptrdiff_t>(image_size);
+  //** for (int iz = 0; iz < image_size[2]; iz++)
+  //**   for (int iy = 0; iy < image_size[1]; iy++)
+  //**     for (int ix = 0; ix < image_size[0]; ix++)
+  //**       aaaiDebugMarkers[iz][iy][ix] = 0;
+  //** aaaiDebugMarkers[40][58][70] = 7;
+  //** aaaiDebugMarkers[40][57][70] = 18;
+  //** aaaiDebugMarkers[40][42][48] = 13;
+  //** END OF: DEBUGGING aaaiDebugMarkers FEATURE
+
+
+  size_t num_basins =
+    Watershed(tomo_in.header.nvoxels,
+              tomo_in.aaafI,
+              aaaiBasinId,
+              mask.aaafI,
+              static_cast<ptrdiff_t ***>(nullptr),
+              settings.watershed_threshold,
+              (! settings.clusters_begin_at_maxima),
+              settings.neighbor_connectivity,
+              settings.watershed_show_boundaries,
+              static_cast<ptrdiff_t>(settings.watershed_boundary_label),
+              static_cast<ptrdiff_t>(-1), // an impossible value
+              &extrema_crds,
+              &extrema_scores,
+              &cerr);
+
+  ptrdiff_t max_label = aaaiBasinId[0][0][0];
+  for (int iz = 0; iz < image_size[2]; ++iz)
+    for (int iy = 0; iy < image_size[1]; ++iy)
+      for (int ix = 0; ix < image_size[0]; ++ix)
+        max_label = std::max(max_label, aaaiBasinId[iz][iy][ix]);
+
+  // Now, copy the contents of aaaClusterId into tomo_out.aaafI
   for (int iz = 0; iz < image_size[2]; ++iz) {
     for (int iy = 0; iy < image_size[1]; ++iy) {
       for (int ix = 0; ix < image_size[0]; ++ix) {
-        if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
-          continue;
         tomo_out.aaafI[iz][iy][ix] = aaaiBasinId[iz][iy][ix];
+        // Special case: Sometimes we want undefined voxels (ie voxels whose
+        // saliency exceeds settings.connect_threshold_saliency)
+        // to have a brightness which is equal to the maximum brightness
+        // in the image (which is num_clusters), plus one.
+        // This makes it easier to visualize the clusters with low ID numbers.
+        // Only do this if settings.undefined_voxels_are_max == true.
+        if (aaaiBasinId[iz][iy][ix] == -1) {
+          if (settings.undefined_voxels_are_max)
+            tomo_out.aaafI[iz][iy][ix] = max_label + 1;
+          else
+            tomo_out.aaafI[iz][iy][ix] = settings.undefined_voxel_brightness;
+        }
       }
     }
   }
@@ -1228,12 +1267,11 @@ HandleWatershed(const Settings &settings,
   // Watershed() intentionally does not modify voxels which lie 
   // outside the mask.  These voxels will have random undefined values 
   // unless we assign them manually.  We do this below.
-  float UNDEFINED = -1;
   for (int iz = 0; iz < image_size[2]; iz++)
     for (int iy = 0; iy < image_size[1]; iy++)
       for (int ix = 0; ix < image_size[0]; ix++)
         if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
-          tomo_out.aaafI[iz][iy][ix] = UNDEFINED;
+          tomo_out.aaafI[iz][iy][ix] = settings.undefined_voxel_brightness;
 } //HandleWatershed()
 
 
@@ -1271,39 +1309,64 @@ HandleClusterConnected(const Settings &settings,
   //  which will be written to a file later.  This way the end-user can
   //  view the results.)
 
-  ClusterConnected(tomo_in.header.nvoxels, //image size
-                   tomo_in.aaafI, //<-saliency
-                   aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
-                   mask.aaafI,
-                   settings.connect_threshold_saliency,
-                   static_cast<ptrdiff_t>(0), //this value is ignored, but it specifies the type of array we are using
-                   true,  //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
-                   static_cast<array<float, 3> ***>(nullptr),
-                   -std::numeric_limits<float>::infinity(),
-                   -std::numeric_limits<float>::infinity(),
-                   false, //normal default value for this (ignored) parameter
-                   static_cast<float****>(nullptr),
-                   -std::numeric_limits<float>::infinity(),
-                   -std::numeric_limits<float>::infinity(),
-                   true,  //normal default value for this (ignored) parameter
-                   1,
-                   &cluster_centers,
-                   &cluster_sizes,
-                   &cluster_saliencies,
-                   ClusterSortCriteria::SORT_BY_SIZE,
-                   static_cast<float***>(nullptr),
-                   #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                   static_cast<array<float, 3> ***>(nullptr),
-                   #endif
-                   pMustLinkConstraints,
-                   true, //(clusters begin at regions of high saliency)
-                   &cerr);  //!< print progress to the user
+  ptrdiff_t undefined_voxel_brightness = settings.undefined_voxel_brightness;
+  if (settings.undefined_voxels_are_max)
+    undefined_voxel_brightness = -1;
 
-  // Now, copy the contents of aaaClusterId into tomo_out.aaafI
+  size_t num_clusters =
+    ClusterConnected(tomo_in.header.nvoxels, //image size
+                     tomo_in.aaafI, //<-saliency
+                     aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
+                     mask.aaafI,
+                     settings.connect_threshold_saliency,
+                     static_cast<array<float, 3> ***>(nullptr),
+                     -std::numeric_limits<float>::infinity(),
+                     -std::numeric_limits<float>::infinity(),
+                     false, //normal default value for this (ignored) parameter
+                     static_cast<float****>(nullptr),
+                     -std::numeric_limits<float>::infinity(),
+                     -std::numeric_limits<float>::infinity(),
+                     true,  //normal default value for this (ignored) parameter
+                     1,
+                     static_cast<ptrdiff_t>(-1), // an impossible value
+                     &cluster_centers,
+                     &cluster_sizes,
+                     &cluster_saliencies,
+                     ClusterSortCriteria::SORT_BY_SIZE,
+                     static_cast<float***>(nullptr),
+                     #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                     static_cast<array<float, 3> ***>(nullptr),
+                     #endif
+                     pMustLinkConstraints,
+                     true, //(clusters begin at regions of high saliency)
+                     &cerr);  //!< print progress to the user
+
+  ptrdiff_t max_label = aaaiClusterId[0][0][0];
   for (int iz = 0; iz < image_size[2]; ++iz)
     for (int iy = 0; iy < image_size[1]; ++iy)
       for (int ix = 0; ix < image_size[0]; ++ix)
+        max_label = std::max(max_label, aaaiClusterId[iz][iy][ix]);
+
+  // Now, copy the contents of aaaClusterId into tomo_out.aaafI
+  for (int iz = 0; iz < image_size[2]; ++iz) {
+    for (int iy = 0; iy < image_size[1]; ++iy) {
+      for (int ix = 0; ix < image_size[0]; ++ix) {
         tomo_out.aaafI[iz][iy][ix] = aaaiClusterId[iz][iy][ix];
+        // Special case: Sometimes we want undefined voxels (ie voxels whose
+        // saliency exceeds settings.connect_threshold_saliency)
+        // to have a brightness which is equal to the maximum brightness
+        // in the image (which is num_clusters), plus one.
+        // This makes it easier to visualize the clusters with low ID numbers.
+        // Only do this if settings.undefined_voxels_are_max == true.
+        if (aaaiClusterId[iz][iy][ix] == -1) {
+          if (settings.undefined_voxels_are_max)
+            tomo_out.aaafI[iz][iy][ix] = max_label + 1;
+          else
+            tomo_out.aaafI[iz][iy][ix] = settings.undefined_voxel_brightness;
+        }
+      }
+    }
+  }
 
   Dealloc3D(aaaiClusterId);
 
@@ -1777,39 +1840,61 @@ HandleTV(const Settings &settings,
     //  which will be written to a file later.  This way the end-user can
     //  view the results.)
 
-    ClusterConnected(image_size, //image size
-                     aaafSaliency,
-                     aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
-                     mask.aaafI,
-                     settings.connect_threshold_saliency,
-                     static_cast<ptrdiff_t>(0), //this value is ignored, but it specifies the type of array we are using
-                     true,  //(voxels not belonging to clusters are assigned the highest value = num_clusters+1)
-                     aaaafDirection,
-                     settings.connect_threshold_vector_saliency,
-                     settings.connect_threshold_vector_neighbor,
-                     false, //eigenvector signs are arbitrary so ignore them
-                     aaaafVoteTensor,
-                     settings.connect_threshold_tensor_saliency,
-                     settings.connect_threshold_tensor_neighbor,
-                     true,  //the tensor should be positive definite near the target
-                     1,
-                     &cluster_centers,
-                     &cluster_sizes,
-                     &cluster_saliencies,
-                     ClusterSortCriteria::SORT_BY_SIZE,
-                     static_cast<float***>(nullptr),
-                     #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                     aaaafDirection,
-                     #endif
-                     pMustLinkConstraints,
-                     true, //(clusters begin at regions of high saliency)
-                     &cerr);  //!< print progress to the user
+    size_t num_clusters =
 
-    // Now, copy the contents of aaaClusterId into tomo_out.aaafI
+      ClusterConnected(image_size, //image size
+                       aaafSaliency,
+                       aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
+                       mask.aaafI,
+                       settings.connect_threshold_saliency,
+                       aaaafDirection,
+                       settings.connect_threshold_vector_saliency,
+                       settings.connect_threshold_vector_neighbor,
+                       false, //eigenvector signs are arbitrary so ignore them
+                       aaaafVoteTensor,
+                       settings.connect_threshold_tensor_saliency,
+                       settings.connect_threshold_tensor_neighbor,
+                       true,  //the tensor should be positive definite near the target
+                       1,
+                       static_cast<ptrdiff_t>(-1), // an impossible value
+                       &cluster_centers,
+                       &cluster_sizes,
+                       &cluster_saliencies,
+                       ClusterSortCriteria::SORT_BY_SIZE,
+                       static_cast<float***>(nullptr),
+                       #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                       aaaafDirection,
+                       #endif
+                       pMustLinkConstraints,
+                       true, //(clusters begin at regions of high saliency)
+                       &cerr);  //!< print progress to the user
+
+    ptrdiff_t max_label = aaaiClusterId[0][0][0];
     for (int iz = 0; iz < image_size[2]; ++iz)
       for (int iy = 0; iy < image_size[1]; ++iy)
         for (int ix = 0; ix < image_size[0]; ++ix)
+          max_label = std::max(max_label, aaaiClusterId[iz][iy][ix]);
+
+    // Now, copy the contents of aaaClusterId into tomo_out.aaafI
+    for (int iz = 0; iz < image_size[2]; ++iz) {
+      for (int iy = 0; iy < image_size[1]; ++iy) {
+        for (int ix = 0; ix < image_size[0]; ++ix) {
           tomo_out.aaafI[iz][iy][ix] = aaaiClusterId[iz][iy][ix];
+          // Special case: Sometimes we want undefined voxels (ie voxels whose
+          // saliency exceeds settings.connect_threshold_saliency)
+          // to have a brightness which is equal to the maximum brightness
+          // in the image (which is num_clusters), plus one.
+          // This makes it easier to visualize the clusters with low ID numbers.
+          // Only do this if settings.undefined_voxels_are_max == true.
+          if (aaaiClusterId[iz][iy][ix] == -1) {
+            if (settings.undefined_voxels_are_max)
+              tomo_out.aaafI[iz][iy][ix] = max_label + 1;
+            else
+              tomo_out.aaafI[iz][iy][ix] = settings.undefined_voxel_brightness;
+          }
+        }
+      }
+    }
 
     Dealloc3D(aaaiClusterId);
 

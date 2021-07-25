@@ -93,8 +93,10 @@ class Settings {
   string mask_file_name; // name of an image file used for masking
   bool use_mask_select; // do we select voxels with a specific value?
   int mask_select; // select only voxels from the input with this value
-  bool use_mask_out; // should we specify the brightness of ignored voxels?
-  float mask_out;//what brightness do we set these voxels?(to go in out_file_name)
+  bool specify_masked_brightness; //did the user specify the brightness of masked voxels?
+  float masked_voxel_brightness;//what brightness do we assign to masked voxels?
+  float undefined_voxel_brightness; //what brightness do we assign to other kinds of undefined voxels?
+  bool undefined_voxels_are_max; // set undefined voxels to the maximum image brightness + 1
   bool is_mask_crds_in_voxels; // Are mask crds in units of voxels or physical distance?
   vector<SimpleRegion<float> > vMaskRegions; // set mask=one or more regions in space
   int resize_with_binning; //width of bin to use to reduce image size?

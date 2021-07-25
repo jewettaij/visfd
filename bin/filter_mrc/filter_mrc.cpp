@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.29.9");
-string g_date_string("2021-7-20");
+string g_version_string("0.29.10");
+string g_date_string("2021-7-25");
 
 
 
@@ -692,12 +692,12 @@ int main(int argc, char **argv) {
     // at this location.  If so, make sure that aaafI is 0 there
     // (or whatever the user has requested us to put there).
     // Do this after thresholding and inverting.
-    if ((mask.aaafI) && (settings.use_mask_out))
+    if ((mask.aaafI) && (settings.specify_masked_brightness))
       for (int iz=0; iz<mask.header.nvoxels[2]; iz++)
         for (int iy=0; iy<mask.header.nvoxels[1]; iy++)
           for (int ix=0; ix<mask.header.nvoxels[0]; ix++)
             if (mask.aaafI[iz][iy][ix] == 0.0)
-              tomo_out.aaafI[iz][iy][ix] = settings.mask_out;
+              tomo_out.aaafI[iz][iy][ix] = settings.masked_voxel_brightness;
 
     // --- Rescale so that the lowest, highest voxels have density 0 and 1? ---
 

@@ -48,10 +48,12 @@ namespace visfd {
 /// If the aaafMask[][][] is not equal to nullptr, then local minima and maxima
 /// will be ignored if the corresponding entry in aaafMask[][][] equals 0.
 ///
-/// @note: THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
+/// @returns The number of extrema (minima and maxima) found
+///
+/// @note  THIS VERSION OF THE FUNCTION WAS NOT INTENDED FOR PUBLIC USE.
 
 template<typename Scalar, typename IntegerIndex, typename Label>
-static void
+static size_t
 _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z directions
              Scalar const *const *const *aaafSource, //!< image array aaafSource[iz][iy][ix]
              Scalar const *const *const *aaafMask, //!< optional: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
@@ -155,6 +157,9 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
         neighbors[j][d] = vNeighbors[j][d];
     // We will use neighbors[][] from now on..
   } // ...done figuring out the list of voxel neighbors
+
+
+  size_t num_extrema = 0; // how many minima or maxima were found so far?
 
 
   // Now search the image for minima, maxima.
@@ -293,6 +298,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
             pv_minima_indices->push_back(index);
             pv_minima_scores->push_back(aaafSource[iz0][iy0][ix0]);
             pv_minima_nvoxels->push_back(n_plateau);
+            num_extrema++;
           }
         }
         if (is_maxima && find_maxima) {
@@ -307,6 +313,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
             pv_maxima_indices->push_back(index);
             pv_maxima_scores->push_back(aaafSource[iz0][iy0][ix0]);
             pv_maxima_nvoxels->push_back(n_plateau);
+            num_extrema++;
           }
         }
 
@@ -502,6 +509,8 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
   Dealloc3D(aaaiExtrema);
 
   delete [] neighbors;
+
+  return num_extrema;
 
 } // _FindExtrema()
 

@@ -82,7 +82,7 @@ typedef enum eClusterSortCriteria {
 ///         This is a form of agglomerative clustering of voxels that
 ///         considers voxel direction and brightness.
 ///
-/// @return The function does not have a return value.
+/// @return The function returns the number of clusters found.
 ///         After the function is finished, the aaaiDest[][][] array will store
 ///         the cluster-ID (a.k.a. "island-ID") associated with each voxel.
 ///         The clusters are sorted by their size (by default), and this is
@@ -92,10 +92,8 @@ typedef enum eClusterSortCriteria {
 ///          the location of the saliency maxima (or minima) for each cluster.)
 ///
 /// @note   Voxels below the saliency threshold are ignored, and will
-///         assigned to the value of UNDEFINED, which (by default)
-///         is equal to the number of clusters detected in the image plus 1.
-///         (This value can be overridden using
-///          the "label_undefined", and "undefined_label_is_max" arguments.)
+///         assigned to the value of UNDEFINED, which (by default) is -1.
+///         (This value can be overridden using the "label_undefined" argument.)
 ///
 /// @note   If a aaafMask array is supplied by the caller, then voxels located
 ///         in regions where aaafMask[iz][iy][ix]=0 will be ignored.
@@ -135,14 +133,12 @@ typedef enum eClusterSortCriteria {
 
 template<typename Scalar, typename Label, typename Coordinate, typename VectorContainer=Scalar*, typename TensorContainer=Scalar*>
 
-void
+size_t
 ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
                  Scalar const *const *const *aaafSaliency,  //!< brightness or saliency of each voxel
                  Label ***aaaiDest,                       //!< watershed segmentation results go here
                  Scalar const *const *const *aaafMask,    //!< optional: Ignore voxels whose mask value is 0
                  Scalar threshold_saliency=-std::numeric_limits<Scalar>::infinity(), //!< don't consider voxels with saliencies below this value
-                 Label label_undefined = 0,               //!< voxels storing this value do not belong to any clusters
-                 bool undefined_label_is_max = false,     //!< set label_undefined to number of clusters + 1 (overrides label_undefined)
                  VectorContainer const *const *const *aaaafVector=nullptr,
                  Scalar threshold_vector_saliency=-std::numeric_limits<Scalar>::infinity(),    //!< voxels with incompatible saliency and vector are ignored (numbers below -1 disable this feature)
                  Scalar threshold_vector_neighbor=-std::numeric_limits<Scalar>::infinity(),    //!< neighboring voxels with incompatible vectors are ignored (numbers below -1 disable this feature)
@@ -150,8 +146,9 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
                  TensorContainer const *const *const *aaaafSymmetricTensor=nullptr,
                  Scalar threshold_tensor_saliency=-std::numeric_limits<Scalar>::infinity(),    //!< voxels with incompatible saliency and tensor are ignored (numbers below -1 disable this feature)
                  Scalar threshold_tensor_neighbor=-std::numeric_limits<Scalar>::infinity(),    //!< neighboring voxels with incompatible tensors are ignored (numbers below -1 disable this feature)
-                 bool tensor_is_positive_definite_near_ridge=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
+                 bool tensor_is_positive_definite_near_target=true, //!< what is the sign of the principal tensor eigenvalue(s) near a ridge we care about?
                  int connectivity=1,                      //!< square root of the search radius around each voxel (1=nearest_neighbors, 2=2D_diagonal, 3=3D_diagonal)
+                 Label label_undefined = -1,               //!< voxels storing this value do not belong to any clusters
                  vector<array<Coordinate, 3> > *pv_cluster_maxima=nullptr, //!< optional: the location of saliency minima or maxima which seeded each cluster
                  vector<Scalar> *pv_cluster_sizes=nullptr, //!< optional: what was the size of each cluster? (either the number of voxels, or the sum of voxel weights)
                  vector<Scalar> *pv_cluster_saliencies=nullptr, //!< optional: what was the saliency (brightness) of each cluster's brightest voxel?
@@ -451,7 +448,7 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
       // we must multiply the entries in saliency_hessian by -1 before 
       // comparing them with the tensor.
 
-      if (tensor_is_positive_definite_near_ridge ==
+      if (tensor_is_positive_definite_near_target ==
           start_from_saliency_maxima) {
         for (int di = 0; di < 3; di++)
           for (int dj = di; dj < 3; dj++)
@@ -1336,10 +1333,11 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
   #endif // #ifndef NDEBUG
 
 
-  // Now, deal with voxels which are "undefined"
-  // voxels to have a high instead of a low value.
-  if (undefined_label_is_max)
-    label_undefined = n_clusters+1;
+  // COMMENTING OUT ("undefined_label_is_max" is no longer used)
+  //// Now, deal with voxels which are "undefined"
+  //// voxels to have a high instead of a low value.
+  //if (undefined_label_is_max)
+  //  label_undefined = n_clusters+1;
 
   // Final procesing: Replace "UNDEFINED" with "label_undefined", or add 1:
   for (int iz=0; iz<image_size[2]; iz++) {
@@ -1368,6 +1366,8 @@ ClusterConnected(const int image_size[3],                   //!< #voxels in xyz
   }
 
   delete [] neighbors;
+
+  return n_clusters;
 
 } // ClusterConnected()
 
