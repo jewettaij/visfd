@@ -380,6 +380,15 @@ int main(int argc, char **argv) {
 
 
 
+    else if (settings.filter_type == Settings::FIND_EXTREMA) {
+
+      // Find the local minima or maxima in the image
+      HandleExtrema(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+
     else if (settings.filter_type == Settings::DILATION) {
 
       // Apply a greyscale dilation filter to the image.
@@ -672,14 +681,6 @@ int main(int argc, char **argv) {
     if (settings.use_intensity_map) {
 
       HandleThresholds(settings, tomo_in, tomo_out, mask, voxel_width);
-
-    }
-
-    // ----- find local minima or maxima -----
-
-    if (settings.find_minima || settings.find_maxima) {
-
-      HandleExtrema(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 

@@ -1041,21 +1041,22 @@ HandleExtrema(const Settings &settings,
     pv_maxima_nvoxels = &maxima_nvoxels;
   }
 
-  FindExtrema(tomo_in.header.nvoxels,
-              tomo_in.aaafI,
-              mask.aaafI,
-              pv_minima_crds_voxels,
-              pv_maxima_crds_voxels,
-              pv_minima_scores,
-              pv_maxima_scores,
-              pv_minima_nvoxels,
-              pv_maxima_nvoxels,
-              minima_threshold,
-              maxima_threshold,
-              settings.neighbor_connectivity,
-              settings.extrema_on_boundary,
-              tomo_out.aaafI, //<--an image showing where the minima are?
-              &cerr);
+  // Note: _FindExtrema() is defind in "morphology_implementation.hpp"
+  _FindExtrema(tomo_in.header.nvoxels,
+               tomo_in.aaafI,
+               mask.aaafI,
+               pv_minima_crds_voxels,
+               pv_maxima_crds_voxels,
+               pv_minima_scores,
+               pv_maxima_scores,
+               pv_minima_nvoxels,
+               pv_maxima_nvoxels,
+               minima_threshold,
+               maxima_threshold,
+               settings.neighbor_connectivity,
+               settings.extrema_on_boundary,
+               tomo_out.aaafI, //<--an image showing where the minima are?
+               &cerr);
 
   // non-max suppression
   // discards minima or maxima which lie too close together.

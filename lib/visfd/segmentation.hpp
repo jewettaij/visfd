@@ -223,18 +223,18 @@ Watershed(int const image_size[3],                   //!< #voxels in xyz
   {
     // Find all the local minima (or maxima?) in the image.
     num_basins =
-      FindExtrema(image_size,
-                  aaafSource,
-                  aaafMask,
-                  *pv_basin_locations,
-                  *pv_basin_scores,
-                  *pv_basin_nvoxels,
-                  start_from_minima, //<-- minima or maxima?
-                  halt_threshold,
-                  connectivity,
-                  true,
-                  static_cast<Label***>(nullptr),
-                  pReportProgress);
+      _FindExtrema(image_size,
+                   aaafSource,
+                   aaafMask,
+                   *pv_basin_locations,
+                   *pv_basin_scores,
+                   *pv_basin_nvoxels,
+                   start_from_minima, //<-- minima or maxima?
+                   halt_threshold,
+                   connectivity,
+                   true,
+                   static_cast<Label***>(nullptr),
+                   pReportProgress);
     max_label = num_basins;
   } // if (! aaaiMarkers)
 
@@ -772,18 +772,18 @@ WatershedDirectional(const int image_size[3],                   //!< #voxels in 
 
   // Find all the local minima (or maxima?) in the image.
 
-  FindExtrema(image_size,
-              aaafSaliency,
-              aaafMask,
-              extrema_locations,
-              extrema_scores,
-              extrema_nvoxels,
-              (! start_from_saliency_maxima), //<-- minima or maxima?
-              threshold_saliency,
-              connectivity,
-              true,  // maxima are allowed to be located on the image border
-              static_cast<Label***>(nullptr),
-              pReportProgress);
+  _FindExtrema(image_size,
+               aaafSaliency,
+               aaafMask,
+               extrema_locations,
+               extrema_scores,
+               extrema_nvoxels,
+               (! start_from_saliency_maxima), //<-- minima or maxima?
+               threshold_saliency,
+               connectivity,
+               true,  // maxima are allowed to be located on the image border
+               static_cast<Label***>(nullptr),
+               pReportProgress);
 
   ptrdiff_t UNDEFINED = extrema_locations.size() + 1; //an impossible value
   ptrdiff_t QUEUED = extrema_locations.size() + 2; //an impossible value

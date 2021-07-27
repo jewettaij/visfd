@@ -34,6 +34,7 @@ class Settings {
 
   typedef enum eFilterType {
     NONE,     //(The user has not selected a filter, or is using thresholding)
+    FIND_EXTREMA, // find local minima or maxima in the image
     MEDIAN,   // a median filter (https://en.wikipedia.org/wiki/Median_filter)
     DILATION, // grayscale image dilation
     EROSION,  // grayscale image erosion
@@ -42,12 +43,10 @@ class Settings {
     TOP_HAT_WHITE, // top hat transforms
     TOP_HAT_BLACK, // (see https://en.wikipedia.org/wiki/Top-hat_transform)
     GAUSS,   //3D Gaussian filter
-    GGAUSS,  //3D Generalized Gaussian filter
-    DOG,     //3D Difference of Gaussians (arbitrary widths, fast)
+    GGAUSS,  //3D Generalized Gaussian filter (slow)
+    DOG,     //3D Difference of Gaussians (arbitrary widths)
     DOGG,    //3D Generalized Difference-of-Generalized-Gaussians with arbitrary
              //   widths and arbitrary exponents, slow)
-    DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary
-             //   widths and arbitrary exponents in XY, and Gaussian blur in Z.
     LOG_DOG,         // Approximation to Laplacian-of-Guassian using DOG (fast)
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     WATERSHED,       // Watershed segmentation
@@ -56,19 +55,22 @@ class Settings {
     CURVE,           // Detect 1D curve-like ridges (a filament detector)
     SURFACE_EDGE,    // Detect the edge of a light-dark boundary (gradient)
     SURFACE_RIDGE,   // Detect 2D surface-like ridges (a thin membrane detector)
+    //   Annotate the image by drawing simple objects in the image
+    DRAW_SPHERES,    // draw spheres onto the image
+    //   Analyze a list of objects supplied by the user
     SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
     SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
-    //   Require the user to supply a list of points:
-    DRAW_SPHERES,    // draw spheres onto the image (annotate the image)
 
     //   DEPRECIATED:
+    DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary
+             //   widths and arbitrary exponents in XY, and Gaussian blur in Z.
     DISTANCE_TO_POINTS, //voxel intensity= distance to nearest point in a set
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses
     TEMPLATE_GGAUSS, // Perform a least-squares fit between a generalized
                      // Gaussian and the surrounding voxel brightnesses
     BOOTSTRAP_DOGG,  // DOGG filter with bootstrapping (significance testing)
-    BLOB_RADIAL_INTENSITY // Report brightness-vs-radius for each blob
+    BLOB_RADIAL_INTENSITY // brightness-vs-distance-to-center for each blob
   } FilterType; 
   
   FilterType filter_type; // The user must select one of these filter types
