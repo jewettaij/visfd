@@ -2179,7 +2179,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        filter_type = SPHERE_DECALS;
+        filter_type = DRAW_SPHERES;
         in_coords_file_name = vArgs[i+1];
       }
       catch (invalid_argument& exc) {
@@ -2194,7 +2194,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
-        filter_type = SPHERE_DECALS;
+        filter_type = DRAW_SPHERES;
         in_coords_file_name = vArgs[i+1];
         if (! user_set_thickness_manually) {
           sphere_decals_shell_thickness = 0.05;
@@ -3353,7 +3353,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       (filter_type != CURVE))
   {
     assert(connect_threshold_saliency!=std::numeric_limits<float>::infinity());
-    filter_type = CLUSTER_CONNECTED;
+    filter_type = WATERSHED_DIRECTIONAL;
   }
 
 

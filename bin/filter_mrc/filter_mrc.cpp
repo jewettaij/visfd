@@ -531,11 +531,11 @@ int main(int argc, char **argv) {
 
 
 
-    else if (settings.filter_type == Settings::CLUSTER_CONNECTED) {
+    else if (settings.filter_type == Settings::WATERSHED_DIRECTIONAL) {
 
       // Cluster adjacent nearby voxels with high "saliency" into "islands"
       // neighboring voxels (this is similar to watershed segmentation).
-      HandleClusterConnected(settings, tomo_in, tomo_out, mask, voxel_width);
+      HandleWatershedDirectional(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 
@@ -563,7 +563,7 @@ int main(int argc, char **argv) {
 
     // ----- sphere_decals_filter -----
 
-    else if (settings.filter_type == settings.SPHERE_DECALS) {
+    else if (settings.filter_type == settings.DRAW_SPHERES) {
 
       // Draw a new image or annotate (draw on top of) an existing image.
       HandleDrawSpheres(settings, tomo_in, tomo_out, mask, voxel_width);

@@ -168,11 +168,11 @@ HandleWatershed(const Settings &settings,
 
 
 void
-HandleClusterConnected(const Settings &settings,
-                       MrcSimple &tomo_in,
-                       MrcSimple &tomo_out,
-                       MrcSimple &mask,
-                       float voxel_width[3]);
+HandleWatershedDirectional(const Settings &settings,
+                           MrcSimple &tomo_in,
+                           MrcSimple &tomo_out,
+                           MrcSimple &mask,
+                           float voxel_width[3]);
 
 
 void

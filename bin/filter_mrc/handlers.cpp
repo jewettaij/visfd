@@ -21,9 +21,8 @@ using namespace visfd;
 #include <mrc_simple.hpp>
 #include <random_gen.h>
 #include <feature.hpp>
-#include <segmentation.hpp>
-#include <clustering.hpp>
 #include <morphology.hpp>
+#include <segmentation.hpp>
 #include <draw.hpp>
 #include "err.hpp"
 #include "settings.hpp"
@@ -1280,7 +1279,7 @@ HandleWatershed(const Settings &settings,
 
 
 void
-HandleClusterConnected(const Settings &settings,
+HandleWatershedDirectional(const Settings &settings,
                        MrcSimple &tomo_in,
                        MrcSimple &tomo_out,
                        MrcSimple &mask,
@@ -1314,32 +1313,32 @@ HandleClusterConnected(const Settings &settings,
     undefined_voxel_brightness = -1;
 
   size_t num_clusters =
-    ClusterConnected(tomo_in.header.nvoxels, //image size
-                     tomo_in.aaafI, //<-saliency
-                     aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
-                     mask.aaafI,
-                     settings.connect_threshold_saliency,
-                     static_cast<array<float, 3> ***>(nullptr),
-                     -std::numeric_limits<float>::infinity(),
-                     -std::numeric_limits<float>::infinity(),
-                     false, //normal default value for this (ignored) parameter
-                     static_cast<float****>(nullptr),
-                     -std::numeric_limits<float>::infinity(),
-                     -std::numeric_limits<float>::infinity(),
-                     true,  //normal default value for this (ignored) parameter
-                     1,
-                     static_cast<ptrdiff_t>(-1), // an impossible value
-                     &cluster_centers,
-                     &cluster_sizes,
-                     &cluster_saliencies,
-                     ClusterSortCriteria::SORT_BY_SIZE,
-                     static_cast<float***>(nullptr),
-                     #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                     static_cast<array<float, 3> ***>(nullptr),
-                     #endif
-                     pMustLinkConstraints,
-                     true, //(clusters begin at regions of high saliency)
-                     &cerr);  //!< print progress to the user
+    WatershedDirectional(tomo_in.header.nvoxels, //image size
+                         tomo_in.aaafI, //<-saliency
+                         aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
+                         mask.aaafI,
+                         settings.connect_threshold_saliency,
+                         static_cast<array<float, 3> ***>(nullptr),
+                         -std::numeric_limits<float>::infinity(),
+                         -std::numeric_limits<float>::infinity(),
+                         false, //normal default value for this (ignored) parameter
+                         static_cast<float****>(nullptr),
+                         -std::numeric_limits<float>::infinity(),
+                         -std::numeric_limits<float>::infinity(),
+                         true,  //normal default value for this (ignored) parameter
+                         1,
+                         static_cast<ptrdiff_t>(-1), // an impossible value
+                         &cluster_centers,
+                         &cluster_sizes,
+                         &cluster_saliencies,
+                         RegionSortCriteria::SORT_BY_SIZE,
+                         static_cast<float***>(nullptr),
+                         #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                         static_cast<array<float, 3> ***>(nullptr),
+                         #endif
+                         pMustLinkConstraints,
+                         true, //(clusters begin at regions of high saliency)
+                         &cerr);  //!< print progress to the user
 
   ptrdiff_t max_label = aaaiClusterId[0][0][0];
   for (int iz = 0; iz < image_size[2]; ++iz)
@@ -1370,7 +1369,7 @@ HandleClusterConnected(const Settings &settings,
 
   Dealloc3D(aaaiClusterId);
 
-} //HandleClusterConnected()
+} //HandleWatershedDirectional()
 
 
 
@@ -1842,32 +1841,32 @@ HandleTV(const Settings &settings,
 
     size_t num_clusters =
 
-      ClusterConnected(image_size, //image size
-                       aaafSaliency,
-                       aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
-                       mask.aaafI,
-                       settings.connect_threshold_saliency,
-                       aaaafDirection,
-                       settings.connect_threshold_vector_saliency,
-                       settings.connect_threshold_vector_neighbor,
-                       false, //eigenvector signs are arbitrary so ignore them
-                       aaaafVoteTensor,
-                       settings.connect_threshold_tensor_saliency,
-                       settings.connect_threshold_tensor_neighbor,
-                       true,  //the tensor should be positive definite near the target
-                       1,
-                       static_cast<ptrdiff_t>(-1), // an impossible value
-                       &cluster_centers,
-                       &cluster_sizes,
-                       &cluster_saliencies,
-                       ClusterSortCriteria::SORT_BY_SIZE,
-                       static_cast<float***>(nullptr),
-                       #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-                       aaaafDirection,
-                       #endif
-                       pMustLinkConstraints,
-                       true, //(clusters begin at regions of high saliency)
-                       &cerr);  //!< print progress to the user
+      WatershedDirectional(image_size, //image size
+                           aaafSaliency,
+                           aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
+                           mask.aaafI,
+                           settings.connect_threshold_saliency,
+                           aaaafDirection,
+                           settings.connect_threshold_vector_saliency,
+                           settings.connect_threshold_vector_neighbor,
+                           false, //eigenvector signs are arbitrary so ignore them
+                           aaaafVoteTensor,
+                           settings.connect_threshold_tensor_saliency,
+                           settings.connect_threshold_tensor_neighbor,
+                           true,  //the tensor should be positive definite near the target
+                           1,
+                           static_cast<ptrdiff_t>(-1), // an impossible value
+                           &cluster_centers,
+                           &cluster_sizes,
+                           &cluster_saliencies,
+                           RegionSortCriteria::SORT_BY_SIZE,
+                           static_cast<float***>(nullptr),
+                           #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+                           aaaafDirection,
+                           #endif
+                           pMustLinkConstraints,
+                           true, //(clusters begin at regions of high saliency)
+                           &cerr);  //!< print progress to the user
 
     ptrdiff_t max_label = aaaiClusterId[0][0][0];
     for (int iz = 0; iz < image_size[2]; ++iz)
@@ -1910,7 +1909,7 @@ HandleTV(const Settings &settings,
     // where is the lookup table to indicate which cluster a voxel belongs to?
     float ***aaafVoxel2Cluster = nullptr;
     if (settings.cluster_connected_voxels)
-      aaafVoxel2Cluster = tomo_out.aaafI; //tomo_out set by ClusterConnected()
+      aaafVoxel2Cluster = tomo_out.aaafI; //tomo_out was filled by WatershedDirectional()
 
     for (int iz = 0; iz < image_size[2]; ++iz) {
       for (int iy = 0; iy < image_size[1]; ++iy) {

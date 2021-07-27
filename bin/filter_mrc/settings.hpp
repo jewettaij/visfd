@@ -51,7 +51,7 @@ class Settings {
     LOG_DOG,         // Approximation to Laplacian-of-Guassian using DOG (fast)
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     WATERSHED,       // Watershed segmentation
-    CLUSTER_CONNECTED,  // Watershed applied to voxels with tensor attributes
+    WATERSHED_DIRECTIONAL, // Watershed applied to voxels with tensor attributes
     BLOB,            // Scale-free blob detection
     CURVE,           // Detect 1D curve-like ridges (a filament detector)
     SURFACE_EDGE,    // Detect the edge of a light-dark boundary (gradient)
@@ -59,10 +59,10 @@ class Settings {
     SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
     SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
     //   Require the user to supply a list of points:
-    SPHERE_DECALS,      //voxel intensity= 1 if within R from the nearest point
-    DISTANCE_TO_POINTS, //voxel intensity= distance to nearest point in the set
+    DRAW_SPHERES,    // draw spheres onto the image (annotate the image)
 
     //   DEPRECIATED:
+    DISTANCE_TO_POINTS, //voxel intensity= distance to nearest point in a set
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses
     TEMPLATE_GGAUSS, // Perform a least-squares fit between a generalized
