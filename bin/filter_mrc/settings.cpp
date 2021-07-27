@@ -3220,8 +3220,10 @@ Settings::ParseArgs(vector<string>& vArgs)
   }
   if ((out_file_name.size() == 0) &&
       ((!
-        ((filter_type == NONE) ||
+        ((out_normals_fname != "") ||
+         (filter_type == NONE) ||
          (filter_type == BLOB) ||
+         (filter_type == FIND_EXTREMA) ||
          (filter_type == SPHERE_NONMAX_SUPPRESSION) ||
          (filter_type == SPHERE_NONMAX_SUPERVISED_MULTI) ||
          (filter_type == BLOB_RADIAL_INTENSITY)))
