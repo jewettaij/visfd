@@ -168,11 +168,11 @@ HandleWatershed(const Settings &settings,
 
 
 void
-HandleWatershedDirectional(const Settings &settings,
-                           MrcSimple &tomo_in,
-                           MrcSimple &tomo_out,
-                           MrcSimple &mask,
-                           float voxel_width[3]);
+HandleLabelConnected(const Settings &settings,
+                     MrcSimple &tomo_in,
+                     MrcSimple &tomo_out,
+                     MrcSimple &mask,
+                     float voxel_width[3]);
 
 
 void

@@ -50,7 +50,7 @@ class Settings {
     LOG_DOG,         // Approximation to Laplacian-of-Guassian using DOG (fast)
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     WATERSHED,       // Watershed segmentation
-    WATERSHED_DIRECTIONAL, // Watershed applied to voxels with tensor attributes
+    LABEL_CONNECTED, // Connected component labeling (count islands in a sea)
     BLOB,            // Scale-free blob detection
     CURVE,           // Detect 1D curve-like ridges (a filament detector)
     SURFACE_EDGE,    // Detect the edge of a light-dark boundary (gradient)

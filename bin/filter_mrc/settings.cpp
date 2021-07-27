@@ -3370,7 +3370,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       (filter_type != CURVE))
   {
     assert(connect_threshold_saliency!=std::numeric_limits<float>::infinity());
-    filter_type = WATERSHED_DIRECTIONAL;
+    filter_type = LABEL_CONNECTED;
   }
 
 

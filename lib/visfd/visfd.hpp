@@ -12,6 +12,7 @@
 #include <feature.hpp>       // feature detectors (blob, surface, edge, curve..)
 #include <morphology.hpp>    // functions relevant to image morphology
 #include <segmentation.hpp>  // functions used for segmentation (eg. watershed)
+#include <connect.hpp>       // functions for connected component labeling
 #include <draw.hpp>          // functions for drawing and annotation
 #include <filter3d.hpp>      // common 3D filters (mostly simple linear filters)
 #include <resample.hpp>      // resize the image

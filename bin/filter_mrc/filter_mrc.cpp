@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.29.10");
-string g_date_string("2021-7-25");
+string g_date_string("2021-7-26");
 
 
 
@@ -540,11 +540,11 @@ int main(int argc, char **argv) {
 
 
 
-    else if (settings.filter_type == Settings::WATERSHED_DIRECTIONAL) {
+    else if (settings.filter_type == Settings::LABEL_CONNECTED) {
 
       // Cluster adjacent nearby voxels with high "saliency" into "islands"
       // neighboring voxels (this is similar to watershed segmentation).
-      HandleWatershedDirectional(settings, tomo_in, tomo_out, mask, voxel_width);
+      HandleLabelConnected(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 
