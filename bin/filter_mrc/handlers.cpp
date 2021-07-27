@@ -1204,6 +1204,19 @@ HandleWatershed(const Settings &settings,
   if (settings.undefined_voxels_are_max)
     undefined_voxel_brightness = -1;
 
+  ptrdiff_t ***aaaiMarkers = nullptr;
+  if (settings.watershed_markers_filename != "") {
+    MrcSimple markers;
+    // Read the input tomogram
+    cerr << "Reading tomogram \""<<settings.watershed_markers_filename
+         <<"\"" << endl;
+    markers.Read(settings.watershed_markers_filename, false);
+    aaaiMarkers = Alloc3D<ptrdiff_t>(image_size);
+    for (int iz = 0; iz < image_size[2]; iz++)
+      for (int iy = 0; iy < image_size[1]; iy++)
+        for (int ix = 0; ix < image_size[0]; ix++)
+          aaaiMarkers[iz][iy][ix] = std::round(markers.aaafI[iz][iy][ix]);
+  }
 
   //** DEBUGGING THE aaaiMarkers FEATURE.
   //** REMOVE THIS CODE EVENTUALLY.
@@ -1223,7 +1236,7 @@ HandleWatershed(const Settings &settings,
               tomo_in.aaafI,
               aaaiBasinId,
               mask.aaafI,
-              static_cast<ptrdiff_t ***>(nullptr),
+              aaaiMarkers,
               settings.watershed_threshold,
               (! settings.clusters_begin_at_maxima),
               settings.neighbor_connectivity,
@@ -1262,6 +1275,8 @@ HandleWatershed(const Settings &settings,
   }
 
   Dealloc3D(aaaiBasinId);
+  if (aaaiMarkers)
+    Dealloc3D(aaaiMarkers);
 
   // Did the user supply a mask?
   // Watershed() intentionally does not modify voxels which lie 
@@ -1272,6 +1287,7 @@ HandleWatershed(const Settings &settings,
       for (int ix = 0; ix < image_size[0]; ix++)
         if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
           tomo_out.aaafI[iz][iy][ix] = settings.undefined_voxel_brightness;
+
 } //HandleWatershed()
 
 

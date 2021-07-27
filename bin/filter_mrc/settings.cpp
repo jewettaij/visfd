@@ -2443,7 +2443,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
-    
+
 
     else if (vArgs[i] == "-watershed-threshold")
     {
@@ -2458,8 +2458,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
-      }
-      
+      }      
       num_arguments_deleted = 2;
     }
 
@@ -2496,6 +2495,23 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number\n");
       }
+      num_arguments_deleted = 2;
+    }
+
+    
+
+    else if (vArgs[i] == "-markers")
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == ""))
+          throw invalid_argument("");
+        watershed_markers_filename = vArgs[i+1];
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by an image file name\n");
+      }      
       num_arguments_deleted = 2;
     }
 
