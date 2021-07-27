@@ -222,25 +222,26 @@ class Settings {
   float out_thresh_gauss_x0;
   float out_thresh_gauss_sigma;
 
-  // ---- parameters for watershed segmentation (and clustering) ----
+  // ---- parameters for watershed segmentation ----
 
   bool watershed_show_boundaries;
   float watershed_boundary_label;
   float watershed_threshold;
+  string watershed_markers_filename;
   bool clusters_begin_at_maxima;
+  bool cluster_connected_voxels;//NOTE TO SELF:I should eliminate or rename this
+  float connect_threshold_saliency; // I should eliminate or rename this
+  size_t select_cluster;            // I should rename this variable
+  string must_link_filename;
+  vector<vector<array<float, 3> > > must_link_constraints;
+  bool is_must_link_constraints_in_voxels = false;
 
-  // ---- parameters for the clustering of connected voxels into islands ----
+  // ---- parameters for directional watershed segmentation ----
 
-  bool cluster_connected_voxels;
-  float connect_threshold_saliency;
   float connect_threshold_vector_saliency;
   float connect_threshold_vector_neighbor;
   float connect_threshold_tensor_saliency;
   float connect_threshold_tensor_neighbor;
-  size_t select_cluster;
-  string must_link_filename;
-  vector<vector<array<float, 3> > > must_link_constraints;
-  bool is_must_link_constraints_in_voxels = false;
 
   // ---- parameters used by the curve and surface detectors ----
 

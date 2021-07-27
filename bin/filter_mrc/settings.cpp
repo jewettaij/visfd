@@ -145,10 +145,14 @@ Settings::Settings() {
   watershed_boundary_label = 0.0;
   watershed_show_boundaries = true;
   watershed_threshold = std::numeric_limits<float>::infinity();
-
-  // ---- parameters for the clustering of connected voxels into islands ----
+  watershed_markers_filename = "";
   cluster_connected_voxels = false;
   connect_threshold_saliency = std::numeric_limits<float>::infinity();
+  must_link_constraints.clear();
+  is_must_link_constraints_in_voxels = false;
+  select_cluster = 0;
+
+  // ---- parameters for directional watershed segmentation ----
   //connect_threshold_vector_saliency = -std::numeric_limits<float>::infinity();
   //connect_threshold_vector_neighbor = -std::numeric_limits<float>::infinity();
   //connect_threshold_tensor_saliency = -std::numeric_limits<float>::infinity();
@@ -157,9 +161,6 @@ Settings::Settings() {
   connect_threshold_vector_neighbor = std::cos(M_PI*15/180.0);//allowed between
   connect_threshold_tensor_saliency = std::cos(M_PI*15/180.0);//neighboring
   connect_threshold_tensor_neighbor = std::cos(M_PI*15/180.0);//voxels
-  must_link_constraints.clear();
-  is_must_link_constraints_in_voxels = false;
-  select_cluster = 0;
 
   // --- parameters for intensity maps and thresholding ---
   use_intensity_map = false;
