@@ -1,8 +1,8 @@
 /// @brief
 /// This program allows the user to run one filter operation on an image file.
 /// This file contains main() as well as many functions named "Handle...()".
-/// Depending on which filter was selected, a different "Handle()" function
-/// will be invoked.
+/// After reading the image files, depending on which filter was selected,
+/// a different "Handle()" function will be invoked.
 /// Each of these "Handle...()" functions will collect the parameters supplied
 /// by the user and invoke an corresponding function from the visfd library.
 
@@ -29,7 +29,7 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.29.10");
+string g_version_string("0.29.11");
 string g_date_string("2021-7-26");
 
 

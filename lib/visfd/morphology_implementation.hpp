@@ -493,7 +493,6 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
         for (int ix = 0; ix < image_size[0]; ix++) {
           if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
             continue; // don't modify voxels outside the mask
-          aaaiDest[iz][iy][ix] = aaaiExtrema[iz][iy][ix];
           // Until now, minima in the image are represented by negative integers
           // and maxima are represented by positive integers.
           if (((! find_minima) || (! find_maxima)) &&
@@ -501,6 +500,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
             // If we only asked for minima OR maxima (not both)
             // then just use positive integers only.
             aaaiExtrema[iz][iy][ix] = -aaaiExtrema[iz][iy][ix];
+          aaaiDest[iz][iy][ix] = aaaiExtrema[iz][iy][ix];
         }
       }
     }
@@ -726,6 +726,7 @@ _FindExtrema(int const image_size[3],          //!< size of the image in x,y,z d
 ///         or maxima, but not both.  (If you want both, use the other version.
 ///         That version is faster than invoking this function twice.)
 ///         See the description of that version for details.
+/// @note   THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
 
 template<typename Scalar, typename Coordinate, typename IntegerIndex, typename Label>
 size_t
@@ -744,7 +745,7 @@ _FindExtrema(int const image_size[3],            //!< size of input image array
 {
   // NOTE:
   // C++ will not allow us to supply nullptr to a function that expects a pointer 
-  // to a template expression: Template argument deduction/substitution fails.
+  // to a template expression: "Template argument deduction/substitution fails."
   // We need to re-cast "nullptr" as a pointer with the correct type.
   // One way to do that is to define these new versions of nullptr:
   vector<array<Coordinate, 3> > *null_vai3 = nullptr;  

@@ -2107,6 +2107,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if (vArgs[i] == "-find-minima") {
+      filter_type = FIND_EXTREMA;
       try {
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
@@ -2122,6 +2123,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if (vArgs[i] == "-find-maxima") {
+      filter_type = FIND_EXTREMA;
       try {
         if (i+1 >= vArgs.size())
           throw invalid_argument("");
