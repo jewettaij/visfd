@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.29.11");
-string g_date_string("2021-7-26");
+string g_version_string("0.29.12");
+string g_date_string("2021-8-07");
 
 
 
@@ -114,7 +114,6 @@ int main(int argc, char **argv) {
     for (int d = 0; d < 3; d++)
       image_size[d] = tomo_in.header.nvoxels[d];
 
-
     // ---- Voxel width? ----
     float voxel_width[3];
     DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
@@ -126,6 +125,9 @@ int main(int argc, char **argv) {
       HandleBinning(settings, tomo_in, mask, voxel_width);
       // Since we reduced the resolution, we should increase voxel width
       DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
+      // Update the "image_size" array (just a copy of tomo_in.header.nvoxels[])
+      for (int d = 0; d < 3; d++)
+	image_size[d] = tomo_in.header.nvoxels[d];
     } //if (settings.resize_with_binning > 0)
 
     // If the user did not ask us to bin the image, perhaps we should anyway?
@@ -162,6 +164,9 @@ int main(int argc, char **argv) {
           HandleBinning(settings, tomo_in, mask, voxel_width);
           // Since we reduced the resolution, we should recalculate voxel width
           DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
+	  // Update the "image_size" array
+	  for (int d = 0; d < 3; d++)
+	    image_size[d] = tomo_in.header.nvoxels[d];
         }
       } //if (settings.tv_sigma > 0)
       else if (settings.blob_diameters.size() > 0)
@@ -191,6 +196,9 @@ int main(int argc, char **argv) {
           HandleBinning(settings, tomo_in, mask, voxel_width);
           // Since we reduced the resolution, we should recalculate voxel width
           DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
+	  // Update the "image_size" array
+	  for (int d = 0; d < 3; d++)
+	    image_size[d] = tomo_in.header.nvoxels[d];
         } //if (settings.blob_diameters[0] > 10.0*voxel_width[0])
       } //else if (settings.blob_diameters.size() > 0)
     } //else if (settings.resize_with_binning == 0)
@@ -215,36 +223,47 @@ int main(int argc, char **argv) {
       }
 
       // now, we loop through the vMaskRegions array, rescaling their coords
-      if (! settings.is_mask_crds_in_voxels) {
-        for (int i = 0; i < settings.vMaskRegions.size(); i++) {
-          switch (settings.vMaskRegions[i].type) {
-          case SimpleRegion<float>::RECT:
-            {
-              settings.vMaskRegions[i].data.rect.xmin /= voxel_width[0];
-              settings.vMaskRegions[i].data.rect.xmax /= voxel_width[0];
-              settings.vMaskRegions[i].data.rect.ymin /= voxel_width[1];
-              settings.vMaskRegions[i].data.rect.ymax /= voxel_width[1];
-              settings.vMaskRegions[i].data.rect.zmin /= voxel_width[2];
-              settings.vMaskRegions[i].data.rect.zmax /= voxel_width[2];
-            }
-            break;
-          case SimpleRegion<float>::SPHERE:
-            {
-              // assume voxel_width[0] == voxel_width[1] == voxel_width[2]
-              // (I haven't yet implemented non-cubical bin-widths.-A 2021-7-04)
-              settings.vMaskRegions[i].data.sphere.r  /= voxel_width[0];
-              settings.vMaskRegions[i].data.sphere.x0 /= voxel_width[0];
-              settings.vMaskRegions[i].data.sphere.y0 /= voxel_width[0];
-              settings.vMaskRegions[i].data.sphere.z0 /= voxel_width[0];
-            }
-            break;
-          default:
-            assert(false); //this line should not be reached
-            break;
-          } //switch (settings.vMaskRegions[i].type)
-        } //for (int i = 0; i < settings.vMaskRegions.size(); i++)
-      } //if (! settings.is_mask_crds_in_voxels)
+      for (int i = 0; i < settings.vMaskRegions.size(); i++) {
+	//determine how to scale the coordinates
+	float scale = 1.0;
+	if (settings.is_mask_crds_in_voxels) {
+	  // Did we use binning?  If so, divide coordinates by the bin size.
+	  scale = 1.0 / settings.resize_with_binning;
+	  // Note that we only do this if we are ignoring the voxel_width,
+	  // because the code that takes care of binning also updates
+	  // the voxel_width automatically.  So if we are dividing by the
+	  // voxel width, we can igore settings.resize_with_binning.
+	}
+	else
+	  // Divide coordinates by the voxel width.
+	  // assume voxel_width[0] == voxel_width[1] == voxel_width[2]
+	  // (I haven't yet implemented non-cubical bin-widths.-A 2021-7-04)
+	  scale = 1.0 / voxel_width[0];
 
+	switch (settings.vMaskRegions[i].type) {
+        case SimpleRegion<float>::RECT:
+          {
+	    settings.vMaskRegions[i].data.rect.xmin *= scale;
+	    settings.vMaskRegions[i].data.rect.xmax *= scale;
+	    settings.vMaskRegions[i].data.rect.ymin *= scale;
+	    settings.vMaskRegions[i].data.rect.ymax *= scale;
+	    settings.vMaskRegions[i].data.rect.zmin *= scale;
+	    settings.vMaskRegions[i].data.rect.zmax *= scale;
+	  }
+	  break;
+	case SimpleRegion<float>::SPHERE:
+	  {
+	    settings.vMaskRegions[i].data.sphere.r  *= scale;
+	    settings.vMaskRegions[i].data.sphere.x0 *= scale;
+	    settings.vMaskRegions[i].data.sphere.y0 *= scale;
+	    settings.vMaskRegions[i].data.sphere.z0 *= scale;
+	  }
+	  break;
+	default:
+	  assert(false); //this line should not be reached
+	  break;
+	} //switch (settings.vMaskRegions[i].type)
+      } //for (int i = 0; i < settings.vMaskRegions.size(); i++)
       // Now use VISFD's "DrawRegions()" function to fill the
       // voxels in these regions of the mask with brightness=1,
       // which means we want to include these voxels in the mask.
