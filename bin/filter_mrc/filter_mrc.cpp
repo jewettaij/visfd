@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
       DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
       // Update the "image_size" array (just a copy of tomo_in.header.nvoxels[])
       for (int d = 0; d < 3; d++)
-	image_size[d] = tomo_in.header.nvoxels[d];
+        image_size[d] = tomo_in.header.nvoxels[d];
     } //if (settings.resize_with_binning > 0)
 
     // If the user did not ask us to bin the image, perhaps we should anyway?
@@ -164,9 +164,9 @@ int main(int argc, char **argv) {
           HandleBinning(settings, tomo_in, mask, voxel_width);
           // Since we reduced the resolution, we should recalculate voxel width
           DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
-	  // Update the "image_size" array
-	  for (int d = 0; d < 3; d++)
-	    image_size[d] = tomo_in.header.nvoxels[d];
+          // Update the "image_size" array
+          for (int d = 0; d < 3; d++)
+            image_size[d] = tomo_in.header.nvoxels[d];
         }
       } //if (settings.tv_sigma > 0)
       else if (settings.blob_diameters.size() > 0)
@@ -196,9 +196,9 @@ int main(int argc, char **argv) {
           HandleBinning(settings, tomo_in, mask, voxel_width);
           // Since we reduced the resolution, we should recalculate voxel width
           DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
-	  // Update the "image_size" array
-	  for (int d = 0; d < 3; d++)
-	    image_size[d] = tomo_in.header.nvoxels[d];
+          // Update the "image_size" array
+          for (int d = 0; d < 3; d++)
+            image_size[d] = tomo_in.header.nvoxels[d];
         } //if (settings.blob_diameters[0] > 10.0*voxel_width[0])
       } //else if (settings.blob_diameters.size() > 0)
     } //else if (settings.resize_with_binning == 0)
@@ -224,45 +224,45 @@ int main(int argc, char **argv) {
 
       // now, we loop through the vMaskRegions array, rescaling their coords
       for (int i = 0; i < settings.vMaskRegions.size(); i++) {
-	//determine how to scale the coordinates
-	float scale = 1.0;
-	if (settings.is_mask_crds_in_voxels) {
-	  // Did we use binning?  If so, divide coordinates by the bin size.
-	  scale = 1.0 / settings.resize_with_binning;
-	  // Note that we only do this if we are ignoring the voxel_width,
-	  // because the code that takes care of binning also updates
-	  // the voxel_width automatically.  So if we are dividing by the
-	  // voxel width, we can igore settings.resize_with_binning.
-	}
-	else
-	  // Divide coordinates by the voxel width.
-	  // assume voxel_width[0] == voxel_width[1] == voxel_width[2]
-	  // (I haven't yet implemented non-cubical bin-widths.-A 2021-7-04)
-	  scale = 1.0 / voxel_width[0];
+        //determine how to scale the coordinates
+        float scale = 1.0;
+        if (settings.is_mask_crds_in_voxels) {
+          // Did we use binning?  If so, divide coordinates by the bin size.
+          scale = 1.0 / settings.resize_with_binning;
+          // Note that we only do this if we are ignoring the voxel_width,
+          // because the code that takes care of binning also updates
+          // the voxel_width automatically.  So if we are dividing by the
+          // voxel width, we can igore settings.resize_with_binning.
+        }
+        else
+          // Divide coordinates by the voxel width.
+          // assume voxel_width[0] == voxel_width[1] == voxel_width[2]
+          // (I haven't yet implemented non-cubical bin-widths.-A 2021-7-04)
+          scale = 1.0 / voxel_width[0];
 
-	switch (settings.vMaskRegions[i].type) {
+        switch (settings.vMaskRegions[i].type) {
         case SimpleRegion<float>::RECT:
           {
-	    settings.vMaskRegions[i].data.rect.xmin *= scale;
-	    settings.vMaskRegions[i].data.rect.xmax *= scale;
-	    settings.vMaskRegions[i].data.rect.ymin *= scale;
-	    settings.vMaskRegions[i].data.rect.ymax *= scale;
-	    settings.vMaskRegions[i].data.rect.zmin *= scale;
-	    settings.vMaskRegions[i].data.rect.zmax *= scale;
-	  }
-	  break;
-	case SimpleRegion<float>::SPHERE:
-	  {
-	    settings.vMaskRegions[i].data.sphere.r  *= scale;
-	    settings.vMaskRegions[i].data.sphere.x0 *= scale;
-	    settings.vMaskRegions[i].data.sphere.y0 *= scale;
-	    settings.vMaskRegions[i].data.sphere.z0 *= scale;
-	  }
-	  break;
-	default:
-	  assert(false); //this line should not be reached
-	  break;
-	} //switch (settings.vMaskRegions[i].type)
+            settings.vMaskRegions[i].data.rect.xmin *= scale;
+            settings.vMaskRegions[i].data.rect.xmax *= scale;
+            settings.vMaskRegions[i].data.rect.ymin *= scale;
+            settings.vMaskRegions[i].data.rect.ymax *= scale;
+            settings.vMaskRegions[i].data.rect.zmin *= scale;
+            settings.vMaskRegions[i].data.rect.zmax *= scale;
+          }
+          break;
+        case SimpleRegion<float>::SPHERE:
+          {
+            settings.vMaskRegions[i].data.sphere.r  *= scale;
+            settings.vMaskRegions[i].data.sphere.x0 *= scale;
+            settings.vMaskRegions[i].data.sphere.y0 *= scale;
+            settings.vMaskRegions[i].data.sphere.z0 *= scale;
+          }
+          break;
+        default:
+          assert(false); //this line should not be reached
+          break;
+        } //switch (settings.vMaskRegions[i].type)
       } //for (int i = 0; i < settings.vMaskRegions.size(); i++)
       // Now use VISFD's "DrawRegions()" function to fill the
       // voxels in these regions of the mask with brightness=1,
@@ -278,7 +278,6 @@ int main(int argc, char **argv) {
                   true);//<--allows us to add and subtract regions from the mask
 
     } //if (settings.vMaskRegions.size() > 0)
-
 
 
     // Now that we know the voxel_width, rescale morphological filter widths
@@ -298,7 +297,8 @@ int main(int argc, char **argv) {
     // But it is a negative number, we need to convert the distance units.
     if (settings.max_distance_to_feature < 0.0)
       settings.max_distance_to_feature /= -voxel_width[0];
-
+    else
+      settings.max_distance_to_feature /= settings.resize_with_binning;
 
     // Now that we know the voxel_width, rescale any tensor-voting
     // parameters that have units of physical distance.
@@ -320,45 +320,53 @@ int main(int argc, char **argv) {
       //                                                  settings.width_b[d]));
     }
 
-
-    // Now that we know the voxel_width, rescale the blob diameters(for drawing)
-    // (and assume the voxel width is the same in the x,y,z directions)
-    for (size_t ir = 0; ir < settings.blob_diameters.size(); ir++)
-      settings.blob_diameters[ir] /= voxel_width[0];
-    settings.sphere_decals_diameter /= voxel_width[0];
     if (! settings.sphere_decals_shell_thickness_is_ratio)
       settings.sphere_decals_shell_thickness /= voxel_width[0];
+    else
+      settings.sphere_decals_shell_thickness /= settings.resize_with_binning;
 
     // Now that we know the voxel_width, rescale the coordinates
     // we have read from various files:
-    if (! settings.is_training_pos_in_voxels)
-      for (size_t i = 0; i < settings.training_pos_crds.size(); i++)
-        for (int d = 0; d < 3; d++)
+    for (size_t i = 0; i < settings.training_pos_crds.size(); i++)
+      for (int d = 0; d < 3; d++)
+        if (! settings.is_training_pos_in_voxels)
           settings.training_pos_crds[i][d] /= voxel_width[d];
+        else
+          settings.training_pos_crds[i][d] /= settings.resize_with_binning;
 
-    if (! settings.is_training_neg_in_voxels)
-      for (size_t i = 0; i < settings.training_neg_crds.size(); i++)
-        for (int d = 0; d < 3; d++)
+    for (size_t i = 0; i < settings.training_neg_crds.size(); i++)
+      for (int d = 0; d < 3; d++)
+        if (! settings.is_training_neg_in_voxels)
           settings.training_neg_crds[i][d] /= voxel_width[d];
+        else
+          settings.training_neg_crds[i][d] /= settings.resize_with_binning;
 
     for (int I=0; I < settings.multi_is_training_pos_in_voxels.size(); I++)
-      if (! settings.multi_is_training_pos_in_voxels[I])
-        for (size_t i = 0; i < settings.training_pos_crds.size(); i++)
-          for (int d = 0; d < 3; d++)
+      for (size_t i = 0; i < settings.training_pos_crds.size(); i++)
+        for (int d = 0; d < 3; d++)
+          if (! settings.multi_is_training_pos_in_voxels[I])
             settings.multi_training_pos_crds[I][i][d] /= voxel_width[d];
+          else
+            settings.multi_training_pos_crds[I][i][d] /=
+              settings.resize_with_binning;
 
     for (int I=0; I < settings.multi_is_training_neg_in_voxels.size(); I++)
-      if (! settings.multi_is_training_neg_in_voxels[I])
-        for (size_t i = 0; i < settings.training_neg_crds.size(); i++)
-          for (int d = 0; d < 3; d++)
+      for (size_t i = 0; i < settings.training_neg_crds.size(); i++)
+        for (int d = 0; d < 3; d++)
+          if (! settings.multi_is_training_neg_in_voxels[I])
             settings.multi_training_neg_crds[I][i][d] /= voxel_width[d];
+          else
+            settings.multi_training_neg_crds[I][i][d] /=
+              settings.resize_with_binning;
 
-    if (! settings.is_must_link_constraints_in_voxels)
-      for (size_t i = 0; i < settings.must_link_constraints.size(); i++)
-        for (size_t j = 0; j < settings.must_link_constraints[i].size(); j++)
-          for (int d = 0; d < 3; d++)
+    for (size_t i = 0; i < settings.must_link_constraints.size(); i++)
+      for (size_t j = 0; j < settings.must_link_constraints[i].size(); j++)
+        for (int d = 0; d < 3; d++)
+          if (! settings.is_must_link_constraints_in_voxels)
             settings.must_link_constraints[i][j][d] /= voxel_width[d];
-
+          else
+            settings.must_link_constraints[i][j][d] /=
+              settings.resize_with_binning;
 
 
 

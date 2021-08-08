@@ -130,7 +130,8 @@ Settings::Settings() {
   out_normals_fname = "";
   ridges_are_maxima = false;
   //max_distance_to_feature = std::numeric_limits<float>::infinity();
-  max_distance_to_feature = std::sqrt(3.0)/2;
+  //max_distance_to_feature = std::sqrt(3.0)/2;
+  max_distance_to_feature = 1.3; // chosen after some experimentation. seems ok
   surface_normal_curve_ds = 0.2;
   surface_find_ridge = true;
   hessian_score_threshold = 0.05; //discard voxels which are not the best 5%
@@ -1531,7 +1532,7 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-blob-separation") ||
              (vArgs[i] == "-blob-r-separation") ||
              (vArgs[i] == "-blobr-separation") ||
-	     (vArgs[i] == "-spheres-nonmax-separation-radius"))
+             (vArgs[i] == "-spheres-nonmax-separation-radius"))
     {
       try {
         if (i+1 >= vArgs.size())
@@ -1674,7 +1675,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
     else if ((vArgs[i] == "-discard-blobs") ||
-	     (vArgs[i] == "-blob-nonmax") ||
+             (vArgs[i] == "-blob-nonmax") ||
              (vArgs[i] == "-blobs-nonmax")) {
       try {
         if ((i+2 >= vArgs.size()) ||
@@ -2593,7 +2594,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         else
           throw invalid_argument("");
         float thickness = stof(vArgs[i+2]);
-        max_distance_to_feature = 1.5*thickness;
+        //max_distance_to_feature = 1.5*thickness;
 
         // Now choose the "sigma" parameter of the Gaussians we will use:
         float sigma;

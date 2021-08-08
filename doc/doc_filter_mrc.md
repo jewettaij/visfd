@@ -1613,8 +1613,7 @@ it means that voxels that are further than *distance* away from the detected
 surface will *not* be included in the PLY file that is generated.
 
 The *distance* parameter has units of physical distance, *not* voxels.
-By default, it is equal to 1.5 times the *thickness* parameter
-used with the "-membrane", "-edge", or "-curve" arguments.
+By default, it is equal to 1.3 times the width of each voxel.
 Setting it to "inf" disables this feature.
 
 *Note that voxels which are not excluded will have their coordinates
