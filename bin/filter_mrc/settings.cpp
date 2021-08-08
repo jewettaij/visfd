@@ -1690,7 +1690,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by two different file names\n");
       }
-      filter_type = SPHERE_NONMAX_SUPPRESSION;
+      filter_type = BLOB_NONMAX_SUPPRESSION;
       num_arguments_deleted = 3;
     } //if (vArgs[i] == "-discard-blobs")
 
@@ -1741,7 +1741,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if (vArgs[i] == "-supervised-multi")
     {
-      filter_type = SPHERE_NONMAX_SUPERVISED_MULTI;
+      filter_type = BLOB_NONMAX_SUPERVISED_MULTI;
       try {
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
@@ -3209,7 +3209,7 @@ Settings::ParseArgs(vector<string>& vArgs)
        (in_set_image_size[1] == 0) ||
        (in_set_image_size[2] == 0))
       &&
-      (filter_type != SPHERE_NONMAX_SUPPRESSION))
+      (filter_type != BLOB_NONMAX_SUPPRESSION))
   {
     throw InputErr("Error: Unknown image size.\n"
                    "       You can either specify the name of the image file you want to read\n"
@@ -3225,8 +3225,8 @@ Settings::ParseArgs(vector<string>& vArgs)
          (filter_type == NONE) ||
          (filter_type == BLOB) ||
          (filter_type == FIND_EXTREMA) ||
-         (filter_type == SPHERE_NONMAX_SUPPRESSION) ||
-         (filter_type == SPHERE_NONMAX_SUPERVISED_MULTI) ||
+         (filter_type == BLOB_NONMAX_SUPPRESSION) ||
+         (filter_type == BLOB_NONMAX_SUPERVISED_MULTI) ||
          (filter_type == BLOB_RADIAL_INTENSITY)))
        ||
        use_intensity_map ||

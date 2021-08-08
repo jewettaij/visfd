@@ -51,15 +51,15 @@ class Settings {
     LOCAL_FLUCTUATIONS, // Report the fluctuation of nearby voxel intensities
     WATERSHED,       // Watershed segmentation
     LABEL_CONNECTED, // Connected component labeling (count islands in a sea)
-    BLOB,            // Scale-free blob detection
     CURVE,           // Detect 1D curve-like ridges (a filament detector)
     SURFACE_EDGE,    // Detect the edge of a light-dark boundary (gradient)
     SURFACE_RIDGE,   // Detect 2D surface-like ridges (a thin membrane detector)
+    BLOB,            // Scale-free blob detection
+    //   Analyze a list of objects supplied by the user
+    BLOB_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
+    BLOB_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
     //   Annotate the image by drawing simple objects in the image
     DRAW_SPHERES,    // draw spheres onto the image
-    //   Analyze a list of objects supplied by the user
-    SPHERE_NONMAX_SUPPRESSION,//throw away overlapping objects(detected earlier)
-    SPHERE_NONMAX_SUPERVISED_MULTI,//use training data to throw away bad scoring blobs in multiple different images
 
     //   DEPRECIATED:
     DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary

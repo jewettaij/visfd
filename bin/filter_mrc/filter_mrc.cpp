@@ -320,6 +320,10 @@ int main(int argc, char **argv) {
       //                                                  settings.width_b[d]));
     }
 
+    // Now that we know the voxel_width, rescale the blob diameters(for drawing)
+    // (Again, I assume the voxel width is the same in the x,y,z directions.)
+    for (size_t ir = 0; ir < settings.blob_diameters.size(); ir++)
+      settings.blob_diameters[ir] /= voxel_width[0];
     if (! settings.sphere_decals_shell_thickness_is_ratio)
       settings.sphere_decals_shell_thickness /= voxel_width[0];
     else
@@ -539,10 +543,42 @@ int main(int argc, char **argv) {
     }
 
 
+
     else if (settings.filter_type == Settings::BLOB) {
 
       HandleBlobDetector(settings, tomo_in, tomo_out, mask, voxel_width);
 
+    }
+
+
+
+    else if (settings.filter_type == settings.BLOB_NONMAX_SUPPRESSION) {
+
+      vector<array<float,3> > crds;
+      vector<float> diameters;
+      vector<float> scores;
+
+      // Discard overlapping or poor scoring blobs from a (user-supplied) list.
+      // (Note: In this case, we are not analyzing the image.
+      //        The list of blobs is supplied by the user, most likely by
+      //        running this program at an earlier time using the "-blob"
+      //        argument.)
+      HandleBlobsNonmaxSuppression(settings,
+                                   mask,
+                                   voxel_width,
+                                   crds,
+                                   diameters,
+                                   scores);
+
+    }
+
+
+
+    else if (settings.filter_type == settings.BLOB_NONMAX_SUPERVISED_MULTI) {
+
+      // Use training data to choose the right threshold(s) for discarding blobs
+      HandleBlobScoreSupervisedMulti(settings,
+                                     voxel_width);
     }
 
 
@@ -604,36 +640,6 @@ int main(int argc, char **argv) {
       // Draw a new image or annotate (draw on top of) an existing image.
       HandleDrawSpheres(settings, tomo_in, tomo_out, mask, voxel_width);
 
-    }
-
-
-    else if (settings.filter_type == settings.SPHERE_NONMAX_SUPPRESSION) {
-
-      vector<array<float,3> > crds;
-      vector<float> diameters;
-      vector<float> scores;
-
-      // Discard overlapping or poor scoring blobs from a (user-supplied) list.
-      // (Note: In this case, we are not analyzing the image.
-      //        The list of blobs is supplied by the user, most likely by
-      //        running this program at an earlier time using the "-blob"
-      //        argument.)
-      HandleBlobsNonmaxSuppression(settings,
-                                   mask,
-                                   voxel_width,
-                                   crds,
-                                   diameters,
-                                   scores);
-
-    }
-
-
-
-    else if (settings.filter_type == settings.SPHERE_NONMAX_SUPERVISED_MULTI) {
-
-      // Use training data to choose the right threshold(s) for discarding blobs
-      HandleBlobScoreSupervisedMulti(settings,
-                                     voxel_width);
     }
 
 
