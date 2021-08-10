@@ -232,12 +232,6 @@ try compiling with CLANG.*
 ```
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
 
-#### Warning: Avoid the **g++** compiler
-As of 2020-2-11, we have had better results
-[using the **CLANG** compiler.](https://github.com/jewettaij/visfd/issues/2).
-*(The problem with g++ seems to only appear when clustering voxels together
-after membrane detection to form connected membrane surfaces.)*
-
 #### Warning: Avoid the **-Ofast** compiler argument
 As of 2020-2-11, we have had better results using
 [**-O3 -ffast-math**](https://github.com/jewettaij/visfd/issues/6) instead.
