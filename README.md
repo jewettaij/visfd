@@ -227,7 +227,7 @@ try compiling with CLANG.*
 ## Linux:
 ```
     source setup_clang.sh
-    # (...or "source setup_gcc.sh".  See below.)
+    # (...or "source setup_gcc.sh", if you prefer gcc)
     make
 ```
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
@@ -301,7 +301,7 @@ to install OpenMP support:
 Then compile visfd using:
 ```
     source setup_clang.sh
-    # (...or "source setup_gcc.sh".  See below.)
+    # (...or "source setup_gcc.sh", if you prefer gcc)
     make
 ```
 
