@@ -175,6 +175,53 @@ We hope to finish the remaining features
 and submit a paper on this software in 2021.
 Nevertheless, if you find a bug, please report it.  I will fix it.
 
+
+
+
+## Requirements
+
+- **16GB** of RAM or higher.
+(64GB is recommended.  For membrane detection,
+ your RAM must exceed 11x the size of the tomogram that you are analyzing.
+ The *voxelize_mesh.py* program requires even more memory.
+ You can reduce the memory needed and computation time dramatically
+ by cropping or binning your tomogram.)
+- A [C++ compiler](#Supported-compilers)
+- [make](https://en.wikipedia.org/wiki/Make_(software))
+- Software to visualize MRC/REC/MAP files
+(such as [IMOD/3dmod](https://bio3d.colorado.edu/imod/))
+
+
+Recommended:
+- A text editor.  (Word, Wordpad, and Notepad will not work.)
+Popular graphical text editors
+include **Atom**, **Sublime**, **Notepad++**, and **VSCode**.
+Older, non-graphical programs include **vim**, **emacs**,
+**nano**, **ne**, and **jove**.
+(Apple's TextEdit can be used if you save the file as *plain text*.)
+- python
+- The "numpy", "matplotlib", "mrcfile", and python modules
+(These are are installable via "pip3" or "pip".)
+
+
+Optional, but needed for membrane segmentation:
+- [**PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
+- software to visualize mesh files
+(such as [meshlab](http://www.meshlab.net)).
+- python
+- The "pyvista" python module (installable via "pip3" or "pip".)
+
+
+### Supported compilers
+
+The **CLANG** compiler is recommended, but no longer required.
+Although this code appears to be working
+with the **GCC** compiler now, I have run into
+[difficulties in the past](https://github.com/jewettaij/visfd/issues/2).
+*Feel free to use GCC, but if you notice strange behavior,
+try compiling with CLANG.*
+
+
 ## Compilation
 
 ## Linux:
@@ -235,9 +282,6 @@ programs which you downloaded and installed directly from within the
 WSL or WSL2 environment *(if possible)*.  In particular, a couple of the
 features of the *filter_mrc* program require you to learn and use a
 (unix-style) text editor.  (Word, Wordpad, and Notepad will not work.)
-Popular text editors include **Atom**, **Sublime**, **Notepad++**,
-and **VSCode**.  Older, non-graphical programs include **vim**, **emacs**,
-**nano**, **ne**, and **jove**.
 Again, it is a good idea to install and run such programs from within WSL,
 not windows.
 
@@ -260,49 +304,6 @@ Then compile visfd using:
     # (...or "source setup_gcc.sh".  See below.)
     make
 ```
-
-## Requirements
-
-- **16GB** of RAM or higher.
-(64GB is recommended.  For membrane detection,
- your RAM must exceed 11x the size of the tomogram that you are analyzing.
- The *voxelize_mesh.py* program requires even more memory.
- You can reduce the memory needed and computation time dramatically
- by cropping or binning your tomogram.)
-- A [C++ compiler](#Supported-C++-compilers)
-- [make](https://en.wikipedia.org/wiki/Make_(software))
-- Software to visualize MRC/REC/MAP files
-(such as [IMOD/3dmod](https://bio3d.colorado.edu/imod/))
-
-
-Recommended:
-- A text editor.  (Word, Wordpad, and Notepad will not work.)
-Popular graphical text editors
-include **Atom**, **Sublime**, **Notepad++**, and **VSCode**.
-Older, non-graphical programs include **vim**, **emacs**,
-**nano**, **ne**, and **jove**.
-(Apple's TextEdit can be used if you save the file as *plain text*.)
-- python
-- The "numpy", "matplotlib", "mrcfile", and python modules
-(These are are installable via "pip3" or "pip".)
-
-
-Optional, but needed for membrane segmentation:
-- [**PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
-- software to visualize mesh files
-(such as [meshlab](http://www.meshlab.net)).
-- python
-- The "pyvista" python module (installable via "pip3" or "pip".)
-
-
-### Supported C++ compilers
-
-The **CLANG** compiler is recommended, but no longer required.
-Although this code appears to be working
-with the **GCC** compiler now, I have run into
-[difficulties in the past](https://github.com/jewettaij/visfd/issues/2).
-*Feel free to use GCC, but if you notice strange behavior,
-try compiling with CLANG.*
 
 
 

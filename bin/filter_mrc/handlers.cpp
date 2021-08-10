@@ -1894,7 +1894,7 @@ HandleTV(const Settings &settings,
     for (int iz = 0; iz < image_size[2]; ++iz) {
       for (int iy = 0; iy < image_size[1]; ++iy) {
         for (int ix = 0; ix < image_size[0]; ++ix) {
-          if (mask.aaafI[iz][iy][ix] == 0.0)
+          if (mask.aaafI && mask.aaafI[iz][iy][ix] == 0.0)
             continue;
           // This next line fails with compiler optimizations on.
           max_label = std::max(max_label, aaaiClusterId[iz][iy][ix]);
