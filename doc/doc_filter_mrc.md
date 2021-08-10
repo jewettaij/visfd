@@ -71,7 +71,7 @@ module.
 filter_mrc -in tomogram.rec \
   -out membranes.rec \
   -membrane minima 70.0 -best 0.05 \
-  -tv 4.0 -tv-angle-exponent 4 \
+  -tv 5.5 -tv-angle-exponent 4 \
   -bin 2 \
   -save-progress temporary_file.rec
 ```
@@ -645,13 +645,20 @@ It performs a kind of directional blurring which reinforces regions in the image
 where detected ridges in the image point in the same or similar directions.
 (For a nice visual demonstration, see
 [these slides](http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/Slides-tensorVoting-Zhe-Leng.pdf).)
-The σ_ratio argument is a number larger than 1 which controls the distance
+The *σ_ratio* argument is a number larger than 1 which controls the distance
 over which this blurring occurs.
-(It is typically 5.0.  See technical details below.)
+A larger *σ_ratio* argument dramatically reduces the influence of noise
+in the original image, at the cost of blurring away small features that
+you wish to detect.
+It is typically between 4.0 and 7.0.
+(See technical details below.)
 Tensor voting is a very effective method to improve the signal-to-noise
 ratio when detecting curves and surfaces.
 Tensor-voting refinement is not done by default
 because it can be a very expensive computation.
+Because the speed of the algorithm grows rapidly with the *σ_ratio* argument,
+users sometimes start with a small parameter (like 4.0) and increase it
+if necessary.
 
 Note: The tensor-voting algorithm used (as a result of using the "-tv" argument)
 is **extremely slow**.  Croping the tomogram and/or reducing the resolution
@@ -2848,6 +2855,8 @@ This command can be issued multiple times as part of an ordered chain of
 [-mask-sphere](#-mask-sphere-x0-y0-z0-r), and
 [-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r)
 commands which collectively define complex regions in space.
+*(Note: This argument should not come before the
+"-mask", "-mask-rect", or "-mask-sphere" arguments.)*
 The resulting mask region can be visualized using the
 [-fill](#-fill-brightness) argument.
 
@@ -2892,6 +2901,8 @@ This command can be issued multiple times as part of an ordered chain of
 [-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax),
 [-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax),
 commands which collectively define complex regions in space.
+*(Note: This argument should not come before the
+"-mask", "-mask-rect", or "-mask-sphere" arguments.)*
 The resulting mask region can be visualized using the
 [-fill](#-fill-brightness) argument.
 

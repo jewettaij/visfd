@@ -80,9 +80,12 @@ and
 [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
 filters.
 *(As of 2021-7-12, this program does not have a graphical user interface, so
-examples explain how to use this software with IMOD and meshlab to display
-results and choose parameters.  Hopefully these tools can eventually
-be integrated with visualizers like 3dmod, chimerax, or tomviz.)*
+examples explain how to use this software with
+[IMOD](https://bio3d.colorado.edu/imod/) and
+[meshlab](http://www.meshlab.net)
+to display results and choose parameters.  Hopefully these tools can eventually
+be integrated with visualizers like IMOD/3dmod, chimerax, or tomviz.)*
+
 
 Documentation for this program is located
 [**here**](./doc/doc_filter_mrc.md).
@@ -175,10 +178,11 @@ Nevertheless, if you find a bug, please report it.  I will fix it.
 ## Compilation
 
 ## Linux:
-
+```
     source setup_clang.sh
+    # (...or "source setup_gcc.sh".  See below.)
     make
-
+```
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
 
 #### Warning: Avoid the **g++** compiler
@@ -250,41 +254,57 @@ First follow the instructions
 [here](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/)
 to install OpenMP support:
 
-Then compile visfd using
+Then compile visfd using:
 ```
     source setup_clang.sh
+    # (...or "source setup_gcc.sh".  See below.)
     make
 ```
 
-If this doesn't work and you are desperate, you can try this instead:
-```
-    source alternate_compiler_settings/for_debugging_and_profiling/setup_gcc_dbg.sh
-    make
-```
-*Unfortunately the resulting (already slow) program will run at least 20x slower.*
+## Requirements
 
-
-## Requirements:
-
-**16GB** of RAM or higher is required.
+- **16GB** of RAM or higher.
 (64GB is recommended.  For membrane detection,
  your RAM must exceed 11x the size of the tomogram that you are analyzing.
  The *voxelize_mesh.py* program requires even more memory.
  You can reduce the memory needed and computation time dramatically
- by cropping your tomogram.)
+ by cropping or binning your tomogram.)
+- A [C++ compiler](#Supported-C++-compilers)
+- [make](https://en.wikipedia.org/wiki/Make_(software))
+- Software to visualize MRC/REC/MAP files
+(such as [IMOD/3dmod](https://bio3d.colorado.edu/imod/))
 
-The CLANG compiler is strongly recommended.
-([The clustering feature does not yet work with GCC.](https://github.com/jewettaij/visfd/issues/2))
 
-Some programs
-(such as "histogram_mrc.py" and "draw_filter_1D.py")
-require python, along with the
-"numpy", "matplotlib", and "mrcfile" modules.
-(installable via "pip")
+Recommended:
+- A text editor.  (Word, Wordpad, and Notepad will not work.)
+Popular graphical text editors
+include **Atom**, **Sublime**, **Notepad++**, and **VSCode**.
+Older, non-graphical programs include **vim**, **emacs**,
+**nano**, **ne**, and **jove**.
+(Apple's TextEdit can be used if you save the file as *plain text*.)
+- python
+- The "numpy", "matplotlib", "mrcfile", and python modules
+(These are are installable via "pip3" or "pip".)
 
-*Automatic membrane surface closure* (a.k.a. surface reconstruction) currently
-requires "**PoissonRecon**" (an external program) which you can download
-[here](https://github.com/mkazhdan/PoissonRecon).
+
+Optional, but needed for membrane segmentation:
+- [**PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
+- software to visualize mesh files
+(such as [meshlab](http://www.meshlab.net)).
+- python
+- The "pyvista" python module (installable via "pip3" or "pip".)
+
+
+### Supported C++ compilers
+
+The **CLANG** compiler is recommended, but no longer required.
+Although this code appears to be working
+with the **GCC** compiler now, I have run into
+[difficulties in the past](https://github.com/jewettaij/visfd/issues/2).
+*Feel free to use GCC, but if you notice strange behavior,
+try compiling with CLANG.*
+
+
 
 ## License
 
@@ -292,6 +312,7 @@ All of the code in this repository
 (except for code located in "lib/mrc_simple" and "lib/visfd/eigen_simple.hpp")
 is available under the terms of the terms of the
 MIT license.  (See "[LICENSE.md](./LICENSE.md)")
+
 
 ### Additional license dependencies
 
@@ -308,8 +329,9 @@ License details for the "mrc_simple" library can be found in the
 [COPYRIGHT.txt](lib/mrc_simple/COPYRIGHT.txt)
 file located in that directory.
 *If you write your own code using the "visfd" library to analyze 3D images
- (which you have loaded into memory by some other means),
- then you can ignore this notice.*
+(which you have loaded into memory by some other means),
+then you can ignore this notice.*
+
 
 ## Funding
 

@@ -276,8 +276,8 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
   for (int iz=0; iz<image_size[2]; iz++) {
     for (int iy=0; iy<image_size[1]; iy++) {
       for (int ix=0; ix<image_size[0]; ix++) {
-        if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
-          continue;
+        //if (aaafMask && aaafMask[iz][iy][ix] == 0.0)
+        //  continue;
         aaaiDest[iz][iy][ix] = UNDEFINED;
       }
     }
@@ -1140,7 +1140,6 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
     }
   }
 
-
   #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
   if (aaaafVectorStandardized && (! consider_dot_product_sign))
   {
@@ -1246,7 +1245,6 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
     }
   } // if (aaaafVectorStandardized && (! consider_dot_product_sign))
   #endif // #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
-
 
 
   if (pv_cluster_maxima != nullptr) {

@@ -1889,11 +1889,18 @@ HandleTV(const Settings &settings,
                      true, //(clusters begin at regions of high saliency)
                      &cerr);  //!< print progress to the user
 
+
     ptrdiff_t max_label = aaaiClusterId[0][0][0];
-    for (int iz = 0; iz < image_size[2]; ++iz)
-      for (int iy = 0; iy < image_size[1]; ++iy)
-        for (int ix = 0; ix < image_size[0]; ++ix)
+    for (int iz = 0; iz < image_size[2]; ++iz) {
+      for (int iy = 0; iy < image_size[1]; ++iy) {
+        for (int ix = 0; ix < image_size[0]; ++ix) {
+          if (mask.aaafI[iz][iy][ix] == 0.0)
+            continue;
+          // This next line fails with compiler optimizations on.
           max_label = std::max(max_label, aaaiClusterId[iz][iy][ix]);
+        }
+      }
+    }
 
     // Now, copy the contents of aaaClusterId into tomo_out.aaafI
     for (int iz = 0; iz < image_size[2]; ++iz) {
