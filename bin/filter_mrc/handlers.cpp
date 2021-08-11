@@ -920,6 +920,9 @@ HandleThresholds(const Settings &settings,
 {
   cerr << "Applying thresholds" << endl;
 
+  float in_threshold_01_a = settings.in_threshold_01_a;
+  float in_threshold_01_b = settings.in_threshold_01_b;
+
   if (settings.out_thresh2_use_clipping_sigma) {
     float stddev_intensity = StdDevArr(tomo_out.header.nvoxels,
                                        tomo_out.aaafI,
@@ -928,9 +931,9 @@ HandleThresholds(const Settings &settings,
                                      tomo_out.aaafI,
                                      mask.aaafI);
 
-    float in_threshold_01_a = ave_intensity +
+    in_threshold_01_a = ave_intensity +
       settings.in_threshold_01_a * stddev_intensity;
-    float in_threshold_01_b = ave_intensity +
+    in_threshold_01_b = ave_intensity +
       settings.in_threshold_01_b * stddev_intensity;
 
     cerr << "ave="<< ave_intensity <<", stddev="<<stddev_intensity << endl;
@@ -953,21 +956,21 @@ HandleThresholds(const Settings &settings,
                                       settings.out_thresh_a_value,
                                       settings.out_thresh_b_value);
         else if (! settings.use_dual_thresholds) {
-          if (settings.in_threshold_01_a == settings.in_threshold_01_b)
+          if (in_threshold_01_a == in_threshold_01_b)
             tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >
-                                           settings.in_threshold_01_a)
+                                           in_threshold_01_a)
                                           ? settings.out_thresh_b_value
                                           : settings.out_thresh_a_value);
           else
             tomo_out.aaafI[iz][iy][ix] =
               Threshold2(tomo_out.aaafI[iz][iy][ix],
-                         settings.in_threshold_01_a,
-                         settings.in_threshold_01_b,
+                         in_threshold_01_a,
+                         in_threshold_01_b,
                          (settings.out_thresh2_use_clipping
-                          ? settings.in_threshold_01_a
+                          ? in_threshold_01_a
                           : settings.out_thresh_a_value),
                          (settings.out_thresh2_use_clipping
-                          ? settings.in_threshold_01_b
+                          ? in_threshold_01_b
                           : settings.out_thresh_b_value));
         }
         else
