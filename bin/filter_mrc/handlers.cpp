@@ -2049,8 +2049,8 @@ HandleTV(const Settings &settings,
                 ixyz[d] = int(round(r[d]));
               }
               if ((ixyz[0] < 0) || (image_size[0] <= ixyz[0]) ||
-                  (ixyz[1] < 0) || (image_size[1] <= ixyz[0]) ||
-                  (ixyz[2] < 0) || (image_size[2] <= ixyz[0]))
+                  (ixyz[1] < 0) || (image_size[1] <= ixyz[1]) ||
+                  (ixyz[2] < 0) || (image_size[2] <= ixyz[2]))
                 break;
               if (mask.aaafI &&
                   (mask.aaafI[ixyz[2]][ixyz[1]][ixyz[0]] == 0.0))
