@@ -141,6 +141,8 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
         // (IMOD surrounds the coordinates with '(' and ')' characters.)
         vvWords[i][d] = vvWords[i][d].substr(1, string::npos);
         is_output_from_imod = true;
+        if (vvWords[i][d].size() == 0)
+          vvWords[i].erase(vvWords[i].begin()+d, vvWords[i].begin()+d+1);
       }
       int n_chars;
       n_chars = vvWords[i][d].size();
@@ -149,6 +151,8 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
         // (IMOD surrounds the coordinates with '(' and ')' characters.)
         vvWords[i][d] = vvWords[i][d].substr(0, n_chars-1);
         is_output_from_imod = true;
+        if (vvWords[i][d].size() == 0)
+          vvWords[i].erase(vvWords[i].begin()+d, vvWords[i].begin()+d+1);
       }
       n_chars = vvWords[i][d].size();
       if ((vvWords[i][d].size()>=0) && (vvWords[i][d][n_chars-1]==','))
