@@ -50,6 +50,21 @@ typedef enum eRegionSortCriteria {
 } RegionSortCriteria;
 
 
+/// @brief   The following numeric constants are used to decide the relative
+///          orientation between pairs of fragments of surfaces (or curves).
+///          When the caller wants to connect a pair of surface fragments
+///          (patches) together, an ambiguity arises
+///          Is the outward normal of these two surfaces pointing in the
+///          same direction or the opposite direction?
+///          If the answer is AUTO, then the LabelConnect() function will
+///          attempt to determine this automatically.
+typedef enum eDirectionPairType {
+  SAME_DIRECTION,
+  OPPOSITE_DIRECTION,
+  AUTO
+} DirectionPairType;
+
+
 
 /// @brief  This function is used for connected-component labeling.
 ///         https://en.wikipedia.org/wiki/Connected-component_labeling
@@ -176,7 +191,8 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
                #ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
                VectorContainer ***aaaafVectorStandardized=nullptr, //!< OPTIONAL: place to store "standardized" vector directions (with flipped sign to agree with neighboring voxels).
                #endif
-               const vector<vector<array<Coordinate, 3> > > *pMustLinkConstraints=nullptr,  //!< OPTIONAL: a list of sets of voxel locations.  This insures that voxels in each set will belong to the same cluster.
+               const vector<vector<array<Coordinate, 3> > > *pMustLinkConstraints=nullptr,  //!< OPTIONAL: make sure that pairs of voxels belong to the same cluster
+               const vector<vector<DirectionPairType> > *pMustLinkDirections=nullptr,  //!< OPTIONAL: should successive pairs of surfaces or curves point in the same directions?
                bool start_from_saliency_maxima=true,             //!< start from local maxima? (if false, minima will be used)  WARNING: As of 2021-7-26, this function has not yet been tested with the non-default value (false)
                ostream *pReportProgress=nullptr)  //!< print progress to the user?
 {
@@ -839,13 +855,13 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
       // Loop over the voxels in each group 
       // and force them to belong to the same cluster
 
-      for (auto pLocation = (*pMustLinkConstraints)[i_group].begin();
-           pLocation != (*pMustLinkConstraints)[i_group].end();
-           pLocation++)
+      for (int i_loc = 0;
+           i_loc < (*pMustLinkConstraints)[i_group].size();
+           i_loc++)
       {
-        r_i_init[0] = int(floor((*pLocation)[0]+0.5));
-        r_i_init[1] = int(floor((*pLocation)[1]+0.5));
-        r_i_init[2] = int(floor((*pLocation)[2]+0.5));
+        r_i_init[0]= int(floor((*pMustLinkConstraints)[i_group][i_loc][0]+0.5));
+        r_i_init[1]= int(floor((*pMustLinkConstraints)[i_group][i_loc][1]+0.5));
+        r_i_init[2]= int(floor((*pMustLinkConstraints)[i_group][i_loc][2]+0.5));
         if (*pReportProgress) {
           *pReportProgress << "  finding voxel nearest to (";
           for (int d = 0; d < 3; d++) {
@@ -909,8 +925,9 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
             // Try to infer whether or not the voxels located at r_i and r_j
             // are pointing in a compatible direction.
             // If not, set "polarity_match" to false.
-            // Later we will flip polarity of the voxels in one of the 
-            // joined clusters in order to make sure the resulting cluster.
+            // Later we will flip polarity of the voxels in one of the clusters
+            // to make it compatible with the voxels in tghe other clusters
+            // in the same group (final merged cluster).
             // Note:
             // Since r_i and r_j could be separated by a great distance
             // the surface direction (or curve direction) is likely to be
@@ -926,43 +943,70 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
               r_ij[d] = r_i[d] - r_j[d];
             }
             Normalize3(r_ij);
-            Scalar ni_dot_rij = DotProduct3(n_i, r_ij);
-            Scalar nj_dot_rij = DotProduct3(n_j, r_ij);
-            // If each plane is at an angle less than 45 degrees from r_ij
-            // then consider the two planes to be facing the same direction
-            // and part of the same portion of the curve.
-            Scalar theta0 = M_PI/4;  // (45 degrees)
-            Scalar theta_ni_rij = asin(abs(ni_dot_rij));
-            Scalar theta_nj_rij = asin(abs(nj_dot_rij));
-            if (*pReportProgress) {
-              *pReportProgress << "    (theta_ni_rij == "
-                               << theta_ni_rij*180.0/M_PI
-                               << ", theta_nj_rij == "
-                               << theta_nj_rij*180.0/M_PI << ")\n";
-            }
-            if ((theta_ni_rij < theta0) &&
-                (theta_nj_rij < theta0))
-            {
-              polarity_match = (DotProduct3(n_i, n_j) > 0);
-            }
-            else {
-              // otherwise, the two planes are probably facing the opposite
-              // direction.  In that case, use the following criteria:
-              polarity_match = (ni_dot_rij * nj_dot_rij <= 0);
-            }
+
+            bool flip_polarity;
+
+            bool determine_direction_automatically = true;
+            if (pMustLinkDirections) {
+              assert(pMustLinkDirections->size() ==
+                     pMustLinkConstraints->size());
+              assert((*pMustLinkDirections)[i_group].size() ==
+                     (*pMustLinkConstraints)[i_group].size());
+
+              if ((*pMustLinkDirections)[i_group][i_loc] ==
+                  SAME_DIRECTION) {
+                determine_direction_automatically = false;
+                polarity_match = (DotProduct3(n_i, n_j) > 0);
+              }
+              else if ((*pMustLinkDirections)[i_group][i_loc] ==
+                       OPPOSITE_DIRECTION) {
+                determine_direction_automatically = false;
+                polarity_match = (DotProduct3(n_i, n_j) < 0);
+              }
+            } //if (pMustLinkDirections)
+
+            if (determine_direction_automatically) {
+              Scalar ni_dot_rij = DotProduct3(n_i, r_ij);
+              Scalar nj_dot_rij = DotProduct3(n_j, r_ij);
+              // If each plane is at an angle less than 45 degrees from r_ij
+              // then consider the two planes to be facing the same direction
+              // and part of the same portion of the curve.
+              Scalar theta0 = M_PI/4;  // (45 degrees)
+              Scalar theta_ni_rij = asin(abs(ni_dot_rij));
+              Scalar theta_nj_rij = asin(abs(nj_dot_rij));
+              if (*pReportProgress) {
+                *pReportProgress << "    (theta_ni_rij == "
+                                 << theta_ni_rij*180.0/M_PI
+                                 << ", theta_nj_rij == "
+                                 << theta_nj_rij*180.0/M_PI << ")\n";
+              }
+              if ((theta_ni_rij < theta0) &&
+                  (theta_nj_rij < theta0))
+              {
+                polarity_match = (DotProduct3(n_i, n_j) > 0);
+              }
+              else {
+                // otherwise, the two planes are probably facing the opposite
+                // direction.  In that case, use the following criteria:
+                polarity_match = (ni_dot_rij * nj_dot_rij <= 0);
+              }
+
+            } //if (determine_direction_automatically)
+
 
             // Confusing code:
-            // We only flip the polarity of the basins from the deleted cluster
-            // if the basin2polarity[basin_i] & basin2polarity[basin_j] entries
-            // are NOT consistent with "polarity_match", which we observed
-            // directly (for example by calculating the dot products of the
-            // surface normals at these two locations r_i and r_j).
-            
-            bool flip_polarity = (polarity_match !=
-                                  (basin2polarity[basin_i] ==
-                                   basin2polarity[basin_j]));
+            //We only flip the polarity of the basins from the deleted cluster
+            //if the basin2polarity[basin_i] & basin2polarity[basin_j] entries
+            //are NOT consistent with "polarity_match", which we observed
+            //directly (for example by calculating the dot products of the
+            //surface normals at these two locations r_i and r_j).
+
+            flip_polarity = (polarity_match !=
+                             (basin2polarity[basin_i] ==
+                              basin2polarity[basin_j]));
 
             #endif //#ifndef DISABLE_STANDARDIZE_VECTOR_DIRECTION
+
 
             // copy the basins from the deleted cluster into the merged cluster
             for (auto p = cluster2basins[deleted_cluster_id].begin();

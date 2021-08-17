@@ -7,11 +7,12 @@
 #include <string>
 #include <sstream>
 using namespace std;
+#include <connect.hpp>
+using namespace visfd;
 #include <err_visfd.hpp>
 #include <mrc_simple.hpp>
 #include "err.hpp"
 #include "settings.hpp"
-
 
 static vector<string> &split(const string &s, char delim, vector<string> &elems){
   stringstream ss(s);
@@ -95,23 +96,23 @@ ReadMulticolumnFile(string file_name,  //!< the name of the file to be read
 
 
 
-/// @brief  Convert a vector-of-vectors of strings
-///         (which typically represent the words on each line of a file)
-///         with a vector-of-vectors of numbers.
-///         The text on each line might be expressed using using IMOD notation:
-///         "Pixel [91.3, 118.7, 231] = 134"
-///         or using ordinary whitespace-delimited notation:
-///         90.3 117.7 230.
-///         If it is expressed in IMOD notation, subtract 1
-///         and return true (informing the caller we don't need to divide
-///         the coordinates later by the voxel_width).  Otherwise return false.
+/// @brief   Convert a vector-of-vectors of strings
+///          (which typically represent the words on each line of a file)
+///          with a vector-of-vectors of numbers.
+///          The text on each line might be expressed using using IMOD notation:
+///          "Pixel (91.3, 118.7, 231) = 134"   or
+///          "(91.3, 118.7, 231)"
+///          ...or using ordinary whitespace-delimited notation:
+///          "90.3 117.7 230"
+/// @return  If the strings are expressed in IMOD notation, subtract 1 and
+///          return true (informing the caller that the coordinates are in
+///          units of voxels, not physical distance).  Otherwise return false.
 
 template<typename Coordinate>
 
 static bool
 ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< words on each line of a file
-                            vector<vector<Coordinate> > &vvCoords, //!< convert these words to a matrix of numbers
-                            int num_columns = 3 //!< number of columns in the matrix (same for each row)
+                            vector<vector<Coordinate> > &vvCoords  //!< convert these words to a matrix of numbers
                             )
 {
   vvCoords.clear();
@@ -132,8 +133,8 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
       vvCoords.push_back(vector<Coordinate>(0));
       continue;
     }
-
-    for (int d=0; d < num_columns; d++) {
+    int d = 0;
+    while (d < vvWords[i].size()) {
       // Get rid if weird characters enclosing or separating the words
       // such as '(', ')', or ','
       if ((vvWords[i][d].size() >= 0) && (vvWords[i][d][0] == '(')) {
@@ -141,8 +142,10 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
         // (IMOD surrounds the coordinates with '(' and ')' characters.)
         vvWords[i][d] = vvWords[i][d].substr(1, string::npos);
         is_output_from_imod = true;
-        if (vvWords[i][d].size() == 0)
+        if (vvWords[i][d].size() == 0) {
           vvWords[i].erase(vvWords[i].begin()+d, vvWords[i].begin()+d+1);
+          continue;
+        }
       }
       int n_chars;
       n_chars = vvWords[i][d].size();
@@ -151,12 +154,34 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
         // (IMOD surrounds the coordinates with '(' and ')' characters.)
         vvWords[i][d] = vvWords[i][d].substr(0, n_chars-1);
         is_output_from_imod = true;
-        if (vvWords[i][d].size() == 0)
+        if (vvWords[i][d].size() == 0) {
           vvWords[i].erase(vvWords[i].begin()+d, vvWords[i].begin()+d+1);
+          continue;
+        }
       }
-      n_chars = vvWords[i][d].size();
-      if ((vvWords[i][d].size()>=0) && (vvWords[i][d][n_chars-1]==','))
+
+      if ((n_chars>0) && (vvWords[i][d][n_chars-1]==',')) {
         vvWords[i][d] = vvWords[i][d].substr(0, n_chars-1);
+        if (vvWords[i][d].size() == 0) {
+          vvWords[i].erase(vvWords[i].begin()+d, vvWords[i].begin()+d+1);
+          continue;
+        }
+      }
+
+      // Is this "word" actually a comma-separated list of numbers?
+      // If so, split this into string into multiple words.
+      stringstream word_ss(vvWords[i][d]);
+      string token;
+      vector<string> tokens;
+      while (getline(word_ss, token, ',')) {
+        //if (token.size() > 0)
+        tokens.push_back(token);
+      }
+      if (tokens.size() > 1) {
+        vvWords[i][d] = tokens[0];
+        vvWords[i].insert(vvWords[i].begin()+d+1,
+                          tokens.begin()+1, tokens.end());
+      }
 
       // Now convert the remaining string to a number
       try {
@@ -174,11 +199,15 @@ ConvertStringsToCoordinates(const vector<vector<string> > &vvWords_orig, //!< wo
       // a somewhat unconventional coordinate system
       Coordinate x = stod(vvWords[i][d]);
       if (is_output_from_imod)
-        x = floor(x) - 1.0;
+        x = floor(x);
+      if (d <= 2)  // we want x,y,z indices to begin at 0 not 1,
+        x -= 1.0;  // but in IMOD, x,y,z indices begin at 1.  So subtract 1.
+
 
       // Finally, store the coordinate in "xyz"
       xyz.push_back(x);
 
+      d++;
     } //for (int d=0; d < vvWords[i].size(); d++)
 
     vvCoords.push_back(xyz);
@@ -519,11 +548,13 @@ WriteOrientedPointCloud(string pointcloud_file_name,
 template<typename Coordinate>
 static bool
 ProcessLinkConstraints(string must_link_filename,
-                       vector<vector<array<Coordinate, 3> > > &must_link_constraints)
+                       vector<vector<array<Coordinate, 3> > > &must_link_constraints,
+                       vector<vector<DirectionPairType> > &must_link_directions)
 {
   vector<vector<string> > vvWords;  // split file into lines and words
   vector<vector<Coordinate> > vvCoords; // replace each word with a number
   vector<array<Coordinate, 3> > linked_group;
+  vector<DirectionPairType> linked_group_directions;
 
   ReadMulticolumnFile(must_link_filename, vvWords); //read the words
 
@@ -534,28 +565,44 @@ ProcessLinkConstraints(string must_link_filename,
   // Now generate a vector of linked groups
   for (size_t i = 0; i < vvCoords.size(); i++) {
     if (vvCoords[i].size() == 0) {
-      if (linked_group.size() > 0)
+      if (linked_group.size() > 0) {
+        assert(linked_group.size() == linked_group_directions.size());
         must_link_constraints.push_back(linked_group);
+        must_link_directions.push_back(linked_group_directions);
+      }
       linked_group.clear();
+      linked_group_directions.clear();
     }
-    else if (vvCoords[i].size() == 3) {
+    else if ((vvCoords[i].size() == 3) ||
+             (vvCoords[i].size() == 4)) {
       array<Coordinate, 3> voxel_location;
       for (int d = 0; d < 3; d++)
         voxel_location[d] = vvCoords[i][d];
       linked_group.push_back(voxel_location);
+      DirectionPairType flip_direction = AUTO;
+      if (vvCoords[i].size() == 4) {
+        if (vvCoords[i][3] > 0)
+          flip_direction = SAME_DIRECTION;
+        else if (vvCoords[i][3] < 0)
+          flip_direction = OPPOSITE_DIRECTION;
+      }
+      linked_group_directions.push_back(flip_direction);
     }
     else {
       stringstream err_msg;
       err_msg << "Error: Each line of file \""
               << must_link_filename << "\"\n"
-              <<"       should contain either 3 numbers or 0 numbers.\n";
+              <<"       should contain either 3 numbers, 4 numbers, or 0 numbers.\n";
       throw VisfdErr(err_msg.str());
     }
   } //for (size_t i = 0; i < vvCoords.size(); i++)
 
   // Deal with any left-over linked_groups that we haven't added to the list yet
-  if (linked_group.size() > 0)
+  if (linked_group.size() > 0) {
+    assert(linked_group.size() == linked_group_directions.size());
     must_link_constraints.push_back(linked_group);
+    must_link_directions.push_back(linked_group_directions);
+  }
 
   if (must_link_constraints.size() == 0) {
     stringstream err_msg;

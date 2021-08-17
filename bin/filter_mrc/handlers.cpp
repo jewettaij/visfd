@@ -1310,9 +1310,14 @@ HandleLabelConnected(const Settings &settings,
                      float voxel_width[3])
 {
   const vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
+  const vector<vector<DirectionPairType> > *pMustLinkDirections = nullptr;
 
   if (settings.must_link_constraints.size() > 0)
     pMustLinkConstraints = &settings.must_link_constraints;
+
+  if (settings.must_link_constraint_directions.size() ==
+      settings.must_link_constraints.size())
+    pMustLinkDirections = &settings.must_link_constraint_directions;
 
   int image_size[3];
   for (int d = 0; d < 3; d++)
@@ -1361,6 +1366,7 @@ HandleLabelConnected(const Settings &settings,
                    static_cast<array<float, 3> ***>(nullptr),
                    #endif
                    pMustLinkConstraints,
+                   pMustLinkDirections,
                    true, //(clusters begin at regions of high saliency)
                    &cerr);  //!< print progress to the user
 
@@ -1409,9 +1415,14 @@ HandleTV(const Settings &settings,
   cerr << "filter_type = surface ridge detector\n";
 
   const vector<vector<array<float, 3> > > *pMustLinkConstraints = nullptr;
-  
+  const vector<vector<DirectionPairType> > *pMustLinkDirections = nullptr;
+
   if (settings.must_link_constraints.size() > 0)
     pMustLinkConstraints = &settings.must_link_constraints;
+
+  if (settings.must_link_constraint_directions.size() ==
+      settings.must_link_constraints.size())
+    pMustLinkDirections = &settings.must_link_constraint_directions;
 
   int image_size[3];
   for (int d = 0; d < 3; d++)
@@ -1889,6 +1900,7 @@ HandleTV(const Settings &settings,
                      aaaafDirection,
                      #endif
                      pMustLinkConstraints,
+                     pMustLinkDirections,
                      true, //(clusters begin at regions of high saliency)
                      &cerr);  //!< print progress to the user
 

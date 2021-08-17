@@ -228,15 +228,19 @@ class Settings {
   float watershed_boundary_label;
   float watershed_threshold;
   string watershed_markers_filename;
+
+  // ---- parameters for connected component analysis ----
+
   bool clusters_begin_at_maxima;
   bool cluster_connected_voxels;//NOTE TO SELF:I should eliminate or rename this
   float connect_threshold_saliency; // I should eliminate or rename this
   size_t select_cluster;            // I should rename this variable
   string must_link_filename;
   vector<vector<array<float, 3> > > must_link_constraints;
+  vector<vector<DirectionPairType> > must_link_constraint_directions;
   bool is_must_link_constraints_in_voxels = false;
 
-  // ---- parameters for directional watershed segmentation ----
+  // ---- parameters for directional connected component analysis ----
 
   float connect_threshold_vector_saliency;
   float connect_threshold_vector_neighbor;

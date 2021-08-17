@@ -150,6 +150,7 @@ Settings::Settings() {
   cluster_connected_voxels = false;
   connect_threshold_saliency = std::numeric_limits<float>::infinity();
   must_link_constraints.clear();
+  must_link_constraint_directions.clear();
   is_must_link_constraints_in_voxels = false;
   select_cluster = 0;
 
@@ -3457,8 +3458,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     // belong to the same cluster. (useful for clustering)
     is_must_link_constraints_in_voxels =
       ProcessLinkConstraints(must_link_filename,
-                             must_link_constraints);
-
+                             must_link_constraints,
+                             must_link_constraint_directions);
 
 
   if (filter_type == SURFACE_EDGE) {
