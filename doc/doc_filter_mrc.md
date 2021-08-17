@@ -1526,8 +1526,10 @@ first voxel (for example, near position 16, 77, 73)
 will be joined with all of the voxels connected to the second voxel
 (near position 134, 75, 73).
 The voxels in the last two lines of the file
-will be connected together as well.  The "-1" indicates that the user wants
-to ensure that these last two surface fragments to point in opposite directions.
+will be connected together as well.
+*(The optional "-1" indicates that the user wants to ensure that these
+last two surface fragments point in opposite directions.  This is explained
+in more detail [here](#Manual-specification-of-fragment-orientation).)*
 
 
 *(Note: When using this format, coordinates are assumed to begin at 1,
