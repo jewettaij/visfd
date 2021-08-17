@@ -1626,11 +1626,11 @@ each successive fragment.
 To do this, they can provide a fourth number
 (after the x,y,z coordinates), which is either 1 or -1.
 
-- A "1" means that the fragment is pointing in the same direction
+- "1" means that the fragment is pointing in the same direction
 (or a similar direction) compared to its predecessor.  
-- A "-1" means they point in opposite directions.
-- If 0, or if left unspecified, the surface orientation will be
-determined automatically.
+- "-1" means they point in opposite directions.
+- If the number in the 4th column is 0, or if it is left unspecified,
+the surface orientation will be determined automatically.
 
 *(WARNING: This is an experimental feature.
   Please report bugs. -Andrew 2021-8-16.)*
