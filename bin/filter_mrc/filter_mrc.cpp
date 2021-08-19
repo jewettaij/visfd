@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.29.15");
-string g_date_string("2021-8-16");
+string g_date_string("2021-8-18");
 
 
 
@@ -136,10 +136,10 @@ int main(int argc, char **argv) {
       if (settings.tv_sigma > 0) {
         float feature_detection_sigma = settings.width_a[0];
         float voting_distance = settings.tv_sigma * feature_detection_sigma;
-        if (feature_detection_sigma > 2.5*voxel_width[0])
+        if (feature_detection_sigma > 2.0*voxel_width[0])
         {
           settings.resize_with_binning = int(ceil(feature_detection_sigma /
-                                                  (2.5*voxel_width[0])));
+                                                  (2.0*voxel_width[0])));
           cerr <<
             "------------------------------------------------------------------\n"
             "------------------------------------------------------------------\n"

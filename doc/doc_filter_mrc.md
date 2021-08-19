@@ -4,12 +4,13 @@ filter_mrc
 **filter_mrc** is typically used for detecting
 1-D **curves** and 2-D **surfaces** in 3-D images
 *(using [3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523))*.
-It can also detect point-like (or sphere-like) **blobs**.
 *(* **WARNING:** *The detection of curves is experimental as of 2021-7-12.)*
+It can also detect spherical and non-spherical **blobs** in an image.
 *(Note: In this documentation, I use the words "image" and "tomogram"
 interchangeably.  A tomogram is a 3-D image.)*
 
-**filter_mrc** can be used local minima-finding, clustering, and
+**filter_mrc** can be used local minima-finding,
+connected-component analysis, and
 [classic watershed segmentation](https://imagej.net/plugins/classic-watershed#introduction).
 The coordinates of the objects that are detected can be saved to text files
 for processing and refinement using popular 3rd-party software tools
@@ -1595,7 +1596,7 @@ Reconstruction programs like *PoissonRecon* will attempt to infer the
 missing regions of the surface.  But *PoissonRecon* needs to know outward
 direction of the surface at each *visible* point on the surface.
 Fortunately, the *filter_mrc* program can detect the membrane surface,
-as well as the direction of its surface normal at every nearby voxel.
+as well as the direction of its surface normal at every voxel.
 But, in the case of a closed surface, it cannot tell whether this direction
 is pointing outward or inward.  *(In other words, there is an ambiguity
 in the sign of the surface normal direction.)*
@@ -2827,9 +2828,9 @@ argument.)
 
 ### -mask-out brightness
 
-If the "-mask-out" argument is specified, then voxels outside the mask will
-be have a brightness of *brightness* in the final output image generated
-by *filter_mrc*.  If unspecified, these voxels will be assigned to a
+If the "-mask-out" argument is specified, then voxels outside the mask will be
+assigned to a brightness of *brightness* in the final output image generated
+by *filter_mrc*.  If unspecified, these voxels will end up with a
 brightness of 0 by default.
 
 
