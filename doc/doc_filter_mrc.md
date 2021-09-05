@@ -73,7 +73,6 @@ filter_mrc -in tomogram.rec \
   -out membranes.rec \
   -membrane minima 70.0 -best 0.05 \
   -tv 5.5 -tv-angle-exponent 4 \
-  -bin 2 \
   -save-progress temporary_file.rec
 ```
 
@@ -99,12 +98,12 @@ detecting the membrane each time we run "filter_mrc" later on.
 Note: The computation time will be roughly proportional to the image size
 *as well as* the "-best" argument (which ranges from 0 to 1).
 (See [example 3](#Example-3) below.)  The computation time also varies
-dramatically with the voxel width.  High resolution images with many small
-voxels are prohibitively slow to analyze.  So in this example, the user
-included the optional [-bin 2](#-bin-binsize) argument, to reduce the image
-resolution by a factor of 2.  If the thickness of the membrane you wish
-to detect is multiple voxels wide, then using "-bin 2" or "-bin 3" should
-hopefully not significantly affect the features you detect.
+dramatically with the voxel width.  High resolution images with small
+voxels are prohibitively slow to analyze.  The software will automatically
+reduce the resolution of the generated tomogram (and increase the voxel width)
+to maintain reasonable performance when used to analyze tomograms
+with small voxel widths.  (You can manually override this using the
+[-bin 1](#-bin-binsize) argument.)
 
 
 
