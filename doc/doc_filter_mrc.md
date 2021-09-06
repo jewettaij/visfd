@@ -81,14 +81,22 @@ creates a new image file ("membranes.rec") with the membranes emphasized.
 View this file (eg. using IMOD) to see if the membranes are successfully
 detected.  You may need to adjust this thickness parameter
 (and the other parameters) until the membrane is clearly visible.
-**This is extremely slow, so try this on a small, cropped image first.**
-(In my experience, 60-70 Angstroms is a reasonable default thickness parameter
+In my experience, 60-70 Angstroms is a reasonable default thickess parameter
 to detect lipid bilayers.  Most Cryo-EM tomogram files have voxel widths
 in units of Angstroms.  You can override this by specifying
-the physical width of each voxel using the [-w argument](#Voxel-Width).)
+the physical width of each voxel using the [-w argument](#Voxel-Width).
+**This operation is extremely slow, so try this on a small,
+cropped image first.**
+*(Note: Extra care must be taken if your image contains gold fiducial markers,
+ice, or other extremely dark objects which can throw the detector off.
+You can usually reduce the severity of this problem by including the
+"-cl -0.4 0.4" argument to clip these extreme voxel brightnesses.
+Alternatively you can remove gold fiducial markers from consideration
+by finding their location beforehand using the "-blob" argument,
+and runing "filter_mrc" again later using the "-mask-spheres" argument.)*
 
 Note: After the membrane features are detected, they must be analyzed.
-This typically requires running the "filter_mrc" program multiple times.
+This typically requires running the "filter_mrc" program again, multiple times.
 The optional
 ["-save-progress"](#-save-progress-FILENAME)
 argument used here allows us to skip the time consuming process of
@@ -137,6 +145,10 @@ argument used in the second step
 is optional.
 I use it in this example because we are searching for ribosomes,
 so we want to restrict our search to blobs which lie *inside* the cell.
+*(Note: Extra care must be taken if your image contains ice, gold fiducial
+markers, or other extremely dark objects which can throw the detector off.
+You can usually reduce the severity of this problem by including the
+"-cl -0.4 0.4" argument to clip these extreme voxel brightnesses.)*
 
 
 Note:

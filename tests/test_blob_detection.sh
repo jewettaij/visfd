@@ -46,11 +46,11 @@ test_blob_detection() {
     # Test supervised learning of blob threshold parameter (single image)
     ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -discard-blobs test_blobs.txt test_blobs_sep_${SEP}_SUPERVISED.txt -blob-separation ${SEP} -auto-thresh score -supervised test_supervised_pos.txt test_supervised_neg.txt >& test_log_e.txt
 
-    assertTrue "visualization failed.  File test_blobs_sep_${SEP}_SUPERVISED.txt was not created" "[ -s test_blobs_sep_${SEP}_SUPERVISED.txt ]"
+    assertTrue "\"-supervised\" non-max suppression failed: File test_blobs_sep_${SEP}_SUPERVISED.txt was not created" "[ -s test_blobs_sep_${SEP}_SUPERVISED.txt ]"
 
     NBLOBS_SUPERVISED_SINGLE=`wc test_blobs_sep_${SEP}_SUPERVISED.txt | awk '{print $1}'`
 
-    assertTrue "supervised-learning failed: number of remaining blobs == 0" "[ $NBLOBS_SUPERVISED_SINGLE -gt 0 ]"
+    assertTrue "\"-supervised\" non-max suppression failed: Number of remaining blobs == 0" "[ $NBLOBS_SUPERVISED_SINGLE -gt 0 ]"
 
     THRESH_SUPERVISED_SINGLE=`grep 'threshold upper bound:' < test_log_e.txt | awk '{print $4}'`
 
@@ -67,7 +67,7 @@ test_blob_detection() {
 
     echo "test_supervised_pos.txt test_supervised_neg.txt test_blobs_sep_${SEP}.txt" > test_supervised_multi.txt
     echo "test_supervised_pos.txt test_supervised_neg.txt test_blobs_sep_${SEP}.txt" >> test_supervised_multi.txt
-    
+
     # run the learning algorithm to choose the threshold
     ../bin/filter_mrc/filter_mrc -w 19.6 -in test_blob_detect.rec -auto-thresh score -supervised-multi test_supervised_multi.txt >& test_log_e.txt
 

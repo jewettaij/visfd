@@ -454,7 +454,7 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
     for (size_t i = 0; i < crds.size(); i++) {
       diameters[i] /= voxel_width_;
       for (int d=0; d < 3; d++)
-          crds[i][d] /= voxel_width_;
+        crds[i][d] = floor((crds[i][d] / voxel_width_) + 0.5);
     }
   }
 
@@ -576,12 +576,15 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
   // Write out the remaining blobs to a file:
   if (settings.out_coords_file_name != "") {
     fstream out_coords_file;
+    double voxel_width_positive = 1.0;
+    if (voxel_width_ > 0.0)
+      voxel_width_positive = voxel_width_;
     out_coords_file.open(settings.out_coords_file_name, ios::out);
     for (size_t i=0; i < crds.size(); i++) {
-      out_coords_file << crds[i][0] << " "
-                      << crds[i][1] << " "
-                      << crds[i][2] << " " 
-                      << diameters[i] << " " 
+      out_coords_file << crds[i][0] * voxel_width_positive << " "
+                      << crds[i][1] * voxel_width_positive << " "
+                      << crds[i][2] * voxel_width_positive << " " 
+                      << diameters[i] * voxel_width_positive << " " 
                       << scores[i]
                       << endl;
     }
@@ -637,7 +640,8 @@ HandleBlobScoreSupervisedMulti(const Settings &settings,
       for (size_t i = 0; i < blob_crds_multi[I].size(); i++) {
         blob_diameters_multi[I][i] /= voxel_width_;
         for (int d=0; d < 3; d++)
-          blob_crds_multi[I][i][d] /= voxel_width_;
+          blob_crds_multi[I][i][d] =
+            floor((blob_crds_multi[I][i][d] / voxel_width_) + 0.5);
       }
     }
   }
