@@ -615,14 +615,27 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
 
 
 
-/// @brief  This variant of the function also takes care of discarding 
-///         training data which is not sufficiently close to any of the blobs.
-///         It also throws an exception if the remaining training data is empty.
+/// @brief Figure out the score for blobs located at each position in crds[].
+///        Terminology:  Every blob has a position, diameter, and a score.
+///        The j'th "blob" is a sphere, centerd at blob_crds[j], with diameter
+///        blob_diameters[j].  Associated with every blob is a "score"
+///        (a number) stored in blob_scores[j].  If the coordinates of the
+///        i'th data point (located in "in_training_crds[i]") lies within
+///        one of the spherical blobs, then store the corresponding coordinates,
+///        score, and the classification (accepted or rejected) for that blob
+///        in these vectors:
+///           out_training_crds[i],
+///           out_training_scores[i],
+///           out_training_accepted[i]
+///        (If crds[i] lies inside more than one blob, give priority to blobs
+///        occuring later in the list.)  If in_training_crds[i] lies outside
+///        any of the blobs, then discard this data point and do not append
+///        it to the output lists.)
 /// @return This function has no return value.
 ///         The results are stored in:
 ///           out_training_crds,
-///           out_training_accepted,
-///           out_training_scores
+///           out_training_scores,
+///           out_training_accepted
 
 template<typename Scalar>
 static void
@@ -647,7 +660,7 @@ FindBlobScores(const vector<array<Scalar,3> >& in_training_crds, //!< locations 
   vector<size_t> in_training_which_blob; // which blob (sphere) contains this position?
   vector<Scalar> in_training_scores; // what is the score of that blob?
 
-  // The next function is defined in "feather_implementation.hpp"
+  // The next function is defined in "feature_implementation.hpp"
   _FindBlobScores(in_training_crds,
                   in_training_scores,
                   in_training_which_blob,

@@ -445,11 +445,18 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
                      &crds,
                      &diameters,
                      &scores,
-                     voxel_width[0],
                      settings.sphere_decals_diameter,
                      settings.sphere_decals_foreground,
                      settings.sphere_decals_scale);
 
+  if (voxel_width_ > 0.0) {
+    assert(crds.size() == diameters.size());
+    for (size_t i = 0; i < crds.size(); i++) {
+      diameters[i] /= voxel_width_;
+      for (int d=0; d < 3; d++)
+          crds[i][d] /= voxel_width_;
+    }
+  }
 
 
   cerr << " --- discarding blobs in file \n"
@@ -515,15 +522,29 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
   }
 
   // Discard overlapping blobs?
-  cerr << "  discarding overlapping blobs" << endl;
-  DiscardOverlappingBlobs(crds,
-                          diameters, 
-                          scores,
-                          settings.nonmax_min_radial_separation_ratio,
-                          settings.nonmax_max_volume_overlap_large,
-                          settings.nonmax_max_volume_overlap_small,
-                          SORT_DECREASING_MAGNITUDE,
-                          &cerr);
+
+  if ((settings.nonmax_min_radial_separation_ratio > 0) ||
+      (settings.nonmax_max_volume_overlap_large !=
+       std::numeric_limits<float>::infinity()) ||
+      (settings.nonmax_max_volume_overlap_small !=
+       std::numeric_limits<float>::infinity())) {
+
+    if (voxel_width_ < 0)
+      throw VisfdErr("Error: Checking for overlapping blobs requires that you either specify the\n"
+                     "       voxel width (using the \"-w\" argument).  Alternatively, if the file\n"
+                     "       containing the original tomogram has accurate voxel width information,\n"
+                     "       you can specify that file instead (using the \"-in\" argument).\n");
+
+    cerr << "  discarding overlapping blobs" << endl;
+    DiscardOverlappingBlobs(crds,
+                            diameters, 
+                            scores,
+                            settings.nonmax_min_radial_separation_ratio,
+                            settings.nonmax_max_volume_overlap_large,
+                            settings.nonmax_max_volume_overlap_small,
+                            SORT_DECREASING_MAGNITUDE,
+                            &cerr);
+  }
 
   cerr << " " << crds.size() << " blobs remaining" << endl;
 
@@ -539,7 +560,6 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
 
     cerr << "  discarding blobs based on score using training data" << endl;
 
-    
     DiscardBlobsByScoreSupervised(crds,
                                   diameters,
                                   scores,
@@ -558,10 +578,10 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
     fstream out_coords_file;
     out_coords_file.open(settings.out_coords_file_name, ios::out);
     for (size_t i=0; i < crds.size(); i++) {
-      out_coords_file << crds[i][0]*voxel_width[0] << " "
-                      << crds[i][1]*voxel_width[1] << " "
-                      << crds[i][2]*voxel_width[2] << " " 
-                      << diameters[i]*voxel_width[0] << " " 
+      out_coords_file << crds[i][0] << " "
+                      << crds[i][1] << " "
+                      << crds[i][2] << " " 
+                      << diameters[i] << " " 
                       << scores[i]
                       << endl;
     }
@@ -579,6 +599,14 @@ void
 HandleBlobScoreSupervisedMulti(const Settings &settings,
                                float voxel_width[3])
 {
+  // At some point I was trying to be as general as possible and allowed
+  // for the possibility that voxels need not be cubes (same width x,y,z)
+  // Now, I realize that allowing for this possibility would slow down some
+  // calculations considerably, so I just assume cube-shaped voxels:
+  float voxel_width_ = voxel_width[0];
+  assert((voxel_width[0] == voxel_width[1]) &&
+         (voxel_width[1] == voxel_width[2]));
+
   float threshold_lower_bound;
   float threshold_upper_bound;
 
@@ -588,12 +616,11 @@ HandleBlobScoreSupervisedMulti(const Settings &settings,
   vector<vector<float> > blob_diameters_multi(Nsets);
   vector<vector<float> > blob_scores_multi(Nsets);
 
-  for (int I = 0; I < settings.multi_in_coords_file_names.size(); ++I) {
+  for (int I = 0; I < Nsets; ++I) {
     ReadBlobCoordsFile(settings.multi_in_coords_file_names[I],
                        &blob_crds_multi[I],
                        &blob_diameters_multi[I],
                        &blob_scores_multi[I],
-                       voxel_width[0],
                        settings.sphere_decals_diameter,
                        settings.sphere_decals_foreground,
                        settings.sphere_decals_scale);
@@ -604,6 +631,16 @@ HandleBlobScoreSupervisedMulti(const Settings &settings,
   assert(Nsets == blob_scores_multi.size());
   assert(Nsets == settings.multi_training_pos_crds.size());
   assert(Nsets == settings.multi_training_neg_crds.size());
+
+  if (voxel_width_ > 0.0) {
+    for (int I = 0; I < Nsets; ++I) {
+      for (size_t i = 0; i < blob_crds_multi[I].size(); i++) {
+        blob_diameters_multi[I][i] /= voxel_width_;
+        for (int d=0; d < 3; d++)
+          blob_crds_multi[I][i][d] /= voxel_width_;
+      }
+    }
+  }
 
   ChooseBlobScoreThresholdsMulti(blob_crds_multi,
                                  blob_diameters_multi,
@@ -2333,7 +2370,17 @@ DetermineVoxelWidth(const Settings &settings,
     }
   }
   else {
-    // Otherwise, infer it from the header of the MRC file
+    if ((tomo_in.header.nvoxels[0] == 0) ||
+        (tomo_in.header.nvoxels[1] == 0) ||
+        (tomo_in.header.nvoxels[2] == 0)) {
+      // If the "tomo_in" image argument does not contain any voxels, then the
+      // user did not supply an input image.  Then there is no voxel width.
+      voxel_width[0] = -1.0; // Set the voxel width to an invalid number.
+      voxel_width[1] = -1.0; // This will let other parts of the code know
+      voxel_width[2] = -1.0; // that the voxel width is unknown.
+      return;
+    }
+    // Otherwise, infer the voxel width from the header metadata in the MRC file
     voxel_width[0] = tomo_in.header.cellA[0]/image_size[0];
     voxel_width[1] = tomo_in.header.cellA[1]/image_size[1];
     voxel_width[2] = tomo_in.header.cellA[2]/image_size[2];

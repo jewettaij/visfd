@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.29.15");
-string g_date_string("2021-8-18");
+string g_version_string("0.29.16");
+string g_date_string("2021-9-05");
 
 
 
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
       image_size[d] = tomo_in.header.nvoxels[d];
 
     // ---- Voxel width? ----
-    float voxel_width[3];
+    float voxel_width[3] = {-1.0 , -1.0, -1.0}; //initial impossible value
     DetermineVoxelWidth(settings, tomo_in, mask, voxel_width);
 
 
@@ -391,9 +391,13 @@ int main(int argc, char **argv) {
     cerr << "allocating space for new 3D image..." << endl;
     MrcSimple tomo_out = tomo_in; //this will take care of allocating the array
 
-    if ((voxel_width[0] <= 0.0) ||
-        (voxel_width[1] <= 0.0) ||
-        (voxel_width[2] <= 0.0))
+    if (((voxel_width[0] <= 0.0) ||
+         (voxel_width[1] <= 0.0) ||
+         (voxel_width[2] <= 0.0))
+        &&
+        (!
+         (settings.filter_type == settings.BLOB_NONMAX_SUPPRESSION) ||
+         (settings.filter_type == settings.BLOB_NONMAX_SUPERVISED_MULTI)))
       throw VisfdErr("Error in tomogram header: Invalid voxel width(s).\n"
                      "Use the -w argument to specify the voxel width.");
 
@@ -571,7 +575,6 @@ int main(int argc, char **argv) {
                                    scores);
 
     }
-
 
 
     else if (settings.filter_type == settings.BLOB_NONMAX_SUPERVISED_MULTI) {

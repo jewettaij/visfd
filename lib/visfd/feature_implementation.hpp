@@ -41,7 +41,7 @@ namespace visfd {
 ///        than one sphere, give priority spheres occuring later in the list.)
 ///        If crds[i] lies outside any of the spheres, store -infinity there.
 ///
-/// @returns void.  Results are stored in "scores".
+/// @returns void.  Results are stored in "scores" and "sphere_ids".
 ///
 /// @note  THIS FUNCTION WAS NOT INTENDED FOR PUBLIC USE
 

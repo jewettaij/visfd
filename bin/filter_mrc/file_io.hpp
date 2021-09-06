@@ -284,7 +284,6 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
                    vector<array<Coordinate, 3> > *pCrds=nullptr, //!< store the blob coordinates here (if !=nullptr)
                    vector<Scalar> *pDiameters=nullptr, //!< store the blob diameters here (if !=nullptr)
                    vector<Scalar> *pScores=nullptr, //!< store blob scores here (if !=nullptr)
-                   Scalar distance_scale=1.0, //!< divide all distances and coordinates by this value
                    Scalar diameter_override=-1.0, //!< use this diameter (useful if no 4th column is present)
                    Scalar score_default=0.0, //!< default "score" (if no 5th column is present)
                    Scalar diameter_factor=1.0, //!< multiply all diameters in the file by this number
@@ -325,22 +324,16 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
     ssLine >> x;
     ssLine >> y;
     ssLine >> z;
-    double ix, iy, iz;
-    ix = floor((x / distance_scale) + 0.5);
-    iy = floor((y / distance_scale) + 0.5);
-    iz = floor((z / distance_scale) + 0.5);
     array<Coordinate, 3> ixiyiz;
-    ixiyiz[0] = ix;
-    ixiyiz[1] = iy;
-    ixiyiz[2] = iz;
+    ixiyiz[0] = x;
+    ixiyiz[1] = y;
+    ixiyiz[2] = z;
 
     Scalar diameter = -1.0;
     Scalar score = score_default;
     if (ssLine) { // Does the file contain a 4th column? (the diameter)
       Scalar _diameter;
       ssLine >> _diameter;
-      // convert from physical distance to # of voxels:
-      _diameter /= distance_scale;
       if (ssLine)
         diameter = _diameter;
       custom_diameters = true;

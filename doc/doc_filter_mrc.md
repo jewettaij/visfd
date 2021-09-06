@@ -118,7 +118,8 @@ filter_mrc -in tomogram.rec \
 
 # Now discard the faint, noisy, or overlapping blobs.
 
-filter_mrc -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
+filter_mrc -in tomogram.rec \
+  -discard-blobs tomogram_blobs.txt tomogram_ribosomes.txt \
   -minima-threshold -70 \
   -radial-separation 0.8 \
   -mask cytoplasmic_volume.mrc   # <- optional
