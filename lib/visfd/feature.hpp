@@ -1265,7 +1265,7 @@ CalcHessian(int const image_size[3], //!< source image size
              aaafMask,
              sigma,
              truncate_halfwidth,
-             false,
+             true,
              pReportProgress);
 
   if (pReportProgress)

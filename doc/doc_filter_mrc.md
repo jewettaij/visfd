@@ -117,8 +117,9 @@ with small voxel widths.  (You can manually override this using the
 
 ### Example 2
 
-Detect all dark blobs ("minima") between 190 and 300 Angstroms in width.
-This corresponds (approximately) to objects which are the size of ribosomes.
+Detect all dark blobs ("minima") which are between
+190 and 300 Angstroms in width.
+This corresponds to objects which are (approximately) the size of ribosomes.
 
 ```
 filter_mrc -in tomogram.rec \
