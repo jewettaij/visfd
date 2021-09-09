@@ -71,9 +71,10 @@ module.
 
 filter_mrc -in tomogram.rec \
   -out membranes.rec \
-  -membrane minima 70.0 -best 0.05 \
-  -tv 5.5 -tv-angle-exponent 4 \
-  -save-progress temporary_file.rec
+  -membrane minima 75.0 -best 0.12 \
+  -tv 5 -tv-angle-exponent 4 \
+  -save-progress temporary_file.rec \
+  -cl -0.5 0.5
 ```
 
 This searches for dark surfaces of thickness approximately 70 (Angstroms), and
@@ -87,13 +88,6 @@ in units of Angstroms.  You can override this by specifying
 the physical width of each voxel using the [-w argument](#Voxel-Width).
 **This operation is extremely slow, so try this on a small,
 cropped image first.**
-*(Note: Extra care must be taken if your image contains gold fiducial markers,
-ice, or other extremely dark objects which can throw the detector off.
-You can usually reduce the severity of this problem by including the
-"-cl -0.4 0.4" argument to clip these extreme voxel brightnesses.
-Alternatively you can remove gold fiducial markers from consideration
-by finding their location beforehand using the "-blob" argument,
-and runing "filter_mrc" again later using the "-mask-spheres" argument.)*
 
 Note: After the membrane features are detected, they must be analyzed.
 This typically requires running the "filter_mrc" program again, multiple times.
@@ -111,8 +105,18 @@ voxels are prohibitively slow to analyze.  The software will automatically
 reduce the resolution of the generated tomogram (and increase the voxel width)
 to maintain reasonable performance when used to analyze tomograms
 with small voxel widths.  (You can manually override this using the
-[-bin 1](#-bin-binsize) argument.)
+[-bin N](#-bin-binsize) argument, and setting N=1.)
 
+*(Note: Extra care must be taken if your image contains ice, gold fiducial
+markers, or other extremely dark objects which can confuse the detector.
+You can usually reduce the severity of this problem a little bit by including
+the "-cl -0.5 0.5" argument to clip these extreme voxel brightnesses.
+Better yet, you can prepare an "mask" image file which excludes
+these objects from consideration.  (This can be done using the
+"-thresh2" argument, or alternatively the "-blob", "-discard-blobs",
+"-draw-spheres" "-foreground 0", and "-background 1" arguments.)
+Then later run filter_mrc again to detect membranes using the
+"-mask" argument, together with the mask image you just created.)*
 
 
 ### Example 2
@@ -142,14 +146,15 @@ filter_mrc -in tomogram.rec \
 
 Note:
 The ["*-mask cytoplasmic_volume.rec*"](#-mask-MRC_FILE)
-argument used in the second step
-is optional.
+argument used in the second step is optional.
 I use it in this example because we are searching for ribosomes,
 so we want to restrict our search to blobs which lie *inside* the cell.
+(The mask image file used in this example, "cytoplasmic_volume.rec",
+can be generated using the procedure described in example 3.)
 *(Note: Extra care must be taken if your image contains ice, gold fiducial
-markers, or other extremely dark objects which can throw the detector off.
-You can usually reduce the severity of this problem by including the
-"-cl -0.4 0.4" argument to clip these extreme voxel brightnesses.)*
+markers, or other extremely dark objects which can confuse the detector
+You can usually reduce the severity of this problem a little by including the
+"-cl -0.5 0.5" argument to clip these extreme voxel brightnesses.)*
 
 
 Note:

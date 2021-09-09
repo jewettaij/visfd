@@ -283,6 +283,14 @@ Settings::ParseArgs(vector<string>& vArgs)
         for (int j = 1; j < vArgs.size(); j++) {
           if ((j == i) || (j == i+1))
             continue;  // omit the "-save-progress filename" arguments
+          else if ((vArgs[j] == "-cl") ||
+                   ((j>1) && (vArgs[j-1] == "-cl")) ||
+                   ((j>2) && (vArgs[j-2] == "-cl")))
+            continue;  // omit the "-cl a b" arguments
+          else if ((vArgs[j] == "-clip") ||
+                   ((j>1) && (vArgs[j-1] == "-clip")) ||
+                   ((j>2) && (vArgs[j-2] == "-clip")))
+            continue;  // omit the "-clip a b" arguments
           f << vArgs[j] << "\n";
         }
         f.close();
