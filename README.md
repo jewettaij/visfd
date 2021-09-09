@@ -218,15 +218,15 @@ The **CLANG** compiler is recommended, but no longer required.
 Although this code appears to be working
 with the **GCC** compiler now, I have run into
 [difficulties in the past](https://github.com/jewettaij/visfd/issues/2).
-*Feel free to use GCC, but if you notice strange behavior,
-try compiling with CLANG.*
+*Feel free to use GCC. But if you notice strange behavior,
+try CLANG instead.*
 
 
 ## Compilation
 
 ## Linux:
 ```
-    source setup_clang.sh
+    source setup_gcc.sh
     # (...or "source setup_gcc.sh", if you prefer gcc)
     make
 ```
