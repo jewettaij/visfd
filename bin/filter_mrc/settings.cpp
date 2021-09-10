@@ -2406,7 +2406,7 @@ Settings::ParseArgs(vector<string>& vArgs)
     else if (vArgs[i] == "-background-auto") {
       sphere_decals_background_norm = true;
       if (! user_set_background_scale_manually) {
-        sphere_decals_background_scale = 0.2;
+        sphere_decals_background_scale = 0.35;
       }
       num_arguments_deleted = 1;
     }

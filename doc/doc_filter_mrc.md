@@ -141,7 +141,8 @@ filter_mrc -in tomogram.rec \
 
 filter_mrc -in tomogram.rec \
   -out tomogram_ribosomes.rec \
-  -draw-hollow-spheres tomogram_ribosomes.txt
+  -draw-hollow-spheres tomogram_ribosomes.txt \
+  -background-auto
 ```
 
 Note:
