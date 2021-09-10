@@ -2390,9 +2390,13 @@ coordinates of the center of that sphere.
 diameters are assumed to be in physical units (eg. Angstroms), not voxels.)*
 If the file contains a 4th column, then it is assumed to
 store the diameter of each sphere.
-(Otherwise the "spheres" will be only 1 voxel wide by default.)
+(Otherwise the "spheres" will be only 1 voxel wide by default.
+You can use the "**-spheres-scale scale**" argument to make all of the
+spheres larger or smaller by a factof of *scale*.)
 Alternatively, the size of *all* of the spheres can be specified using
 the the "**-diameters d**" or "**-radii r**" arguments.
+
+
 If the file contains a 5th column, it is assumed to represent the brightness
 of that sphere.  (Otherwise, the sphere brightness is 1 by default, unless
 it is overridden using the "**-foreground brightness**" argument.)
@@ -2407,6 +2411,7 @@ for that blob and selecting the "Edit"->"Point"->"Value" menu option,
 or by pressing the "F" key.  The brightness of voxel at that location
 will be printed to the IMOD control window. That brightness is the score
 of the corresponding blob.)*
+
 
 #### Background voxels
 
@@ -2427,6 +2432,7 @@ If you want all of the background voxels to have the *same*
 brightness use the "**-background brightness**" and
 "**-background-scale 0**" arguments.
 
+#### -background-auto
 Choosing the correct *ratio* and *brightness* offsets can be difficult.
 If you use the "**-background-auto**" argument, then the brightness of
 background voxels will be automatically shifted and rescaled in an attempt to
@@ -2445,6 +2451,7 @@ to see the background image and harder to see the spheres.
 When it is 0, the original image is not visible and
 all of the background voxels are set to the **-background brightness**
 parameter value (which is also 0 by default).
+
 
 #### Examples:
 

@@ -2264,7 +2264,7 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if ((vArgs[i] == "-spheres-scale") ||
              (vArgs[i] == "-sphere-scale")) {
-      sphere_decals_foreground_use_score = false;
+      //sphere_decals_foreground_use_score = false;
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
