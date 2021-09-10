@@ -2390,12 +2390,12 @@ coordinates of the center of that sphere.
 diameters are assumed to be in physical units (eg. Angstroms), not voxels.)*
 If the file contains a 4th column, then it is assumed to
 store the diameter of each sphere.
-(Otherwise the "spheres" will be only 1 voxel wide by default.
-You can use the "**-spheres-scale scale**" argument to make all of the
-spheres larger or smaller by a factof of *scale*.)
+(You can use the "**-spheres-scale scale**" argument to make all of the
+spheres larger or smaller by a factof of *scale* to make them more visible.)
 Alternatively, the size of *all* of the spheres can be specified using
 the the "**-diameters d**" or "**-radii r**" arguments.
-
+If you do not specify the sphere size, they will be only 1 voxel wide by
+default.
 
 If the file contains a 5th column, it is assumed to represent the brightness
 of that sphere.  (Otherwise, the sphere brightness is 1 by default, unless
