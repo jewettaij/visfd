@@ -127,7 +127,7 @@ This corresponds to objects which are (approximately) the size of ribosomes.
 
 ```
 filter_mrc -in tomogram.rec \
-  -blob minima tomogram_blobs.txt 190.0 300.0 1.01
+  -blob minima tomogram_blobs.txt 195.0 275.0 1.005
 
 # Now discard the faint, noisy, or overlapping blobs.
 
@@ -2464,7 +2464,7 @@ of the background voxels to make them visible in the presence of the spheres,
 use the "**-background-auto**" argument.  If the results are still not visually
 appealing, try using the "**-background-scale ratio**" argument, and vary
 the *ratio* parameter between 0 and 1 until the image looks reasonable.
-(Typical values of the *ratio* parameter are between 0.1 and 0.3.)
+(Typical values of the *ratio* parameter are between 0.1 and 0.4.)
 
 
 #### Thin hollow spheres
