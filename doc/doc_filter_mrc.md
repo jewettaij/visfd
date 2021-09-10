@@ -71,8 +71,8 @@ module.
 
 filter_mrc -in tomogram.rec \
   -out membranes.rec \
-  -membrane minima 75.0 -best 0.12 \
-  -tv 5 -tv-angle-exponent 4 \
+  -membrane minima 75.0 \
+  -tv 5 -tv-angle-exponent 4 -tv-best 0.12 \
   -save-progress temporary_file.rec \
   -cl -0.5 0.5
 ```
@@ -98,7 +98,7 @@ detecting the membrane each time we run "filter_mrc" later on.
 (See [example 3](#Example-3) below.)
 
 Note: The computation time will be roughly proportional to the image size
-*as well as* the "-best" argument (which ranges from 0 to 1).
+*as well as* the "-tv-best" argument (which ranges from 0 to 1).
 (See [example 3](#Example-3) below.)  The computation time also varies
 dramatically with the voxel width.  High resolution images with small
 voxels are prohibitively slow to analyze.  The software will automatically
@@ -749,15 +749,15 @@ the "-membrane" filter argument, and then visualizing the resulting file.
  see the saliency of voxels of interest.)*
 
 In practice, it is often easier to use the
-[*-best**](#-best-fraction)
+[*-tv-best**](#-tv-best-fraction)
 argument, because no intermediate visualization step is required.
 
 
-### -best fraction
+### -tv-best fraction
 
 *(This argument is optional.)*
 The vast majority of voxels in an image do not resemble the feature you are
-searching for (ie membranes).  The "-best" argument will discard all but the
+searching for (ie membranes).  The "-tv-best" argument will discard all but the
 most salient voxels in the image.  It discards voxels from future consideration
 unless their
 [saliency](https://www.pyimagesearch.com/2018/07/16/opencv-saliency-detection)

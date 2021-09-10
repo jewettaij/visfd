@@ -2681,7 +2681,8 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-best")
+    else if ((vArgs[i] == "-tv-best") ||
+             (vArgs[i] == "-best"))
     {
       try {
         if ((i+1 >= vArgs.size()) ||
