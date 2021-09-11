@@ -195,16 +195,45 @@ filter_mrc -in tomogram.rec \
   -connect 1.0e+09 -connect-angle 15 \
   -select-cluster 1 -normals-file largest_membrane_pointcloud.ply
 ```
-Note:
+This will generate a new file ("largest_membrane_pointcloud.ply")
+containing a list of points located on the largest surface.
+You can use
+[*SSDRecon*](https://github.com/mkazhdan/PoissonRecon)
+to load this file and close the holes in the surface.  (See below.)
+
+**Note:**
 Here I assumed that the user has already followed the instructions in
 [example 1](#Example-1).  (Consequently, to save time, we used the
 ["-load-progress"](#-load-progress-FILENAME)
 to argument to skip over the time consuming
 process of detecting the membrane again.)
-This will generate a new file ("largest_membrane_pointcloud.ply")
-containing a list of points located on the largest surface. You can use
-[*SSDRecon*](https://github.com/mkazhdan/PoissonRecon)
-to load this file and close the holes in the surface:
+
+**Note:**
+All of these parameters make reasonably good
+defaults for membrane detection except the
+["**-connect**"](#-connect-threshold)
+parameter ("1.0e+09" in the example).
+It must be chosen carefully because it will vary from image to image.
+Strategies for choosing this parameter are discussed
+[below](#determining-the--connect-threshold-parameter).
+Repeat the step above with different parameters until the resulting
+"membranes_clusters.rec" shows that the different surface fragments
+have merged into larger surfaces correctly.
+(Verify this by opening the file in 3dmod, clicking on different portions
+of the dark surface that you care about, pressing the "F" key each time,
+and checking that the resulting ID numbers match.)
+If a suitable parameter can not be found that merges the membrane
+fragments togethe, you can also use the
+["**-must-link**"](#-must-link-FILE)
+argument to manually force connections between
+disconnected surface fragments. (See below.)
+You can also *modify* the image to erase or mask problematic regions (using the
+[-draw-spheres](#-draw-spheres-filename), or
+[-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax), and
+[-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r) arguments).
+
+Now use [*SSDRecon*](https://github.com/mkazhdan/PoissonRecon)
+to load the PLY file we just created and close the holes in the surface:
 ```
 SSDRecon --in largest_membrane_pointcloud.ply \
   --out largest_membrane.ply --depth 12 --scale 2.0
@@ -250,26 +279,6 @@ filter_mrc -i segmented.rec -o segmented_interior.rec -erosion 50.0
 (You will have to play with this distance parameter, eg "50.0"
 to see what works best.)
 
-
-
-**Note:**
-All of these parameters make reasonably good
-defaults for membrane detection except the
-["**-connect**"](#-connect-threshold)
-parameter ("1.0e+09" in the example).
-It must be chosen carefully because it will vary from image to image.
-Use the "-load-progress FILENAME" argument to save time
-while experimenting with different thresholds.
-Strategies for choosing this parameter are discussed
-[below](#determining-the--connect-threshold-parameter).
-If a suitable parameter can not be found, you can also use the
-["**-must-link**"](#-must-link-FILE)
-argument to manually force connections between
-disconnected regions. (See below.)
-You can also *modify* the image to erase or mask problematic regions (using the
-[-draw-spheres](#-draw-spheres-filename), or
-[-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax), and
-[-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r) arguments).
 
 Note:
 If the resulting surface is *not closed*,

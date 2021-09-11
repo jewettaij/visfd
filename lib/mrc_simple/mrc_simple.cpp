@@ -182,7 +182,7 @@ void MrcSimple::Read(string in_file_name,
   fstream mrc_file;
   mrc_file.open(in_file_name, ios::binary | ios::in);
   if (! mrc_file) 
-    throw MrcfileErr("Error: unable to open \""+ in_file_name +"\" for reading.\n");
+    throw MrcfileErr("Error: Unable to open \""+ in_file_name +"\" for reading.\n");
   // Try to infer signed-vs-unsigned integers from the file name:
   //http://www.cgl.ucsf.edu/pipermail/chimera-users/2010-June/005245.html
   if ((len_in_file_name > 4)
@@ -354,7 +354,7 @@ void MrcSimple::Write(string out_file_name) {
   fstream mrc_file;
   mrc_file.open(out_file_name, ios::binary | ios::out);
   if (! mrc_file) 
-    throw MrcfileErr("Error: unable to open \""+ out_file_name+"\" for writing.\n");
+    throw MrcfileErr("Error: Unable to open \""+ out_file_name+"\" for writing.\n");
   Write(mrc_file);  // You can also use "mrc_file << tomo;"
   mrc_file.close();
 }

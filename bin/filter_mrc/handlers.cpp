@@ -1711,7 +1711,7 @@ HandleTV(const Settings &settings,
           }
         }
       }
-      cerr << " -- sorting ALL voxels by ridge saliency --\n" << endl;
+      cerr << " -- sorting all voxels by ridge saliency --\n" << endl;
       vector<float> saliencies(n_voxels);
       size_t i = 0;
       for (int iz=0; iz < image_size[2]; iz++) {

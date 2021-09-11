@@ -280,6 +280,9 @@ Settings::ParseArgs(vector<string>& vArgs)
         // Now save all the current command line arguments into the INFO file.
         fstream f;
         f.open(save_intermediate_fname_info, ios::out);
+        if (! f)
+          throw VisfdErr("Error: Unable to open \"" +
+                         save_intermediate_fname_info +"\" for writing.\n");
         for (int j = 1; j < vArgs.size(); j++) {
           if ((j == i) || (j == i+1))
             continue;  // omit the "-save-progress filename" arguments
@@ -324,6 +327,9 @@ Settings::ParseArgs(vector<string>& vArgs)
         // Now load the arguments that were in the INFO file.
         fstream f;
         f.open(load_intermediate_fname_info, ios::in);
+        if (! f)
+          throw VisfdErr("Error: Unable to open \"" +
+                         load_intermediate_fname_info +"\" for reading.\n");
         vector<string> new_args;
         string line;
         while (getline(f, line, '\n'))
