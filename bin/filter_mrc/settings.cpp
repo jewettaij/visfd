@@ -283,18 +283,62 @@ Settings::ParseArgs(vector<string>& vArgs)
         if (! f)
           throw VisfdErr("Error: Unable to open \"" +
                          save_intermediate_fname_info +"\" for writing.\n");
+
+        // Loop through the argument list and save each argument to the file.
         for (int j = 1; j < vArgs.size(); j++) {
+
+          // We want to omit some of these arguments.
+          // Make sure the arguments we are saving to the file do
+          // not include any arguments that cause this program to write
+          // data to any files.  Later on, we will run this program with
+          // the "-load-progress" argument, which will read the same list
+          // of arguments from the file we are creating now.  If those arguments
+          // tell the program to create a new file, it could overwrite the
+          // file(s) we created earlier the first time we ran this program.
+          // I want the user to explicitly specify the names of the output
+          // files they want to create each time they run the program.
+          // This will hopefully reduce the chance of erasing those old files.
           if ((j == i) || (j == i+1))
             continue;  // omit the "-save-progress filename" arguments
-          else if ((vArgs[j] == "-cl") ||
-                   ((j>1) && (vArgs[j-1] == "-cl")) ||
-                   ((j>2) && (vArgs[j-2] == "-cl")))
-            continue;  // omit the "-cl a b" arguments
+          else if ((vArgs[j] == "-out") || (vArgs[j] == "-o") ||
+                   ((j>1) && ((vArgs[j-1] == "-out") || (vArgs[j-1] == "-o"))))
+            continue;  // omit the "-out filename" arguments
+          // I also want to omit arguments that modify the output files:
+          else if ((vArgs[j] == "-thresh") ||
+                   ((j>1) && (vArgs[j-1] == "-thresh")))
+            continue;  // omit the "-thresh brightness" arguments
+          else if ((vArgs[j] == "-thresh2") ||
+                   ((j>1) && (vArgs[j-1] == "-thresh2")) ||
+                   ((j>2) && (vArgs[j-2] == "-thresh2")))
+            continue;  // omit the "-thresh2 a b" arguments
+          else if ((vArgs[j] == "-thresh4") ||
+                   ((j>1) && (vArgs[j-1] == "-thresh4")) ||
+                   ((j>2) && (vArgs[j-2] == "-thresh4")) ||
+                   ((j>3) && (vArgs[j-3] == "-thresh4")) ||
+                   ((j>4) && (vArgs[j-4] == "-thresh4")))
+            continue;  // omit the "-thresh4 a1 b1 b2 a2" arguments
+          else if ((vArgs[j] == "-thresh-interval") ||
+                   ((j>1) && (vArgs[j-1] == "-thresh-interval")) ||
+                   ((j>2) && (vArgs[j-2] == "-thresh-interval")))
+            continue;  // omit the "-thresh-interval a b" arguments
+          else if ((vArgs[j] == "-thresh-gauss") ||
+                   ((j>1) && (vArgs[j-1] == "-thresh-gauss")) ||
+                   ((j>2) && (vArgs[j-2] == "-thresh-guass")))
+            continue;  // omit the "-thresh-gauss x0 sigma" arguments
           else if ((vArgs[j] == "-clip") ||
                    ((j>1) && (vArgs[j-1] == "-clip")) ||
                    ((j>2) && (vArgs[j-2] == "-clip")))
             continue;  // omit the "-clip a b" arguments
-          f << vArgs[j] << "\n";
+          else if ((vArgs[j] == "-cl") ||
+                   ((j>1) && (vArgs[j-1] == "-cl")) ||
+                   ((j>2) && (vArgs[j-2] == "-cl")))
+            continue;  // omit the "-cl a b" arguments
+          else if ((vArgs[j] == "-fill") ||
+                   ((j>1) && (vArgs[j-1] == "-fill")))
+            continue;  // omit the "-fill brightness" arguments
+          else
+            // Otherwise, save this argument to the file
+            f << vArgs[j] << "\n";
         }
         f.close();
         vArgs.erase(vArgs.begin()+i,
@@ -1109,7 +1153,6 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 3;
     }
-
 
     else if ((vArgs[i] == "-thresh-gauss") ||
              (vArgs[i] == "-thresh-gauss-out")) {
