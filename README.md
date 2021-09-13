@@ -220,12 +220,10 @@ Nevertheless, if you find a bug, please report it.  I will fix it.
 
 ### Supported compilers
 
-The **CLANG** compiler is recommended, but no longer required.
-Although this code appears to be working
-with the **GCC** compiler now, I have run into
+This code has been tested with the **CLANG** and **GCC** (v9.3.0)
+compilers.  I have run into
 [difficulties in the past](https://github.com/jewettaij/visfd/issues/2).
-*Feel free to use GCC. But if you notice strange behavior,
-try CLANG instead.*
+with older versions of GCC (7.5.0).
 
 
 ## Compilation
@@ -238,11 +236,20 @@ try CLANG instead.*
 ```
 (If you are not using the bash shell, enter "bash" into the terminal beforehand.)
 
+Then copy the newly-compiled programs (and .PY files) from the
+various bin/ subdirectories to a directory that is in your
+[PATH](http://www.linfo.org/path_env_var.html)
+(such as ~/bin/ or /usr/local/bin/).
+*(This includes "filter_mrc", "combine_mrc", "voxelize_mesh.py",
+and "sum_voxels".)*
+Then log out and log in again for the changes to take effect.
+
+
 #### Warning: Avoid the **-Ofast** compiler argument
 As of 2020-2-11, we have had better results using
 [**-O3 -ffast-math**](https://github.com/jewettaij/visfd/issues/6) instead.
 (The problem with -Ofast seems to only appear during membrane detection.
- See [setup_clang.sh](setup_clang.sh) for a list of suggested compiler flags.)
+ See [setup_gcc.sh](setup_gcc.sh) for a list of suggested compiler flags.)
 
 *Note: This program has been carefully checked for memory errors using valgrind
 and was found to be clean.  The issues mentioned above only occur when compiler
@@ -251,9 +258,11 @@ optimization flags like -Ofast are in use.*
 
 ## Windows:
 
-It is recommended that you install the BASH shell environment on your computer, along with *clang* and *make*.  (If you decide to use a different compiler, modify the "setup_clang.sh" file accordingly.)  There are several ways to do that.
-
-Perhaps the easiest way is to install
+It is recommended that you install the BASH shell environment on your computer,
+along with *make* and either *gcc* or *clang*.  Once you have done that,
+you can follow the instructions above for linux users.
+There are several ways to to create a BASH environment,
+but perhaps the easiest method is to install
 [Windows Subsystem for Linux (WSL2)](https://docs.microsoft.com/en-us/windows/wsl/install-win10),
 ***or***
 [virtualbox](https://www.virtualbox.org)
@@ -289,23 +298,31 @@ not windows.
 
 ## Apple Mac:
 
-*WARNING: The following procedure has not been tested.
- If you have a mac, please test this and let me know if it worked
- (or if something else worked).
- -andrew 2021-9-12*
+You must install OpenMP, and a compiler that supports it.
+Otherwise, this software will run at an intolerably slow speed.
+Last I checked OpenMP is disabled in MacOS by default.
+You must figure out how to install it.
+*(If it helps, there are some old instructions for doing that
+[here](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/).)*
 
-To make 
-First follow the instructions
-[here](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/)
-to install OpenMP support:
+I do not have access to a computer running MacOS.
+If you figure out how to install OpenMP, please contact me
+(or create a pull-request) so that we can update this section.
 
-Then compile visfd using:
+
+Once OpenMP is installed, compile the visfd tools using:
 ```
-    source setup_clang.sh
-    # (...or "source setup_gcc.sh", if you prefer gcc)
+    source setup_gcc.sh
+    # (...or "source setup_clang.sh", if you prefer clang)
     make
 ```
 
+Then copy the newly-compiled programs (and .PY files) from the
+various bin/ subdirectories to a directory that is in your
+[PATH](http://www.linfo.org/path_env_var.html)
+(such as ~/bin/ or /usr/local/bin/).
+*(This includes "filter_mrc", "combine_mrc", "voxelize_mesh.py",
+and "sum_voxels".)*
 
 
 ## License
