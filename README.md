@@ -208,13 +208,11 @@ Nevertheless, if you find a bug, please report it.  I will fix it.
 - [**PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
 - Software to visualize mesh files (such as [meshlab](http://www.meshlab.net)).
 - A computer with *at least* 4 CPU cores (8 threads).
-- A **hard drive**.  (An HDD, not an SSD.)  If used frequently, the "filter_mrc"
-  program creates a large number of large temporary files.  For example, each
-  step in a membrane-detection calculation creates temporary files that consume
-  as much as 28x as much space as the original tomogram.  Although these files
+- A **hard drive**.  (An HDD, not an SSD.)  The "filter_mrc"
+  program creates many large temporary files.  Although they
   can be deleted, I worry that over time, this frequent writing and erasing
   could wear down an SSD.  Old-fashioned magnetic hard drives are
-  *(apparently)* able tolerate this kind of usage.
+  better able tolerate this kind of usage.
 
 
 

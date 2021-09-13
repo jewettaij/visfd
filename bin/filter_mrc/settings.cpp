@@ -2656,12 +2656,19 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-curve"))
     {
       if ((vArgs[i] == "-membrane") ||
-          (vArgs[i] == "-surface-ridge"))
+          (vArgs[i] == "-surface-ridge")) {
         filter_type = SURFACE_RIDGE;
-      else if ((vArgs[i] == "-edge") || (vArgs[i] == "-surface-edge"))
+      }
+      else if ((vArgs[i] == "-edge") || (vArgs[i] == "-surface-edge")) {
         filter_type = SURFACE_EDGE;
-      else if (vArgs[i] == "-curve")
+        throw VisfdErr("WARNING: The \"-edge\" argument has been implemented but not tested. If you want\n"
+                       "to use and debug this feature, remove this error message message. -A 2021-9-13.\n");
+      }
+      else if (vArgs[i] == "-curve") {
         filter_type = CURVE;
+        throw VisfdErr("WARNING: The \"-curve\" argument has been implemented but not tested. If you want\n"
+                       "to use and debug this feature, remove this error message message. -A 2021-9-13.\n");
+      }
 
       try {
         if ((i+2 >= vArgs.size()) ||
