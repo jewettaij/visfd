@@ -62,9 +62,10 @@ BlobDog(int const image_size[3], //!< source image size
         vector<Scalar> *pv_maxima_sigma=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
         vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
         vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
+        const Scalar aspect_ratio[3]=nullptr, //!< multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
         //the following optional parameters are usually left with default values
         Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
-        Scalar truncate_ratio=2.8,      //!< how many sigma before truncating?
+        Scalar truncate_ratio=2.5,       //!< how many sigma before truncating?
         Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
         bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
@@ -92,6 +93,11 @@ BlobDog(int const image_size[3], //!< source image size
     pv_minima_scores = &minima_scores;
   if (pv_maxima_scores == nullptr)
     pv_maxima_scores = &maxima_scores;
+
+  Scalar default_aspect_ratio[3] = {1.0, 1.0, 1.0};
+  const Scalar *_aspect_ratio = aspect_ratio;
+  if (_aspect_ratio == nullptr)
+    _aspect_ratio = default_aspect_ratio;
 
   // We need 3 images to store the result of filtering the image
   // using DoG filters with 3 different widths.  Store those images here:
@@ -159,13 +165,18 @@ BlobDog(int const image_size[3], //!< source image size
     j2i[0]  = (ir-1) % 3;
     j2i[1]  = ir % 3;
 
+    Scalar blob_sigma_xyz[3];
+    blob_sigma_xyz[0] = blob_sigma[ir] * _aspect_ratio[0];
+    blob_sigma_xyz[1] = blob_sigma[ir] * _aspect_ratio[1];
+    blob_sigma_xyz[2] = blob_sigma[ir] * _aspect_ratio[2];
+    
     //Apply the LoG filter (approximated with a DoG filter)
     //      ...using the most recent blob width:
     ApplyLog(image_size,
              aaafSource,
              aaaafI[j2i[1]], //<-store the most recent filtered image
              aaafMask,
-             blob_sigma[ir],
+             blob_sigma_xyz,
              delta_sigma_over_sigma,
              truncate_ratio);
 
@@ -458,11 +469,12 @@ BlobDogD(int const image_size[3], //!<source image size
          vector<Scalar> *pv_maxima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
          vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
          vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
+         const Scalar aspect_ratio[3]=nullptr, //!< multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
          //the following optional parameters are usually left with default values
          Scalar delta_sigma_over_sigma=0.02,//!<param for approximating LoG with DoG
          Scalar truncate_ratio=2.5,    //!<how many sigma before truncating?
          Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
-         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities lessr than this
+         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities less than this
          bool    use_threshold_ratios=false, //!<threshold=ratio*best_score?
          ostream *pReportProgress = nullptr, //!<report progress to the user?
          Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images
@@ -475,6 +487,11 @@ BlobDogD(int const image_size[3], //!<source image size
   for (int i=0; i < blob_diameters.size(); i++)
     blob_sigma[i] = blob_diameters[i]/(2.0*sqrt(3));
 
+  Scalar default_aspect_ratio[3] = {1.0, 1.0, 1.0};
+  const Scalar *_aspect_ratio = aspect_ratio;
+  if (_aspect_ratio == nullptr)
+    _aspect_ratio = default_aspect_ratio;
+
   BlobDog(image_size,
           aaafSource,
           aaafMask,
@@ -485,6 +502,7 @@ BlobDogD(int const image_size[3], //!<source image size
           &maxima_sigma,
           pv_minima_scores,
           pv_maxima_scores,
+          _aspect_ratio,
           delta_sigma_over_sigma,
           truncate_ratio,
           minima_threshold,

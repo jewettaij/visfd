@@ -988,6 +988,31 @@ arguments, perhaps several times with different thresholds)
 ...to decide which of these blobs are worth keeping.
 
 
+### -blob-aspect-ratio Xratio Yratio Zratio
+
+By default, the blob detection algorithm assumes that the objects you
+are searching for are spherical.  *Sometimes this is not the case.*
+The *-blob-aspect-ratio* argument allows the user to specify that the
+objects you are searching for are allways wider (or narrower) in the
+X, Y, or Z directions.  For example, if you know that the objects you
+are trying to detect are always 30% wider in the Z direction,
+you can use "*-blob-aspect-ratio 1 1 1.3*".  (This might occur if the
+resolution of the image is different in the Z direction.)
+This can be an issue when looking for small objects in electron microscopy
+tomograms.  The "missing-wedge" artifact in these tomograms often causes
+a direction blurring which sometimes makes small objects appear
+significantly wider in the Z direction.
+In all of these cases, the "*-blob-aspect-ratio*" argument 
+can make the blob-detector more sensitive and perform better.
+
+Note that if you use this argument, the width of the detected blobs
+will be reported (in the text file) as if the blobs *were* spherical
+(ie. as if *Xratio=Yratio=Zratio=1*).  This is also true later on
+when discarding overlapping blobs.
+
+
+
+
 
 # Morphology
 

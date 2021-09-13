@@ -275,6 +275,7 @@ class Settings {
   float blob_width_multiplier;
   string blob_minima_file_name;
   string blob_maxima_file_name;
+  float blob_aspect_ratio[3];
   #ifndef DISABLE_INTENSITY_PROFILES
   string blob_profiles_file_name_base;
   BlobCenterCriteria blob_profiles_center_criteria;

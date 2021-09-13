@@ -782,6 +782,7 @@ HandleBlobDetector(const Settings &settings,
              &maxima_diameters, // corresponding diameter for that maxima
              &minima_scores, // what was the blob's score?
              &maxima_scores, // ("score" = intensity after filtering)
+             settings.blob_aspect_ratio,
              settings.delta_sigma_over_sigma, //difference in Gauss widths parameter
              settings.filter_truncate_ratio,
              settings.filter_truncate_threshold,

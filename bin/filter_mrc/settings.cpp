@@ -72,7 +72,7 @@ Settings::Settings() {
   //filter_truncate_halfwidth[2] = -1; //  which will be convolved with the image.
   //                          //  "-1" means unspecified.)
 
-  filter_truncate_threshold=0.02;    //Filter intensity decay value before giving up
+  filter_truncate_threshold=0.05;  //Filter intensity decay value before giving up
                             //When the filter strength is less than this value
                             //we ignore it. For difference-of-gaussian filters
                             //we choose the gaussian with the wider width. This
@@ -121,6 +121,9 @@ Settings::Settings() {
   is_training_pos_in_voxels = false;
   is_training_neg_in_voxels = false;
   blob_width_multiplier = 1.0;
+  blob_aspect_ratio[0] = 1.0;
+  blob_aspect_ratio[1] = 1.0;
+  blob_aspect_ratio[2] = 1.0;
   nonmax_min_radial_separation_ratio = 0.0;
   nonmax_max_volume_overlap_small = std::numeric_limits<float>::infinity();
   nonmax_max_volume_overlap_large = std::numeric_limits<float>::infinity();
@@ -1608,6 +1611,26 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-radial-separation")
+
+
+
+    else if (vArgs[i] == "-blob-aspect-ratio")
+    {
+      try {
+        if (i+3 >= vArgs.size())
+          throw invalid_argument("");
+        blob_aspect_ratio[0] = stof(vArgs[i+1]);
+        blob_aspect_ratio[1] = stof(vArgs[i+2]);
+        blob_aspect_ratio[2] = stof(vArgs[i+3]);
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number:\n"
+                       "       the minimum allowed separation between a pair of detected blobs\n"
+                       "       (as a fraction of the sum of their radii, estimated using r≈σ√3).");
+      }
+      num_arguments_deleted = 4;
+    } //if (vArgs[i] == "-blob-aspect-ratio")
 
 
 

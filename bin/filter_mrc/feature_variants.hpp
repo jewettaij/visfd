@@ -403,6 +403,7 @@ BlobDogNM(int const image_size[3], //!<source image size
           vector<Scalar> *pv_maxima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
           vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
           vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
+          const Scalar aspect_ratio[3]=nullptr, //!<multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
           //the following optional parameters are usually left with default values
           Scalar delta_sigma_over_sigma=0.02,//!< param for approximating LOG with DOG
           Scalar truncate_ratio=2.5,      //!< how many sigma before truncating?
@@ -437,6 +438,11 @@ BlobDogNM(int const image_size[3], //!<source image size
   if (pv_maxima_scores == nullptr)
     pv_maxima_scores = &maxima_scores;
 
+  Scalar default_aspect_ratio[3] = {1.0, 1.0, 1.0};
+  const Scalar *_aspect_ratio = aspect_ratio;
+  if (_aspect_ratio == nullptr)
+    _aspect_ratio = default_aspect_ratio;
+
   BlobDogD(image_size,
            aaafSource,
            aaafMask,
@@ -447,6 +453,7 @@ BlobDogNM(int const image_size[3], //!<source image size
            pv_maxima_diameters,
            pv_minima_scores,
            pv_maxima_scores,
+           _aspect_ratio,
            delta_sigma_over_sigma,
            truncate_ratio,
            minima_threshold,
@@ -520,6 +527,7 @@ _BlobDogNM(int const image_size[3], //!<source image size
            vector<Scalar> *pv_maxima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
            vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
            vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
+           const Scalar aspect_ratio[3]=nullptr, //!<multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
            //the following optional parameters are usually left with default values
            Scalar delta_sigma_over_sigma=0.02, //!<difference in Gauss widths parameter
            Scalar filter_truncate_ratio=2.5,   //!<how many sigma before truncating?
@@ -542,6 +550,11 @@ _BlobDogNM(int const image_size[3], //!<source image size
     filter_truncate_ratio = sqrt(-2*log(filter_truncate_threshold));
   }
 
+  Scalar default_aspect_ratio[3] = {1.0, 1.0, 1.0};
+  const Scalar *_aspect_ratio = aspect_ratio;
+  if (_aspect_ratio == nullptr)
+    _aspect_ratio = default_aspect_ratio;
+
   BlobDogNM(image_size,
             aaafSource,
             aaafMask,
@@ -552,6 +565,7 @@ _BlobDogNM(int const image_size[3], //!<source image size
             pv_maxima_diameters,
             pv_minima_scores,
             pv_maxima_scores,
+            _aspect_ratio,
             delta_sigma_over_sigma,
             filter_truncate_ratio,
             minima_threshold,

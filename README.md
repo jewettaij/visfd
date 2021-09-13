@@ -186,30 +186,36 @@ Nevertheless, if you find a bug, please report it.  I will fix it.
  The *voxelize_mesh.py* program requires even more memory.
  You can reduce the memory needed and computation time dramatically
  by cropping or binning your tomogram.)
+- A terminal (running BASH or CSH/TCSH) where you can enter commands.
+  (*filter_mrc* is currently a text-only program.)
 - A [C++ compiler](#Supported-compilers)
 - [make](https://en.wikipedia.org/wiki/Make_(software))
 - Software to visualize MRC/REC/MAP files
 (such as [IMOD/3dmod](https://bio3d.colorado.edu/imod/))
 
 
-Recommended:
+### Recommended:
+
 - A text editor.  (Word, Wordpad, and Notepad will not work.)
-Popular graphical text editors
-include **Atom**, **Sublime**, **Notepad++**, and **VSCode**.
-Older, non-graphical programs include **vim**, **emacs**,
-**nano**, **ne**, and **jove**.
-(Apple's TextEdit can be used if you save the file as *plain text*.)
+  Popular graphical text editors
+  include **Atom**, **Sublime**, **Notepad++**, and **VSCode**.
+  Older, non-graphical programs include **vim**, **emacs**,
+  **nano**, **ne**, and **jove**.
+  (Apple's TextEdit can be used if you save the file as *plain text*.)
 - python
-- The "numpy", "matplotlib", "mrcfile", and python modules
-(These are are installable via "pip3" or "pip".)
-
-
-Optional, but needed for membrane segmentation:
+- The "numpy", "matplotlib", "mrcfile", and "pyvista" python modules
+  (These are are installable via "pip3" or "pip".)
 - [**PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
-- software to visualize mesh files
-(such as [meshlab](http://www.meshlab.net)).
-- python
-- The "pyvista" python module (installable via "pip3" or "pip".)
+- Software to visualize mesh files (such as [meshlab](http://www.meshlab.net)).
+- A computer with *at least* 4 CPU cores (8 threads).
+- A **hard drive**.  (An HDD, not an SSD.)  If used frequently, the "filter_mrc"
+  program creates a large number of large temporary files.  For example, each
+  step in a membrane-detection calculation creates temporary files that consume
+  as much as 28x as much space as the original tomogram.  Although these files
+  can be deleted, I worry that over time, this frequent writing and erasing
+  could wear down an SSD.  Old-fashioned magnetic hard drives are
+  *(apparently)* able tolerate this kind of usage.
+
 
 
 ### Supported compilers
@@ -286,8 +292,9 @@ not windows.
 *WARNING: The following procedure has not been tested.
  If you have a mac, please test this and let me know if it worked
  (or if something else worked).
- -andrew 2019-3-08*
+ -andrew 2021-9-12*
 
+To make 
 First follow the instructions
 [here](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/)
 to install OpenMP support:
