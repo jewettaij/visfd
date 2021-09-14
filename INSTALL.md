@@ -17,8 +17,8 @@ Before you begin, you will need:
 
 - A computer with a terminal running BASH (not TCSH).
   This is included in linux.
-  Instructions for [#Windows-instructions] and [#Apple-MacOS-instructions]
-  users is included below.
+  Instructions for [windows](#Windows-instructions) and
+  [Apple MacOS](#Apple-MacOS-instructions) users are included below.
 - At least 16GB of RAM memory.  (Preferrably 32GB or more.)
 - A text editor.  (Such as vi, emacs, atom, VisualStudio, Notepad++, ...)
 - A recent version of python (version 3.0 or later).
