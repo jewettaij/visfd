@@ -42,8 +42,6 @@ All operations support "masking".
 An image *mask* can be used to exclude certain
 voxels or regions from consideration.
 (Typically these are voxels which have been characterized previously.
-The contributions from remaining voxels are normalized, so that objects located
-within narrow confined spaces can be detected accurately and without penalty.)
 Masks can also be used to give some voxels more consideration
 than others during the blurring (filtering) process.  (A.K.A. "weighting".)
 In this way, you can use a mask to to apply a filter to an image
@@ -64,6 +62,10 @@ module.
 
 ## Usage Examples:
 
+For more realistic and detailed examples, see the
+[tutorials](https://github.com/jewettaij/visfd_tutorials).
+
+
 ### Example 1
 ```
 # Detect membranes in an EM image using tensor voting
@@ -72,7 +74,7 @@ module.
 filter_mrc -in tomogram.rec \
   -out membranes.rec \
   -membrane minima 75.0 \
-  -tv 5 -tv-angle-exponent 4 -tv-best 0.12 \
+  -tv 5 -tv-angle-exponent 4 -tv-best 0.1 \
   -save-progress temporary_file.rec \
   -cl -0.5 0.5
 ```
@@ -82,41 +84,34 @@ creates a new image file ("membranes.rec") with the membranes emphasized.
 View this file (eg. using IMOD) to see if the membranes are successfully
 detected.  You may need to adjust this thickness parameter
 (and the other parameters) until the membrane is clearly visible.
-In my experience, 60-70 Angstroms is a reasonable default thickess parameter
+In my experience, 65-80 Angstroms is a reasonable default thickess parameter
 to detect lipid bilayers.  Most Cryo-EM tomogram files have voxel widths
 in units of Angstroms.  You can override this by specifying
 the physical width of each voxel using the [-w argument](#Voxel-Width).
+
 **This operation is extremely slow, so try this on a small,
 cropped image first.**
+The computation time will be roughly proportional to the image size
+*(as well as the "-tv-best" argument, which ranges from 0 to 1)*.
+The computation time also varies dramatically with the voxel width.
+High resolution images with small voxels are prohibitively slow to analyze.
+So this program will automatically reduce the resolution of high resolution
+tomograms to maintain reasonable performance.  (You can manually override
+this using the [-bin N](#-bin-binsize) argument.)
 
-Note: After the membrane features are detected, they must be analyzed.
-This typically requires running the "filter_mrc" program again, multiple times.
-The optional
-["-save-progress"](#-save-progress-FILENAME)
+After the membrane features are detected, they must be analyzed.
+The optional ["-save-progress"](#-save-progress-FILENAME)
 argument used here allows us to skip the time consuming process of
 detecting the membrane each time we run "filter_mrc" later on.
 (See [example 3](#Example-3) below.)
 
-Note: The computation time will be roughly proportional to the image size
-*as well as* the "-tv-best" argument (which ranges from 0 to 1).
-(See [example 3](#Example-3) below.)  The computation time also varies
-dramatically with the voxel width.  High resolution images with small
-voxels are prohibitively slow to analyze.  The software will automatically
-reduce the resolution of the generated tomogram (and increase the voxel width)
-to maintain reasonable performance when used to analyze tomograms
-with small voxel widths.  (You can manually override this using the
-[-bin N](#-bin-binsize) argument, and setting N=1.)
-
 *(Note: Extra care must be taken if your image contains ice, gold fiducial
 markers, or other extremely dark objects which can confuse the detector.
-You can usually reduce the severity of this problem a little bit by including
-the "-cl -0.5 0.5" argument to clip these extreme voxel brightnesses.
-Better yet, you can prepare an "mask" image file which excludes
-these objects from consideration.  (This can be done using the
-"-thresh2" argument, or alternatively the "-blob", "-discard-blobs",
-"-draw-spheres" "-foreground 0", and "-background 1" arguments.)
-Then later run filter_mrc again to detect membranes using the
-"-mask" argument, together with the mask image you just created.)*
+When present, one typically creates a mask file to exclude these objects.
+For details, see the [tutorials](https://github.com/jewettaij/visfd_tutorials).
+Here, we use the
+"[-cl -0.5 0.5](#-cl-a-b) argument to reduce the intensity of these dark
+voxels.)*
 
 
 ### Example 2
@@ -146,19 +141,6 @@ filter_mrc -in tomogram.rec \
 ```
 
 Note:
-The ["*-mask cytoplasmic_volume.rec*"](#-mask-MRC_FILE)
-argument used in the second step is optional.
-I use it in this example because we are searching for ribosomes,
-so we want to restrict our search to blobs which lie *inside* the cell.
-(The mask image file used in this example, "cytoplasmic_volume.rec",
-can be generated using the procedure described in example 3.)
-*(Note: Extra care must be taken if your image contains ice, gold fiducial
-markers, or other extremely dark objects which can confuse the detector
-You can usually reduce the severity of this problem a little by including the
-"-cl -0.5 0.5" argument to clip these extreme voxel brightnesses.)*
-
-
-Note:
 All of these parameters make reasonable
 defaults for ribosome detection except the
 ["*-minima-thresold*"](#Automatic-disposal-of-poor-scoring-blobs)
@@ -170,6 +152,23 @@ It must be chosen carefully because it will vary from image to image.
 ["*-auto-thresh*"](#-auto-thresh-score--supervised-file_accepttxt-file_rejecttxt)
 argument.
 
+It should be noted that there are better methods for detecting ribosomes
+(and other known molecular complexes) in a tomogram, including template
+matching.  (This issue is discussed in more detail in the
+[tutorials](https://github.com/jewettaij/visfd_tutorials).)
+
+
+*(Note: Extra care must be taken if your image contains ice, gold fiducial
+markers, or other extremely dark objects which can confuse the detector.
+When present, one typically creates a mask file to exclude these objects.
+For details, see the [tutorials](https://github.com/jewettaij/visfd_tutorials).
+Here, we use the
+"[-cl -0.5 0.5](#-cl-a-b) argument to reduce the intensity of these dark
+voxels.)*
+
+*(Note: The ["-mask cytoplasmic_volume.rec"](#-mask-MRC_FILE)
+argument used in the second step is optional.)*
+
 
 
 ### Example 3
@@ -180,13 +179,23 @@ and **generate a closed surface** for that membrane.
  [*SSDRecon*](https://github.com/mkazhdan/PoissonRecon) and
  [*meshlab*](http://www.meshlab.net).)
 
-This is a complicated example with several steps.
-In order for this to work, you must make sure you are able to detect the
-membrane first.  To do that, first try the procedure in [example 1](#Example-1)
-on your tomogram.  Try that on a small cropped image.
-View the newly created image, and if the membranes are clearly visible.
-If so, then you are ready to try the example below.
-(If not, adjust the -membrane thickness parameter.)
+This is a complicated example with several steps. Sometimes these steps fail.
+Nevertheless, try this procedure first, and if it fails, then take a look at the
+[**tutorials**](https://github.com/jewettaij/visfd_tutorials).
+The tutorials contain detailed examples and show how to work around common
+problems when they arise.
+
+*Note:*
+This example is a continuation of [example 1](#Example-1).
+Please follow the instructions in [example 1](#Example-1)
+if you have not yet done so.  This will generate a new image file
+("membranes.rec").  You must make sure that you were able to detect the
+membranes successfully.  So view this image using IMOD/3dmod (for example).
+The membranes in that image should be clearly visible.
+They should dominate the image.
+*(If not, repeat the steps in example 1, and adjust the
+"-membrane thickness" parameter.  Sometimes several iterations are necessary.)*
+If so, then you are ready to enter the next command:
 
 ```
 filter_mrc -in tomogram.rec \
@@ -197,16 +206,7 @@ filter_mrc -in tomogram.rec \
 ```
 This will generate a new file ("largest_membrane_pointcloud.ply")
 containing a list of points located on the largest surface.
-You can use
-[*SSDRecon*](https://github.com/mkazhdan/PoissonRecon)
-to load this file and close the holes in the surface.  (See below.)
-
-**Note:**
-Here I assumed that the user has already followed the instructions in
-[example 1](#Example-1).  (Consequently, to save time, we used the
-["-load-progress"](#-load-progress-FILENAME)
-to argument to skip over the time consuming
-process of detecting the membrane again.)
+We will use this file later.  (See below.)
 
 **Note:**
 All of these parameters make reasonably good
@@ -2021,10 +2021,8 @@ It displays the range of voxel intensities in an image.
 Alternatively you can use the "**-cl a b**" argument.*
 
 
-### -cl
-```
--cl  a  b
-```
+### -cl a b
+
 The "**-cl**" argument is similar to the "**-clip**" argument, however it
 allows you to specify the minimimum and maximum intensity parameters
 in units of σ, where σ is the standard deviation of the brightness values

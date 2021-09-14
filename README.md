@@ -48,51 +48,37 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 ![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)
 ![example: membrane reconstruction using tensor voting and PoissonRecon (after cleaning up with meshlab)](./doc/images/nucleoid_example_Hylemonella_gracilis_inner_membrane.jpg)
 
-**filter_mrc** is a stand-alone program which uses many of the
+**[filter_mrc](./doc/doc_filter_mrc.md)**
+is a stand-alone program which uses many of the
 features of the **visfd** library.
 This program was intended to be used for automatic
-[membrane (surface) detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523),
-[surface closure](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction),
-[edge detection](./doc/doc_filter_mrc.md#-edge-thickness), 
-[filament (curve) detection](./doc/doc_filter_mrc.md#Detecting-curves), and
-[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection).
-Images can be segmented into distinct contiguous objects,
+[detection](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
+and
+[segmentation](./doc/doc_voxelize_mesh.md)
+of
+[closed](https://stackoverflow.com/questions/51149213/how-to-avoid-hole-filling-in-surface-reconstruction)
+membrane-bound compartments in Cryo-EM tomograms.
+Other features include
+filtering,
+annotation,
+[scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
+[morphological noise removal](https://en.wikipedia.org/wiki/Opening_(morphology))
+[connected component analysis](https://en.wikipedia.org/wiki/Connected-component_labeling),
+[filament (curve) detection *(planned)*](./doc/doc_filter_mrc.md#Detecting-curves), and
+[edge detection *(planned)*](./doc/doc_filter_mrc.md#-edge-thickness).
+Images can be segmented hierarchically into distinct contiguous objects,
 using a [variety](https://imagej.net/plugins/classic-watershed#introduction)
 of [strategies](./doc/doc_filter_mrc.md#-connect-threshold),
-and closed compartments can be hierarchically segmented using
-[*voxelize_mesh.py*](doc/doc_voxelize_mesh.md).
-A list of detected objects can be sorted, clustered
-and saved to standard files for further analysis by 3rd party programs,
-*(including [*PoissonRecon*](https://github.com/mkazhdan/PoissonRecon),
-[*meshlab*](http://www.meshlab.net), and
-[*voxelize_mesh.py*](doc/doc_voxelize_mesh.md)
-to generate smooth, connected, closed surface meshes.)*
+This program currently only supports the *.MRC* (a.k.a. *.REC* or *.MAP*)
+image file format.
+As of 2021-9-13, this program does not have a graphical user interface.
 
-This program includes a manual (text-mode) 3D image editor,
-as well as a variety of filters to clean up 3D images, including
-low-pass, high-pass, dilation, erosion, opening ,closing,
-thresholding, clipping, brightness inversions, fluctuation detectors,
-[generalized Gaussian blur](https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1),
-[DoG](https://en.wikipedia.org/wiki/Difference_of_Gaussians),
-[LoG](https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian),
-[Ridge-detection](https://en.wikipedia.org/wiki/Ridge_detection),
-and
-[3D tensor voting](https://www.ncbi.nlm.nih.gov/pubmed/24625523)
-filters.
-*(As of 2021-7-12, this program does not have a graphical user interface, so
-examples explain how to use this software with
-[IMOD](https://bio3d.colorado.edu/imod/) and
-[meshlab](http://www.meshlab.net)
-to display results and choose parameters.  Hopefully these tools can eventually
-be integrated with visualizers like IMOD/3dmod, chimerax, or tomviz.)*
-
-
-Documentation for this program is located
+Tutorials for using *filter_mrc* this are available
+[**here**](https://github.com/jewettaij/visfd_tutorials).
+A (long) reference manual for this program is available
 [**here**](./doc/doc_filter_mrc.md).
-The source code for the filters used by this program
-is located
+The source code for the VISFD filters used by this program is located
 [**here**](./lib/visfd/).
-This program currently only supports the .mrc/.rec image file format.
 
 
 ## voxelize_mesh.py
@@ -167,160 +153,49 @@ however as of 2020-12-15, some commits still (temporarily) break everything.
  This usually gets fixed within 24 hours.
  If the build is failing, choose a previous commit.)
 
-### Development Timeline: 2021
 
-Work on this project was temporarily halted on 2019-7,
-however I occasionally make small feature updates as I need them.
-We hope to finish the remaining features
-and submit a paper on this software in 2021.
-Nevertheless, if you find a bug, please report it.  I will fix it.
+### Development Timeline
+
+The most important features of this software are tested and working.
+We hope to submit a paper on this software in late 2021 or early 2022.
 
 
+## Installation
+
+The [INSTALL.md](INSTALL.md) file has instructions
+for installing VISFD and its dependencies.
 
 
 ## Requirements
 
 - **16GB** of RAM or higher.
-(64GB is recommended.  For membrane detection,
- your RAM must exceed 11x the size of the tomogram that you are analyzing.
- The *voxelize_mesh.py* program requires even more memory.
- You can reduce the memory needed and computation time dramatically
+(For membrane detection, your RAM must exceed 11x the size of the tomogram
+ that you are analyzing. The *voxelize_mesh.py* program requires even more
+ memory. You can reduce the memory needed and computation time dramatically
  by cropping or binning your tomogram.)
-- A terminal (running BASH or CSH/TCSH) where you can enter commands.
-  (*filter_mrc* is currently a text-only program.)
+- A terminal (running BASH) where you can enter commands.
 - A [C++ compiler](#Supported-compilers)
 - [make](https://en.wikipedia.org/wiki/Make_(software))
 - Software to visualize MRC/REC/MAP files
 (such as [IMOD/3dmod](https://bio3d.colorado.edu/imod/))
-
-
-### Recommended:
-
-- A text editor.  (Word, Wordpad, and Notepad will not work.)
-  Popular graphical text editors
-  include **Atom**, **Sublime**, **Notepad++**, and **VSCode**.
-  Older, non-graphical programs include **vim**, **emacs**,
-  **nano**, **ne**, and **jove**.
-  (Apple's TextEdit can be used if you save the file as *plain text*.)
-- python
+- python (version 3.0 or later)
 - The "numpy", "matplotlib", "mrcfile", and "pyvista" python modules
   (These are are installable via "pip3" or "pip".)
 - [**PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
 - Software to visualize mesh files (such as [meshlab](http://www.meshlab.net)).
+
+
+### Recommended:
+
+- A text editor.  (Such as vi, emacs, atom, VisualStudio, Notepad++, ...
+  Apple's TextEdit can be used if you save the file as *plain text*.)
 - A computer with *at least* 4 CPU cores (8 threads).
 - A **hard drive**.  (An HDD, not an SSD.)  The "filter_mrc"
-  program creates many large temporary files.  Although they
-  can be deleted, I worry that over time, this frequent writing and erasing
-  could wear down an SSD.  Old-fashioned magnetic hard drives are
-  better able tolerate this kind of usage.
+  program frequently creates many large temporary files which could wear down
+  an SSD over time.  Old-fashioned magnetic hard drives (HDDs) are better able
+  tolerate this kind of usage.  External (USB,thunderbolt) hard drives
+  should be fast enough.
 
-
-
-### Supported compilers
-
-This code has been tested with the **CLANG** and **GCC** (v9.3.0)
-compilers.  I have run into
-[difficulties in the past](https://github.com/jewettaij/visfd/issues/2).
-with older versions of GCC (7.5.0).
-
-
-## Compilation
-
-## Linux:
-```
-    source setup_gcc.sh
-    # (...or "source setup_gcc.sh", if you prefer gcc)
-    make
-```
-(If you are not using the bash shell, enter "bash" into the terminal beforehand.)
-
-Then copy the newly-compiled programs (and .PY files) from the
-various bin/ subdirectories to a directory that is in your
-[PATH](http://www.linfo.org/path_env_var.html)
-(such as ~/bin/ or /usr/local/bin/).
-*(This includes "filter_mrc", "combine_mrc", "voxelize_mesh.py",
-and "sum_voxels".)*
-Then log out and log in again for the changes to take effect.
-
-
-#### Warning: Avoid the **-Ofast** compiler argument
-As of 2020-2-11, we have had better results using
-[**-O3 -ffast-math**](https://github.com/jewettaij/visfd/issues/6) instead.
-(The problem with -Ofast seems to only appear during membrane detection.
- See [setup_gcc.sh](setup_gcc.sh) for a list of suggested compiler flags.)
-
-*Note: This program has been carefully checked for memory errors using valgrind
-and was found to be clean.  The issues mentioned above only occur when compiler
-optimization flags like -Ofast are in use.*
-
-
-## Windows:
-
-It is recommended that you install the BASH shell environment on your computer,
-along with *make* and either *gcc* or *clang*.  Once you have done that,
-you can follow the instructions above for linux users.
-There are several ways to to create a BASH environment,
-but perhaps the easiest method is to install
-[Windows Subsystem for Linux (WSL2)](https://docs.microsoft.com/en-us/windows/wsl/install-win10),
-***or***
-[virtualbox](https://www.virtualbox.org)
-(In the later case, you will also need to install a linux distribution,
-preferably with a lightweight
-desktop such as [xubuntu](https://xubuntu.org).)
-Alternatively, you can try 
-[Hyper-V](https://www.nakivo.com/blog/run-linux-hyper-v/)
-or (if you have an older version of windows)
-[CYGWIN](https://www.cygwin.com/).
-
-WSL and virtualbox are virtual machines that allow you to run an
-alternate operating system from within windows.
-In this case that operating system is linux.  The BASH shell and the
-compiler tools that you need can be easily installed from within in linux.
-Both WSL and virtualbox also create an alternate filesystem inside windows
-where the linux operating system is stored.  Software (like *visfd/filter_mrc*)
-that you download and install there can access the files in that filesystem.
-So you may need to copy your tomograms and otherf files to this fileystem
-beforehand.  If you **are using WSL or WSL2**, then you should
-[use caution when using windows programs to edit files stored there](https://devblogs.microsoft.com/commandline/do-not-change-linux-files-using-windows-apps-and-tools/).
-This includes text editors, image editors, and tomography processing software
-(such as IMOD).
-One possible way to avoid problems is to try to restrict yourself to using
-programs which you downloaded and installed directly from within the
-WSL or WSL2 environment *(if possible)*.  In particular, a couple of the
-features of the *filter_mrc* program require you to learn and use a
-(unix-style) text editor.  (Word, Wordpad, and Notepad will not work.)
-Again, it is a good idea to install and run such programs from within WSL,
-not windows.
-
-
-
-## Apple Mac:
-
-You must install OpenMP, and a compiler that supports it.
-Otherwise, this software will run at an intolerably slow speed.
-Last I checked OpenMP is disabled in MacOS by default.
-You must figure out how to install it.
-*(If it helps, there are some old instructions for doing that
-[here](https://iscinumpy.gitlab.io/post/omp-on-high-sierra/).)*
-
-I do not have access to a computer running MacOS.
-If you figure out how to install OpenMP, please contact me
-(or create a pull-request) so that we can update this section.
-
-
-Once OpenMP is installed, compile the visfd tools using:
-```
-    source setup_gcc.sh
-    # (...or "source setup_clang.sh", if you prefer clang)
-    make
-```
-
-Then copy the newly-compiled programs (and .PY files) from the
-various bin/ subdirectories to a directory that is in your
-[PATH](http://www.linfo.org/path_env_var.html)
-(such as ~/bin/ or /usr/local/bin/).
-*(This includes "filter_mrc", "combine_mrc", "voxelize_mesh.py",
-and "sum_voxels".)*
 
 
 ## License
@@ -352,4 +227,4 @@ then you can ignore this notice.*
 
 ## Funding
 
-VISFD is funded by NIH grant R01GM120604.
+VISFD was funded by NIH grant R01GM120604.
