@@ -62,7 +62,7 @@ Other features include
 filtering,
 annotation,
 [scale-free blob-detection](https://en.wikipedia.org/wiki/Blob_detection),
-[morphological noise removal](https://en.wikipedia.org/wiki/Opening_(morphology))
+[morphological noise removal](https://en.wikipedia.org/wiki/Opening_(morphology)),
 [connected component analysis](https://en.wikipedia.org/wiki/Connected-component_labeling),
 [filament (curve) detection *(planned)*](./doc/doc_filter_mrc.md#Detecting-curves), and
 [edge detection *(planned)*](./doc/doc_filter_mrc.md#-edge-thickness).
