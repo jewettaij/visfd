@@ -15,34 +15,34 @@ and their dependencies.
 
 Before you begin, you will need:
 
-A) A computer with a terminal running BASH (not TCSH).
+- A computer with a terminal running BASH (not TCSH).
   This is included in linux.
   Instructions for [#Windows-instructions] and [#Apple-MacOS-instructions]
   users is included below.
-B) At least 16GB of RAM memory.  (Preferrably 32GB or more.)
-C) A text editor.  (Such as vi, emacs, atom, VisualStudio, Notepad++, ...)
-D) A recent version of python (version 3.0 or later).
-E) The "pip3" (or "pip") python installer tool (usually included with python)
-F) A modern C++ compiler (C++17 or later).  This software has been tested
+- At least 16GB of RAM memory.  (Preferrably 32GB or more.)
+- A text editor.  (Such as vi, emacs, atom, VisualStudio, Notepad++, ...)
+- A recent version of python (version 3.0 or later).
+- The "pip3" (or "pip") python installer tool (usually included with python)
+- A modern C++ compiler (C++17 or later).  This software has been tested
   using GCC (v9.3.0) and CLANG (v10.0.0).  Earlier versions may not work.
-G) OpenMP
+- OpenMP
   In linux (and Windows WSL) OpenMP support is included with the GCC and
   CLANG compilers by default.  *(I don't know if MacOS supports OpenMP.
   See [below.](#Apple-MacOS-instructions))*
-H) The "make" tool.
+- The "make" tool.
   (Type "make" into the terminal.  If it doesn't complain "command not found"
   then it is installed.)
-I) [IMOD/3dmod](https://bio3d.colorado.edu/imod/)
-J) [Meshlab](https://www.meshlab.net)
-K) git (Usually "git" can be installed using your OS' package management
+- [IMOD/3dmod](https://bio3d.colorado.edu/imod/)
+- [Meshlab](https://www.meshlab.net)
+- git (Usually "git" can be installed using your OS' package management
   installer tool, such as "apt", "yum", or "brew", etc...)
 
 
 ### Optional, but recommended:
 
-L) [ChimeraX](https://www.rbvi.ucsf.edu/chimerax/download.html)
-M) A computer with *at least* 4 CPU cores (8 threads).
-N) A *hard drive*.  (An HDD, not an SSD.  Frequent rewrites to an SSD
+- [ChimeraX](https://www.rbvi.ucsf.edu/chimerax/download.html)
+- A computer with *at least* 4 CPU cores (8 threads).
+- A *hard drive*.  (An HDD, not an SSD.  Frequent rewrites to an SSD
   may reduce its lifetime.  An external/USB hard drive should be fast enough.)
 
 *(This file does not cover installation of these prerequisites.)*
