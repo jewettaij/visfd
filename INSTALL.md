@@ -18,7 +18,7 @@ Before you begin, you will need:
 - A computer with a terminal running BASH (not TCSH).
   This is included in linux.
   Instructions for [windows](#Windows-instructions) and
-  [Apple MacOS](#Apple-MacOS-instructions) users are included below.
+  [apple MacOS](#Apple-MacOS-instructions) users are included below.
 - At least 16GB of RAM memory.  (Preferrably 32GB or more.)
 - A text editor.  (Such as vi, emacs, atom, VisualStudio, Notepad++, ...)
 - A recent version of python (version 3.0 or later).
@@ -52,22 +52,13 @@ When you can satisfy these requirements, you are ready to proceed.
 
 ## STEP 1: Install the VISFD software tools
 
+### Download the VISFD code
+
 ```
 git clone https://github.com/jewettaij/visfd ~/visfd
 ```
 
-If this fails because "git" is not installed, then:
-- Open this web site with a web browser:
-  https://github.com/jewettaij/visfd
-- Click on the word "Releases" on the right-hand side of the page.
-  (It's not at the top.  It's about half-way down the page on the right.)
-- Click on the "Tags" tab button on the upper-left hand side of the page.
-- Click on the top most icons with the word "zip" underneath it.
-- Save the zip file.
-- Unpack the zip file and save it in your home directory with the name "visfd".
-
-
-## Now compile the VISFD source code
+### Compile the VISFD code
 
 ```
 cd ~/visfd
