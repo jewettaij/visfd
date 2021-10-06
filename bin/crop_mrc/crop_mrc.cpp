@@ -35,12 +35,45 @@ int main(int argc, char **argv) {
     tomo.Read(in_file_name, false);//You can also use "tomo.Read(cin);" or "cin>>tomo;"
     tomo.PrintStats(cerr);  //Optional (display the tomogram size & format)
 
-    if (xmin < 0) xmin = 0;
-    if (ymin < 0) ymin = 0;
-    if (zmin < 0) zmin = 0;
-    if (xmax > tomo.header.nvoxels[0]) xmax = tomo.header.nvoxels[0];
-    if (ymax > tomo.header.nvoxels[1]) ymax = tomo.header.nvoxels[1];
-    if (zmax > tomo.header.nvoxels[2]) zmax = tomo.header.nvoxels[2];
+    if (xmin < 0) {
+      xmin = 0;
+      cerr << "####################################################\n"
+           << "######### WARNING: xmin changed from " << xmin << " to 0\n"
+           << "####################################################" << endl;
+    }
+    if (xmax >= tomo.header.nvoxels[0]) {
+      cerr << "####################################################\n"
+           << "######### WARNING: xmax changed from " << xmax << " to "
+           << tomo.header.nvoxels[0]-1 << "\n"
+           << "####################################################" << endl;
+      xmax = tomo.header.nvoxels[0] - 1;
+    }
+    if (ymin < 0) {
+      ymin = 0;
+      cerr << "####################################################\n"
+           << "######### WARNING: ymin changed from " << ymin << " to 0\n"
+           << "#####################################################" << endl;
+    }
+    if (ymax >= tomo.header.nvoxels[1]) {
+      cerr << "#####################################################\n"
+           << "######### WARNING: xmax changed from " << ymax << " to "
+           << tomo.header.nvoxels[1]-1 << "\n"
+           << "#####################################################" << endl;
+      ymax = tomo.header.nvoxels[1] - 1;
+    }
+    if (zmin < 0) {
+      zmin = 0;
+      cerr << "#####################################################\n"
+           << "######### WARNING: zmin changed from " << zmin << " to 0\n"
+           << "#####################################################" << endl;
+    }
+    if (zmax >= tomo.header.nvoxels[2]) {
+      cerr << "##################################################\n"
+           << "######### WARNING: xmax changed from " << zmax << " to "
+           << tomo.header.nvoxels[2]-1 << "\n"
+           << "##################################################" << endl;
+      zmax = tomo.header.nvoxels[2] - 1;
+    }
 
     MrcSimple cropped_tomo;
     cropped_tomo.header = tomo.header;
