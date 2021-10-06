@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
     cropped_tomo.header.nvoxels[1] = nvoxels[1];
     cropped_tomo.header.nvoxels[2] = nvoxels[2];
     //           and shift origin[0],origin[1],origin[2] accordingly
-    cropped_tomo.header.origin[0]= tomo.header.origin[0]+(xmin-1)*voxel_size[0];
-    cropped_tomo.header.origin[1]= tomo.header.origin[1]+(ymin-1)*voxel_size[1];
-    cropped_tomo.header.origin[2]= tomo.header.origin[2]+(zmin-1)*voxel_size[2];
+    cropped_tomo.header.origin[0]= tomo.header.origin[0]-xmin*voxel_size[0];
+    cropped_tomo.header.origin[1]= tomo.header.origin[1]-ymin*voxel_size[1];
+    cropped_tomo.header.origin[2]= tomo.header.origin[2]-zmin*voxel_size[2];
 
     for (int iz = 0; iz <= zmax-zmin; iz++)
       for (int iy = 0; iy <= ymax-ymin; iy++)
