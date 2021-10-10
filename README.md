@@ -9,11 +9,14 @@ visfd
 
 ## Volumetric Image toolkit for Simple Feature Detection
 
-This is a small C++ template library for general 3D image processing
-("[visfd.hpp](./lib/visfd/visfd.hpp)"),
-as well as reading & writing image files using the the MRC file format
+VISFD is a small C++ template library for 3D image processing
+("[visfd.hpp](./lib/visfd/visfd.hpp)")
+which is primarily used to extract geometric shapes, volumes, and other features
+from 3-D volumetric images (tomograms).
+VISFD also includes a basic C++ library for reading and writing MRC files.
 ("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
-It is also a collection of stand-alone programs
+
+VISFD is also a collection of stand-alone programs
 which use this library
 (including "[filter_mrc](./doc/doc_filter_mrc.md)",
  "[combine_mrc](./doc/doc_combine_mrc.md)",
