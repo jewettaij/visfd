@@ -1,6 +1,7 @@
 [![CircleCI](https://circleci.com/gh/jewettaij/visfd.svg?style=svg)](https://circleci.com/gh/jewettaij/visfd)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/jewettaij/visfd)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+[![DOI](https://zenodo.org/badge/124841397.svg)](https://zenodo.org/badge/latestdoi/124841397)
 
 
 visfd
