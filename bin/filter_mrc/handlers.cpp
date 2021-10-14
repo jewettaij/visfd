@@ -1873,6 +1873,30 @@ HandleTV(const Settings &settings,
   } //if (settings.save_intermediate_fname_base != "")
 
 
+
+
+  if ((settings.morphology_aniso[0] != 0.0) ||
+      (settings.morphology_aniso[1] != 0.0) ||
+      (settings.morphology_aniso[2] != 0.0))
+  {
+    CONTINUEHERE;
+    switch (settings.morphology_aniso_type)
+    case EROSION_ANISO:
+      CONTINUEHERE;
+      break;
+    case DILATION_ANISO:
+      CONTINUEHERE;
+      break;
+    case OPENING_ANISO:
+      CONTINUEHERE;
+      break;
+    case CLOSING_ANISO:
+      CONTINUEHERE;
+      break;
+  }
+
+
+
   float ***aaafSaliency = nullptr;
 
   if (settings.cluster_connected_voxels)
@@ -1918,7 +1942,7 @@ HandleTV(const Settings &settings,
 
     size_t num_clusters =
 
-      LabelConnected(image_size, //image size
+      LabelConnected(image_size,
                      aaafSaliency,
                      aaaiClusterId, //<-which cluster does each voxel belong to?  (results will be stored here)
                      mask.aaafI,
@@ -2050,6 +2074,15 @@ HandleTV(const Settings &settings,
           }
 
           if (settings.surface_normal_curve_ds > 0.0) {
+            // Then, starting at position, xyz[0],xyz[1],xyz[2], move along
+            // a curve that is normal to the surface at this location,
+            // stopping when the saliency falls below some threshold.
+            // Do this in both directions.  We want to find out how thick the
+            // surface is at this location, and choose a point which lies
+            // roughly half-way through the thickness of the surface
+            // at this location.  The curve passes through this surface.
+            // we want to choose a point which is in the middle of this curve.
+            // We use the (saliency weighted) average position along this curve.
             vector<float> vS;
             vector<float> vWeights;
             vector<array<float,3> > vxyz;

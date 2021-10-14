@@ -272,12 +272,12 @@ all the way to the center of the membrane boundary.  Hence, some of
 these voxels at the surface are actually part of the membrane itself.
 We can optionally cleanup of the segmented volume to exclude voxels
 that are too close to the membrane surface.
-The [-erosion](#-erosion-thickness) 
+The [-erode](#-erode-thickness) 
 argument will contract the boundary of a segmented
 surface by approximately 50.0 Angstroms inward,
 creating a new file "segmented_interior.rec".
 ```
-filter_mrc -i segmented.rec -o segmented_interior.rec -erosion 50.0
+filter_mrc -i segmented.rec -o segmented_interior.rec -erode 50.0
 ```
 (You will have to play with this distance parameter, eg "50.0"
 to see what works best.)
@@ -406,10 +406,12 @@ Other, simpler filters and operations are also provided
 
 
 The
-["**-dilation**"](#-dilate-thickness),
-["**-erosion**"](#-erosion-thickness),
-["**-dilation-gauss**"](#-dilate-thickness), and
-["**-erosion-gauss**"](#-erosion-thickness)
+["**-dilate**"](#-dilate-thickness),
+["**-erode**"](#-erode-thickness),
+["**-dilate-gauss**"](#-dilate-thickness),
+["**-erode-gauss**"](#-erode-thickness)
+["**-dilate-aniso**"](#-dilate-aniso), and
+["**-erode-aniso**"](#-erode-aniso)
 filters are used for
 [enlarging](https://en.wikipedia.org/wiki/Dilation_(morphology)) or
 [shrinking](https://en.wikipedia.org/wiki/Erosion_(morphology))
@@ -417,6 +419,8 @@ the bright regions in an image.
 The
 ["**-opening**"](#-opening-thickness)
 ["**-closing**"](#-closing-thickness)
+["**-opening-aniso**"](#-opening-r1-r2-r3)
+["**-closing-aniso**"](#-closing-r1-r2-r3)
 filters are used for the removal of small
 [bright](https://en.wikipedia.org/wiki/Opening_(morphology))
 or
@@ -572,8 +576,8 @@ noise near this boundary instead of the surface or curve that you are seeking.
 Alternatively, to get around this problem you can dilate (expand) the size
 of the mask region to include these voxels near the periphery.
 *(One way to do this is using the 
-[-dilation](#-dilation-thickness) or
-[-dilation-gauss](#-dilation-gauss-thickness)
+[-dilate](#-dilate-thickness) or
+[-dilate-gauss](#-dilate-gauss-thickness)
 arguments with a large thickness parameter.  This is discussed below.
 Alternatively, if your only goal is to reduce the computation time, you can
 use the [-mask-rect](#-mask-rect-xmin-xmax-ymin-ymax-zmin-zmax) and
@@ -585,10 +589,10 @@ It may also help to vary the *size of the region* in the mask file using
 [dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)).
 (If you are using the "-mask" argument to load a mask image file,
 you can do this by creating a new mask file using *filter_mrc* again with the
-[-erosion](#-erosion-thickness),
-[-dilation](#-dilation-thickness),
-[-erosion-gauss](#-erosion-gauss-thickness), or
-[-dilation-gauss](#-dilation-gauss-thickness) arguments.)
+[-erode](#-erode-thickness),
+[-dilate](#-dilate-thickness),
+[-erode-gauss](#-erode-gauss-thickness), or
+[-dilate-gauss](#-dilate-gauss-thickness) arguments.)
 Eroding the mask can elimate traces of any structure at the edge
 of the mask boundary that might otherwise confuse or distract the detector.
 But, as mentioned earlier, dilating the mask is frequently more effective
@@ -931,8 +935,8 @@ the mask). However don't do this if you care about blobs near the periphery.
 Alternatively, to get around this problem you can dilate (expand) the size
 of the mask region to include these voxels near the periphery.
 *(One way to do this is using the
-[-dilation](#-dilation-thickness) or
-[-dilation-gauss](#-dilation-gauss-thickness) arguments.)*
+[-dilate](#-dilate-thickness) or
+[-dilate-gauss](#-dilate-gauss-thickness) arguments.)*
 
 
 #### Non-max suppression: automatic disposal of blobs
@@ -1019,8 +1023,8 @@ when discarding overlapping blobs.
 
 # Morphology
 
-### -erosion thickness
-### -dilation thickness
+### -erode thickness
+### -dilate thickness
 
 These arguments will apply a *grayscale*
 [image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
@@ -1032,7 +1036,9 @@ or
 regions in the image appear by a distance of *thickness*, respectively
 (which is in physical units, not voxels, unless the
 [-w 1](#Voxel-Width) argument is used).
-*(Details: A flat spherical structure-factor with radius=thickness is used.)*
+*(Details: A flat spherical structure-factor with radius=thickness is used.
+For comparison, the "-erode-aniso" and "-dilate-aniso" arguments will use
+an ellipsoidal structure factor instead.)*
 
 Image dilation and erosion are useful for erasing or emphasizing
 features (or noise) in the image that are in a given size range.
@@ -1050,8 +1056,8 @@ These filters have not been optimized for speed.
 
 If you have a binary image (images whose voxels have brightnesses 
 in the range from 0 to 1), you can try using the
-[-dilation-gauss](#-dilation-gauss-thickness) and
-[-erosion-gauss](#-erosion-gauss-thickness)
+[-dilate-gauss](#-dilate-gauss-thickness) and
+[-erode-gauss](#-erode-gauss-thickness)
 arguments.
 (These fast filters are insensitive to small features in the image.)
 *(For additional morphological filter operations, see
@@ -1062,6 +1068,108 @@ from
 along with the
 [mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
 module.)*
+
+
+
+### -dilate-gauss thickness
+### -erode-gauss thickness
+
+These filters are an alternative implementation of
+[image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
+[image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
+that uses fast Gaussian filters to blur an image followed by thresholding.
+
+*Note: These arguments are only intended for use with binary images
+(images whose voxels have brightnesses of either 0 or 1).*
+For binary images containing large smooth regions of bright voxels,
+the **-dilate-gauss** and **-erode-gauss** arguments
+will enlarge or shrink the size of these bright regions
+by a distance of roughly *thickness* (which has units of
+physical distance unless the ["-w 1"](#Voxel-Width) argument is used).
+Note that, due to blurring, features in the image which are smaller or
+narrower than *thickness* will be lost after this operation is completed.
+This generally producing a smoother result,
+and avoids the sometimes undesirable sensitivity
+to noise and small blemishes that ordinary
+[dilation](#-dilate-sphere-thickness) and
+[erosion](#-erode-sphere-thickness) filters can suffer from.
+However, this blurring makes these filters unsuitable
+for some morphological tasks *(such as 
+[opening](https://en.wikipedia.org/wiki/Opening_(morphology)),
+[closing](https://en.wikipedia.org/wiki/Closing_(morphology)), and the
+[top-hat transform](https://en.wikipedia.org/wiki/Top-hat_transform))*.
+Use with caution.
+
+#### Details
+This is implemented by blurring the image, and then applying a threshold
+so that all voxels whose brightness are below a threshold are discarded.
+
+- "-dilate-gauss *thickness*" is equivalent to
+"-gauss *thickness* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
+- "-erode-gauss *thickness*" is equivalent to
+"-gauss *thickness* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
+
+These thresholds were chosen so that the selected region
+expands or shrinks by a distance of *thickness*.
+(Technically, this is only true near a flat boundary.)
+
+
+### -dilate-binary-soft r1 r2 bmax
+### -erode-binary-soft r1 r2 bmax
+
+These arguments will perform a graycale
+[dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation) and
+[erosion](https://en.wikipedia.org/wiki/Erosion_(morphology)#Grayscale_erosion).
+Unlike traditional dilation and erosion operations which have a hard distance
+cutoff, this version has a cutoff that varies gradually from *r1* to *r2*.
+(Unless the "-w 1" argument is used, both *r1* and *r2* are expressed in
+units of physical distance, not voxels.  *Special case: If r2=0*,
+a soft edge is used which is only 1-voxel wide.)
+
+***Note:*** These "binary-soft" arguments are only intended for use with
+*binary* images or grayscale images whose voxels have brightness
+in the range from *0* to *bmax*.  (Typically *bmax=1*.)
+
+*(Technical details: This version uses a soft spherical structure factor,
+*b(r)* that varies from *0*, when *r=r1*, up to to *-bmax*, when
+*r=r2*, and -∞, when *r>r2*.  Setting *r2=0* results in a
+spherical structure factor whose brightness varies from *0* to *-bmax*
+on a thin 1-voxel wide shell at the sphere's boundary.)*
+
+
+### -dilate-aniso r1 r2 r3
+### -erode-aniso r1 r2 r3
+
+*WARNING: EXPERIMENTAL FEATURE, -A 2021-10-14*
+
+These arguments will perform a graycale
+[dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation) and
+[erosion](https://en.wikipedia.org/wiki/Erosion_(morphology)#Grayscale_erosion)
+using an ellipsoidal structure-factor (instead of a spherical structure factor).
+This means that, for each voxel in the image, the program will report the
+brightest (or dimmest) voxel inside an ellipsoidal region centered at that voxel
+(with principal axes of length *r1*, *r2*, *r3*, instead of a spherical region
+around that voxel).  This will expand the bright (or dark) regions in the
+image in those directions by a distance of *r1*, *r2*, and *r3*
+(in units of physical distance, not voxels).
+The **orientation** of the ellipsoid is determined by a tensor
+that must have been loaded from a file or computed in advance.
+*(Note: As of 2021-10-14, the 2nd-deriviative matrix (Hessian) is used.
+To calculate this matrix, you must use also use either the the "-membrane",
+"-curve", or "-load-progress" arguments.
+If you also used the "-tv" argument, the voting tensor will be used instead.
+As of 2021-10-14, you cannot yet load the matrix from a file.
+The directions of the principal axes, *r1*, *r2*, and *r3*,
+are determined by the eigenvectors of this matrix and
+sorted according to the corresponding eigenvalues in decresing order.
+If any of these r1,r2,r3 numbers are zero, then the brightnesses
+in that direction will not be searched.)*
+**Example:** To dilate or erode bright or dark features on the surface of a
+thin membrane-like surface in the image, set *r2=r3*, and set *r1=0* and use
+"-membrane".  To dilate or erode features along a curve, set *r1=r2=0*,
+and use "-curve".)
+
+
 
 
 ### -opening thickness
@@ -1080,6 +1188,38 @@ The size of the objects removed is determined by the *thickness* parameter
 [-w 1](#Voxel-Width) argument is used).
 *(Details: A flat spherical structure-factor with radius=thickness is used.)*
 These operations have not been optimized for speed.
+
+
+### -opening-aniso r1 r2 r3
+### -closing-aniso r1 r2 r3
+
+*WARNING: EXPERIMENTAL FEATURE, -A 2021-10-14*
+
+These arguments will perform a graycale
+[image opening](https://en.wikipedia.org/wiki/Opening_(morphology)) and
+[image closing](https://en.wikipedia.org/wiki/Closing_(morphology))
+filter to your image
+using an ellipsoidal structure-factor (instead of a spherical structure factor).
+This means that for each voxel in the image the program will erase
+bright or dark regions in the image if they smaller than a distance
+of *r1*, *r2*, *r3* along the principal axis directions of an ellipsoid
+(these r1, r2, r3 parameters are in units of physical distance, not voxels).
+The **orientation** of the ellipsoid is determined by a tensor
+that must have been loaded from a file or computed in advance.
+*(Note: As of 2021-10-14, the 2nd-deriviative matrix (Hessian) is used.
+To calculate this matrix, you must use also use either the the "-membrane",
+"-curve", or "-load-progress" arguments.
+If you also used the "-tv" argument, the voting tensor will be used instead.
+As of 2021-10-14, you cannot yet load the matrix from a file.
+The directions of the principal axes, *r1*, *r2*, and *r3*,
+are determined by the eigenvectors of this matrix and
+sorted according to the corresponding eigenvalues in decresing order.
+If any of these r1,r2,r3 numbers are zero, then the brightnesses
+in that direction will not be searched.)*
+**Example:** To apply an opening or closing filter on the surface of a
+tin membrane-like surface in the image, set *r2=r3*, and set *r1=0* and use
+"-membrane".  To perform an opening or closing operation along a curve,
+set *r1=r2=0*, and use "-curve".)
 
 
 ### -white-top-hat thickness
@@ -1107,71 +1247,6 @@ a distance which is similar to a distance which is smaller than
 the size of the large objects that you want removed from the image
 (in physical distance units, not in voxels).*
 
-
-### -dilation-gauss thickness
-### -erosion-gauss thickness
-
-These filters are an alternative implementation of
-[image dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)) and
-[image erosion](https://en.wikipedia.org/wiki/Erosion_(morphology))
-that uses fast Gaussian filters to blur an image followed by thresholding.
-
-*Note: These arguments are only intended for use with binary images
-(images whose voxels have brightnesses of either 0 or 1).*
-For binary images containing large smooth regions of bright voxels,
-the **-dilation-gauss** and **-erosion-gauss** arguments
-will enlarge or shrink the size of these bright regions
-by a distance of roughly *thickness* (which has units of
-physical distance unless the ["-w 1"](#Voxel-Width) argument is used).
-Note that, due to blurring, features in the image which are smaller or
-narrower than *thickness* will be lost after this operation is completed.
-This generally producing a smoother result,
-and avoids the sometimes undesirable sensitivity
-to noise and small blemishes that ordinary
-[dilation](#-dilation-sphere-thickness) and
-[erosion](#-erosion-sphere-thickness) filters can suffer from.
-However, this blurring makes these filters unsuitable
-for some morphological tasks *(such as 
-[opening](https://en.wikipedia.org/wiki/Opening_(morphology)),
-[closing](https://en.wikipedia.org/wiki/Closing_(morphology)), and the
-[top-hat transform](https://en.wikipedia.org/wiki/Top-hat_transform))*.
-Use with caution.
-
-#### Details
-This is implemented by blurring the image, and then applying a threshold
-so that all voxels whose brightness are below a threshold are discarded.
-
-- "-dilation-gauss *thickness*" is equivalent to
-"-gauss *thickness* -thresh 0.157299", *(where 0.157299 ≈ 1-erf(1))*
-- "-erosion-gauss *thickness*" is equivalent to
-"-gauss *thickness* -thresh 0.842701", *(where 0.842701 ≈ erf(1))*
-
-These thresholds were chosen so that the selected region
-expands or shrinks by a distance of *thickness*.
-(Technically, this is only true near a flat boundary.)
-
-
-### -dilation-binary-soft r1 r2 bmax
-### -erosion-binary-soft r1 r2 bmax
-
-These arguments will perform a graycale
-[dilation](https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation) and
-[erosion](https://en.wikipedia.org/wiki/Erosion_(morphology)#Grayscale_erosion).
-Unlike traditional dilation and erosion operations which have a hard distance
-cutoff, this version has a cutoff that varies gradually from *r1* to *r2*.
-(Unless the "-w 1" argument is used, both *r1* and *r2* are expressed in
-units of physical distance, not voxels.  *Special case: If r2=0*,
-a soft edge is used which is only 1-voxel wide.)
-
-***Note:*** These "binary-soft" arguments are only intended for use with
-*binary* images or grayscale images whose voxels have brightness
-in the range from *0* to *bmax*.  (Typically *bmax=1*.)
-
-*(Technical details: This version uses a soft spherical structure factor,
-*b(r)* that varies from *0*, when *r=r1*, up to to *-bmax*, when
-*r=r2*, and -∞, when *r>r2*.  Setting *r2=0* results in a
-spherical structure factor whose brightness varies from *0* to *-bmax*
-on a thin 1-voxel wide shell at the sphere's boundary.)*
 
 
 ### -find-minima and -find-maxima

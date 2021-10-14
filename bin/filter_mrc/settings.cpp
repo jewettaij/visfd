@@ -49,6 +49,10 @@ Settings::Settings() {
   morphology_r = 0.0;
   morphology_rmax = 0.0;
   morphology_bmax = 0.0;
+  morphology_aniso[0] = 0.0;
+  morphology_aniso[1] = 0.0;
+  morphology_aniso[2] = 0.0;
+  morphology_aniso_type = NONE_ANISO;
 
   // The code is a little bit confusing because I tried to cram as much
   // functionality into the smallest number of parameters possible:
@@ -708,8 +712,8 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-dilation") ||
-             (vArgs[i] == "-dilate"))
+    else if ((vArgs[i] == "-dilate") ||
+             (vArgs[i] == "-dilation"))
     {
       try {
         if ((i+1 >= vArgs.size()) ||
@@ -727,8 +731,8 @@ Settings::ParseArgs(vector<string>& vArgs)
 
 
 
-    else if ((vArgs[i] == "-erosion") ||
-             (vArgs[i] == "-erode"))
+    else if ((vArgs[i] == "-erode") ||
+             (vArgs[i] == "-erosion"))
     {
       try {
         if ((i+1 >= vArgs.size()) ||
@@ -742,12 +746,12 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by a nonnegative number\n");
       }
       num_arguments_deleted = 2;
-    } //if (vArgs[i] == "-erosion")
+    } //if (vArgs[i] == "-erode")
 
 
 
-    else if ((vArgs[i] == "-dilation-binary-soft") ||
-             (vArgs[i] == "-dilate-binary-soft"))
+    else if ((vArgs[i] == "-dilate-binary-soft") ||
+             (vArgs[i] == "-dilation-binary-soft"))
     {
       try {
         if ((i+2 >= vArgs.size()) ||
@@ -765,12 +769,12 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by nonnegative numbers\n");
       }
       num_arguments_deleted = 4;
-    } //(vArgs[i] == "-dilation-binary-soft")
+    } //(vArgs[i] == "-dilate-binary-soft")
 
 
 
-    else if ((vArgs[i] == "-erosion-binary-soft") ||
-             (vArgs[i] == "-erode-binary-soft"))
+    else if ((vArgs[i] == "-erode-binary-soft") ||
+             (vArgs[i] == "-erosion-binary-soft"))
     {
       try {
         if ((i+3 >= vArgs.size()) ||
@@ -788,14 +792,14 @@ Settings::ParseArgs(vector<string>& vArgs)
                        " argument must be followed by nonnegative numbers\n");
       }
       num_arguments_deleted = 4;
-    } //(vArgs[i] == "-erosion-binary-soft")
+    } //(vArgs[i] == "-erode-binary-soft")
 
 
 
-    else if ((vArgs[i] == "-dilation-gauss") ||
-             (vArgs[i] == "-dilate-gauss") ||
-             (vArgs[i] == "-erosion-gauss") ||
-             (vArgs[i] == "-erode-gauss"))
+    else if ((vArgs[i] == "-dilate-gauss") ||
+             (vArgs[i] == "-dilation-gauss") ||
+             (vArgs[i] == "-erode-gauss") ||
+             (vArgs[i] == "-erosion-gauss"))
     {
       float blur_distance;
       try {
@@ -825,7 +829,49 @@ Settings::ParseArgs(vector<string>& vArgs)
       in_threshold_01_b = in_threshold_01_a;
 
       num_arguments_deleted = 2;
-    } // if ((vArgs[i] == "-erode-gauss") || (vArgs[i] == "-dilate-gauss"))
+    } // if ((vArgs[i] == "-dilate-gauss") || (vArgs[i] == "-erode-gauss"))
+
+
+
+    else if ((vArgs[i] == "-dilate-aniso") ||
+             (vArgs[i] == "-dilation-aniso"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        morphology_aniso[0] = stof(vArgs[i+1]);
+        morphology_aniso[1] = stof(vArgs[i+2]);
+        morphology_aniso[2] = stof(vArgs[i+3]);
+        morphology_aniso_type = DILATION_ANISO;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a nonnegative number\n");
+      }
+      num_arguments_deleted = 4;
+    } //if (vArgs[i] == "-dilate-aniso")
+
+
+
+    else if ((vArgs[i] == "-erode-aniso") ||
+             (vArgs[i] == "-erosion-aniso"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        morphology_aniso[0] = stof(vArgs[i+1]);
+        morphology_aniso[1] = stof(vArgs[i+2]);
+        morphology_aniso[2] = stof(vArgs[i+3]);
+        morphology_aniso_type = EROSION_ANISO;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a nonnegative number\n");
+      }
+      num_arguments_deleted = 4;
+    } //if (vArgs[i] == "-erode-aniso")
 
 
 
@@ -864,6 +910,48 @@ Settings::ParseArgs(vector<string>& vArgs)
       }
       num_arguments_deleted = 2;
     } //if (vArgs[i] == "-closing")
+
+
+
+    else if ((vArgs[i] == "-closing-aniso") ||
+             (vArgs[i] == "-close-aniso"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        morphology_aniso[0] = stof(vArgs[i+1]);
+        morphology_aniso[1] = stof(vArgs[i+2]);
+        morphology_aniso[2] = stof(vArgs[i+3]);
+        morphology_aniso_type = CLOSING_ANISO;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a nonnegative number\n");
+      }
+      num_arguments_deleted = 4;
+    } //if (vArgs[i] == "-closing-aniso")
+
+
+
+    else if ((vArgs[i] == "-opening-aniso") ||
+             (vArgs[i] == "-open-aniso"))
+    {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        morphology_aniso[0] = stof(vArgs[i+1]);
+        morphology_aniso[1] = stof(vArgs[i+2]);
+        morphology_aniso[2] = stof(vArgs[i+3]);
+        morphology_aniso_type = OPENING_ANISO;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a nonnegative number\n");
+      }
+      num_arguments_deleted = 4;
+    } //if (vArgs[i] == "-opening-aniso")
 
 
 

@@ -592,6 +592,163 @@ BlackTopHatSphere(Scalar radius,             //!< radius of the sphere (in voxel
 
 
 
+/// @brief Computes the grayscale dilation of an image with a flat sphere.
+///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
+template<typename Scalar>
+void
+DilateSphere(Scalar radius,           //!< radius of the sphere (in voxels)
+             int const image_size[3], //!< size of the image in x,y,z directions
+             Scalar const *const *const *aaafSource, //!< source image array
+             Scalar ***aaafDest,         //!< filter results stored here
+             Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+             Scalar radius_max = 0.0,  //!< OPTIONAL: smoothly vary between two radii?
+             Scalar bmax = 0.0, //!< OPTIONAL: structure factor b varies between 0 and this value
+             ostream *pReportProgress = nullptr //!< OPTIONAL: report progress to the user
+             )
+
+/// @brief Computes either the grayscale erosion or dilation of an image with an
+///        ellipsoidal-shaped structure factor.  For more details, see:
+///       https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
+///       https://en.wikipedia.org/wiki/Erosion_(morphology)#Grayscale_erosion
+///        The size of the ellipsoid to search over (principal axis lengths) 
+///        is given by the "search_ellipsoid" argument.
+///        The directions to search over are stored in "aaaafDirections"
+///        aaaafTensor[iz][iy][ix][] is a 1-dimensional array which
+///        stores the direction of the ellipsoid at voxel position ix,iy,iz.
+///        This 1-dimensional array stores 6 numbers
+///        aaaafTensor[iz][iy][ix][0..5]
+///        which are the 6 non-redundant entries of a symmetric tensor whose
+///        eigenvectors correspond the directions of the ellipsoid at this
+///        location. (They should be sorted by eigenvalue in descending order.)
+///        Since these directions are not algined with the X,Y,Z axis,
+///        and they are changing throughout the image, the distance that we
+///        travel in each of these principal directions is determined by the
+///        search_iters[] array argument, and is typically less than one voxel.
+///        This ensures that we visit every real nearby voxel at least once,
+///        even though we may sometimes visit the same voxel multiple times.
+///        
+/// @note  This function has not been optimized for speed.
+template<typename Scalar>
+void
+DilateOrErodeAniso(bool dilate,                            //!< dilate or erode?
+                   Scalar search_radius[3],                //!< size of the eillipsoidal structure factor in voxels
+                   const int image_size[3],                //!< size of the image in x,y,z directions
+                   Scalar const *const *const *aaafSource, //!< source image array
+                   Scalar ***aaafDest,                     //!< filter results stored here
+                   TensorContainer const *const *const *aaaafTensor, //!< ellipsoid orientations stored here (see above)
+                   Scalar const *const *const *aaafMask = nullptr,   //!< OPTIONAL: ignore voxel ix,iy,iz if aaafMask!=nullptr and aaafMask[iz][iy][ix]==0
+                   const int *search_radius_i=nullptr,     //!< iterate this many times in each direction during the search
+                   ostream *pReportProgress=nullptr        //!< OPTIONAL: print progress to the user?
+       )
+{
+  assert(aaaafDirections);
+  // figure out the size of the nearby region we will search over
+  // (ie the size of the "structure factor")
+  int niters[3];
+  Scalar incr[3];
+  if (search_radius_i == nullptr) {
+    for (int d=0; d < 3; d++) {
+      assert(search_radius[d] >= 0);
+      niters[d] = std::floor(search_radius[d]+0.5);
+      incr[d] = 1.0;
+    }
+  }
+  else {
+    for (int d=0; d < 3; d++) {
+      assert(search_radius_i[d] >= 0);
+      niters[d] = search_radius_i[d];
+      nincr[d] = 0.0;
+      if (search_radius_i[d] > 1)
+        incr[d] = search_radius_i[d] / (search_radius_i[d] - 1);
+    }
+  }
+
+  // Now, figure out which voxels lie within the ellipsoid.
+  // We will save the relative coordinates of these voxels in an array.
+  // We will lookup the voxel indices from this array.
+  CONTINUEHERE;
+
+  // Now figure out the size of the aaaaaaDirections array (in the Z direction)
+  // It should equal the maximum width of the ellipsoid (from any direction).
+  CONTINUEHERE;
+
+
+
+  // now loop over the voxels in the source image
+  for (int iz=0; iz < image_size[2]; iz++) {
+    if (pReportProgress)
+      *pReportProgress << "  z = " << iz+1 << " of " << image_size[2] << endl;
+    vector<array<int,2> > voxels_to_consider;
+    for (int iy=0; iy < image_size[1]; iy++) {
+      for (int ix=0; ix < image_size[0]; ix++) {
+        if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0))
+          continue;
+        else
+          voxels_to_consider.push_back(array<int,2>(ix,iy));
+      }
+    }
+    // Now precompute the aaaaaaDirections array for voxels near this z value
+    CONTINUEHERE;
+
+
+
+
+    #pragma omp parallel for collapse(1)
+    for (size_t ip = 0; ip < voxels_to_consider.size(); ip++)
+    {
+      ix = voxels_to_consider[ip][0];
+      iy = voxels_to_consider[ip][1];
+      Scalar max_f_plus_b = -std::numeric_limits<Scalar>::infinity();
+
+      //CONTINUEHERE
+      Scalar dx, dy, dz;
+      Scalar du = 0.0;
+      Scalar dv = 0.0;
+      Scalar dw = 0.0;
+      for (int jw = 0; jw <= niters[2]; jw++) {
+        for (int jv = 0; jv <= niters[1]; jv++) {
+          for (int ju = 0; ju <= niters[0]; ju++) {
+            int Ix = std::floor(x+0.5);
+            int Iy = std::floor(y+0.5);
+            int Iz = std::floor(z+0.5);
+            if ((Ix < 0) || (Ix >= image_size[0]) ||
+                (Iy < 0) || (Iy >= image_size[1]) ||
+                (Iz < 0) || (Iz >= image_size[2]))
+              continue;
+            if ((aaafMask) && (aaafMask[Iz][Iy][Ix] == 0.0))
+              continue;
+
+            Scalar f = aaafSource[Iz][Iy][Ix];
+
+            Scalar b = 0.0; // In this implementation, we assume b=0.  See:
+            //https://en.wikipedia.org/wiki/Erosion_(morphology)#Grayscale_erosion
+            //https://en.wikipedia.org/wiki/Dilation_(morphology)#Grayscale_dilation
+            max_f_plus_b = std::max(max_f_plus_b, f + b);
+            min_f_minus_b = std::max(min_f_minus_b, f - b);
+
+            dx += incr[0] * directions[0][0];
+            dy += incr[0] * directions[0][1];
+            dz += incr[0] * directions[0][2];
+          }
+          dx += incr[1] * directions[1][0];
+          dy += incr[1] * directions[1][1];
+          dz += incr[1] * directions[1][2];
+        }
+        dx += incr[2] * directions[2][0];
+        dy += incr[2] * directions[2][1];
+        dz += incr[2] * directions[2][2];
+      }
+      if (dilate)
+        aaafDest[iz][iy][ix] = max_f_plus_b;
+      else
+        aaafDest[iz][iy][ix] = min_f_minus_b;
+    }
+  }
+} // DilateOrErodeAniso()
+
+
+
+
 } //namespace visfd
 
 

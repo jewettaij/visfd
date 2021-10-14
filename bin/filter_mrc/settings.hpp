@@ -36,13 +36,13 @@ class Settings {
     NONE,     //(The user has not selected a filter, or is using thresholding)
     FIND_EXTREMA, // find local minima or maxima in the image
     MEDIAN,   // a median filter (https://en.wikipedia.org/wiki/Median_filter)
-    DILATION, // grayscale image dilation
-    EROSION,  // grayscale image erosion
-    OPENING,  // grayscale image opening
-    CLOSING,  // grayscale image closing
-    TOP_HAT_WHITE, // top hat transforms
-    TOP_HAT_BLACK, // (see https://en.wikipedia.org/wiki/Top-hat_transform)
-    GAUSS,   //3D Gaussian filter
+    DILATION,       // grayscale morphological dilation
+    EROSION,        // grayscale morphological erosion
+    OPENING,        // grayscale morphological opening
+    CLOSING,        // grayscale morphological closing
+    TOP_HAT_WHITE,  // top hat transforms
+    TOP_HAT_BLACK,  // (see https://en.wikipedia.org/wiki/Top-hat_transform)
+    GAUSS,   //3D Gaussian blur (diffusion) filter
     GGAUSS,  //3D Generalized Gaussian filter (slow)
     DOG,     //3D Difference of Gaussians (arbitrary widths)
     DOGG,    //3D Generalized Difference-of-Generalized-Gaussians with arbitrary
@@ -75,7 +75,6 @@ class Settings {
   
   FilterType filter_type; // The user must select one of these filter types
 
-
   // ---- parameters describing the physical size of each voxel ----
   //      (shared by all filter types)
 
@@ -106,10 +105,23 @@ class Settings {
   string save_intermediate_fname_base = ""; //save progress of slow calculations
   string load_intermediate_fname_base = ""; //load progress from a previous run?
 
-  float median_radius;       // radius used for the median filter
-  float morphology_r;        // distance parameter for morphological operations
-  float morphology_rmax;     // distance parameter for morphological operations
-  float morphology_bmax;     // maximum b value used in soft structure factors
+  float median_radius;      // radius used for the median filter
+  float morphology_r;       // distance parameter for morphological operations
+  float morphology_rmax;    // distance parameter for morphological operations
+  float morphology_bmax;    // maximum b value used in soft structure factors
+  float morphology_aniso[3];// distance for anisotropic morphological operations
+  // Anisotropic morphological filters are currently a subset of the
+  // some of the filter types above (CURVE and SURFACE filter types).
+  // (This may change in the future.)
+  // So I have a sub-type called "eMorphAnisoType" for these filter types.
+  typedef enum eMorphAnisoType {
+    DILATION_ANISO, // anisotropic grayscale morphological dilation
+    EROSION_ANISO,  // anisotropic grayscale morphological erosion
+    OPENING_ANISO,  // anisotropic grayscale morphological opening
+    CLOSING_ANISO,  // anisotropic grayscale morphological closing
+    NONE_ANISO      // don't use any anisotropic operations
+  } MorphAnisoType; 
+  MorphAnisoType morphology_aniso_type; // specify the morphology operation
 
   // ---- parameters for "difference of generalized gaussians" filters ----
   //

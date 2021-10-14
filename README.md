@@ -47,10 +47,9 @@ and robust connected-component analysis.
 Interesting features can be detected in images using programs like EMAN2.
 Then the coordinates of these geometric shapes can be extracted using VISFD,
 and analyzed using 3rd-party tools like
-[**SSDRecon**](https://github.com/mkazhdan/PoissonRecon)).
-Using these tools together, it now possible to automatically determine the
-inside and outside of membrane-bound compartments in tomograms of cells
-(for example).
+[**SSDRecon**](https://github.com/mkazhdan/PoissonRecon).
+Using these tools together, it possible to automatically determine the
+inside and outside of membrane-bound compartments in tomograms of cells.
 
 
 
