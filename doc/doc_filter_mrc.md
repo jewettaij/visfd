@@ -68,6 +68,9 @@ For more realistic and detailed examples, see the
 
 ### Example 1
 ```
+# Use NAD filtering to improve the contrast of the membranes in the image:
+nad_eed_3d -m 2 -k 7 -n 15 orig_tomogram.rec tomogram.rec
+
 # Detect membranes in an EM image using tensor voting
 # (target thickness ≈ 60.0 Angstroms)
 
