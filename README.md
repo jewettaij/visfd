@@ -40,16 +40,17 @@ In addition, sophisticated machine-learning methods have been implemented in
 [EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg)
 and
 [scikit-learn](https://scikit-learn.org).
-*VISFD compliments these software tools and libraries*
-by providing tools for geometry extraction, curve and surface detectors
+*VISFD compliments this software*
+by providing tools for geometry extraction, curve and surface detection
 (following [this paper](http://dx.doi.org/10.1016/j.jsb.2014.02.015)),
 and robust connected-component analysis.
-Objects and shapes can be detected in images using programs like EMAN2.
+Interesting features can be detected in images using programs like EMAN2.
 Then the coordinates of these geometric shapes can be extracted using VISFD,
 and analyzed using 3rd-party tools like
 [**SSDRecon**](https://github.com/mkazhdan/PoissonRecon)).
 Using these tools together, it now possible to automatically determine the
-inside and outside of membrane-bound compartments in tomograms of cells.
+inside and outside of membrane-bound compartments in tomograms of cells
+(for example).
 
 
 
