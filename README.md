@@ -30,16 +30,27 @@ Multiprocessor support is implemented using
 
 
 ## *Alternatives to VISFD*
-Much more comprehensive libraries and software tools are available
-for 3-D image processing, such as [scikit-image](https://scikit-image.org) and
+Much more comprehensive libraries and software tools are available for 3-D
+image processing, such as [scikit-image](https://scikit-image.org) and
 [scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 *(MRC files can be read into python arrays using the
 [mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
 module.)*
-VISFD compliments these libraries by providing
-more robust curve and surface detectors
+In addition, sophisticated machine-learning methods have been implemented in
+[EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg)
+and
+[scikit-learn](https://scikit-learn.org).
+*VISFD compliments these software tools and libraries*
+by providing tools for geometry extraction, curve and surface detectors
 (following [this paper](http://dx.doi.org/10.1016/j.jsb.2014.02.015)),
-as well as tools for clustering and closed surface segmentation.
+and robust connected-component analysis.
+Objects and shapes can be detected in images using programs like EMAN2.
+Then the coordinates of these geometric shapes can be extracted using VISFD,
+and analyzed using 3rd-party tools like
+[**SSDRecon**](https://github.com/mkazhdan/PoissonRecon)).
+Using these tools together, it now possible to automatically determine the
+inside and outside of membrane-bound compartments in tomograms of cells.
+
 
 
 ## programs included with this repository:
