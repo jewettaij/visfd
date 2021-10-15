@@ -96,7 +96,7 @@ Settings::Settings() {
   extrema_on_boundary = true;
   //REMOVE THIS CRUFT
   //find_extrema_occlusion_ratio = 1.0;
-  in_coords_file_name = "";
+  in_coords_file_names.clear();
   out_coords_file_name = "";
   sphere_decals_diameter = -1.0;
   sphere_decals_foreground = 1.0;
@@ -1764,7 +1764,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
             (vArgs[i+1] == vArgs[i+2]))
           throw invalid_argument("");
-        in_coords_file_name = vArgs[i+1];
+        in_coords_file_names.push_back(vArgs[i+1]);
         out_coords_file_name = vArgs[i+2];
       }
       catch (invalid_argument& exc) {
@@ -2253,7 +2253,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       filter_type = DISTANCE_TO_POINTS;
-      in_coords_file_name = vArgs[i+1];
+      in_coords_file_names.push_back(vArgs[i+1]);
       num_arguments_deleted = 2;
     }
 
@@ -2265,7 +2265,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = DRAW_SPHERES;
-        in_coords_file_name = vArgs[i+1];
+        in_coords_file_names.push_back(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2280,7 +2280,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = DRAW_SPHERES;
-        in_coords_file_name = vArgs[i+1];
+        in_coords_file_names.push_back(vArgs[i+1]);
         if (! user_set_thickness_manually) {
           sphere_decals_shell_thickness = 0.05;
           sphere_decals_shell_thickness_is_ratio = true;
@@ -3161,7 +3161,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           blob_profiles_center_criteria = BlobCenterCriteria::CENTER;
         else
           throw invalid_argument("");
-        in_coords_file_name = vArgs[i+2];
+        in_coords_file_names.push_back(vArgs[i+2]);
         blob_profiles_file_name_base = vArgs[i+3];
       }
       catch (invalid_argument& exc) {
@@ -3490,7 +3490,7 @@ Settings::ParseArgs(vector<string>& vArgs)
   if ((multi_training_pos_fnames.size() > 0) ||
       (multi_training_neg_fnames.size() > 0))
   {
-    if ((in_coords_file_name != "") &&
+    if ((in_coords_file_names.size() > 0) &&
         (out_coords_file_name != ""))
       throw InputErr("Error: This program is too stupid to automatically discard blobs from multiple\n"
                      "       images in a single invocation.  For this reason,\n"

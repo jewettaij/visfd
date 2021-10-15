@@ -441,13 +441,15 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
          (voxel_width[1] == voxel_width[2]));
 
 
-  ReadBlobCoordsFile(settings.in_coords_file_name,
-                     &crds,
-                     &diameters,
-                     &scores,
-                     settings.sphere_decals_diameter,
-                     settings.sphere_decals_foreground,
-                     settings.sphere_decals_scale);
+  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
+    ReadBlobCoordsFile(settings.in_coords_file_names[I],
+                       &crds,
+                       &diameters,
+                       &scores,
+                       settings.sphere_decals_diameter,
+                       settings.sphere_decals_foreground,
+                       settings.sphere_decals_scale);
+  }
 
   if (voxel_width_ > 0.0) {
     assert(crds.size() == diameters.size());
@@ -459,8 +461,8 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
   }
 
 
-  cerr << " --- discarding blobs in file \n"
-       << "     \"" << settings.in_coords_file_name << "\" ---\n"
+  cerr << " --- discarding blobs in file ---\n"
+    //<< "     \"" << settings.in_coords_file_name << "\" ---\n"
        << "\n";
 
 

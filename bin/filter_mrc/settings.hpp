@@ -319,7 +319,7 @@ class Settings {
 
   // ---- parameters for creating images showing detected blobs ----
 
-  string in_coords_file_name;
+  vector<string> in_coords_file_names;
   string out_coords_file_name;
   float sphere_decals_diameter;
   float sphere_decals_scale;

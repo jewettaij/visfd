@@ -171,17 +171,19 @@ HandleBlobRadialIntensity(const Settings &settings,
   vector<float> diameters;         // diameter of each sphere
   vector<float> scores;            // the "score" (contrast) of each blob
 
-  assert(settings.in_coords_file_name != "");
+  assert(settings.in_coords_file_names.size() > 0);
   assert(settings.blob_profiles_file_name_base != "");
 
-  ReadBlobCoordsFile(settings.in_coords_file_name,
-                     &sphere_centers, // store blob coordinates here
-                     &diameters,
-                     &scores,
-                     voxel_width[0],
-                     settings.sphere_decals_diameter,
-                     settings.sphere_decals_foreground,
-                     settings.sphere_decals_scale);
+  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
+    ReadBlobCoordsFile(settings.in_coords_file_names[I],
+                       &sphere_centers, // store blob coordinates here
+                       &diameters,
+                       &scores,
+                       voxel_width[0],
+                       settings.sphere_decals_diameter,
+                       settings.sphere_decals_foreground,
+                       settings.sphere_decals_scale);
+  }
 
   size_t Nblobs = sphere_centers.size();
   assert(Nblobs == diameters.size());
@@ -1396,30 +1398,32 @@ HandleDistanceToPoints(const Settings &settings,
                        MrcSimple &mask,
                        float voxel_width[3])
 {
-  fstream coords_file;
-  coords_file.open(settings.in_coords_file_name, ios::in);
-  if (! coords_file)
-    throw VisfdErr("Error: unable to open \""+
-                   settings.in_coords_file_name +"\" for reading.\n");
   vector<array<int,3> > crds;
-  while (coords_file) {
-    double x, y, z;
-    coords_file >> x;
-    coords_file >> y;
-    coords_file >> z;
-    double ix, iy, iz;
-    ix = floor((x / voxel_width[0]) + 0.5);
-    iy = floor((y / voxel_width[1]) + 0.5);
-    iz = floor((z / voxel_width[2]) + 0.5);
-    array<int, 3> ixiyiz;
-    ixiyiz[0] = ix;
-    ixiyiz[1] = iy;
-    ixiyiz[2] = iz;
-    crds.push_back(ixiyiz);
-  }
+  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
+    fstream coords_file;
+    coords_file.open(settings.in_coords_file_names[I], ios::in);
+    if (! coords_file)
+      throw VisfdErr("Error: unable to open \""+
+                     settings.in_coords_file_names[I] +"\" for reading.\n");
+    while (coords_file) {
+      double x, y, z;
+      coords_file >> x;
+      coords_file >> y;
+      coords_file >> z;
+      double ix, iy, iz;
+      ix = floor((x / voxel_width[0]) + 0.5);
+      iy = floor((y / voxel_width[1]) + 0.5);
+      iz = floor((z / voxel_width[2]) + 0.5);
+      array<int, 3> ixiyiz;
+      ixiyiz[0] = ix;
+      ixiyiz[1] = iy;
+      ixiyiz[2] = iz;
+      crds.push_back(ixiyiz);
+    }
+  } // for (int I = 0; I < settings.in_coords_file_names.size(); ++I)
 
-  cerr << " ------ calculating distance to points in "
-       << settings.in_coords_file_name << " ------\n"
+  cerr << " ------ calculating distance to points ------\n"
+    //<< " in " << settings.in_coords_file_name << " ------\n"
        << endl;
 
   // At some point I was trying to be as general as possible and allowed
