@@ -2393,14 +2393,17 @@ to compensate for the change in image resolution.
 ### (-draw-hollow-spheres filename)
 
 
-The "**-draw-spheres**" argument does not perform a filtering operation
-on the original image.
+The "**-draw-spheres**" argument does not perform
+a filtering operation on the original image.
 Instead it reads a text file (eg "filename") containing between 3 and 5 columns
 indicating the location, size, and brightness of a series of points in space.
 After reading that file, a new image will be created
 (the same size as the input image)
 with each blob represented (by default) by a solid sphere centered
 at the points of interest superimposed on the original image (by default).
+(If you have multiple files containing the positions of spheres
+you want to draw, the "-draw-spheres" argument can be included
+multiple times with different files.)
 The "**-draw-hollow-spheres**" argument behaves similarly,
 however it draws hollow spherical shells instead of solid spheres,
 and it superimposes them upon the original image.
