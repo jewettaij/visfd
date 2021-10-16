@@ -2700,6 +2700,12 @@ Here is an example of the output:
   threshold lower bound: 37.921
   threshold upper bound: inf
 ```
+If both an upper bound and a lower bound are listed, then an error occurred.
+This usually happens if you have much more positive or negative data.
+In that case, you can usually solve the problem by including more training
+data or discarding training data so that the number of positive and negative
+training examples is similar.
+
 Equal weight is given to false-positives and false-negatives,
 (so choose your examples accordingly).
 Choosing blobs which are "edge-cases" is recommended.
