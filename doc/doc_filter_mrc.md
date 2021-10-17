@@ -2697,15 +2697,9 @@ The (upper-bound or lower-bound) threshold will be chosen
 which minimize the number of incorrectly classified blobs.
 Here is an example of the output:
 ```
-  threshold lower bound: 37.921
-  threshold upper bound: inf
+  threshold lower bound: -inf
+  threshold upper bound: -37.921
 ```
-If both an upper bound and a lower bound are listed, then an error occurred.
-This usually happens if you have much more positive or negative data.
-In that case, you can usually solve the problem by including more training
-data or discarding training data so that the number of positive and negative
-training examples is similar.
-
 Equal weight is given to false-positives and false-negatives,
 (so choose your examples accordingly).
 Choosing blobs which are "edge-cases" is recommended.
@@ -2713,21 +2707,34 @@ Choosing blobs which are "edge-cases" is recommended.
 
 
 *(Note: These arguments must be supplied together as shown.
-        The "-auto-thresh" argument will have no effect unless
-        you are also using the "-supervised" and the
-        "-discard-blobs" arguments as well.
-        The "score" argument is not a number, but literally the word "score".
-        Eventually, it will be possible to supply a list of other criteria used
-        for classifying blobs, but as of 2019-5-07, only "score" is available.)*
+The "-auto-thresh" argument will have no effect unless
+you are also using the "-supervised" and the
+"-discard-blobs" arguments as well.
+The "score" argument is not a number, but literally the word "score".
+Eventually, it will be possible to supply a list of other criteria used
+for classifying blobs, but as of 2019-5-07, only "score" is available.)*
 
 *(Note: You must provide examples of both
-        blobs that you want to keep and
-        blobs that you want to discard.
-        These example blobs must already be present
-        within the list of blobs that you have provided
-        to the "-discard-blobs" argument.
-        If you are using a mask, then blobs whose centers lie outside
-        the mask will be ignored.)*
+blobs that you want to keep and
+blobs that you want to discard.
+These example blobs must already be present
+within the list of blobs that you have provided
+to the "-discard-blobs" argument.
+If you are using a mask, then blobs whose centers lie outside
+the mask will be ignored.)*
+
+*(Note: Usually one of these bounds is infinite, and the other is finite.
+The infinite bound can be be ignored.
+Occasionally an upper bound AND a lower bound are both not infiinte.
+This usually happens if you have much more positive data than negative
+data (or visa-versa).  In that case, you can ignore one of these thresholds
+(whichever threshold which does not make sense).  For example, if your blobs
+are light on a dark background, then only the lower bound is relevant.
+You can ignore the upper bound in that case. Similarly, if your blobs are dark
+on a white background then you can ignore the lower bound.
+You can usually avoid this confusing situation by including more
+training data or discarding training data, so that the number
+of positive and negative training examples is not so lopsided.)*
 
 
 ### -auto-thresh score -supervised-multi list_of_files.txt
