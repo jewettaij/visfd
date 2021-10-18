@@ -2461,8 +2461,7 @@ Settings::ParseArgs(vector<string>& vArgs)
       //sphere_decals_background_use_orig = false;
       sphere_decals_background_scale = 0.0;
       try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         sphere_decals_background = stof(vArgs[i+1]);
       }
@@ -2500,15 +2499,14 @@ Settings::ParseArgs(vector<string>& vArgs)
              (vArgs[i] == "-sphere-foreground")) {
       sphere_decals_foreground_use_score = false;
       try {
-        if ((i+1 >= vArgs.size()) ||
-            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+        if ((i+1 >= vArgs.size()) || (vArgs[i+1] == ""))
           throw invalid_argument("");
         sphere_decals_foreground = stof(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a number:\n"
-                       "       the voxel intensity value outside the sphere (normally 0).\n");
+                       "       the voxel intensity value on the sphere (normally 1).\n");
       }
       num_arguments_deleted = 2;
     }
