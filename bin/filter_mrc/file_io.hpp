@@ -46,7 +46,8 @@ Str2Words(string source,          //!< line of text containing words
   bool preceeded_by_comma = false;
   while (ssSource.get(c)) {
     if (isspace(c) || (c == ',') || (c == comment_char)) {
-      if ((word.size() > 0) || preceeded_by_comma) {
+      if ((word.size() > 0) ||
+          ((c == ',') && preceeded_by_comma)) {
         vDest.push_back(word);
         word = string(""); //clear word
         preceeded_by_comma = false;
@@ -88,6 +89,9 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
                char comment_char='#' //!<ignore text following this character ('\0' disables)
                )
 {
+  // (I really hate this redundant ugly code.
+  //  I would reorganize this if I had time, but it's working at the moment. -A)
+
   xyz.clear();
 
   bool is_output_from_imod = false;
@@ -154,46 +158,51 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
     }
 
     // Is this "word" actually a comma-separated list of numbers?
-    // If so, split this into string into multiple words.
-    stringstream word_ss(vWords_cpy[d]);
-    string token;
-    vector<string> tokens;
-    while (getline(word_ss, token, ',')) {
-      //if (token.size() > 0)
-      tokens.push_back(token);
-    }
-    if (tokens.size() > 1) {
-      vWords_cpy[d] = tokens[0];
-      vWords_cpy.insert(vWords_cpy.begin()+d+1,
-                        tokens.begin()+1, tokens.end());
+    // If so, split this string into multiple words.
+    {
+      stringstream word_ss(vWords_cpy[d]);
+      string token;
+      vector<string> tokens;
+      while (getline(word_ss, token, ',')) {
+        //if (token.size() > 0)
+        tokens.push_back(token);
+      }
+      if (tokens.size() > 1) {
+        vWords_cpy[d] = tokens[0];
+        vWords_cpy.insert(vWords_cpy.begin()+d+1,
+                          tokens.begin()+1, tokens.end());
+      }
     }
 
     // Now convert the remaining string to a number
     Coordinate x; //<-- shorthand for all 3 coordinates (x, y, z)
-    stringstream ssWord(vWords_cpy[d]);
-    try {
-      ssWord >> x;
-    }
-    catch ( ... ) {
-      stringstream err_msg;
-      err_msg << "Error: File read error (invalid entry?) on line:";
-      for (int i = 0; i < vWords.size(); i++) {
-        err_msg << " " << vWords[i];
-      }
-      err_msg << "\n";
-      throw VisfdErr(err_msg.str());
-    }
-
     // The way we interpret the number depends on whether or not
     // we suspect the number was printed by IMOD, which uses
-    // a somewhat unconventional coordinate system
-    if (is_output_from_imod)
-      x = floor(x);
-    if (d <= 2)  // we want x,y,z indices to begin at 0 not 1,
-      x -= 1.0;  // but in IMOD, x,y,z indices begin at 1.  So subtract 1.
-
-    // Finally, store the coordinate in "xyz"
-    xyz.push_back(x);
+    // a coordinate system with integer coordinates beginning at 1, not 0.
+    if ((d < 3) || (! is_output_from_imod))
+    {
+      stringstream word_ss(vWords_cpy[d]);
+      try {
+        word_ss >> x;
+        // To be as general as possible, I use >> instead of stod(vWords_cpy[d])
+        // (I don't assume "Coordinate" is of type "double".)
+      }
+      catch ( ... ) {
+        stringstream err_msg;
+        err_msg << "Error: File read error (invalid entry?) on line:\n"
+                << "     ";
+        for (int i = 0; i < vWords.size(); i++)
+          err_msg << " " << vWords[i];
+        err_msg << "\n";
+        throw VisfdErr(err_msg.str());
+      }
+      if (is_output_from_imod)
+        // we want x,y,z indices to begin at 0 not 1,
+        // but in IMOD, x,y,z indices begin at 1.  So subtract 1.
+        x = floor(x) - 1.0;
+      // Finally, store the coordinate in "xyz"
+      xyz.push_back(x);
+    }
 
     d++;
   } //for (int d=0; d < vWords_cpy.size(); d++)
@@ -287,57 +296,27 @@ ReadMulticolumnFile(istream &f,  //!< the file to be read
 
     // Split this line of text into words separated by commas and/or spaces.
     vector<string> vWords;
-    stringstream ssLine(line);
-    char c;
-    string word;
-    bool preceeded_by_comma = false;
-    while (ssLine.get(c)) {
-      if (isspace(c) || (c == ',') || (c == comment_char)) {
-        if ((word.size() > 0) || preceeded_by_comma) {
-          vWords.push_back(word);
-          word = string(""); //clear word
-          preceeded_by_comma = false;
-          if (c == ',')
-            preceeded_by_comma = true;
-        }
-        if (c == comment_char)
-          break;
-      }
-      else
-        word.push_back(c); // add c to the end of this word
-    }
-    // now deal with text in the last word in the line
-    if ((word.size() > 0) || preceeded_by_comma)
-      vWords.push_back(word);
-
+    Str2Words(line, vWords, comment_char);
+ 
     if (vWords.size() == 0)
       continue;
 
     vector<Entry> vDest;
 
-    // SPECIAL CASE (HACK) If the first word is "Pixel"
-    //if (vWords[0] == "Pixel") {
-    //  //is_imod_format = true; // <-- NOT NEEDED
-    //  IMODWords2Crds(vWords, vDest, comment_char);
-    //}
-    //else {
-
-      try {
-        for (int i = 0; i < vWords.size(); i++) {
-          stringstream ssWord(vWords[i]);
-          Entry x;
-          ssWord >> x;
-          vDest.push_back(x);
-        }
-      } // try {
-      catch ( ... ) {
-        stringstream err_msg;
-        err_msg << "Error: File read error (invalid entry?) on line: "
-                << i_line << "\n";
-        throw VisfdErr(err_msg.str());
+    try {
+      for (int i = 0; i < vWords.size(); i++) {
+        stringstream word_ss(vWords[i]);
+        Entry x;
+        word_ss >> x;
+        vDest.push_back(x);
       }
-
-    //}
+    } // try {
+    catch ( ... ) {
+      stringstream err_msg;
+      err_msg << "Error: File read error (invalid entry?) on line: "
+              << i_line << "\n";
+      throw VisfdErr(err_msg.str());
+    }
 
     vvDest.push_back(vDest);
     i_line++;
@@ -426,9 +405,13 @@ ReadCoordinates(string filename,  //!< the name of the file to be read
 
 /// @brief   Read a list of blob coordinates, diameters, and scores
 ///          from a text file.
+/// @returns true if any of the file coordinates were surrounded by parenthesis.
+///          (For example: "(23 51 49)" or "Pixel (411, 196, 171) = 63".
+///          In that case, it is assumed the numbers were printed by IMOD
+///          and are in units of voxels instead of units of physical distance.)
 
 template<typename Scalar, typename Coordinate>
-static void
+static bool
 ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
                    vector<array<Coordinate, 3> > *pCrds=nullptr, //!< store the blob coordinates here (if !=nullptr)
                    vector<Scalar> *pDiameters=nullptr, //!< store the blob diameters here (if !=nullptr)
@@ -439,6 +422,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
                    char comment_char='#' //!<ignore text following this character ('\0' disables)
                    )
 {
+  bool has_parens = false;
   fstream coords_file;
   coords_file.open(in_coords_file_name, ios::in);
   if (! coords_file)
@@ -455,9 +439,10 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
 
     // Convert this line of text into an array of numbers
     vector<Coordinate> vCoords;
-    bool is_in_voxels = IMODStr2Crds(line,    //convert words to numbers
-                                     vCoords, // store coordinates here
-                                     comment_char);
+    if (IMODStr2Crds(line,    //convert words to numbers
+                     vCoords, // store coordinates here
+                     comment_char))
+      has_parens = true;
     //(is_in_voxels warns us that IMOD notation was used so units are in voxels)
 
     if (vCoords.size() == 0)
@@ -486,8 +471,6 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
     }
     if (diameter < 0) { //If file does not contain a 4th column, or if < 0
       diameter = diameter_override;
-      if (diameter_override < 0)
-        diameter = 1.0;   // (sphere will be 1 voxel wide by default)
     }
 
     if (diameter_override >= 0) //override the diameter ?
@@ -499,49 +482,6 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
     if (vCoords.size() > 4)
       score = vCoords[4];
 
-
-
-    #if 0
-    stringstream ssLine(strLine);
-    double x, y, z;
-    ssLine >> x;
-    ssLine >> y;
-    ssLine >> z;
-    array<Coordinate, 3> xyz;
-    xyz[0] = x;
-    xyz[1] = y;
-    xyz[2] = z;
-
-    Scalar diameter = -1.0;
-    Scalar score = score_default;
-    if (ssLine) { // Does the file contain a 4th column? (the diameter)
-      Scalar _diameter;
-      ssLine >> _diameter;
-      if (ssLine)
-        diameter = _diameter;
-      custom_diameters = true;
-    }
-
-    if (diameter < 0) { //If file does not contain a 4th column, or if < 0
-      diameter = diameter_override;
-      if (diameter_override < 0)
-        diameter = 1.0;   // (sphere will be 1 voxel wide by default)
-    }
-
-    if (diameter_override >= 0) //override the diameter ?
-      diameter = diameter_override;
-    else
-      diameter *= diameter_factor;
-
-    if (ssLine) {
-      Scalar _score;
-      ssLine >> _score;
-      if (ssLine)
-        score = _score;
-    }
-    #endif  //#if 0
-
-
     if (pCrds)
       (*pCrds).push_back(xyz);
     if (pDiameters)
@@ -551,6 +491,7 @@ ReadBlobCoordsFile(string in_coords_file_name, //!< name of file we will read
 
     i_line++;
   } //while (coords_file) {...
+  return has_parens;
 } //ReadBlobCoordsFile()
 
 
@@ -564,7 +505,6 @@ WriteOrientedPointCloudPLY(string filename,
                            vector<array<Scalar,3> > norms)
 {
   assert(coords.size() == norms.size());
-  
   size_t n = coords.size();
   fstream ply_file;
   ply_file.open(filename, ios::out);

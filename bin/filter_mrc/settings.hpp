@@ -322,6 +322,7 @@ class Settings {
   vector<string> in_coords_file_names;
   string out_coords_file_name;
   float sphere_decals_diameter;
+  bool sphere_decals_diameter_in_voxels;
   float sphere_decals_scale;
   float sphere_decals_foreground;      //intensity of voxels in each sphere
   float sphere_decals_background;      //intensity of voxels not in any spheres

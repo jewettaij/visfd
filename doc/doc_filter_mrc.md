@@ -1572,7 +1572,6 @@ The following examples describe two *different* connected objects.
 and separated by spaces, (as shown below)
 *then* it is assumed that these coordinates are in units of voxels,
 and should range from 1 to Nx, Ny, or Nz (which define the image size).
-
 Considering the following text file:
 ```
 (16 77 73)
@@ -1581,9 +1580,6 @@ Considering the following text file:
 (141 83 62)
 (123 133 64) -1
 ```
-*(Note: You* ***must include spaces*** between each coordinate,
-even if commas are also present.)*
-
 This example describes two *different* connected objects
 (separated by a blank line).
 For each of these objects, all of the voxels connected to the
@@ -1596,13 +1592,14 @@ will be connected together as well.
 last two surface fragments point in opposite directions.  This is explained
 in more detail [here](#Manual-specification-of-fragment-orientation).)*
 
-
 *(Note: When using this format, coordinates are assumed to begin at 1,
-       and are rounded down to the next lowest integer.
-       These coordinates do not have to lie exactly on the object you
-       are trying to segment.  Nearby voxels should work adequately well.)*
+and are rounded down to the next lowest integer.
+These coordinates do not have to lie exactly on the object you
+are trying to segment.  Nearby voxels should work adequately well.)*
 
-**WARNING:** *Do not forget to put spaces between each integer (not commas).*
+*(Note: If you use parenthesis on one line,
+you must do this consistently throughout the file.)*
+
 
 #### Suggestion: *Use IMOD (3dmod)*
 
@@ -1632,7 +1629,7 @@ they may get joined anyway.)*
 If no parenthesis are used, then it is assumed
 that the coordinates are in physical distance units (eg Angstroms).
 ```
-379.68 1923.71 1822.46
+3739.68 1923.71 1822.46
 3366.5 1873.09 1822.46
 
 3543.68 2075.58 1544.03
@@ -1641,7 +1638,7 @@ that the coordinates are in physical distance units (eg Angstroms).
 As with the previous example,
 this example also describes two *different* connected objects.
 For each of these objects, all of the voxels connected to the
-first voxel (for example, at position 379.68,1923.71,1822.46)
+first voxel (for example, at position 3739.68,1923.71,1822.46)
 will be joined with all of the voxels connected to the second voxel
 (at position 3366.5,1873.09,1822.46).
 
@@ -1696,7 +1693,7 @@ the surface orientation will be determined automatically.
 ```
 (106 177 89)
 (149 181 93) 1
-723.3 381.6 178.5 -1
+(223 181 78) -1
 (185 131 95)
 ```
 
@@ -1706,7 +1703,7 @@ second surface fragment points in a similar direction to its predecessor.
 The "-1" on the third line means that the third surface fragment points in
 the opposite direction of the second fragment.  *(As mentioned elsewhere,
 parenthesis are optional and determine the units of the coordinates.)*
-The orientation of the fourth surface fragment (at "(185 131 95)")
+The orientation of the fourth surface fragment (at voxel position "185 131 95)")
 will be determined automatically (since the "1" or "-1" was omitted).
 
 
@@ -2413,11 +2410,11 @@ and it superimposes them upon the original image.
 
 ```
 # Column meaning:
-#  X    Y    Z    diameter brightess
+#   X    Y     Z     diameter brightess
 
-56.45 55.74 32.01 15.62483 2.658
-87.88 75.21 42.53 63.91314 7.172
-66.11 59.92 32.38 13.05745 7.172
+546.45 575.74 332.01 62.62483 2.658
+877.88 705.21 412.53 89.91314 7.172
+626.11 549.92 352.38 77.05745 7.172
 :
 ```
 
@@ -2432,6 +2429,8 @@ store the diameter of each sphere.
 spheres larger or smaller by a factof of *scale* to make them more visible.)
 Alternatively, the size of *all* of the spheres can be specified using
 the the "**-diameters d**" or "**-radii r**" arguments.
+*(Note: These parameters are in units of physical distance, not voxels.  To
+specify them in units of voxels, use "-diameters-voxels" and "-radii-voxels".)*
 If you do not specify the sphere size, they will be only 1 voxel wide by
 default.
 

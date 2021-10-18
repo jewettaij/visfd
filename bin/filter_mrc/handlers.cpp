@@ -440,31 +440,64 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
   assert((voxel_width[0] == voxel_width[1]) &&
          (voxel_width[1] == voxel_width[2]));
 
-
   for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
-    ReadBlobCoordsFile(settings.in_coords_file_names[I],
-                       &crds,
-                       &diameters,
-                       &scores,
-                       settings.sphere_decals_diameter,
-                       settings.sphere_decals_foreground,
-                       settings.sphere_decals_scale);
-  }
+    vector<array<float,3> > crds_file; //coordinates stored in the I'th file
+    vector<float> diameters_file;      //diameters stored in the I'th file
+    vector<float> scores_file;         //scores stored in the I'th file
 
-  if (voxel_width_ > 0.0) {
-    assert(crds.size() == diameters.size());
-    for (size_t i = 0; i < crds.size(); i++) {
-      diameters[i] /= voxel_width_;
-      for (int d=0; d < 3; d++)
-        crds[i][d] = floor((crds[i][d] / voxel_width_) + 0.5);
+    bool units_of_voxels =
+      ReadBlobCoordsFile(settings.in_coords_file_names[I],
+                         &crds_file,
+                         &diameters_file,
+                         &scores_file,
+                         -1.0f,
+                         settings.sphere_decals_foreground,
+                         settings.sphere_decals_scale);
+
+    assert(crds_file.size() == diameters_file.size());
+    assert(crds_file.size() == scores_file.size());
+
+    // Convert the units of the coordinates and/or sphere diameters
+    // and supply default diameters if they were omitted from the file.
+    if ((! units_of_voxels) && (voxel_width_ > 0.0)) {
+      for (size_t i = 0; i < crds_file.size(); i++) {
+        for (int d=0; d < 3; d++)
+          crds_file[i][d] = floor((crds_file[i][d] / voxel_width_) + 0.5);
+        if (diameters_file[i] != -1.0)
+          // Only rescale the diameters if they were explicitly specified in
+          // this file (>=0). If the user omitted them, we deal with that later.
+          diameters_file[i] /= voxel_width_;
+      }
     }
-  }
+    // Deal with default diameters (if the user omitted them from the file).
+    for (size_t i = 0; i < diameters_file.size(); i++) {
+      if (diameters_file[i] == -1.0) {
+        // Then the user left the column with the diameter blank.
+        // In that case, use the (user-supplied) default diameter:
+        if (settings.sphere_decals_diameter > 0) {
+          diameters_file[i] = settings.sphere_decals_diameter;
+          // Is this default diameter in units of voxels or physical distance?
+          if ((! settings.sphere_decals_diameter_in_voxels)
+              && (voxel_width_ > 0.0))
+            diameters_file[i] /= voxel_width_; // then convert to units of voxels
+        }
+        else
+          // If a default diameter was not specified either, then the
+          // sphere will be 1 voxel wide by default (...the "default default").
+          diameters_file[i] = 1.0;
+      }
+    }
+    crds.insert(crds.end(),
+                crds_file.begin(), crds_file.end());
+    diameters.insert(diameters.end(),
+                     diameters_file.begin(), diameters_file.end());
+    scores.insert(scores.end(),
+                  scores_file.begin(), scores_file.end());
+  } //for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
 
-
-  cerr << " --- discarding blobs in file ---\n"
+  cerr << " --- discarding blobs in files ---\n"
     //<< "     \"" << settings.in_coords_file_name << "\" ---\n"
        << "\n";
-
 
   // Discard blobs based on score or size?
 
@@ -529,9 +562,9 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
       (settings.nonmax_max_volume_overlap_large !=
        std::numeric_limits<float>::infinity()) ||
       (settings.nonmax_max_volume_overlap_small !=
-       std::numeric_limits<float>::infinity())) {
-
-    if (voxel_width_ < 0)
+       std::numeric_limits<float>::infinity()))
+  {
+    if (voxel_width_ <= 0.0)
       throw VisfdErr("Error: Checking for overlapping blobs requires that you either specify the\n"
                      "       voxel width (using the \"-w\" argument).  Alternatively, if the file\n"
                      "       containing the original tomogram has accurate voxel width information,\n"

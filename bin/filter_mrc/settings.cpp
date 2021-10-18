@@ -99,6 +99,7 @@ Settings::Settings() {
   in_coords_file_names.clear();
   out_coords_file_name = "";
   sphere_decals_diameter = -1.0;
+  sphere_decals_diameter_in_voxels = false;
   sphere_decals_foreground = 1.0;
   sphere_decals_background = 0.0;
   sphere_decals_background_scale = 1.0;
@@ -2294,17 +2295,36 @@ Settings::ParseArgs(vector<string>& vArgs)
       num_arguments_deleted = 2;
     }
 
+
     else if ((vArgs[i] == "-diameters") ||
              (vArgs[i] == "-diameter") ||
-             (vArgs[i] == "-sphere-diameter") ||
              (vArgs[i] == "-sphere-diameters") ||
-             (vArgs[i] == "-spheres-diameter") ||
-             (vArgs[i] == "-spheres-diameters")) {
+             (vArgs[i] == "-sphere-diameter")) {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         sphere_decals_diameter = stof(vArgs[i+1]);
+        sphere_decals_diameter_in_voxels = false;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if ((vArgs[i] == "-diameters-voxels") ||
+             (vArgs[i] == "-diameter-voxels") ||
+             (vArgs[i] == "-sphere-diameters-voxels") ||
+             (vArgs[i] == "-sphere-diameter-voxels")) {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        sphere_decals_diameter = stof(vArgs[i+1]);
+        sphere_decals_diameter_in_voxels = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2316,15 +2336,33 @@ Settings::ParseArgs(vector<string>& vArgs)
 
     else if ((vArgs[i] == "-radii") ||
              (vArgs[i] == "-radius") ||
-             (vArgs[i] == "-sphere-radius") ||
              (vArgs[i] == "-sphere-radii") ||
-             (vArgs[i] == "-spheres-radius") ||
-             (vArgs[i] == "-spheres-radii")) {
+             (vArgs[i] == "-sphere-radius")) {
       try {
         if ((i+1 >= vArgs.size()) ||
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         sphere_decals_diameter = stof(vArgs[i+1]) * 2.0;
+        sphere_decals_diameter_in_voxels = false;
+      }
+      catch (invalid_argument& exc) {
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a number\n");
+      }
+      num_arguments_deleted = 2;
+    }
+
+
+    else if ((vArgs[i] == "-radii-voxels") ||
+             (vArgs[i] == "-radius-voxels") ||
+             (vArgs[i] == "-sphere-radii-voxels") ||
+             (vArgs[i] == "-sphere-radius-voxels")) {
+      try {
+        if ((i+1 >= vArgs.size()) ||
+            (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
+          throw invalid_argument("");
+        sphere_decals_diameter = stof(vArgs[i+1]) * 2.0;
+        sphere_decals_diameter_in_voxels = true;
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
