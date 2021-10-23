@@ -95,6 +95,7 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
   xyz.clear();
 
   bool is_output_from_imod = false;
+  bool contains_parens = false;
   vector<string> vWords_cpy = vWords;
 
   // First, if the line of text contains a comment character,
@@ -114,6 +115,7 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
   if ((vWords_cpy.size() > 0) && (vWords_cpy[0] == "Pixel")) {
       vWords_cpy.erase(vWords_cpy.begin(), vWords_cpy.begin() + 1);
       is_output_from_imod = true;
+      contains_parens = true;
   }
 
   if (vWords_cpy.size() == 0) {
@@ -129,8 +131,8 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
     if ((vWords_cpy[d].size() >= 0) && (vWords_cpy[d][0] == '(')) {
       // Delete the '(' character from the beginning of the string.
       // (IMOD surrounds the coordinates with '(' and ')' characters.)
+      contains_parens = true;
       vWords_cpy[d] = vWords_cpy[d].substr(1, string::npos);
-      is_output_from_imod = true;
       if (vWords_cpy[d].size() == 0) {
         vWords_cpy.erase(vWords_cpy.begin()+d, vWords_cpy.begin()+d+1);
         continue;
@@ -141,8 +143,8 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
     if ((vWords_cpy[d].size()>=0) && (vWords_cpy[d][n_chars-1]==')')) {
       // Delete the ')' character from the end of the string.
       // (IMOD surrounds the coordinates with '(' and ')' characters.)
+      contains_parens = true;
       vWords_cpy[d] = vWords_cpy[d].substr(0, n_chars-1);
-      is_output_from_imod = true;
       if (vWords_cpy[d].size() == 0) {
         vWords_cpy.erase(vWords_cpy.begin()+d, vWords_cpy.begin()+d+1);
         continue;
@@ -196,7 +198,7 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
         err_msg << "\n";
         throw VisfdErr(err_msg.str());
       }
-      if (is_output_from_imod)
+      if (contains_parens || is_output_from_imod)
         // we want x,y,z indices to begin at 0 not 1,
         // but in IMOD, x,y,z indices begin at 1.  So subtract 1.
         x = floor(x) - 1.0;
@@ -207,7 +209,7 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
     d++;
   } //for (int d=0; d < vWords_cpy.size(); d++)
 
-  return is_output_from_imod;
+  return contains_parens;
 
 } // IMODWords2Crds()
 

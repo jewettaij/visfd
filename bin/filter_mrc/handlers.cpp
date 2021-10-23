@@ -2429,10 +2429,33 @@ DetermineVoxelWidth(const Settings &settings,
       voxel_width[1] *= 0.1;
       voxel_width[2] *= 0.1;
     }
+    cerr.precision(8);
     cerr << "voxel width in physical units = ("
          << voxel_width[0] << ", "
          << voxel_width[1] << ", "
          << voxel_width[2] << ")\n";
+    float voxel_width_max = -std::numeric_limits<float>::infinity();
+    float voxel_width_min = std::numeric_limits<float>::infinity();
+    for (int d = 0; d < 3; d++) {
+      if (voxel_width[d] > voxel_width_max)
+        voxel_width_max = voxel_width[d];
+      if (voxel_width[d] < voxel_width_min)
+        voxel_width_min = voxel_width[d];
+    }
+    if (voxel_width_min != voxel_width_max) {
+      float voxel_width_ave = 0;
+      for (int d = 0; d < 3; d++)
+        voxel_width_ave += voxel_width[d];
+      voxel_width_ave /= 3;
+      if ((voxel_width_max - voxel_width_min) > 0.000005*voxel_width_ave) {
+        throw VisfdErr("ERROR: The voxel width in the X,Y,Z directions varies by more than 0.0005%.\n"
+                       "       This is a problem in the header section of the MRC file.\n"
+                       "       Either repair the MRC file, or specify the voxel width manually.\n"
+                       "       (You can do that using the \"-w\" argument.  See documentation.)\n");
+      }
+      for (int d = 0; d < 3; d++)
+        voxel_width[d] = voxel_width_ave;
+    }
   }
 
   if ((abs((voxel_width[0] - voxel_width[1]) /
