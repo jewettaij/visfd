@@ -24,11 +24,14 @@ test_blob_detection() {
     ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -discard-blobs test_blobs.txt test_blobs_sep_${SEP}_thresh_${THRESH}.txt -blob-separation ${SEP} -minima-threshold ${THRESH}
 
     assertTrue "non-max suppression failed.  File test_blobs_sep_${SEP}_thresh_${THRESH}.txt was not created" "[ -s test_blobs_sep_${SEP}_thresh_${THRESH}.txt ]"
+    NBLOBS_IN_LIST=`wc test_blobs_sep_${SEP}_thresh_${THRESH}.txt | awk '{print $1}'`
+    assertTrue "Blob detection failed. The number of non-redundant blobs should be 2" "[ $NBLOBS_IN_LIST -eq 2 ]"
+
 
     # Create an image with each blob represented by a single voxel of
     # brightness 1 surrounded by other voxels of brightness 0
 
-    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect_dog_0_500_cl_-1.3_1.3.rec -out test_blob_detect_results.rec -draw-spheres test_blobs_sep_${SEP}_thresh_${THRESH}.txt -sphere-shell-ratio 0.1 -background 0 -foreground 1 -sphere-radii 0
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect_dog_0_500_cl_-1.3_1.3.rec -out test_blob_detect_results.rec -draw-spheres test_blobs_sep_${SEP}_thresh_${THRESH}.txt -background 0 -foreground 1 -sphere-radii 0
 
     # Note:
     # To superimpose the spheres onto the original image, get rid of these args:
@@ -38,7 +41,6 @@ test_blob_detection() {
     
     assertTrue "visualization failed.  File test_blob_detect_results.rec was not created" "[ -s test_blob_detect_results.rec ]"
 
-    NBLOBS_IN_LIST=`wc test_blobs_sep_${SEP}_thresh_${THRESH}.txt | awk '{print $1}'`
     NBLOBS_IN_IMAGE=`../bin/sum_voxels/sum_voxels -mask test_blob_detect_mask.rec test_blob_detect_results.rec`
     
     assertTrue "visualization failed: number of non-zero voxels != number of blobs" "[ $NBLOBS_IN_LIST -eq $NBLOBS_IN_IMAGE ]"
