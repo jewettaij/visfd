@@ -913,7 +913,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         filter_truncate_ratio = stof(vArgs[i+1]);
         filter_truncate_threshold=-1.0; //(disables)override any filter_truncate_threshold settings
         //filter_truncate_ratio_exp = exp(-pow(filter_truncate_ratio,
-        //                                   n_exp));
+        //                                     n_exp));
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +

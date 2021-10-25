@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 SEP=1.1
-THRESH=-90
+THRESH=-115   #(Note: This threshold depends on the "-truncate" and/or
+              #       "-truncate-threshold" arguments.)
 
 test_blob_detection() {
   cd tests/

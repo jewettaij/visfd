@@ -469,24 +469,36 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
           diameters_file[i] /= voxel_width_;
       }
     }
+
     // Deal with default diameters (if the user omitted them from the file).
     for (size_t i = 0; i < diameters_file.size(); i++) {
-      if (diameters_file[i] == -1.0) {
-        // Then the user left the column with the diameter blank.
-        // In that case, use the (user-supplied) default diameter:
-        if (settings.sphere_decals_diameter > 0) {
+
+      // UNCOMMENT THE NEXT LINE if you only want to replace the sphere diameter
+      // when 1) the user left it unspecified, AND
+      //      2) the user supplied a settings.sphere_decals_diameter parameter.
+      //if (diameters_file[i] == -1.0) {  //Then the user left the column blank
+
+      // INSTEAD, I currently replace the diameter whenever
+      //          the user supplied a settings.sphere_decals_diameter parameter
+      if (settings.sphere_decals_diameter >= 0) { // Then user overrode diameters
+
+        // In that case, use the user supplied a default/override diameter:
+        //if (settings.sphere_decals_diameter >= 0) {
           diameters_file[i] = settings.sphere_decals_diameter;
           // Is this default diameter in units of voxels or physical distance?
           if ((! settings.sphere_decals_diameter_in_voxels)
               && (voxel_width_ > 0.0))
             diameters_file[i] /= voxel_width_; // then convert to units of voxels
-        }
-        else
-          // If a default diameter was not specified either, then the
-          // sphere will be 1 voxel wide by default (...the "default default").
-          diameters_file[i] = 1.0;
-      }
-    }
+        //}
+        //else
+        //    // If a default diameter was not specified either, then the
+        //    // sphere will be 1 voxel wide by default (...the "default default")
+        //    diameters_file[i] = 1.0;
+
+      } // if (settings.sphere_decals_diameter > 0)
+
+    } // for (size_t i = 0; i < diameters_file.size(); i++)
+
     crds.insert(crds.end(),
                 crds_file.begin(), crds_file.end());
     diameters.insert(diameters.end(),
