@@ -72,7 +72,7 @@ Settings::Settings() {
   //filter_truncate_halfwidth[2] = -1; //  which will be convolved with the image.
   //                          //  "-1" means unspecified.)
 
-  filter_truncate_threshold=0.05;  //Filter intensity decay value before giving up
+  filter_truncate_threshold=0.03;  //Filter intensity decay value before giving up
                             //When the filter strength is less than this value
                             //we ignore it. For difference-of-gaussian filters
                             //we choose the gaussian with the wider width. This

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SEP=1.1
-THRESH=-115   #(Note: This threshold depends on the "-truncate" and/or
+THRESH=-90   #(Note: This threshold depends on the "-truncate" and/or
               #       "-truncate-threshold" arguments.)
 
 test_blob_detection() {
@@ -18,7 +18,7 @@ test_blob_detection() {
 
     #../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect_dog_0_500.rec -blob minima test_blobs.txt 160.0 280.0 1.02
 
-    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -blob minima test_blobs.txt 160.0 280.0 1.02
+    ../bin/filter_mrc/filter_mrc -w 19.6 -mask test_blob_detect_mask.rec -in test_blob_detect.rec -blob minima test_blobs.txt 160.0 280.0 1.01
 
     assertTrue "blob detection failed.  File test_blobs.txt was not created" "[ -s test_blobs.txt ]"
 
