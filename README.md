@@ -185,9 +185,11 @@ for installing VISFD and its dependencies.
 ## Requirements
 
 - **16GB** of RAM or higher.
-(For membrane detection, your RAM must exceed 11x the size of the tomogram
- that you are analyzing. The *voxelize_mesh.py* program requires even more
- memory. You can reduce the memory needed and computation time dramatically
+(For membrane detection, your RAM must exceed 11x-44x the size of the tomogram
+ that you are analyzing.  This does not include the memory needed by the OS,
+ browser, or other programs you are running.
+ The *voxelize_mesh.py* program requires even more memory.
+ You can reduce the memory needed and computation time dramatically
  by cropping or binning your tomogram.)
 - A terminal (running BASH) where you can enter commands.
 - A [C++ compiler](#Supported-compilers)
@@ -211,7 +213,7 @@ for installing VISFD and its dependencies.
   an SSD over time.  Old-fashioned magnetic hard drives (HDDs) are better able
   tolerate this kind of usage.  External (USB,thunderbolt) hard drives
   should be fast enough.
-
+- 32GB of RAM (depending on image size, this still might not be enough)
 
 
 ## License
