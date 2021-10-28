@@ -198,7 +198,7 @@ IMODWords2Crds(const vector<string> &vWords, //!< words containing x,y,z coordin
         err_msg << "\n";
         throw VisfdErr(err_msg.str());
       }
-      if (contains_parens || is_output_from_imod)
+      if ((contains_parens || is_output_from_imod) && (xyz.size() < 3))
         // we want x,y,z indices to begin at 0 not 1,
         // but in IMOD, x,y,z indices begin at 1.  So subtract 1.
         x = floor(x) - 1.0;
@@ -261,8 +261,7 @@ IMODWords2Crds(const vector<vector<string> > &vvWords_orig, //!< 2D table of str
     vector<Coordinate> xyz;
     if (IMODWords2Crds(vvWords_orig[i], xyz))
       is_output_from_imod = true;
-    if (xyz.size() > 0)
-      vvCoords.push_back(xyz);
+    vvCoords.push_back(xyz);
   } //for (size_t i = 0; i < vvWords.size(); i++)
 
   //assert(vvCoords.size() == vvWords.size());
@@ -300,9 +299,6 @@ ReadMulticolumnFile(istream &f,  //!< the file to be read
     vector<string> vWords;
     Str2Words(line, vWords, comment_char);
  
-    if (vWords.size() == 0)
-      continue;
-
     vector<Entry> vDest;
 
     try {
