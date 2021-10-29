@@ -92,10 +92,10 @@ public:
 
   char extra_raw_data[25*SIZE_PER_FIELD]; // (IGNORED)
 
-  float origin[3];      // I'm guessing this is only relevant to reconstructions
-                        // I'm guessing this might be the location of a point
+  float origin[3];      //Origin of the coordinate system?  (I'm not sure...)
+                        //(I'm guessing this might be the location of a point
                         // within the pivot axis (axes?) around which the sample
-                        // was rotated when generating the original tilt series.
+                        // was rotated when generating the original tilt series)
 
   char remaining_raw_data[SIZE_REMAINING_HEADER];
 

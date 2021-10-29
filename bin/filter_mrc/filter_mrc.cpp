@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.29.20");
-string g_date_string("2021-10-28");
+string g_date_string("2021-10-29");
 
 
 
@@ -121,6 +121,12 @@ int main(int argc, char **argv) {
 
     // ---- Reduce the size of the input image (using binning)? ----
 
+    for (int d=0; d < 3; d++) {
+      // To be safe, back up the original image size and voxel width first
+      settings.image_size_orig[d] = tomo_in.header.nvoxels[d]; //image size
+      settings.cellA_orig[d] = tomo_in.header.cellA[d]; //voxel width
+    }
+    // Did the user explicitly ask us to resample the image using binning?
     if (settings.resize_with_binning > 1) {
       HandleBinning(settings, tomo_in, mask, voxel_width);
       // Since we reduced the resolution, we should increase voxel width

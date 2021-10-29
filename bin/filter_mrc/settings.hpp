@@ -81,6 +81,8 @@ class Settings {
 
   float voxel_width;  //physical width of each voxel (for example in Angstroms)
   bool voxel_width_divide_by_10; //Use nm instead of Angstroms?
+  int image_size_orig[3]; //number of voxels in the source image before binning
+  float cellA_orig[3]; //backup of the voxel width in the source image.
 
 
   // -- parameters which determine the image files we will be reading/writing --
@@ -102,6 +104,7 @@ class Settings {
   bool is_mask_crds_in_voxels; // Are mask crds in units of voxels or physical distance?
   vector<SimpleRegion<float> > vMaskRegions; // set mask=one or more regions in space
   int resize_with_binning; //width of bin to use to reduce image size?
+  bool resize_with_binning_explicit; //did the user explictly ask for binning?
 
   string save_intermediate_fname_base = ""; //save progress of slow calculations
   string load_intermediate_fname_base = ""; //load progress from a previous run?

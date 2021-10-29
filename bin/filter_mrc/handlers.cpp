@@ -1889,8 +1889,6 @@ HandleTV(const Settings &settings,
   } // if (settings.tv_sigma > 0.0)
 
 
-
-
   // Save the contents of the vote_tensor.aaaafI array for future use?
   if (settings.save_intermediate_fname_base != "") {
 
@@ -2307,14 +2305,50 @@ HandleTV(const Settings &settings,
   } //if (settings.out_normals_fname != "")
 
 
-  ////Did the user ask us to generate any output files?
-  //if ((settings.out_normals_fname == "") &&
-  //    (settings.out_file_name != ""))
-  //  settings.out_normals_fname =
-  //    settings.out_file_name + string(".bnpts");
-
 
   Dealloc3D(aaaafGradient);
+
+
+
+  // Did we resize the image (via binning) without permission from the user?
+  // In that case, the user will be expecting an image which is bigger
+  // than the one we generated.  To do that, I will restore the orignal
+  // image size for both "tomo_out" and "mask".
+  if ((settings.resize_with_binning != 1) &&
+      (! settings.resize_with_binning_explicit))
+  {
+    float ***aaafTomoOutCpy = Alloc3D<float>(image_size);
+    for (int iz = 0; iz < image_size[2]; iz++)
+      for (int iy = 0; iy < image_size[1]; iy++)
+        for (int ix = 0; ix < image_size[0]; ix++)
+          aaafTomoOutCpy[iz][iy][ix] = tomo_out.aaafI[iz][iy][ix];
+    tomo_out.Resize(settings.image_size_orig);
+    tomo_out.header.cellA[0] = settings.cellA_orig[0];
+    tomo_out.header.cellA[1] = settings.cellA_orig[1];
+    tomo_out.header.cellA[2] = settings.cellA_orig[2];
+    UnbinArray3D(image_size,
+                 settings.image_size_orig,
+                 aaafTomoOutCpy,
+                 tomo_out.aaafI);
+    Dealloc3D(aaafTomoOutCpy);
+
+    if (mask.aaafI) {
+      float ***aaafMaskCpy = Alloc3D<float>(image_size);
+      for (int iz = 0; iz < image_size[2]; iz++)
+        for (int iy = 0; iy < image_size[1]; iy++)
+          for (int ix = 0; ix < image_size[0]; ix++)
+            aaafMaskCpy[iz][iy][ix] = mask.aaafI[iz][iy][ix];
+      mask.Resize(settings.image_size_orig);
+      mask.header.cellA[0] = settings.cellA_orig[0];
+      mask.header.cellA[1] = settings.cellA_orig[1];
+      mask.header.cellA[2] = settings.cellA_orig[2];
+      UnbinArray3D(image_size,
+                   settings.image_size_orig,
+                   aaafMaskCpy,
+                   mask.aaafI);
+      Dealloc3D(aaafMaskCpy);
+    } //if (mask.aaafI)
+  } //if ((settings.resize_with_binning != 1)
 
 } //HandleTV()
 
@@ -2330,6 +2364,7 @@ HandleBinning(const Settings &settings,
   for (int d=0; d < 3; d++)
     nvoxels_resized[d] = (tomo_in.header.nvoxels[d] /
                           settings.resize_with_binning);
+
   double _voxel_width;
   if (settings.voxel_width > 0)
     _voxel_width = settings.voxel_width;

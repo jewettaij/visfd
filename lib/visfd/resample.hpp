@@ -97,7 +97,73 @@ void BinArray3D(Integer const size_source[3],
       }
     }
   }
-}
+} //BinArray3D()
+
+
+
+template<typename Scalar, typename Integer>
+/// @brief  Increase the resolution of the image in the x, y, z directions
+///         by a factor of binsize[0], binsize[1], binsize[2],
+///         ...where binsize[d] = floor(size_dest[d] / size_source[d]),
+///         (where "d" is an integer from 0 to 2).  This is done in the crudest
+///         possible way by sampling from the corresponding voxel in the source:
+/// aaafDest[iz][iy][ix]=aaafSource[iz/binsize[2]][iy/binsize[1]][ix/binsize[0]]
+/// @note   If the size_source[0] is not a divisor of size_dest[0],
+///         (ie. if size_dest[0] / size_source[0] is not an integer), then
+///         the nearest available voxel from the source image will be used.
+///         (The same is true for size_source[1] and size_source[2].)
+/// @note   The caller can shift the location of the binning window in the
+///         x,y,z direction by passing an optional "offset" argument.  If not
+///         NULL, this argument should be an array of size 3.  The d'th entry
+///         in this array should be an integer between 0 and binsize[d]-1.
+/// @param size_source contains size of the source image (in the x,y,z directions)
+/// @param size_dest contains size of the source image (in the x,y,z directions)
+/// @param aaafSource[][][] is the source array (source image)
+/// @param aaafDest[][][] will store the (reduced-size) image after binning
+///        This array is assumed to have been preallocated.
+void UnbinArray3D(Integer const size_source[3],
+                  Integer const size_dest[3],
+                  Scalar const *const *const *aaafSource,
+                  Scalar ***aaafDest,
+                  Integer const *offset = nullptr)
+{
+  Integer bin_size[3];
+  for (int d = 0; d < 3; d++) {
+    assert((size_source[d] > 0) && (size_dest[d] > 0));
+    bin_size[d] = size_dest[d] / size_source[d];
+    if (offset && ((offset[d] >= bin_size[d]) || (offset[d] < 0))) {
+      stringstream err_msg;
+      err_msg << "Error in BinArray3D(): offset[" << d
+              << "] should lie between 0 and floor("
+              << size_dest[d] << " / " << size_source[d] << ")\n";
+      throw VisfdErr(err_msg.str());
+    }
+  }
+  Integer _offset[3] = {0, 0, 0};
+  if (offset) {
+    _offset[0] = offset[0];
+    _offset[1] = offset[1];
+    _offset[2] = offset[2];
+  }
+  for (Integer Iz=0; Iz < size_dest[2]; Iz++) {
+    Integer iz = Iz / bin_size[2];
+    for (Integer Iy=0; Iy < size_dest[1]; Iy++) {
+      for (Integer Ix=0; Ix < size_dest[0]; Ix++) {
+        Scalar sum = 0.0;
+        Integer ix = (Ix-_offset[0]) / bin_size[0];
+        Integer iy = (Iy-_offset[1]) / bin_size[1];
+        Integer iz = (Iz-_offset[2]) / bin_size[2];
+        if (ix < 0) ix = 0;
+        if (iy < 0) iy = 0;
+        if (iz < 0) iz = 0;
+        if (ix >= size_source[0]) ix = size_source[0] - 1;
+        if (iy >= size_source[1]) iy = size_source[1] - 1;
+        if (iz >= size_source[2]) iz = size_source[2] - 1;
+        aaafDest[Iz][Iy][Ix] = aaafSource[iz][iy][ix];
+      }
+    }
+  }
+} //UnbinArray3D()
 
 
 

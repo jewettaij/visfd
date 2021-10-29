@@ -21,7 +21,12 @@ Settings::Settings() {
   voxel_width = 0.0;  //How many Angstroms per voxel? (if 0 then read from file)
   voxel_width_divide_by_10 = false; //Use nm instead of Angstroms?
   filter_type = NONE;
-
+  image_size_orig[0] = -1;
+  image_size_orig[1] = -1;
+  image_size_orig[2] = -1;
+  cellA_orig[0] = 0;
+  cellA_orig[1] = 0;
+  cellA_orig[2] = 0;
   in_file_name = "";
   in_set_image_size[0] = 0;
   in_set_image_size[1] = 0;
@@ -41,6 +46,7 @@ Settings::Settings() {
   is_mask_crds_in_voxels = true; //are mask crds in units of voxels or physical distance?
 
   resize_with_binning = 0; //width of bin to use to reduce image size?
+  resize_with_binning_explicit = false;
 
   save_intermediate_fname_base = "";
   load_intermediate_fname_base = "";
@@ -697,6 +703,7 @@ Settings::ParseArgs(vector<string>& vArgs)
         if ((i+1 >= vArgs.size()) || (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         resize_with_binning = stoi(vArgs[i+1]);
+        resize_with_binning_explicit = true;
         if (resize_with_binning < 1)
           throw invalid_argument("");
       }
