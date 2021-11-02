@@ -137,8 +137,8 @@ to use the **-i** or **-c** arguments.)
 ### -c ix<sub>min</sub> ix<sub>max</sub> iy<sub>min</sub> iy<sub>max</sub> iz<sub>min</sub> iz<sub>max</sub>
 Specify the size of the 3-D image (in units of voxels).
 It will crop the voxelized image to the size indicated by the 6 integer
-arguments.  (If you specify this argument, you do not need to use the
-**-i** or **-b** arguments.)
+arguments.  (Example: "-c 0 992 0 762 0 193" will generate a 3-D image of size 992x762x193 in voxels.  Note:If you specify this argument,
+you do not need to use the **-i** or **-b** arguments.)
 
 ### -s dx dy dz
 Shift the coordinates of the mesh in the dx dy dz direction before voxelization.
