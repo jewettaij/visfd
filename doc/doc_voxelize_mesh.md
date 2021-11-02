@@ -125,7 +125,7 @@ that you wish to create.
 Specify the name of a 3D image file (MRC or REC format)
 which is the same size as the image you want to create.
 (Alternatively, you can specify the size of the image file manually
-using the "-c" or "-b" arguments.)
+using the **-c** or **-b** arguments.)
 
 ### -b x<sub>min</sub> x<sub>max</sub> y<sub>min</sub> y<sub>max</sub> z<sub>min</sub> z<sub>max</sub>
 Specify the physical size of the 3-D image.
