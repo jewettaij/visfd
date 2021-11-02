@@ -117,23 +117,28 @@ this should match the **-w** argument that you used with that program.
 ### -m MESH_FILE
 Specify the name of a file containing a closed mesh (typically in PLY format).
 
-### -i ORIG_IMAGE_FILE
-Specify the name of a 3D image file (MRC or REC format)
-which is the same size as the image you want to create.
-
 ### -o NEW_IMAGE_FILE
 Specify the name of the 3D image file (MRC or REC format)
 that you wish to create.
 
-### -c ix<sub>min</sub> ix<sub>max</sub> iy<sub>min</sub> iy<sub>max</sub> iz<sub>min</sub> iz<sub>max</sub>
-This will crop the voxelized image to the size indicated by the 6 integer
-arguments.  (If you specify this argument, you do not need to use the
-**-i** or **-bounds** arguments.)
+### -i ORIG_IMAGE_FILE
+Specify the name of a 3D image file (MRC or REC format)
+which is the same size as the image you want to create.
+(Alternatively, you can specify the size of the image file manually
+using the "-c" or "-b" arguments.)
 
 ### -b x<sub>min</sub> x<sub>max</sub> y<sub>min</sub> y<sub>max</sub> z<sub>min</sub> z<sub>max</sub>
-This will crop the voxelized image to the size indicated by the 6 floating
-point arguments.  These are in units of physical distance, not voxels. (If you
-specify this argument, you do not need to use the **-i** or **-c** arguments.)
+Specify the physical size of the 3-D image.
+This will crop the voxelized image to a rectangular region specified
+by the 6 floating point arguments.  These are in units of physical
+distance, not voxels. (If you specify this argument, you do not need
+to use the **-i** or **-c** arguments.)
+
+### -c ix<sub>min</sub> ix<sub>max</sub> iy<sub>min</sub> iy<sub>max</sub> iz<sub>min</sub> iz<sub>max</sub>
+Specify the size of the 3-D image (in units of voxels).
+It will crop the voxelized image to the size indicated by the 6 integer
+arguments.  (If you specify this argument, you do not need to use the
+**-i** or **-b** arguments.)
 
 ### -s dx dy dz
 Shift the coordinates of the mesh in the dx dy dz direction before voxelization.
