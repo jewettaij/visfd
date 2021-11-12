@@ -131,16 +131,16 @@ int main(int argc, char **argv) {
     cropped_tomo.header.origin[2] =
       tomo.header.origin[2]+(zpad-zmin)*voxel_size[2];
 
-    for (int iz = 0; iz <= cropped_tomo.header.nvoxels[0]; iz++)
-      for (int iy = 0; iy <= cropped_tomo.header.nvoxels[0]; iy++)
-	for (int ix = 0; ix <= cropped_tomo.header.nvoxels[0]; ix++)
+    for (int iz = 0; iz < cropped_tomo.header.nvoxels[2]; iz++)
+      for (int iy = 0; iy < cropped_tomo.header.nvoxels[1]; iy++)
+	for (int ix = 0; ix < cropped_tomo.header.nvoxels[0]; ix++)
           cropped_tomo.aaafI[iz][iy][ix] = default_brightness;
 
-    for (int iz = 0; iz <= zmax-zmin; iz++)
-      for (int iy = 0; iy <= ymax-ymin; iy++)
-	for (int ix = 0; ix <= xmax-xmin; ix++)
-	  cropped_tomo.aaafI[iz][iy][ix] = 
-	    tomo.aaafI[iz+zmin+zpad][iy+ymin+ypad][ix+xmin+xpad];
+    for (int iz = zmin; iz <= zmax; iz++)
+      for (int iy = ymin; iy <= ymax; iy++)
+	for (int ix = xmin; ix <= xmax; ix++)
+	  cropped_tomo.aaafI[iz+zpad-zmin][iy+ypad-ymin][ix+xpad-xmin] = \
+	    tomo.aaafI[iz][iy][ix];
 
     cropped_tomo.FindMinMaxMean(); //update the min, max, mean header params
 

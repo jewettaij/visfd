@@ -21,6 +21,7 @@ This will allow you to add extra voxels (of brightness *B*)
 before and after the image in the X,Y,Z directions.
 
 
+
 ### Example 1
 ```
    crop_mrc orig_file.rec new_file.mrc 290 450 80 300 38 137
@@ -42,9 +43,18 @@ at the beginning of the image in the Y direction.
 The resulting image will be size 191 x 261 x 100 voxels wide.
 
 
-### IMOD coordinates
+### NOTE: Voxel coordinates begin at 0
 
-Note: If you are using IMOD to locate voxel coordinates,
-keep in mind that IMOD uses "1-indexing".
-This means that it prints voxel coordinates starting at (1,1,1).
-In this program, voxel coordinates begin at (0,0,0).
+Unlike some programs (such as IMOD), the X,Y,Z coordinate
+of the voxels in the image are counted beginning at 0 not 1.
+So to extract the first 100 voxels from the image in the X,Y,Z directions,
+use this:
+```
+   crop_mrc orig_file.rec new_file.mrc 0 99 0 99 0 99
+```
+*not* this:
+```
+   crop_mrc orig_file.rec new_file.mrc 1 100 1 100 1 100
+```
+Both commands will extract a 100x100x100 rectangular region from the image,
+but the second command excludes the voxels located at X=0, Y=0, or Z=0.
