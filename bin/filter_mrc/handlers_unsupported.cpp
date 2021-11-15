@@ -16,7 +16,6 @@ using namespace visfd;
 
 
 #ifndef DISABLE_DOGGXY
-
 void
 HandleDoggXY(const Settings &settings,
              MrcSimple &tomo_in,
@@ -153,7 +152,7 @@ HandleDoggXY(const Settings &settings,
          << " " << settings.width_a[2] << endl;
   }
 } //HandleDoggXY()
-
+#endif  //#ifndef DISABLE_DOGGXY
 
 
 
@@ -1423,7 +1422,6 @@ HandleDistanceToPoints(const Settings &settings,
   } // for (int I = 0; I < settings.in_coords_file_names.size(); ++I)
 
   cerr << " ------ calculating distance to points ------\n"
-    //<< " in " << settings.in_coords_file_name << " ------\n"
        << endl;
 
   // At some point I was trying to be as general as possible and allowed
@@ -1468,4 +1466,80 @@ HandleDistanceToPoints(const Settings &settings,
 
 
 
-#endif  //#ifndef DISABLE_DOGGXY
+void
+HandleDistancePointsToFeature(const Settings &settings,
+                              MrcSimple &tomo_in,
+                              MrcSimple &tomo_out,
+                              MrcSimple &mask,
+                              float voxel_width[3])
+{
+  vector<array<int,3> > crds;
+  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
+    fstream coords_file;
+    coords_file.open(settings.in_coords_file_names[I], ios::in);
+    if (! coords_file)
+      throw VisfdErr("Error: unable to open \""+
+                     settings.in_coords_file_names[I] +"\" for reading.\n");
+    while (coords_file) {
+      double x, y, z;
+      coords_file >> x;
+      coords_file >> y;
+      coords_file >> z;
+      double ix, iy, iz;
+      ix = floor((x / voxel_width[0]) + 0.5);
+      iy = floor((y / voxel_width[1]) + 0.5);
+      iz = floor((z / voxel_width[2]) + 0.5);
+      array<int, 3> ixiyiz;
+      ixiyiz[0] = ix;
+      ixiyiz[1] = iy;
+      ixiyiz[2] = iz;
+      crds.push_back(ixiyiz);
+    }
+  } // for (int I = 0; I < settings.in_coords_file_names.size(); ++I)
+
+  cerr << " ------ calculating distance from points to feature ------\n"
+       << endl;
+
+  // At some point I was trying to be as general as possible and allowed
+  // for the possibility that voxels need not be cubes (same width x,y,z)
+  // Now, I realize that allowing for this possibility would slow down some
+  // calculations considerably, so I just assume cube-shaped voxels:
+  float voxel_width_ = voxel_width[0];
+  assert((voxel_width[0] == voxel_width[1]) &&
+         (voxel_width[1] == voxel_width[2]));
+
+  for (int i = 0; i < crds.size(); i++) {
+    cerr << "processing point " << i+1 << " / " << crds.size() << "\n";
+
+    // Loop over all of the voxels to find the nearest one.
+    // (Note: This is a terribly inefficient way to do this.
+    //        An algorithm similar to the algorithm used for image dilation
+    //        would be much faster and visit each voxel only once on average.
+    //        In fact, this can be done using scikit-image (skimage) in python.)
+    int rminsq_int = SQR(tomo_out.header.nvoxels[0] +
+                         tomo_out.header.nvoxels[1] +
+                         tomo_out.header.nvoxels[2]);
+    for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
+      for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
+        for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
+          // ignore voxels which are not in the masked region (if applicable)
+          if (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0.0))
+            continue;
+          // ignore voxels whose brightness is not in the selected range
+          if (! ((tomo_in.aaafI[iz][iy][ix] >= settings.out_thresh_a_value) &&
+                 (tomo_in.aaafI[iz][iy][ix] <= settings.out_thresh_b_value)))
+            continue;
+          // calculate the distance from the voxel to the i'th point
+          int rsqi=SQR(ix-crds[i][0])+SQR(iy-crds[i][1])+SQR(iz-crds[i][2]);
+          if (rsqi < rminsq_int)
+            rminsq_int = rsqi;
+        } //for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++)
+      } //for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++)
+    } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++)
+    float rmin = sqrt(rminsq_int * SQR(voxel_width_));
+    cout << rmin << endl;
+  } //for (int i = 0; i < crds.size(); i++)
+} //HandleDistancePointsToFeature()
+
+
+

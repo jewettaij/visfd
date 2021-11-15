@@ -2266,6 +2266,18 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
+    else if (vArgs[i] == "-distance-points-to-feature") {
+      if (i+3 >= vArgs.size())
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a file name.\n");
+      filter_type = DISTANCE_POINTS_TO_FEATURE;
+      in_coords_file_names.push_back(vArgs[i+1]);
+      out_thresh_a_value = stof(vArgs[i+2]);
+      out_thresh_b_value = stof(vArgs[i+3]);
+      num_arguments_deleted = 4;
+    }
+
+
     else if ((vArgs[i] == "-draw-spheres") ||
              (vArgs[i] == "-spheres")) {
       try {
@@ -3359,7 +3371,8 @@ Settings::ParseArgs(vector<string>& vArgs)
          (filter_type == FIND_EXTREMA) ||
          (filter_type == BLOB_NONMAX_SUPPRESSION) ||
          (filter_type == BLOB_NONMAX_SUPERVISED_MULTI) ||
-         (filter_type == BLOB_RADIAL_INTENSITY)))
+         (filter_type == BLOB_RADIAL_INTENSITY) ||
+         (filter_type == DISTANCE_POINTS_TO_FEATURE)))
        ||
        use_intensity_map ||
        invert_output))

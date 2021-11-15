@@ -95,4 +95,12 @@ HandleDistanceToPoints(const Settings &settings,
                        float voxel_width[3]);
 
 
+void
+HandleDistancePointsToFeature(const Settings &settings,
+                              MrcSimple &tomo_in,
+                              MrcSimple &tomo_out,
+                              MrcSimple &mask,
+                              float voxel_width[3]);
+
+
 #endif //#ifndef _UNSUPPORTED_HPP

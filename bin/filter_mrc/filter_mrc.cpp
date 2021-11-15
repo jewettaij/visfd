@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.29.20");
-string g_date_string("2021-10-29");
+string g_date_string("2021-11-14");
 
 
 
@@ -402,8 +402,8 @@ int main(int argc, char **argv) {
          (voxel_width[2] <= 0.0))
         &&
         (!
-         (settings.filter_type == settings.BLOB_NONMAX_SUPPRESSION) ||
-         (settings.filter_type == settings.BLOB_NONMAX_SUPERVISED_MULTI)))
+         (settings.filter_type == Settings::BLOB_NONMAX_SUPPRESSION) ||
+         (settings.filter_type == Settings::BLOB_NONMAX_SUPERVISED_MULTI)))
       throw VisfdErr("Error in tomogram header: Invalid voxel width(s).\n"
                      "Use the -w argument to specify the voxel width.");
 
@@ -562,7 +562,7 @@ int main(int argc, char **argv) {
 
 
 
-    else if (settings.filter_type == settings.BLOB_NONMAX_SUPPRESSION) {
+    else if (settings.filter_type == Settings::BLOB_NONMAX_SUPPRESSION) {
 
       vector<array<float,3> > crds;
       vector<float> diameters;
@@ -583,7 +583,7 @@ int main(int argc, char **argv) {
     }
 
 
-    else if (settings.filter_type == settings.BLOB_NONMAX_SUPERVISED_MULTI) {
+    else if (settings.filter_type == Settings::BLOB_NONMAX_SUPERVISED_MULTI) {
 
       // Use training data to choose the right threshold(s) for discarding blobs
       HandleBlobScoreSupervisedMulti(settings,
@@ -631,9 +631,9 @@ int main(int argc, char **argv) {
     }
 
 
-    // ----- distance_filter -----
+    // ----- distance_filters -----
 
-    else if (settings.filter_type == settings.DISTANCE_TO_POINTS) {
+    else if (settings.filter_type == Settings::DISTANCE_TO_POINTS) {
 
       // Apply a filter which replaces the voxel brightness with the distance
       // to the nearest poing in a (user-supplied) point cloud.
@@ -642,9 +642,18 @@ int main(int argc, char **argv) {
     }
 
 
+    else if (settings.filter_type == Settings::DISTANCE_POINTS_TO_FEATURE) {
+
+      // Apply a filter which replaces the voxel brightness with the distance
+      // to the nearest poing in a (user-supplied) point cloud.
+      HandleDistancePointsToFeature(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
     // ----- sphere_decals_filter -----
 
-    else if (settings.filter_type == settings.DRAW_SPHERES) {
+    else if (settings.filter_type == Settings::DRAW_SPHERES) {
 
       // Draw a new image or annotate (draw on top of) an existing image.
       HandleDrawSpheres(settings, tomo_in, tomo_out, mask, voxel_width);
