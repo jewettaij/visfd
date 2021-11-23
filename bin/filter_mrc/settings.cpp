@@ -102,8 +102,8 @@ Settings::Settings() {
   extrema_on_boundary = true;
   //REMOVE THIS CRUFT
   //find_extrema_occlusion_ratio = 1.0;
-  in_coords_file_names.clear();
-  out_coords_file_name = "";
+  in_crds_file_names.clear();
+  out_crds_file_name = "";
   sphere_decals_diameter = -1.0;
   sphere_decals_diameter_in_voxels = false;
   sphere_decals_foreground = 1.0;
@@ -127,6 +127,9 @@ Settings::Settings() {
   training_neg_crds.clear();
   is_training_pos_in_voxels = false;
   is_training_neg_in_voxels = false;
+  rand_crds_n = 0;
+  rand_crds_diameter = 0.0;
+  rand_crds_seed = 0;
   blob_width_multiplier = 1.0;
   blob_aspect_ratio[0] = 1.0;
   blob_aspect_ratio[1] = 1.0;
@@ -1772,8 +1775,8 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
             (vArgs[i+1] == vArgs[i+2]))
           throw invalid_argument("");
-        in_coords_file_names.push_back(vArgs[i+1]);
-        out_coords_file_name = vArgs[i+2];
+        in_crds_file_names.push_back(vArgs[i+1]);
+        out_crds_file_name = vArgs[i+2];
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -1876,7 +1879,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             }
             multi_training_pos_fnames.push_back(tokens[0]);
             multi_training_neg_fnames.push_back(tokens[1]);
-            multi_in_coords_file_names.push_back(tokens[2]);
+            multi_in_crds_file_names.push_back(tokens[2]);
           } //while (getline(f, strLine))
           f.close();
         } //Read multi_training_meta_fname
@@ -2261,20 +2264,42 @@ Settings::ParseArgs(vector<string>& vArgs)
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by a file name.\n");
       filter_type = DISTANCE_TO_POINTS;
-      in_coords_file_names.push_back(vArgs[i+1]);
+      in_crds_file_names.push_back(vArgs[i+1]);
       num_arguments_deleted = 2;
     }
 
 
     else if (vArgs[i] == "-distance-points-to-feature") {
-      if (i+3 >= vArgs.size())
+      if (i+4 >= vArgs.size())
         throw InputErr("Error: The " + vArgs[i] +
-                       " argument must be followed by a file name.\n");
+                       " argument must be followed by two file names and two numbers:\n"
+                       "       InFile OutFile BrightnessSelectMin BrightnessSelectMax\n");
       filter_type = DISTANCE_POINTS_TO_FEATURE;
-      in_coords_file_names.push_back(vArgs[i+1]);
-      out_thresh_a_value = stof(vArgs[i+2]);
-      out_thresh_b_value = stof(vArgs[i+3]);
-      num_arguments_deleted = 4;
+      in_crds_file_names.push_back(vArgs[i+1]);
+      out_distances_file_name = vArgs[i+2];
+      out_thresh_a_value = stof(vArgs[i+3]);
+      out_thresh_b_value = stof(vArgs[i+4]);
+      num_arguments_deleted = 5;
+    }
+
+
+    else if (vArgs[i] == "-random-spheres") {
+      if ((i+6 >= vArgs.size()) ||
+          (vArgs[i+2] == "") || (vArgs[i+2][0] == '-') ||
+          (vArgs[i+3] == "") || (vArgs[i+3][0] == '-'))
+        throw InputErr("Error: The " + vArgs[i] +
+                       " argument must be followed by a file name and 5 numbers:\n"
+                       "       FILE Npoints diameter BrightnessSelectMin BrightnessSelectMax seed\n");
+      filter_type = RANDOM_SPHERES;
+      out_crds_file_name = vArgs[i+1];
+      rand_crds_n = stoi(vArgs[i+2]);
+      rand_crds_diameter = stof(vArgs[i+3]);
+      out_thresh_a_value = stof(vArgs[i+4]);
+      out_thresh_b_value = stof(vArgs[i+5]);
+      rand_crds_seed = stoi(vArgs[i+6]);
+      if (! ((rand_crds_n > 0) && (rand_crds_diameter > 0)))
+        throw InputErr("Error(\"-random-spheres\"): The number of points and the diameter must be > 0.");
+      num_arguments_deleted = 7;
     }
 
 
@@ -2285,7 +2310,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = DRAW_SPHERES;
-        in_coords_file_names.push_back(vArgs[i+1]);
+        in_crds_file_names.push_back(vArgs[i+1]);
       }
       catch (invalid_argument& exc) {
         throw InputErr("Error: The " + vArgs[i] +
@@ -2300,7 +2325,7 @@ Settings::ParseArgs(vector<string>& vArgs)
             (vArgs[i+1] == "") || (vArgs[i+1][0] == '-'))
           throw invalid_argument("");
         filter_type = DRAW_SPHERES;
-        in_coords_file_names.push_back(vArgs[i+1]);
+        in_crds_file_names.push_back(vArgs[i+1]);
         if (! user_set_thickness_manually) {
           sphere_decals_shell_thickness = 0.05;
           sphere_decals_shell_thickness_is_ratio = true;
@@ -3216,7 +3241,7 @@ Settings::ParseArgs(vector<string>& vArgs)
           blob_profiles_center_criteria = BlobCenterCriteria::CENTER;
         else
           throw invalid_argument("");
-        in_coords_file_names.push_back(vArgs[i+2]);
+        in_crds_file_names.push_back(vArgs[i+2]);
         blob_profiles_file_name_base = vArgs[i+3];
       }
       catch (invalid_argument& exc) {
@@ -3372,6 +3397,7 @@ Settings::ParseArgs(vector<string>& vArgs)
          (filter_type == BLOB_NONMAX_SUPPRESSION) ||
          (filter_type == BLOB_NONMAX_SUPERVISED_MULTI) ||
          (filter_type == BLOB_RADIAL_INTENSITY) ||
+         (filter_type == RANDOM_SPHERES) ||
          (filter_type == DISTANCE_POINTS_TO_FEATURE)))
        ||
        use_intensity_map ||
@@ -3546,8 +3572,8 @@ Settings::ParseArgs(vector<string>& vArgs)
   if ((multi_training_pos_fnames.size() > 0) ||
       (multi_training_neg_fnames.size() > 0))
   {
-    if ((in_coords_file_names.size() > 0) &&
-        (out_coords_file_name != ""))
+    if ((in_crds_file_names.size() > 0) &&
+        (out_crds_file_name != ""))
       throw InputErr("Error: This program is too stupid to automatically discard blobs from multiple\n"
                      "       images in a single invocation.  For this reason,\n"
                      "       you may not use the \"-supervised-multi\" argument simultaneously with\n"

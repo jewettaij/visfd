@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.29.20");
-string g_date_string("2021-11-14");
+string g_date_string("2021-11-23");
 
 
 
@@ -631,7 +631,7 @@ int main(int argc, char **argv) {
     }
 
 
-    // ----- distance_filters -----
+    // ----- distance calculations -----
 
     else if (settings.filter_type == Settings::DISTANCE_TO_POINTS) {
 
@@ -644,9 +644,22 @@ int main(int argc, char **argv) {
 
     else if (settings.filter_type == Settings::DISTANCE_POINTS_TO_FEATURE) {
 
-      // Apply a filter which replaces the voxel brightness with the distance
-      // to the nearest poing in a (user-supplied) point cloud.
+      // Read the coordinates of multiple points in 3-D (a pointcloud) and
+      // calculate the distance of each of these points to the nearest voxel
+      // whose brightness lies in a range selected by the user.
       HandleDistancePointsToFeature(settings, tomo_in, tomo_out, mask, voxel_width);
+
+    }
+
+
+    // ----- random_spheres -----
+
+    else if (settings.filter_type == Settings::RANDOM_SPHERES) {
+
+      // Generate a random point cloud of thick spheres which fills a 3-D region
+      // of space corresponding to a region in the image whose voxel brightness
+      // lies in a range selected by the user.
+      HandleRandomSpheres(settings, tomo_in, tomo_out, mask, voxel_width);
 
     }
 

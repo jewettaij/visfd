@@ -66,6 +66,7 @@ class Settings {
              //   widths and arbitrary exponents in XY, and Gaussian blur in Z.
     DISTANCE_TO_POINTS, //voxel intensity= distance to nearest point in a set
     DISTANCE_POINTS_TO_FEATURE,//report distance ofeach point to selected voxels
+    RANDOM_SPHERES,  // generate a list of randomly positioned spheres
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses
     TEMPLATE_GGAUSS, // Perform a least-squares fit between a generalized
@@ -305,13 +306,20 @@ class Settings {
   bool is_training_pos_in_voxels = false;
   bool is_training_neg_in_voxels = false;
 
+  // generate a random point cloud?
+  int    rand_crds_n;
+  double rand_crds_diameter;
+  int    rand_crds_seed;
+
+  // measure distances in image
+  string out_distances_file_name;
+
   // training data in multiple independent files (for multiple images)
-  vector<string> multi_in_coords_file_names;
+  vector<string> multi_in_crds_file_names;
   vector<bool> multi_is_training_pos_in_voxels;
   vector<bool> multi_is_training_neg_in_voxels;
   vector<vector<array<float, 3> > > multi_training_pos_crds;
   vector<vector<array<float, 3> > > multi_training_neg_crds;
-
   // ---- parameters for detecting local minima and local maxima ----
 
   bool find_minima = false;
@@ -323,8 +331,8 @@ class Settings {
 
   // ---- parameters for creating images showing detected blobs ----
 
-  vector<string> in_coords_file_names;
-  string out_coords_file_name;
+  vector<string> in_crds_file_names;
+  string out_crds_file_name;
   float sphere_decals_diameter;
   bool sphere_decals_diameter_in_voxels;
   float sphere_decals_scale;

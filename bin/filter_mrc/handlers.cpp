@@ -440,13 +440,13 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
   assert((voxel_width[0] == voxel_width[1]) &&
          (voxel_width[1] == voxel_width[2]));
 
-  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
+  for (int I = 0; I < settings.in_crds_file_names.size(); ++I) {
     vector<array<float,3> > crds_file; //coordinates stored in the I'th file
     vector<float> diameters_file;      //diameters stored in the I'th file
     vector<float> scores_file;         //scores stored in the I'th file
 
     bool units_of_voxels =
-      ReadBlobCoordsFile(settings.in_coords_file_names[I],
+      ReadBlobCoordsFile(settings.in_crds_file_names[I],
                          &crds_file,
                          &diameters_file,
                          &scores_file,
@@ -505,10 +505,10 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
                      diameters_file.begin(), diameters_file.end());
     scores.insert(scores.end(),
                   scores_file.begin(), scores_file.end());
-  } //for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
+  } //for (int I = 0; I < settings.in_crds_file_names.size(); ++I) {
 
   cerr << " --- discarding blobs in files ---\n"
-    //<< "     \"" << settings.in_coords_file_name << "\" ---\n"
+    //<< "     \"" << settings.in_crds_file_name << "\" ---\n"
        << "\n";
 
   // Discard blobs based on score or size?
@@ -621,14 +621,14 @@ HandleBlobsNonmaxSuppression(const Settings &settings,
   }
 
   // Write out the remaining blobs to a file:
-  if (settings.out_coords_file_name != "") {
-    fstream out_coords_file;
+  if (settings.out_crds_file_name != "") {
     double voxel_width_positive = 1.0;
     if (voxel_width_ > 0.0)
       voxel_width_positive = voxel_width_;
-    out_coords_file.open(settings.out_coords_file_name, ios::out);
+    fstream out_crds_file;
+    out_crds_file.open(settings.out_crds_file_name, ios::out);
     for (size_t i=0; i < crds.size(); i++) {
-      out_coords_file << crds[i][0] * voxel_width_positive << " "
+      out_crds_file << crds[i][0] * voxel_width_positive << " "
                       << crds[i][1] * voxel_width_positive << " "
                       << crds[i][2] * voxel_width_positive << " " 
                       << diameters[i] * voxel_width_positive << " " 
@@ -660,14 +660,14 @@ HandleBlobScoreSupervisedMulti(const Settings &settings,
   float threshold_lower_bound;
   float threshold_upper_bound;
 
-  int Nsets = settings.multi_in_coords_file_names.size();
+  int Nsets = settings.multi_in_crds_file_names.size();
 
   vector<vector<array<float,3> > > blob_crds_multi(Nsets);
   vector<vector<float> > blob_diameters_multi(Nsets);
   vector<vector<float> > blob_scores_multi(Nsets);
 
   for (int I = 0; I < Nsets; ++I) {
-    ReadBlobCoordsFile(settings.multi_in_coords_file_names[I],
+    ReadBlobCoordsFile(settings.multi_in_crds_file_names[I],
                        &blob_crds_multi[I],
                        &blob_diameters_multi[I],
                        &blob_scores_multi[I],
@@ -823,8 +823,8 @@ HandleBlobDetector(const Settings &settings,
              tomo_in.aaafI,
              mask.aaafI,
              settings.blob_diameters,  // try detecting blobs of these diameters
-             &minima_crds_voxels,  // store minima x,y,z coords here
-             &maxima_crds_voxels,  // store maxima x,y,z coords here
+             &minima_crds_voxels,  // store minima x,y,z crds here
+             &maxima_crds_voxels,  // store maxima x,y,z crds here
              &minima_diameters, // corresponding diameter for that minima
              &maxima_diameters, // corresponding diameter for that maxima
              &minima_scores, // what was the blob's score?
@@ -1226,12 +1226,12 @@ HandleExtrema(const Settings &settings,
                   << minima_scores[i] << "\n";
   }
   if ((maxima_crds_voxels.size() > 0) && settings.find_maxima) {
-    fstream coords_file;
-    coords_file.open(settings.find_maxima_file_name, ios::out);
-    if (! coords_file)
+    fstream crds_file;
+    crds_file.open(settings.find_maxima_file_name, ios::out);
+    if (! crds_file)
       throw VisfdErr("Error: unable to open \""+ settings.find_maxima_file_name +"\" for reading.\n");
     for (int i=0; i < maxima_crds_voxels.size(); i++)
-      coords_file << maxima_crds_voxels[i][0] * voxel_width[0] << " "
+      crds_file << maxima_crds_voxels[i][0] * voxel_width[0] << " "
                   << maxima_crds_voxels[i][1] * voxel_width[1] << " "
                   << maxima_crds_voxels[i][2] * voxel_width[2] << " "
                   //<< maxima_diameters[i] << " "
@@ -2034,7 +2034,7 @@ HandleTV(const Settings &settings,
   //Did the user ask us to generate output files containing surface orientation?
   if (settings.out_normals_fname != "")
   {
-    vector<array<float,3> > coords;
+    vector<array<float,3> > crds;
     vector<array<float,3> > norms;
     // where is the lookup table to indicate which cluster a voxel belongs to?
     float ***aaafVoxel2Cluster = nullptr;
@@ -2052,7 +2052,7 @@ HandleTV(const Settings &settings,
             xyz[0] = ix * voxel_width[0];
             xyz[1] = iy * voxel_width[1];
             xyz[2] = iz * voxel_width[2];
-            coords.push_back(xyz);
+            crds.push_back(xyz);
             array<float,3> normal;
             for (int d = 0; d < 3; d++)
               normal[d] = aaaafDirection[iz][iy][ix][d];
@@ -2292,14 +2292,14 @@ HandleTV(const Settings &settings,
             // So we set the surface normal to aaaafDirection[],not eivects[0][]
           } //if (settings.surface_find_ridge)
 
-          coords.push_back(xyz); // add it to the point cloud
+          crds.push_back(xyz); // add it to the point cloud
           norms.push_back(normal);
         } //for (int ix = 0; ix < image_size[0]; ++ix)
       } //for (int iy = 0; iy < image_size[1]; ++iy)
     } //for (int iz = 0; iz < image_size[2]; ++iz)
 
     WriteOrientedPointCloudPLY(settings.out_normals_fname,
-                               coords,
+                               crds,
                                norms);
 
   } //if (settings.out_normals_fname != "")

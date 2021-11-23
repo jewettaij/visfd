@@ -103,4 +103,15 @@ HandleDistancePointsToFeature(const Settings &settings,
                               float voxel_width[3]);
 
 
+// @brief  Pack spheres in a region in space randomly.  The region of space is
+//         restricted to voxels lying within the mask region (if applicable) and
+//         voxels whose brightnesses lie within the range of selected voxels.
+void
+HandleRandomSpheres(const Settings &settings,
+                    MrcSimple &tomo_in,
+                    MrcSimple &tomo_out,
+                    MrcSimple &mask,
+                    float voxel_width[3]);
+
+
 #endif //#ifndef _UNSUPPORTED_HPP

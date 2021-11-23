@@ -170,11 +170,11 @@ HandleBlobRadialIntensity(const Settings &settings,
   vector<float> diameters;         // diameter of each sphere
   vector<float> scores;            // the "score" (contrast) of each blob
 
-  assert(settings.in_coords_file_names.size() > 0);
+  assert(settings.in_crds_file_names.size() > 0);
   assert(settings.blob_profiles_file_name_base != "");
 
-  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
-    ReadBlobCoordsFile(settings.in_coords_file_names[I],
+  for (int I = 0; I < settings.in_crds_file_names.size(); ++I) {
+    ReadBlobCoordsFile(settings.in_crds_file_names[I],
                        &sphere_centers, // store blob coordinates here
                        &diameters,
                        &scores,
@@ -1398,17 +1398,18 @@ HandleDistanceToPoints(const Settings &settings,
                        float voxel_width[3])
 {
   vector<array<int,3> > crds;
-  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
-    fstream coords_file;
-    coords_file.open(settings.in_coords_file_names[I], ios::in);
-    if (! coords_file)
+  assert(settings.in_crds_file_names.size() > 0);
+  for (int I = 0; I < settings.in_crds_file_names.size(); ++I) {
+    fstream crds_file;
+    crds_file.open(settings.in_crds_file_names[I], ios::in);
+    if (! crds_file)
       throw VisfdErr("Error: unable to open \""+
-                     settings.in_coords_file_names[I] +"\" for reading.\n");
-    while (coords_file) {
+                     settings.in_crds_file_names[I] +"\" for reading.\n");
+    while (crds_file) {
       double x, y, z;
-      coords_file >> x;
-      coords_file >> y;
-      coords_file >> z;
+      crds_file >> x;
+      crds_file >> y;
+      crds_file >> z;
       double ix, iy, iz;
       ix = floor((x / voxel_width[0]) + 0.5);
       iy = floor((y / voxel_width[1]) + 0.5);
@@ -1419,7 +1420,7 @@ HandleDistanceToPoints(const Settings &settings,
       ixiyiz[2] = iz;
       crds.push_back(ixiyiz);
     }
-  } // for (int I = 0; I < settings.in_coords_file_names.size(); ++I)
+  } // for (int I = 0; I < settings.in_crds_file_names.size(); ++I)
 
   cerr << " ------ calculating distance to points ------\n"
        << endl;
@@ -1445,7 +1446,7 @@ HandleDistanceToPoints(const Settings &settings,
           continue;
 
         // Loop over all of the points and find the nearest one.
-        // Calculate the distance to that point, and store that in the tomogram.
+        // Calculate the distance to that point, and store that in the 3Dimage
         // (Note: This is a terribly inefficient way to do this.
         //        A paint-bucket-like-tool using expanding spheres would
         //        be much faster and visit each voxel only once on average.)
@@ -1474,17 +1475,18 @@ HandleDistancePointsToFeature(const Settings &settings,
                               float voxel_width[3])
 {
   vector<array<int,3> > crds;
-  for (int I = 0; I < settings.in_coords_file_names.size(); ++I) {
-    fstream coords_file;
-    coords_file.open(settings.in_coords_file_names[I], ios::in);
-    if (! coords_file)
+  assert(settings.in_crds_file_names.size() > 0);
+  for (int I = 0; I < settings.in_crds_file_names.size(); ++I) {
+    fstream crds_file;
+    crds_file.open(settings.in_crds_file_names[I], ios::in);
+    if (! crds_file)
       throw VisfdErr("Error: unable to open \""+
-                     settings.in_coords_file_names[I] +"\" for reading.\n");
-    while (coords_file) {
+                     settings.in_crds_file_names[I] +"\" for reading.\n");
+    while (crds_file) {
       double x, y, z;
-      coords_file >> x;
-      coords_file >> y;
-      coords_file >> z;
+      crds_file >> x;
+      crds_file >> y;
+      crds_file >> z;
       double ix, iy, iz;
       ix = floor((x / voxel_width[0]) + 0.5);
       iy = floor((y / voxel_width[1]) + 0.5);
@@ -1495,7 +1497,7 @@ HandleDistancePointsToFeature(const Settings &settings,
       ixiyiz[2] = iz;
       crds.push_back(ixiyiz);
     }
-  } // for (int I = 0; I < settings.in_coords_file_names.size(); ++I)
+  } // for (int I = 0; I < settings.in_crds_file_names.size(); ++I)
 
   cerr << " ------ calculating distance from points to feature ------\n"
        << endl;
@@ -1507,6 +1509,9 @@ HandleDistancePointsToFeature(const Settings &settings,
   float voxel_width_ = voxel_width[0];
   assert((voxel_width[0] == voxel_width[1]) &&
          (voxel_width[1] == voxel_width[2]));
+
+  fstream out_distances_file;
+  out_distances_file.open(settings.out_distances_file_name, ios::out);
 
   for (int i = 0; i < crds.size(); i++) {
     cerr << "processing point " << i+1 << " / " << crds.size() << "\n";
@@ -1536,10 +1541,124 @@ HandleDistancePointsToFeature(const Settings &settings,
         } //for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++)
       } //for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++)
     } //for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++)
+
     float rmin = sqrt(rminsq_int * SQR(voxel_width_));
-    cout << rmin << endl;
+    out_distances_file << rmin << endl;
   } //for (int i = 0; i < crds.size(); i++)
+  out_distances_file.close();
 } //HandleDistancePointsToFeature()
+
+
+
+
+//      Pack spheres in a region in space randomly.  The region of space is
+//      restricted to voxels lying within the mask region (if applicable)
+//      and voxels whose brightnesses lie within the range of selected voxels.
+//
+// note: This strategy becomes extremely slow as the packing density increases,
+//       and can easily run indefinitely if the early points were chosen poorly.
+//       A much, much better strategy would use some kind of simulation
+//       stratgy (such as Monte-Carlo) allowing us to start with a non-random
+//       or random-but-overlapping distribution of spheres, and let the spheres
+//       move until overlapping are reduced, and placement becomes more random.
+//       It's not hard to implement, but I am too lazy to implement this now.
+//       I may revisit this in case I learn that others might want this feature.
+//       -Andrew 2021-11-20
+
+void
+HandleRandomSpheres(const Settings &settings,
+                    MrcSimple &tomo_in,
+                    MrcSimple &tomo_out,
+                    MrcSimple &mask,
+                    float voxel_width[3])
+{
+  // Note: voxel_width[0...2] is the physical width of each voxel (along x,y,z).
+  // At some point I was trying to be as general as possible and allowed
+  // for the possibility that voxels need not be cubes (same width x,y,z)
+  // Now, I realize that allowing for this possibility would slow down some
+  // calculations considerably, so now nI just assume cube-shaped voxels:
+  float voxel_width_ = voxel_width[0];
+  assert((voxel_width[0] == voxel_width[1]) &&
+         (voxel_width[1] == voxel_width[2]));
+
+  assert(settings.rand_crds_diameter > 0);
+  int rsphere = ceil((settings.rand_crds_diameter/voxel_width_)/2);
+  int rspheresq = rsphere*rsphere;
+  if ((tomo_out.header.nvoxels[0] <= 2*rsphere) ||
+      (tomo_out.header.nvoxels[1] <= 2*rsphere) ||
+      (tomo_out.header.nvoxels[2] <= 2*rsphere))
+    throw InputErr("Error: The image size is smaller than the spheres you want to pack.\n");
+
+  vector<array<int,3> > crds; //stores results (the centers of all the spheres)
+
+  array<int, 3> ixiyiz;
+  // allocate the array used to check if that location is already occupied
+  tomo_out = tomo_in; //(this is one way to allocate space to store the array)
+  for (int iz = 0; iz < tomo_out.header.nvoxels[2]; iz++) {
+    for (int iy = 0; iy < tomo_out.header.nvoxels[1]; iy++) {
+      for (int ix = 0; ix < tomo_out.header.nvoxels[0]; ix++) {
+        tomo_out.aaafI[iz][iy][ix] = 1; //occupied
+        if ((tomo_in.aaafI[iz][iy][ix] >= settings.out_thresh_a_value) &&
+            (tomo_in.aaafI[iz][iy][ix] <= settings.out_thresh_b_value) &&
+            (! (mask.aaafI && (mask.aaafI[iz][iy][ix] == 0))))
+          tomo_out.aaafI[iz][iy][ix] = 0; //available
+      }
+    }
+  }
+
+  RANDOM_INIT(settings.rand_crds_seed); //initialize the random number generator
+  assert(settings.rand_crds_n > 0);
+
+  for (int i=0; i < settings.rand_crds_n; i++) {
+    cerr << "Generating random point " << i+1 << " / "
+         << settings.rand_crds_n << ": ";
+    bool collision = true;
+    int ix0, iy0, iz0;
+    while (collision) {
+      //attempt to add a sphere centerd at random location ix0, iy0, iz0
+      ix0 = RANDOM_INT(tomo_out.header.nvoxels[0] - 2*rsphere) + rsphere;
+      iy0 = RANDOM_INT(tomo_out.header.nvoxels[1] - 2*rsphere) + rsphere;
+      iz0 = RANDOM_INT(tomo_out.header.nvoxels[2] - 2*rsphere) + rsphere;
+      collision = false;
+      for (int dz = -rsphere; (!collision) && dz <= rsphere; dz++) {
+        int iz =iz0+dz;
+        assert((0<=iz) && (iz < tomo_out.header.nvoxels[2]));
+        for (int dy = -rsphere; (!collision) && dy <= rsphere; dy++) {
+          int iy =iy0+dy;
+          assert((0<=iy) && (iy < tomo_out.header.nvoxels[1]));
+          for (int dx = -rsphere; (!collision) && dx <= rsphere; dx++) {
+            int ix =ix0+dx;
+            assert((0<=ix) && (ix < tomo_out.header.nvoxels[0]));
+            if ((tomo_out.aaafI[iz][iy][ix] != 0) &&
+                (dx*dx+dy*dy+dz*dz <= rspheresq))
+              collision = true;
+          }
+        }
+      }
+    } //while (! collision)
+    ixiyiz[0] = ix0;
+    ixiyiz[1] = iy0;
+    ixiyiz[2] = iz0;
+    crds.push_back(ixiyiz);
+    cerr << ix0 << " " << iy0 << " " << iz0 << endl;
+    for (int dz = -rsphere; (!collision) && dz <= rsphere; dz++)
+      for (int dy = -rsphere; (!collision) && dy <= rsphere; dy++)
+        for (int dx = -rsphere; (!collision) && dx <= rsphere; dx++)
+          if (dx*dx+dy*dy+dz*dz <= rspheresq)
+            tomo_out.aaafI[iz0+dz][iy0+dy][ix0+dx] = 1;
+  } //for (int i=0; i < settings.rand_crds_n; i++)
+
+  fstream out_crds_file;
+  out_crds_file.open(settings.out_crds_file_name, ios::out);
+  assert(crds.size() == settings.rand_crds_n);
+  // Now print out the x,y,z coordinates of each point we generated
+  // (Multiply voxel positions by voxel_width to convert to physical distance.)
+  for (int i=0; i < crds.size(); i++)
+    out_crds_file << crds[i][0]*voxel_width_ << " " 
+                  << crds[i][1]*voxel_width_ << " "
+                  << crds[i][2]*voxel_width_ << endl;
+  out_crds_file.close();
+} //HandleGenRandomPointcloud()
 
 
 
