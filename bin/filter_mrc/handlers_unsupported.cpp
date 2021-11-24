@@ -1400,24 +1400,24 @@ HandleDistanceToPoints(const Settings &settings,
   vector<array<int,3> > crds;
   assert(settings.in_crds_file_names.size() > 0);
   for (int I = 0; I < settings.in_crds_file_names.size(); ++I) {
-    fstream crds_file;
-    crds_file.open(settings.in_crds_file_names[I], ios::in);
-    if (! crds_file)
-      throw VisfdErr("Error: unable to open \""+
-                     settings.in_crds_file_names[I] +"\" for reading.\n");
-    while (crds_file) {
-      double x, y, z;
-      crds_file >> x;
-      crds_file >> y;
-      crds_file >> z;
-      double ix, iy, iz;
-      ix = floor((x / voxel_width[0]) + 0.5);
-      iy = floor((y / voxel_width[1]) + 0.5);
-      iz = floor((z / voxel_width[2]) + 0.5);
+    vector<array<float,3> > crds_; // coordinates stored in the I'th file
+    bool crds_are_ints =
+      ReadBlobCoordsFile(settings.in_crds_file_names[I],
+                         &crds_,
+                         static_cast<vector<float>*>(nullptr),
+                         static_cast<vector<float>*>(nullptr),
+                         settings.sphere_decals_diameter,
+                         settings.sphere_decals_foreground,
+                         settings.sphere_decals_scale);
+    for (int i = 0; i < crds_.size(); i++) {
       array<int, 3> ixiyiz;
-      ixiyiz[0] = ix;
-      ixiyiz[1] = iy;
-      ixiyiz[2] = iz;
+      for (int d = 0; d < 3; d++) {
+        if (crds_are_ints)
+          crds_[i][d] -= 1;
+        else
+          crds_[i][d] /= voxel_width[d];
+        ixiyiz[d] = floor(crds_[i][d] + 0.5);
+      }
       crds.push_back(ixiyiz);
     }
   } // for (int I = 0; I < settings.in_crds_file_names.size(); ++I)
@@ -1476,25 +1476,26 @@ HandleDistancePointsToFeature(const Settings &settings,
 {
   vector<array<int,3> > crds;
   assert(settings.in_crds_file_names.size() > 0);
+
   for (int I = 0; I < settings.in_crds_file_names.size(); ++I) {
-    fstream crds_file;
-    crds_file.open(settings.in_crds_file_names[I], ios::in);
-    if (! crds_file)
-      throw VisfdErr("Error: unable to open \""+
-                     settings.in_crds_file_names[I] +"\" for reading.\n");
-    while (crds_file) {
-      double x, y, z;
-      crds_file >> x;
-      crds_file >> y;
-      crds_file >> z;
-      double ix, iy, iz;
-      ix = floor((x / voxel_width[0]) + 0.5);
-      iy = floor((y / voxel_width[1]) + 0.5);
-      iz = floor((z / voxel_width[2]) + 0.5);
+    vector<array<float,3> > crds_; // coordinates stored in the I'th file
+    bool crds_are_ints =
+      ReadBlobCoordsFile(settings.in_crds_file_names[I],
+                         &crds_,
+                         static_cast<vector<float>*>(nullptr),
+                         static_cast<vector<float>*>(nullptr),
+                         settings.sphere_decals_diameter,
+                         settings.sphere_decals_foreground,
+                         settings.sphere_decals_scale);
+    for (int i = 0; i < crds_.size(); i++) {
       array<int, 3> ixiyiz;
-      ixiyiz[0] = ix;
-      ixiyiz[1] = iy;
-      ixiyiz[2] = iz;
+      for (int d = 0; d < 3; d++) {
+        if (crds_are_ints)
+          crds_[i][d] -= 1;
+        else
+          crds_[i][d] /= voxel_width[d];
+        ixiyiz[d] = floor(crds_[i][d] + 0.5);
+      }
       crds.push_back(ixiyiz);
     }
   } // for (int I = 0; I < settings.in_crds_file_names.size(); ++I)
