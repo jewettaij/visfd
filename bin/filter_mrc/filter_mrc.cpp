@@ -30,7 +30,7 @@ using namespace std;
 
 string g_program_name("filter_mrc");
 string g_version_string("0.29.20");
-string g_date_string("2021-11-23");
+string g_date_string("2021-11-28");
 
 
 
@@ -642,7 +642,7 @@ int main(int argc, char **argv) {
     }
 
 
-    else if (settings.filter_type == Settings::DISTANCE_POINTS_TO_FEATURE) {
+    else if (settings.filter_type == Settings::DISTANCE_TO_VOXELS) {
 
       // Read the coordinates of multiple points in 3-D (a pointcloud) and
       // calculate the distance of each of these points to the nearest voxel

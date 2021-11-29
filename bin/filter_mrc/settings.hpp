@@ -64,8 +64,8 @@ class Settings {
     //   DEPRECIATED:
     DOGGXY,  //2D Generalized Difference-of-Generalized-Gaussians with arbitrary
              //   widths and arbitrary exponents in XY, and Gaussian blur in Z.
-    DISTANCE_TO_POINTS, //voxel intensity= distance to nearest point in a set
-    DISTANCE_POINTS_TO_FEATURE,//report distance ofeach point to selected voxels
+    DISTANCE_TO_POINTS, //voxel intensity=distance to nearest point in a set
+    DISTANCE_TO_VOXELS, //report distance of each point to selected voxels
     RANDOM_SPHERES,  // generate a list of randomly positioned spheres
     TEMPLATE_GAUSS,  // Perform a least-squares fit between a Gaussian
                      // and the surrounding voxel brightnesses

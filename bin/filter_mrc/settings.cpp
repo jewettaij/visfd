@@ -2269,12 +2269,12 @@ Settings::ParseArgs(vector<string>& vArgs)
     }
 
 
-    else if (vArgs[i] == "-distance-points-to-feature") {
+    else if (vArgs[i] == "-distance-to-voxels") {
       if (i+4 >= vArgs.size())
         throw InputErr("Error: The " + vArgs[i] +
                        " argument must be followed by two file names and two numbers:\n"
                        "       InFile OutFile BrightnessSelectMin BrightnessSelectMax\n");
-      filter_type = DISTANCE_POINTS_TO_FEATURE;
+      filter_type = DISTANCE_TO_VOXELS;
       in_crds_file_names.push_back(vArgs[i+1]);
       out_distances_file_name = vArgs[i+2];
       out_thresh_a_value = stof(vArgs[i+3]);
@@ -3398,7 +3398,7 @@ Settings::ParseArgs(vector<string>& vArgs)
          (filter_type == BLOB_NONMAX_SUPERVISED_MULTI) ||
          (filter_type == BLOB_RADIAL_INTENSITY) ||
          (filter_type == RANDOM_SPHERES) ||
-         (filter_type == DISTANCE_POINTS_TO_FEATURE)))
+         (filter_type == DISTANCE_TO_VOXELS)))
        ||
        use_intensity_map ||
        invert_output))
