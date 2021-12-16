@@ -83,8 +83,7 @@ annotation,
 [filament (curve) detection *(planned)*](./doc/doc_filter_mrc.md#Detecting-curves), and
 [edge detection *(planned)*](./doc/doc_filter_mrc.md#-edge-thickness).
 Images can be segmented hierarchically into distinct contiguous objects,
-using a [variety](https://imagej.net/plugins/classic-watershed#introduction)
-of [strategies](./doc/doc_filter_mrc.md#-connect-threshold),
+using a variety of strategies.
 This program currently only supports the *.MRC* (a.k.a. *.REC* or *.MAP*)
 image file format.
 As of 2021-9-13, this program does not have a graphical user interface.
@@ -192,7 +191,7 @@ for installing VISFD and its dependencies.
  You can reduce the memory needed and computation time dramatically
  by cropping or binning your tomogram.)
 - A terminal (running BASH) where you can enter commands.
-- A [C++ compiler](#Supported-compilers)
+- A [C++ compiler](./INSTALL.md#Compile-the-VISFD-code)
 - [make](https://en.wikipedia.org/wiki/Make_(software))
 - Software to visualize MRC/REC/MAP files
 (such as [IMOD/3dmod](https://bio3d.colorado.edu/imod/))
