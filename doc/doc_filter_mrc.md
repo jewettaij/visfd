@@ -179,7 +179,7 @@ argument used in the second step is optional.)*
 Find the **largest membrane** in an image,
 and **generate a closed surface** for that membrane.
 (This example requires
- [*SSDRecon*](https://github.com/mkazhdan/PoissonRecon) and
+ [*SSDRecon/PoissonRecon*](https://github.com/mkazhdan/PoissonRecon) and
  [*meshlab*](http://www.meshlab.net).)
 
 This is a complicated example with several steps. Sometimes these steps fail.
@@ -235,7 +235,7 @@ You can also *modify* the image to erase or mask problematic regions (using the
 [-mask-rect-subtract](#-mask-rect-subtract-xmin-xmax-ymin-ymax-zmin-zmax), and
 [-mask-sphere-subtract](#-mask-sphere-subtract-x0-y0-z0-r) arguments).
 
-Now use [*SSDRecon*](https://github.com/mkazhdan/PoissonRecon)
+Now use [*SSDRecon/PoissonRecon*](https://github.com/mkazhdan/PoissonRecon)
 to load the PLY file we just created and close the holes in the surface:
 ```
 SSDRecon --in largest_membrane_pointcloud.ply \

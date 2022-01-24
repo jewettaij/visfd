@@ -47,7 +47,7 @@ and robust connected-component analysis.
 Interesting features can be detected in images using programs like EMAN2.
 Then the coordinates of these geometric shapes can be extracted using VISFD,
 and analyzed using 3rd-party tools like
-[**SSDRecon**](https://github.com/mkazhdan/PoissonRecon)).
+[**SSDRecon/PoissonRecon**](https://github.com/mkazhdan/PoissonRecon)).
 Using these tools together, it now possible to automatically determine the
 inside and outside of membrane-bound compartments in tomograms of cells
 (for example).
@@ -62,7 +62,7 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 ## filter_mrc
 ![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
 ![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)
-![example: membrane reconstruction using tensor voting and PoissonRecon (after cleaning up with meshlab)](./doc/images/nucleoid_example_Hylemonella_gracilis_inner_membrane.jpg)
+![example: membrane reconstruction using tensor voting and SSDRecon/PoissonRecon (after cleaning up with meshlab)](./doc/images/nucleoid_example_Hylemonella_gracilis_inner_membrane.jpg)
 
 **[filter_mrc](./doc/doc_filter_mrc.md)**
 is a stand-alone program which uses many of the
@@ -198,7 +198,7 @@ for installing VISFD and its dependencies.
 - python (version 3.0 or later)
 - The "numpy", "matplotlib", "mrcfile", and "pyvista" python modules
   (These are are installable via "pip3" or "pip".)
-- [**PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
+- [**SSDRecon/PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
 - Software to visualize mesh files (such as [meshlab](http://www.meshlab.net)).
 
 
