@@ -207,15 +207,16 @@ for installing VISFD and its dependencies.
 - A text editor.  (Such as vi, emacs, atom, VisualStudio, Notepad++, ...
   Apple's TextEdit can be used if you save the file as *plain text*.)
 - A computer with *at least* 4 CPU cores (8 threads).
-- A **hard drive**.  (An HDD, not an SSD.)  The "filter_mrc"
-  program frequently creates many large temporary files which could wear down
-  an SSD over time.  Old-fashioned magnetic hard drives (HDDs) are better able
-  tolerate this kind of usage.  External (USB,thunderbolt) hard drives
-  should be fast enough.
 - 32GB of RAM (depending on image size, this still might not be enough)
 - [ChimeraX](https://www.cgl.ucsf.edu/chimerax/) is useful for visualizing
   MRC files in 3-D and also includes simple graphical
   [volume editing capability](https://www.cgl.ucsf.edu/chimera/docs/ContributedSoftware/voleraser/voleraser.html).
+- (Optional) A **hard drive**.  (An HDD, not an SSD.)  The "filter_mrc"
+  program frequently creates many large temporary files which could wear down
+  an SSD over time.  Old-fashioned magnetic hard drives (HDDs) are sufficiently
+  fast, and are able tolerate this kind of usage better than SSDs.
+  If you only use this program occasionally, or only use it for a single
+  project, then you probably don't need worry about this issue.
 
 
 ## License
