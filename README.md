@@ -213,6 +213,9 @@ for installing VISFD and its dependencies.
   tolerate this kind of usage.  External (USB,thunderbolt) hard drives
   should be fast enough.
 - 32GB of RAM (depending on image size, this still might not be enough)
+- [ChimeraX](https://www.cgl.ucsf.edu/chimerax/) is useful for visualizing
+  MRC files in 3-D and also includes simple graphical
+  [volume editing capability](https://www.cgl.ucsf.edu/chimera/docs/ContributedSoftware/voleraser/voleraser.html).
 
 
 ## License
