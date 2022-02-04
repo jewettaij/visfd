@@ -212,7 +212,7 @@ along with *make* and either *gcc* or *clang*.  Once you have done that,
 you can follow the instructions above for linux users.
 There are several ways to to create a BASH environment,
 but perhaps the easiest method is to install
-[Windows Subsystem for Linux (WSL2)](https://docs.microsoft.com/en-us/windows/wsl/install-win10),
+[Windows Subsystem for Linux (WSL/WSL2)](WSL/WSL2)](https://devblogs.microsoft.com/commandline/a-preview-of-wsl-in-the-microsoft-store-is-now-available/)
 ***or***
 [virtualbox](https://www.virtualbox.org)
 (In the later case, you will also need to install a linux distribution,
@@ -230,7 +230,7 @@ compiler tools that you need can be easily installed from within in linux.
 Both WSL and virtualbox also create an alternate filesystem inside windows
 where the linux operating system is stored.  Software (like *visfd/filter_mrc*)
 that you download and install there can access the files in that filesystem.
-So you may need to copy your tomograms and otherf files to this fileystem
+So you may need to copy your tomograms and other files to this fileystem
 beforehand.  If you **are using WSL or WSL2**, then you should
 [use caution when using windows programs to edit files stored there](https://devblogs.microsoft.com/commandline/do-not-change-linux-files-using-windows-apps-and-tools/).
 This includes text editors, image editors, and tomography processing software

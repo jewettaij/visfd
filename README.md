@@ -13,6 +13,8 @@ VISFD is a small C++ template library for 3D image processing
 ("[visfd.hpp](./lib/visfd/visfd.hpp)")
 which is primarily used to extract geometric shapes, volumes, and other features
 from 3-D volumetric images (tomograms).
+*VISFD's most useful feature is probably its ability to segment cell volumes
+in Cryo-ET images, as well as closed membrane-bound compartments within cells.*
 VISFD also includes a basic C++ library for reading and writing MRC files.
 ("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
 
@@ -40,17 +42,18 @@ In addition, sophisticated machine-learning methods have been implemented in
 [EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg)
 and
 [scikit-learn](https://scikit-learn.org).
-*VISFD compliments this software*
-by providing tools for geometry extraction, curve and surface detection
-(following [this paper](http://dx.doi.org/10.1016/j.jsb.2014.02.015)),
-and robust connected-component analysis.
-Interesting features can be detected in images using programs like EMAN2.
-Then the coordinates of these geometric shapes can be extracted using VISFD,
-and analyzed using 3rd-party tools like
+*VISFD compliments machine learning software*
+by providing tools for geometry extraction,
+[curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015)),
+robust connected-component analysis, and closing holes in incomplete surfaces.
+For example, interesting features can be detected using programs
+like EMAN2.  Then the coordinates of these geometric shapes can be
+extracted using VISFD and analyzed using 3rd-party tools like
 [**SSDRecon/PoissonRecon**](https://github.com/mkazhdan/PoissonRecon)).
-Using these tools together, it now possible to automatically determine the
+Using these tools together, it possible to automatically determine the
 inside and outside of membrane-bound compartments in tomograms of cells
-(for example).
+*(This is a topological problen which existing machine learning strategies
+have not yet been able to solve.)*
 
 
 
@@ -214,7 +217,7 @@ for installing VISFD and its dependencies.
 - (Optional) A **hard drive**.  (An HDD, not an SSD.)  The "filter_mrc"
   program frequently creates many large temporary files which could wear down
   an SSD over time.  Old-fashioned magnetic hard drives (HDDs) are sufficiently
-  fast, and are able tolerate this kind of usage better than SSDs.
+  fast and are supposedly able tolerate this kind of usage better than SSDs.
   If you only use this program occasionally, or only use it for a single
   project, then you probably don't need worry about this issue.
 

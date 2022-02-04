@@ -1,7 +1,9 @@
 crop_mrc
 ===========
-**crop_mrc** is a crude, simple program for cropping 3D images in MRC (.REC)
-file format.  The syntax is:
+**crop_mrc** is a simple program for cropping 3D images in MRC (.REC)
+file format.  It can also be used to shift (translate) the contents
+of an image or extendding (padding) its size.
+The syntax is:
 ```
    crop_mrc INPUT_FILE OUTPUT_FILE xmin xmax ymin ymax zmin zmax
 ```
@@ -20,6 +22,8 @@ cropped image.  The syntax is demonstrated below:
 This will allow you to add extra voxels (of brightness *B*)
 before and after the image in the X,Y,Z directions.
 
+As of 2022-2-03, the resulting image will be saved in
+an MRC file in mode 2 (32-bit floats).
 
 
 ### Example 1
