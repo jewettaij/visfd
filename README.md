@@ -52,7 +52,7 @@ like EMAN2.  Then the coordinates of these geometric shapes can be
 extracted using VISFD and analyzed using 3rd-party tools like
 [**SSDRecon/PoissonRecon**](https://github.com/mkazhdan/PoissonRecon)).
 Using these tools together, it possible to automatically determine the
-inside and outside of membrane-bound compartments in tomograms of cells
+inside and outside of membrane-bound compartments in tomograms of cells.
 *(This is a topological problen which existing machine learning strategies
 have not yet been able to solve.)*
 
