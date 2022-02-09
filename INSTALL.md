@@ -141,15 +141,13 @@ pip3 install scipy       # optional but recommended
 ## STEP 3:  Install "PoissonRecon" (and "SSDRecon")
 
 ```
-git clone https://github.com/mkazhdan/PoissonRecon ~/PoissonRecon
-cd ~/PoissonRecon
+git clone https://github.com/jewettaij/PoissonRecon ~/PoissonRecon_jewettaij
+cd ~/PoissonRecon_jewettaij
 ```
 
-*(Note: The code in that repository changes frequently.  If at some point,
-the SSDRecon and PoissonRecon programs are no longer able to adequately
-create closed surfaces, then try downloading the old version of that code in
-[my backup fork](https://github.com/jewettaij/PoissonRecon)
-instead.)*
+*(Note: This is a version of the original
+[PoissonRecon](https://github.com/mkazhdan/PoissonRecon)
+code which has been modified to make it easier to compile.)*
 
 
 
