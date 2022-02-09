@@ -50,7 +50,7 @@ robust connected-component analysis, and closing holes in incomplete surfaces.
 For example, interesting features can be detected using programs
 like EMAN2.  Then the coordinates of these geometric shapes can be
 extracted using VISFD and analyzed using 3rd-party tools like
-[**SSDRecon/PoissonRecon**](https://github.com/mkazhdan/PoissonRecon)).
+[**SSDRecon/PoissonRecon**](https://github.com/jewettaij/PoissonRecon)).
 Using these tools together, it possible to automatically determine the
 inside and outside of membrane-bound compartments in tomograms of cells.
 *(This is a topological problen which existing machine learning strategies
@@ -202,7 +202,7 @@ for installing VISFD and its dependencies.
 - python (version 3.0 or later)
 - The "numpy", "matplotlib", "mrcfile", and "pyvista" python modules
   (These are are installable via "pip3" or "pip".)
-- [**SSDRecon/PoissonRecon**](https://github.com/mkazhdan/PoissonRecon).
+- [**SSDRecon/PoissonRecon**](https://github.com/jewettaij/PoissonRecon).
 - Software to visualize mesh files (such as [meshlab](http://www.meshlab.net)).
 
 
