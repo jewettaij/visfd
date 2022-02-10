@@ -870,7 +870,7 @@ HandleBlobDetector(const Settings &settings,
   //    settings.out_file_name.substr(0,
   //                                  settings.out_file_name.length()-4);
 
-  if ((minima_crds_voxels.size() > 0) && (settings.blob_minima_file_name != ""))
+  if (settings.blob_minima_file_name != "")
   {
 
     SortBlobs(minima_crds,
@@ -898,7 +898,7 @@ HandleBlobDetector(const Settings &settings,
   }
 
 
-  if ((maxima_crds_voxels.size() > 0) && (settings.blob_maxima_file_name != ""))
+  if (settings.blob_maxima_file_name != "")
   {
 
     SortBlobs(maxima_crds,

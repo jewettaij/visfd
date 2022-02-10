@@ -45,7 +45,7 @@ and
 [scikit-learn](https://scikit-learn.org).
 *VISFD compliments machine learning software*
 by providing tools for geometry extraction,
-[curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015)),
+[curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015),
 robust connected-component analysis, and closing holes in incomplete surfaces.
 For example, interesting features can be detected using programs
 like EMAN2.  Then the coordinates of these geometric shapes can be

@@ -254,13 +254,10 @@ DrawSpheres(int const image_size[3], //!< image size
   assert(aaafDest);
   // handle the edge cases first:
 
-  if (centers.size() == 0)
-    return;
-
   vector<Scalar> diameters;
   vector<Scalar> shell_thicknesses;
   vector<Scalar> voxel_intensities_foreground;
-  
+
   if (pDiameters == nullptr) {
     // if empty, then fill the vector with the default value
     diameters.resize(centers.size(), 0.0);
