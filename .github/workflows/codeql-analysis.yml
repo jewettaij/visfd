@@ -53,7 +53,8 @@ jobs:
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
 
-    - name: run
+    - name: Build using g++
+      run:
        source setup_gcc.sh
        cd lib
        make
