@@ -53,13 +53,17 @@ jobs:
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
 
-    - name: Build using g++
-      run:
-       source setup_gcc.sh
-       cd lib
-       make
-       cd ../bin
-       make
+    - name: Define environment variables needed
+      run: source setup_gcc.sh
+      working-directory: ./
+
+    - name: Compile the libraries
+      run: make
+      working-directory: ./lib
+
+    - name: Compile the binaries
+      run: make
+      working-directory: ./bin
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
