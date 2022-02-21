@@ -66,7 +66,7 @@ jobs:
           L_COMP: "ar rs"
           LFLAGS: ""
           MY_FLAGS: "-std=c++17 -DNDEBUG -DCXX17_UNSUPPORTED"
-          CFLAGS: "-c $MY_FLAGS"
+          CFLAGS: "-c \$MY_FLAGS"
           CPP_PRELINKER_COMMAND: "echo"
           COMPILER_TEMP_FILES: ""
           LINKER_TEMP_FILES: ""
