@@ -60,10 +60,20 @@ jobs:
     - name: Compile the libraries
       run: make
       working-directory: ./lib
+      env:
+          ANSI_C: gcc
+          ANSI_CPP: g++
+          L_COMP: "ar rs"
+          LFLAGS: ""
+          MY_FLAGS: "-std=c++17 -DNDEBUG -DCXX17_UNSUPPORTED"
+          CFLAGS: "-c $MY_FLAGS"
+          CPP_PRELINKER_COMMAND: "echo"
+          COMPILER_TEMP_FILES: ""
+          LINKER_TEMP_FILES: ""
 
-    - name: Compile the binaries
-      run: make
-      working-directory: ./bin
+    #- name: Compile the binaries
+    #  run: make
+    #  working-directory: ./bin
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
