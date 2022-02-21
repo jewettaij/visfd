@@ -78,7 +78,7 @@ jobs:
           ANSI_CPP: g++
           L_COMP: "ar rs"
           LFLAGS: ""
-          CFLAGS: "-c -std=c++17 -DNDEBUG -DCXX17_UNSUPPORTED -DDISABLE_OPENMP""
+          CFLAGS: "-c -std=c++17 -DNDEBUG -DCXX17_UNSUPPORTED -DDISABLE_OPENMP"
           CPP_PRELINKER_COMMAND: "echo"
           COMPILER_TEMP_FILES: ""
           LINKER_TEMP_FILES: ""
