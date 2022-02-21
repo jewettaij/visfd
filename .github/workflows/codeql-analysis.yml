@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp' ]
+        language: [ 'cpp', 'python' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
@@ -70,9 +70,18 @@ jobs:
           COMPILER_TEMP_FILES: ""
           LINKER_TEMP_FILES: ""
 
-    #- name: Compile the binaries
-    #  run: make
-    #  working-directory: ./bin
+    - name: Compile the binaries
+      run: make
+      working-directory: ./bin
+      env:
+          ANSI_C: gcc
+          ANSI_CPP: g++
+          L_COMP: "ar rs"
+          LFLAGS: ""
+          CFLAGS: "-c -std=c++17 -DNDEBUG -DCXX17_UNSUPPORTED"
+          CPP_PRELINKER_COMMAND: "echo"
+          COMPILER_TEMP_FILES: ""
+          LINKER_TEMP_FILES: ""
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
