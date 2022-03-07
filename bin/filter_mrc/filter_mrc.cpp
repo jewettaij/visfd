@@ -29,8 +29,8 @@ using namespace std;
 
 
 string g_program_name("filter_mrc");
-string g_version_string("0.29.20");
-string g_date_string("2021-11-28");
+string g_version_string("0.29.21");
+string g_date_string("2022-3-06");
 
 
 
@@ -406,6 +406,17 @@ int main(int argc, char **argv) {
          (settings.filter_type == Settings::BLOB_NONMAX_SUPERVISED_MULTI)))
       throw VisfdErr("Error in tomogram header: Invalid voxel width(s).\n"
                      "Use the -w argument to specify the voxel width.");
+
+    // If the user customized the voxel width (using the "-w" argument,
+    // for example), then include this information in the header portion
+    // of the output tomogram.
+    if (voxel_width[0] != tomo_in.header.cellA[0]/image_size[0])
+      tomo_out.header.cellA[0] = image_size[0] * voxel_width[0];
+    if (voxel_width[1] != tomo_in.header.cellA[1]/image_size[1])
+      tomo_out.header.cellA[1] = image_size[1] * voxel_width[1];
+    if (voxel_width[2] != tomo_in.header.cellA[2]/image_size[2])
+      tomo_out.header.cellA[2] = image_size[2] * voxel_width[2];
+
 
 
 
