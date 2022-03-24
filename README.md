@@ -10,6 +10,9 @@ visfd
 
 ## Volumetric Image toolkit for Simple Feature Detection
 
+<img src="https://github.com/jewettaij/visfd_tutorials/tree/main/prokaryotes/Hylemonella_gracilis/images/orig_crop_XZ_view_XY_view_LR.jpg" title="original tomogram slized in the XZ and XY directions" height=230>  <img src="https://github.com/jewettaij/visfd_tutorials/tree/main/images/rightarrow.svg" height=30>  <img src="https://github.com/jewettaij/visfd_tutorials/tree/main/prokaryotes/Hylemonella_gracilis/images/membrane_tilt_inner+outer+poincloud_clipped_mesh_LR.jpg" title="interpolated polygon meshes. detected membranes are dark blue and green" height=255>  <img src="https://github.com/jewettaij/visfd_tutorials/tree/main/images/rightarrow.svg" height=30>  <img src="https://github.com/jewettaij/visfd_tutorials/tree/main/prokaryotes/Hylemonella_gracilis/images/segmentation_occ_bbg_LR.jpg" title="segmented image showing membranes ribosomes and nucleoid" height=230>
+
+
 VISFD is a small C++ template library for 3D image processing
 ("[visfd.hpp](./lib/visfd/visfd.hpp)")
 which is primarily used to extract geometric shapes, volumes, and other features
@@ -65,9 +68,6 @@ After compilation, all programs will be located in the "*bin/*" subdirectory.  H
 
 
 ## filter_mrc
-![example: a slice through a tomogram with a visible nucleoid](./doc/images/nucleoid_example_Hylemonella_gracilis.jpg)
-![example: red: scale-free-blob-detection ("-blobr"), blue: fluctuation-filter ("-fluct")](./doc/images/nucleoid_example_Hylemonella_gracilis__red_blob_detection__blue_fluctuation_filter.jpg)
-![example: membrane reconstruction using tensor voting and SSDRecon/PoissonRecon (after cleaning up with meshlab)](./doc/images/nucleoid_example_Hylemonella_gracilis_inner_membrane.jpg)
 
 **[filter_mrc](./doc/doc_filter_mrc.md)**
 is a stand-alone program which uses many of the
