@@ -1,4 +1,4 @@
-[![CircleCI](https://img.shields.io/circleci/build/github/jewett/visfd/main)](https://circleci.com/gh/jewett/visfd)
+[![CircleCI](https://img.shields.io/circleci/build/github/jewettaij/visfd/master)](https://circleci.com/gh/jewettaij/visfd)
 [![CodeQL](https://github.com/jewettaij/visfd/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/jewettaij/visfd/actions/workflows/codeql-analysis.yml)
 [![C++11](https://img.shields.io/badge/C%2B%2B-11-blue.svg)](https://isocpp.org/std/the-standard)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/jewettaij/visfd)]()
@@ -11,7 +11,7 @@ visfd
 
 ## Volumetric Image toolkit for Simple Feature Detection
 
-<img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/orig_crop_XZ_view_XY_view_LR.jpg" title="original tomogram slized in the XZ and XY directions" height=170>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/membrane_tilt_inner+outer+poincloud_clipped_mesh_LR.jpg" title="interpolated polygon meshes on top and bottom. detected membranes are dark blue and dark green" height=180>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/segmentation_occ_bbg_LR.jpg" title="segmented image showing membranes, ribosomes, and the nucleoid" height=160>
+<img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/orig_crop_XZ_view_XY_view_LR.jpg" title="original tomogram slized in the XZ and XY directions" height=170>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/membrane_tilt_inner+outer+poincloud_clipped_mesh_LR.jpg" title="detected surfaces are dark blue,green. Inferred, generated surfaces on top and bottom" height=180>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/segmentation_occ_bbg_LR.jpg" title="segmented image showing membranes, ribosomes, and the nucleoid" height=160>
 
 
 VISFD is a small C++ template library for 3D image processing
