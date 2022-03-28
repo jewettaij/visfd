@@ -11,13 +11,13 @@ visfd
 
 ## Volumetric Image toolkit for Simple Feature Detection
 
-<img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/orig_crop_XZ_view_XY_view_LR.jpg" title="original tomogram sliced in the XZ and XY directions" height=170>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/membrane_tilt_inner+outer+poincloud_clipped_mesh_LR.jpg" title="detected surfaces are dark blue,green. Inferred, generated surfaces on top and bottom" height=180>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/segmentation_occ_bbg_LR.jpg" title="segmented image showing membranes, ribosomes, and the nucleoid" height=160>
+<img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/orig_crop_XZ_view_XY_view_LR.jpg" title="original tomogram sliced in the XZ and XY directions" height=170>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/membrane_tilt_inner+outer+poincloud_clipped_mesh_LR.jpg" title="detected surfaces are dark blue, green. Inferred, generated surfaces on top and bottom" height=180>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/images/rightarrow.svg" height=30>  <img src="https://raw.githubusercontent.com/jewettaij/visfd_tutorials/main/prokaryotes/Hylemonella_gracilis/images/segmentation_occ_bbg_LR.jpg" title="segmented image showing membranes, ribosomes, and the nucleoid" height=160>
 
 
 VISFD is a small C++ template library for 3D image processing
 ("[visfd.hpp](./lib/visfd/visfd.hpp)")
 which is primarily used to extract geometric shapes, volumes, and other features
-from 3-D volumetric images (tomograms).
+from 3-D volumetric images (eg. tomograms).
 VISFD also includes a basic C++ library for reading and writing MRC files.
 ("[mrc_simple.hpp](./lib/mrc_simple/mrc_simple.hpp)").
 
@@ -44,22 +44,21 @@ image processing, such as [scikit-image](https://scikit-image.org) and
 *(MRC files can be read into python arrays using the
 [mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
 module.)*
-In addition, sophisticated machine-learning methods have been implemented in
+In addition, machine-learning based detectors for membranes
+and large molecular complexes have been implemented in
 [EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg)
 and
 [scikit-learn](https://scikit-learn.org).
 *VISFD compliments machine learning software*
 by providing tools for geometry extraction,
 [curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015),
-robust connected-component analysis, and closing holes in incomplete surfaces.
-For example, interesting features can be detected using programs
+signed normal determination, and robust connected-component analysis.
+For example, feature of interest can be detected using programs
 like EMAN2.  Then the coordinates of these geometric shapes can be
 extracted using VISFD and analyzed using 3rd-party tools like
 [**SSDRecon/PoissonRecon**](https://github.com/jewettaij/PoissonRecon)).
-Using these tools together, it possible to automatically determine the
-inside and outside of membrane-bound compartments in tomograms of cells.
-*(This is a topological problen which existing machine learning strategies
-have not yet been able to solve.)*
+This makes it possible to detect and close holes in incomplete surfaces
+automatically.
 
 
 
