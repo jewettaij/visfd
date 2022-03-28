@@ -49,7 +49,7 @@ and large molecular complexes have been implemented in
 [EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg)
 and
 [scikit-learn](https://scikit-learn.org).
-*VISFD compliments machine learning software*
+*VISFD compliments this software*
 by providing tools for geometry extraction,
 [curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015),
 signed normal determination, and robust connected-component analysis.
