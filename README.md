@@ -53,12 +53,12 @@ and
 by providing tools for geometry extraction,
 [curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015),
 signed normal determination, and robust connected-component analysis.
-For example, feature of interest can be detected using programs
-like EMAN2.  Then the coordinates of these geometric shapes can be
-extracted using VISFD and analyzed using 3rd-party tools like
-[**SSDRecon/PoissonRecon**](https://github.com/jewettaij/PoissonRecon)).
-This makes it possible to detect and close holes in incomplete surfaces
-automatically.
+For example, features of interest (like membranes or filaments) can be detected
+using programs like EMAN2.  Then the coordinates of these geometric shapes can
+be extracted using VISFD and analyzed using 3rd-party tools like
+[**SSDRecon/PoissonRecon**](https://github.com/jewettaij/PoissonRecon).
+This makes it possible to detect and close holes in incomplete membrane
+surfaces automatically.
 
 
 
