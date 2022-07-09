@@ -1013,11 +1013,11 @@ HandleThresholds(const Settings &settings,
   float in_threshold_01_b = settings.in_threshold_01_b;
 
   if (settings.out_thresh2_use_clipping_sigma) {
-    float stddev_intensity = StdDevArr(tomo_out.header.nvoxels,
-                                       tomo_out.aaafI,
+    float stddev_intensity = StdDevArr(tomo_in.header.nvoxels,
+                                       tomo_in.aaafI,
                                        mask.aaafI);
-    float ave_intensity = AverageArr(tomo_out.header.nvoxels,
-                                     tomo_out.aaafI,
+    float ave_intensity = AverageArr(tomo_in.header.nvoxels,
+                                     tomo_in.aaafI,
                                      mask.aaafI);
 
     in_threshold_01_a = ave_intensity +
@@ -1030,6 +1030,10 @@ HandleThresholds(const Settings &settings,
          << in_threshold_01_a << ", "
          << in_threshold_01_b << "]" << endl;
   }
+  assert(tomo_out.header.nvoxels[0] = tomo_in.header.nvoxels[0]);
+  assert(tomo_out.header.nvoxels[1] = tomo_in.header.nvoxels[1]);
+  assert(tomo_out.header.nvoxels[2] = tomo_in.header.nvoxels[2]);
+  assert(tomo_out.aaafI);
   for (int iz=0; iz<tomo_out.header.nvoxels[2]; iz++) {
     for (int iy=0; iy<tomo_out.header.nvoxels[1]; iy++) {
       for (int ix=0; ix<tomo_out.header.nvoxels[0]; ix++) {
@@ -1039,20 +1043,20 @@ HandleThresholds(const Settings &settings,
         }
         else if (settings.use_gauss_thresholds)
           tomo_out.aaafI[iz][iy][ix] =
-            SelectIntensityRangeGauss(tomo_out.aaafI[iz][iy][ix],
+            SelectIntensityRangeGauss(tomo_in.aaafI[iz][iy][ix],
                                       settings.out_thresh_gauss_x0,
                                       settings.out_thresh_gauss_sigma,
                                       settings.out_thresh_a_value,
                                       settings.out_thresh_b_value);
         else if (! settings.use_dual_thresholds) {
           if (in_threshold_01_a == in_threshold_01_b)
-            tomo_out.aaafI[iz][iy][ix] = ((tomo_out.aaafI[iz][iy][ix] >
+            tomo_out.aaafI[iz][iy][ix] = ((tomo_in.aaafI[iz][iy][ix] >
                                            in_threshold_01_a)
                                           ? settings.out_thresh_b_value
                                           : settings.out_thresh_a_value);
           else
             tomo_out.aaafI[iz][iy][ix] =
-              Threshold2(tomo_out.aaafI[iz][iy][ix],
+              Threshold2(tomo_in.aaafI[iz][iy][ix],
                          in_threshold_01_a,
                          in_threshold_01_b,
                          (settings.out_thresh2_use_clipping
@@ -1064,7 +1068,7 @@ HandleThresholds(const Settings &settings,
         }
         else
           tomo_out.aaafI[iz][iy][ix] =
-            Threshold4(tomo_out.aaafI[iz][iy][ix],
+            Threshold4(tomo_in.aaafI[iz][iy][ix],
                        settings.in_threshold_01_a,
                        settings.in_threshold_01_b,
                        settings.in_threshold_10_a,
