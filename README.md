@@ -177,7 +177,7 @@ however as of 2020-12-15, some commits still (temporarily) break everything.
 ### Development Timeline
 
 The most important features of this software are tested and working.
-We hope to submit a paper on this software in late 2021 or early 2022.
+We hope to submit a paper on this software in 2022.
 
 
 ## Installation
