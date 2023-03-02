@@ -46,9 +46,7 @@ image processing, such as [scikit-image](https://scikit-image.org) and
 module.)*
 In addition, machine-learning based detectors for membranes
 and large molecular complexes have been implemented in
-[EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg)
-and
-[scikit-learn](https://scikit-learn.org).
+[EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg).
 *VISFD compliments this software*
 by providing tools for geometry extraction,
 [curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015),
@@ -165,19 +163,9 @@ Documentation for this program is located
 
 ### Development Status: *alpha*
 
-Program names, command line arguments, file names, and function names
-(in the API) may change in the future.
-Automated testing was added,
-however as of 2020-12-15, some commits still (temporarily) break everything.
-(...because I'm too lazy to use branch & merge.
- This usually gets fixed within 24 hours.
- If the build is failing, choose a previous commit.)
-
-
-### Development Timeline
-
-The most important features of this software are tested and working.
-We hope to submit a paper on this software in 2022.
+As of 2023, development on this software has been postponed.
+If I have time to work on it again, some program names, command line arguments,
+file names, and function names (in the API) may be altered in the future.
 
 
 ## Installation
@@ -216,12 +204,6 @@ for installing VISFD and its dependencies.
 - [ChimeraX](https://www.cgl.ucsf.edu/chimerax/) is useful for visualizing
   MRC files in 3-D and also includes simple graphical
   [volume editing capability](https://www.cgl.ucsf.edu/chimera/docs/ContributedSoftware/voleraser/voleraser.html).
-- (Optional) A **hard drive**.  (An HDD, not an SSD.)  The "filter_mrc"
-  program frequently creates many large temporary files which could wear down
-  an SSD over time.  Old-fashioned magnetic hard drives (HDDs) are sufficiently
-  fast and are supposedly able tolerate this kind of usage better than SSDs.
-  If you only use this program occasionally, or only use it for a single
-  project, then you probably don't need worry about this issue.
 
 
 ## License
@@ -254,3 +236,9 @@ then you can ignore this notice.*
 ## Funding
 
 VISFD was funded by NIH grant R01GM120604.
+
+
+## Citation
+
+If you find this program useful, please cite DOI
+[10.5281/zenodo.5559243](https://doi.org/10.5281/zenodo.5559243)
