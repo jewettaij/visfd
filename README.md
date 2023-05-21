@@ -64,7 +64,7 @@ However VISFD has additional features (such as tensor-voting) which
 are useful for extracting geometry from Cryo-EM tomograms of living cells.
 
 
-## programs included with this repository:
+## Programs included with this repository:
 
 After compilation, all programs will be located in the "*bin/*" subdirectory.  Here is a brief description of some of them:
 
