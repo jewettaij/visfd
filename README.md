@@ -37,15 +37,10 @@ Multiprocessor support is implemented using
 [OpenMP.](https://en.wikipedia.org/wiki/OpenMP)
 
 
-## *Alternatives to VISFD*
-Much more comprehensive libraries and software tools are available for 3-D
-image processing, such as [scikit-image](https://scikit-image.org) and
-[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
-*(MRC files can be read into python arrays using the
-[mrcfile](https://mrcfile.readthedocs.io/en/latest/readme.html#basic-usage)
-module.)*
-In addition, machine-learning based detectors for membranes
-and large molecular complexes have been implemented in
+## Segmenting cell volumes from 3D CryoEM tomograms
+
+Machine-learning based detectors for membranes
+and large molecular complexes have been implemented in programs like
 [EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg).
 *VISFD compliments this software*
 by providing tools for geometry extraction,
@@ -58,6 +53,15 @@ be extracted using VISFD and analyzed using 3rd-party tools like
 This makes it possible to detect and close holes in incomplete membrane
 surfaces automatically.
 
+
+## Alternatives to VISFD
+
+Although VISFD has similiarities and features to general libraries for for 3-D image processing,
+such as [scikit-image](https://scikit-image.org) and
+[scipy.ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html),
+VISFD is no where near as general or well documented as these tools.
+However VISFD has additional features (such as tensor-voting) which
+are useful for extracting geometry from Cryo-EM tomograms of living cells.
 
 
 ## programs included with this repository:
