@@ -48,7 +48,7 @@ by providing tools for geometry extraction,
 signed normal determination, and robust connected-component analysis.
 In a typical workflow, features of interest (like membranes or filaments)
 would be detected using programs like EMAN2.  Then the coordinates of these
-geometric shapes can be extracted using VISFD and analyzed using 3rd-party tools like
+geometric shapes would be extracted using VISFD and analyzed using 3rd-party tools like
 [**SSDRecon/PoissonRecon**](https://github.com/jewettaij/PoissonRecon).
 This makes it possible to detect and close holes in incomplete membrane
 surfaces automatically.
