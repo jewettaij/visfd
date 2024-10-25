@@ -1,5 +1,4 @@
 [![CircleCI](https://img.shields.io/circleci/build/github/jewettaij/visfd/master)](https://circleci.com/gh/jewettaij/visfd)
-[![CodeQL](https://github.com/jewettaij/visfd/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/jewettaij/visfd/actions/workflows/codeql-analysis.yml)
 [![C++11](https://img.shields.io/badge/C%2B%2B-11-blue.svg)](https://isocpp.org/std/the-standard)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/jewettaij/visfd)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
