@@ -40,7 +40,9 @@ Multiprocessor support is implemented using
 
 Machine-learning based detectors for membranes
 and large molecular complexes have been implemented in programs like
-[EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg).
+[EMAN2](https://blake.bcm.edu/emanwiki/EMAN2/Programs/tomoseg)
+and
+[AIS](https://github.com/bionanopatterning/Ais).
 *VISFD compliments this software*
 by providing tools for geometry extraction,
 [curve and surface detection](http://dx.doi.org/10.1016/j.jsb.2014.02.015),
