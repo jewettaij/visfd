@@ -1889,8 +1889,7 @@ This can be disabled using the
 
 ### -median radius
 
-*(WARNING: This untested feature requires a modern C++17 compliant compiler,
-and is not enabled by default.)*
+*(WARNING: This feature has not been tested as of 2025-3-05.)*
 
 This argument will apply a
 [median filter](https://en.wikipedia.org/wiki/Median_filter)

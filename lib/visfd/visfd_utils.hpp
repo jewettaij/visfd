@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <limits>
+#include <array>
 #include <algorithm>
 using namespace std;
 #include <alloc3d.hpp>

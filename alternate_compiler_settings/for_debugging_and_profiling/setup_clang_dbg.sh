@@ -7,8 +7,8 @@ export L_COMP="ar rs"
 #export LFLAGS="-static"          
 export LFLAGS="-fopenmp"  #-static
 
-#export MY_FLAGS="-std=c++17 -g3 -O0 -DCXX17_UNSUPPORTED -DDISABLE_OPENMP"
-export MY_FLAGS="-std=c++17 -g3 -O0 -DCXX17_UNSUPPORTED"
+#export MY_FLAGS="-g3 -O0 -DDISABLE_OPENMP"
+export MY_FLAGS="-g3 -O0"
 export CFLAGS="-c $MY_FLAGS"
 export CPP_PRELINKER_COMMAND="echo"
 export COMPILER_TEMP_FILES=""

@@ -891,7 +891,6 @@ LabelConnected(const int image_size[3],                   //!< #voxels in xyz
           if (aaaafVectorStandardized) {
             *pReportProgress << ", normal=(";
             for (int d = 0; d < 3; d++) {
-              aaaafVectorStandardized[r_i[2]][r_i[1]][r_i[0]][d];
               *pReportProgress << aaaafVectorStandardized[r_i[2]][r_i[1]][r_i[0]][d];
               if (d+1 != 3) *pReportProgress << ",";
             }

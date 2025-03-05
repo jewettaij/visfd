@@ -1561,6 +1561,7 @@ ApplyLog(const int image_size[3], //!< source image size
 
 #ifndef CXX17_UNSUPPORTED
 
+
 /// @brief Computes the median filter with an arbitrary "footprint" (see below),///        as defind here:
 ///        https://en.wikipedia.org/wiki/Median_filter
 ///        The "footprint" defines the nearby region over which the median
@@ -1570,6 +1571,9 @@ ApplyLog(const int image_size[3], //!< source image size
 ///        will be calculated.  (A version of this function using a spherical
 ///        footprint is defined elsewhere.)
 /// @note  This function has not been optimized for speed.
+
+// WARNING THIS FUNCTION HAS NOT BEEN TESTED  -Andrew 2025-3-05
+
 template<typename Scalar>
 void
 Median(vector<tuple<int,int,int> > footprint, // a list of (ix,iy,iz,b) values, one for each voxel
@@ -1615,11 +1619,11 @@ Median(vector<tuple<int,int,int> > footprint, // a list of (ix,iy,iz,b) values, 
         if (n_brightnesses > 0)
           // Now find the median of the first "n_brightnesses"
           // numbers in "brightnesses"
-          aaafDest[iz][iy][ix] =
-            std::nth_element(std::execution::seq,
-                             brightnesses.begin(),
-                             n_brightnesses/2,
-                             brightnesses.begin() + n_brightnesses);
+          std::nth_element(std::execution::seq,
+                           brightnesses.begin(),
+                           brightnesses.begin() + n_brightnesses/2,
+                           brightnesses.begin() + n_brightnesses);
+	aaafDest[iz][iy][ix] = brightnesses[n_brightnesses/2];
       }
     }
   }

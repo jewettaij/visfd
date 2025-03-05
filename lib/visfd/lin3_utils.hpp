@@ -27,7 +27,7 @@ static inline Scalar Trace3(const Scalar m[3][3]) {
 }
 
 template <typename Scalar>
-static inline Scalar Trace3(const array<array<int, 3>, 3>& m) {
+static inline Scalar Trace3(const array<array<Scalar, 3>, 3>& m) {
   return m[0][0]+m[1][1]+m[2][2];
 }
 
