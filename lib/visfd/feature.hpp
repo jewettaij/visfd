@@ -6,6 +6,7 @@
 #ifndef _FEATURE_HPP
 #define _FEATURE_HPP
 
+#include <algorithm>
 #include <cstring>
 #include <cassert>
 #include <cmath>
@@ -15,8 +16,9 @@
 #include <tuple>
 #include <set>
 #include <queue>
+#include <utility>
 using namespace std;
-#include <err_visfd.hpp> // defines the "VisfdErr" exception type
+#include <err_visfd.hpp>  // defines the "VisfdErr" exception type
 #include <eigen3_simple.hpp>  // defines matrix diagonalizer (DiagonalizeSym3())
 #include <visfd_utils.hpp>    // defines invert_permutation(), FindSpheres()
 #include <alloc2d.hpp>    // defines Alloc2D() and Dealloc2D()
@@ -51,36 +53,34 @@ namespace visfd {
 template<typename Scalar>
 
 void
-BlobDog(int const image_size[3], //!< source image size
-        Scalar const *const *const *aaafSource,   //!< source image
-        Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
-        const vector<Scalar>& blob_sigma, //!< blob widths to try, ordered
-        // optional arguments
-        vector<array<Scalar,3> > *pva_minima_crds=nullptr, //!< if not nullptr, stores blob minima x,y,z coords here
-        vector<array<Scalar,3> > *pva_maxima_crds=nullptr, //!< if not nullptr, stores blob maxima x,y,z coords here
-        vector<Scalar> *pv_minima_sigma=nullptr, //!< if not nullptr, stores the corresponding width for that minima
-        vector<Scalar> *pv_maxima_sigma=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
-        vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
-        vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
-        const Scalar aspect_ratio[3]=nullptr, //!< multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
-        //the following optional parameters are usually left with default values
-        Scalar delta_sigma_over_sigma=0.02,//!< δ param for approximating LoG with DoG
-        Scalar truncate_ratio=2.5,       //!< how many sigma before truncating?
-        Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
-        Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< discard blobs with unremarkable scores (disabled by default)
-        bool use_threshold_ratios=true, //!< threshold=ratio*best_score ?
-        ostream *pReportProgress = nullptr, //!< optional: report progress to the user?
-        Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images
-        )
-
-{
-
-  vector<array<Scalar,3> > minima_crds; //store minima blob x,y,z coords here
-  vector<array<Scalar,3> > maxima_crds; //store minima blob x,y,z coords here
-  vector<Scalar>  minima_sigma;         //corresponding width for that minima
-  vector<Scalar>  maxima_sigma;         //corresponding width for that maxima
-  vector<Scalar>  minima_scores;        //store the score of each blob minima
-  vector<Scalar>  maxima_scores;        //store the score of each blob maxima
+BlobDog(
+  int const image_size[3],  //!< source image size
+  Scalar const *const *const *aaafSource,   //!< source image
+  Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
+  const vector<Scalar>& blob_sigma,  //!< blob widths to try, ordered
+  // optional arguments
+  vector<array<Scalar,3> > *pva_minima_crds=nullptr,  //!< if not nullptr, stores blob minima x,y,z coords here
+  vector<array<Scalar,3> > *pva_maxima_crds=nullptr,  //!< if not nullptr, stores blob maxima x,y,z coords here
+  vector<Scalar> *pv_minima_sigma=nullptr,  //!< if not nullptr, stores the corresponding width for that minima
+  vector<Scalar> *pv_maxima_sigma=nullptr,  //!< if not nullptr, stores the corresponding width for that maxima
+  vector<Scalar> *pv_minima_scores=nullptr,  //!< if not nullptr, stores the blob's score?
+  vector<Scalar> *pv_maxima_scores=nullptr,  //!< (score = intensity after filtering)
+  const Scalar aspect_ratio[3]=nullptr,  //!< multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
+  //the following optional parameters are usually left with default values
+  Scalar delta_sigma_over_sigma=0.02,  //!< δ param for approximating LoG with DoG
+  Scalar truncate_ratio=2.5,       //!< how many sigma before truncating?
+  Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(),  //!< discard blobs with unremarkable scores (disabled by default)
+  Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(),  //!< discard blobs with unremarkable scores (disabled by default)
+  bool use_threshold_ratios=true,  //!< threshold=ratio*best_score ?
+  ostream *pReportProgress = nullptr,  //!< optional: report progress to the user?
+  Scalar ****aaaafI = nullptr  //!<optional: preallocated memory for filtered images
+) {
+  vector<array<Scalar, 3>> minima_crds;  // store minima blob x,y,z coords here
+  vector<array<Scalar, 3>> maxima_crds;  // store minima blob x,y,z coords here
+  vector<Scalar>  minima_sigma;          // corresponding width for that minima
+  vector<Scalar>  maxima_sigma;          // corresponding width for that maxima
+  vector<Scalar>  minima_scores;         // store the score of each blob minima
+  vector<Scalar>  maxima_scores;         // store the score of each blob maxima
   if (pva_minima_crds == nullptr)
     pva_minima_crds = &minima_crds;
   if (pva_maxima_crds == nullptr)
@@ -108,9 +108,9 @@ BlobDog(int const image_size[3], //!< source image size
       << " -- (If this crashes your computer, find a computer with   --\n"
       << " --  more RAM and use \"ulimit\", OR use a smaller image.)   --\n";
 
-  bool preallocated = ! (aaaafI == nullptr);
+  bool preallocated = !(aaaafI == nullptr);
 
-  if (! preallocated) {
+  if (!preallocated) {
     assert(aaaafI == nullptr);
     aaaafI = new Scalar*** [3];
     aaaafI[0] = Alloc3D<Scalar>(image_size);
@@ -119,22 +119,17 @@ BlobDog(int const image_size[3], //!< source image size
   }
 
 
-  Scalar global_min_score = 1.0;  //impossible, minima < 0
-  Scalar global_max_score = -1.0; //impossible, maxima > 0
-
-  //REMOVE THIS CRUFT:
-  //bool disable_thresholds = ((! use_threshold_ratios) &&
-  //                           (minima_threshold >= maxima_threshold));
+  Scalar global_min_score = 1.0;   // impossible, minima < 0
+  Scalar global_max_score = -1.0;  // impossible, maxima > 0
 
   if (pReportProgress)
     *pReportProgress << "\n----- Blob detection initiated using "
                      << blob_sigma.size() << " trial Gaussians -----\n\n";
 
   for (int ir = 0; ir < blob_sigma.size(); ir++) {
-
     if (pReportProgress)
       *pReportProgress
-        << "--- Progress: "<<ir+1<<"/"<<blob_sigma.size() << "\n"
+        << "--- Progress: " << ir+1 << "/" << blob_sigma.size() << "\n"
         << "--- Applying DoG filter using sigma[" << ir << "] = "
         << blob_sigma[ir] << " (in voxels) ---\n";
 
@@ -150,7 +145,7 @@ BlobDog(int const image_size[3], //!< source image size
 
     // We are going to apply a DoG filter to the original image and
     // store it in the aaaaf array.
-    // Unfortunately, there probably won't be enough memory 
+    // Unfortunately, there probably won't be enough memory
     // to keep track of all of the filtered versions of the image.
     // Instead we only need to keep track of the last 3 filtered images,
     // So the aaaafI[] array only has 3 entries.  We store the images in:
@@ -159,8 +154,8 @@ BlobDog(int const image_size[3], //!< source image size
     //   aaaafI[ j2i[1] ]
     // ... and the values of j2i[-1], j2i[0], and j2i[1] cycle between 0,1,2
 
-    int j2i_[3];       // an array of indices.  index into it using 0,1,2
-    int *j2i = j2i_+1; // convenient to offset by 1 so we can index using -1,0,1
+    int j2i_[3];         // an array of indices.  index into it using 0,1,2
+    int *j2i = j2i_+ 1;  // convenient to offset by 1 so we can index using -1,0,1
     j2i[-1] = (ir-2) % 3;
     j2i[0]  = (ir-1) % 3;
     j2i[1]  = ir % 3;
@@ -169,12 +164,12 @@ BlobDog(int const image_size[3], //!< source image size
     blob_sigma_xyz[0] = blob_sigma[ir] * _aspect_ratio[0];
     blob_sigma_xyz[1] = blob_sigma[ir] * _aspect_ratio[1];
     blob_sigma_xyz[2] = blob_sigma[ir] * _aspect_ratio[2];
-    
-    //Apply the LoG filter (approximated with a DoG filter)
-    //      ...using the most recent blob width:
+
+    // Apply the LoG filter (approximated with a DoG filter)
+    //       ...using the most recent blob width:
     ApplyLog(image_size,
              aaafSource,
-             aaaafI[j2i[1]], //<-store the most recent filtered image
+             aaaafI[j2i[1]],  // store the most recent filtered image
              aaafMask,
              blob_sigma_xyz,
              delta_sigma_over_sigma,
@@ -185,15 +180,15 @@ BlobDog(int const image_size[3], //!< source image size
       continue;
 
     // The blob widths should be ordered consistently (increasing or decreasing)
-    assert(((blob_sigma[ir-2] < blob_sigma[ir-1]) &&   //increasing order
-            (blob_sigma[ir-1] < blob_sigma[ir])) ||    
-           ((blob_sigma[ir-2] > blob_sigma[ir-1]) &&   //decreasing order
+    assert(((blob_sigma[ir-2] < blob_sigma[ir-1]) &&   // increasing order
+            (blob_sigma[ir-1] < blob_sigma[ir])) ||
+           ((blob_sigma[ir-2] > blob_sigma[ir-1]) &&   // decreasing order
             (blob_sigma[ir-1] > blob_sigma[ir])));
 
 
     if (pReportProgress)
       *pReportProgress
-        << "--- Searching for local minima & maxima with sigma["<<ir-1<<"] = "
+        << "--- Searching for local minima & maxima with sigma[" << ir-1 << "] = "
         << blob_sigma[ir-1] << " ---\n";
 
        //<< "--- Searching for local minima & maxima with width["<<ir-1<<"] = "
@@ -216,17 +211,16 @@ BlobDog(int const image_size[3], //!< source image size
 
     #pragma omp parallel
     {
-
       // (The following variables are private for each thread/processor.
       // Later, the global list of minima and maxima will be updated with the
       // information collected from each processor at the end of this iteration)
 
-      vector<array<Scalar,3> > min_crds_proc; //store minima x,y,z coords here
-      vector<array<Scalar,3> > max_crds_proc; //store maxima x,y,z coords here
-      vector<Scalar> min_sigma_proc; //corresponding width for that minima
-      vector<Scalar> max_sigma_proc; //corresponding width for that maxima
-      vector<Scalar> min_scores_proc; //what was the blob's score?
-      vector<Scalar> max_scores_proc; //(score = intensity after filtering)
+      vector<array<Scalar,3> > min_crds_proc;  // store minima x,y,z coords here
+      vector<array<Scalar,3> > max_crds_proc;  // store maxima x,y,z coords here
+      vector<Scalar> min_sigma_proc;  // corresponding width for that minima
+      vector<Scalar> max_sigma_proc;  // corresponding width for that maxima
+      vector<Scalar> min_scores_proc;  // what was the blob's score?
+      vector<Scalar> max_scores_proc;  // (score = intensity after filtering)
       Scalar global_min_score_proc = global_min_score;
       Scalar global_max_score_proc = global_max_score;
 
@@ -242,8 +236,8 @@ BlobDog(int const image_size[3], //!< source image size
               for (int jz = -1; jz <= 1; jz++) {
                 for (int jy = -1; jy <= 1; jy++) {
                   for (int jx = -1; jx <= 1; jx++) {
-                    if (jx==0 && jy==0 && jz==0 && jr==0)
-                      continue; // Skip the central voxel. Check neighbors only
+                    if (jx == 0 && jy == 0 && jz == 0 && jr == 0)
+                      continue;  // Skip the central voxel. Check neighbors only
                     int Ix = ix + jx;
                     int Iy = iy + jy;
                     int Iz = iz + jz;
@@ -269,15 +263,14 @@ BlobDog(int const image_size[3], //!< source image size
 
             Scalar score = aaaafI[ j2i[0] ][ iz ][ iy ][ ix ];
 
-            if ((! aaafMask) || (aaafMask[iz][iy][ix] != 0))
-            {
+            if ((!aaafMask) || (aaafMask[iz][iy][ix] != 0)) {
               Scalar minima_threshold_so_far = minima_threshold;
               if (use_threshold_ratios)
-                minima_threshold_so_far=minima_threshold*global_min_score_proc;
+                minima_threshold_so_far = minima_threshold * global_min_score_proc;
               if (is_minima &&
                   (score < 0.0) &&
-                  ((score < minima_threshold_so_far) // || disable_thresholds
-                   ))   
+                  ((score < minima_threshold_so_far)  // || disable_thresholds
+                   ))
               {
                 array<Scalar, 3> ixiyiz;
                 ixiyiz[0] = ix;
@@ -292,11 +285,11 @@ BlobDog(int const image_size[3], //!< source image size
 
               Scalar maxima_threshold_so_far = maxima_threshold;
               if (use_threshold_ratios)
-                maxima_threshold_so_far=maxima_threshold*global_max_score_proc;
+                maxima_threshold_so_far = maxima_threshold * global_max_score_proc;
               if (is_maxima &&
                   (score > 0.0) &&
-                  ((score > maxima_threshold_so_far) // || disable_thresholds
-                   ))   
+                  ((score > maxima_threshold_so_far)  // || disable_thresholds
+                   ))
               {
                 array<Scalar, 3> ixiyiz;
                 ixiyiz[0] = ix;
@@ -309,14 +302,13 @@ BlobDog(int const image_size[3], //!< source image size
                   global_max_score_proc = score;
               }
             }
-            assert(! (is_minima && is_maxima));
-          } //for (int ix=0; ix<image_size[0]; ix++) {
-        } //for (int iy=0; iy<image_size[1]; iy++) {
-      } //for (int iz=0; iz<image_size[2]; iz++) {
+            assert(!(is_minima && is_maxima));
+          }  // for (int ix=0; ix<image_size[0]; ix++) {
+        }  // for (int iy=0; iy<image_size[1]; iy++) {
+      }  // for (int iz=0; iz<image_size[2]; iz++) {
 
       #pragma omp critical
       {
-
         // Append the newly minima and maxima discovered by this processor
         // to the global list of minima and maxima:
 
@@ -350,28 +342,25 @@ BlobDog(int const image_size[3], //!< source image size
           global_min_score = global_min_score_proc;
         if (global_max_score < global_max_score_proc)
           global_max_score = global_max_score_proc;
-      } //#pragma omp critical
+      }  // #pragma omp critical
+    }  // #pragma omp parallel
 
-    } //#pragma omp parallel
-
-    if (pReportProgress)
+    if (pReportProgress) {
       *pReportProgress
-        << "--- (Found " << pva_minima_crds->size ()
+        << "--- (Found " << pva_minima_crds->size()
         << " and " << pva_maxima_crds->size()
         << " local minima and maxima, respectively so far) ---\n" << endl;
-
+    }
     assert((pva_minima_crds->size() == pv_minima_sigma->size()) &&
            (pva_minima_crds->size() == pv_minima_scores->size()));
     assert((pva_maxima_crds->size() == pv_maxima_sigma->size()) &&
            (pva_maxima_crds->size() == pv_maxima_scores->size()));
-
-  } //for (ir = 0; ir < blob_sigma.size(); ir++)
+  }  // for (ir = 0; ir < blob_sigma.size(); ir++)
 
 
 
   if ((minima_threshold != std::numeric_limits<Scalar>::infinity()) ||
-      (maxima_threshold != -std::numeric_limits<Scalar>::infinity()))
-  {
+      (maxima_threshold != -std::numeric_limits<Scalar>::infinity())) {
     if (pReportProgress)
       *pReportProgress
         << " Discarding poor scoring blobs...\n"
@@ -389,7 +378,7 @@ BlobDog(int const image_size[3], //!< source image size
 
     { // throw away the poor-scoring minima
       assert(pva_minima_crds && pv_minima_sigma && pv_minima_scores);
-      vector<array<Scalar,3> > minima_crds_cpy;
+      vector<array<Scalar, 3>> minima_crds_cpy;
       vector<Scalar> minima_sigma_cpy;
       vector<Scalar> minima_scores_cpy;
       for (int i = 0; i < pv_minima_scores->size(); i++) {
@@ -403,11 +392,11 @@ BlobDog(int const image_size[3], //!< source image size
       *pva_minima_crds = minima_crds_cpy;
       *pv_minima_sigma = minima_sigma_cpy;
       *pv_minima_scores = minima_scores_cpy;
-    } // throw away the poor-scoring minima
+    }  // throw away the poor-scoring minima
 
-    { // throw away the poor-scoring maxima
+    {  // throw away the poor-scoring maxima
       assert(pva_maxima_crds && pv_maxima_sigma && pv_maxima_scores);
-      vector<array<Scalar,3> > maxima_crds_cpy;
+      vector<array<Scalar, 3>> maxima_crds_cpy;
       vector<Scalar> maxima_sigma_cpy;
       vector<Scalar> maxima_scores_cpy;
       for (int i = 0; i < pv_maxima_scores->size(); i++) {
@@ -421,28 +410,27 @@ BlobDog(int const image_size[3], //!< source image size
       *pva_maxima_crds = maxima_crds_cpy;
       *pv_maxima_sigma = maxima_sigma_cpy;
       *pv_maxima_scores = maxima_scores_cpy;
-    } // throw away the poor-scoring maxima
+    }  // throw away the poor-scoring maxima
 
     if (pReportProgress)
       *pReportProgress << " ...done.\n" << endl;
-  } //if ((minima_threshold != -std::numeric_limits<Scalar>::infinity()) || ...
+  }  // if ((minima_threshold!= -std::numeric_limits<Scalar>::infinity()) ||...
 
 
-  if (! preallocated) {
+  if (!preallocated) {
     // Deallocate the temporary arrays we created earlier
     Dealloc3D(aaaafI[0]);
     Dealloc3D(aaaafI[1]);
     Dealloc3D(aaaafI[2]);
     delete [] aaaafI;
   }
-
-} //BlobDog()
+}  // BlobDog()
 
 
 
 
 /// @brief Find all scale-invariant blobs in the image as a function of their
-///        (effective) diameters.  For conenience, each blob's diameter is 
+///        (effective) diameters.  For conenience, each blob's diameter is
 ///        reported instead of its "sigma" parameter.  Diameter is easy
 ///        to interpret.  (For comparison a blob's "sigma" parameter
 ///        represents the optimal width of the Gaussian blur that, when
@@ -458,29 +446,28 @@ BlobDog(int const image_size[3], //!< source image size
 template<typename Scalar>
 
 void
-BlobDogD(int const image_size[3], //!<source image size
-         Scalar const *const *const *aaafSource,   //!< source image
-         Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
-         const vector<Scalar>& blob_diameters, //!< blob widths to try, ordered
-         //optional arguments:
-         vector<array<Scalar,3> > *pva_minima_crds=nullptr, //!< if not nullptr, stores blob minima x,y,z coords here
-         vector<array<Scalar,3> > *pva_maxima_crds=nullptr, //!< if not nullptr, stores blob maxima x,y,z coords here
-         vector<Scalar> *pv_minima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that minima
-         vector<Scalar> *pv_maxima_diameters=nullptr, //!< if not nullptr, stores the corresponding width for that maxima
-         vector<Scalar> *pv_minima_scores=nullptr, //!< if not nullptr, stores the blob's score?
-         vector<Scalar> *pv_maxima_scores=nullptr, //!< (score = intensity after filtering)
-         const Scalar aspect_ratio[3]=nullptr, //!< multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
-         //the following optional parameters are usually left with default values
-         Scalar delta_sigma_over_sigma=0.02,//!<param for approximating LoG with DoG
-         Scalar truncate_ratio=2.5,    //!<how many sigma before truncating?
-         Scalar minima_threshold=std::numeric_limits<Scalar>::infinity(), //!< ignore minima with intensities greater than this
-         Scalar maxima_threshold=-std::numeric_limits<Scalar>::infinity(), //!< ignore maxima with intensities less than this
-         bool    use_threshold_ratios=false, //!<threshold=ratio*best_score?
-         ostream *pReportProgress = nullptr, //!<report progress to the user?
-         Scalar ****aaaafI = nullptr //!<optional: preallocated memory for filtered images
-         )
-{
-
+BlobDogD(
+  int const image_size[3],  //!< source image size
+  Scalar const *const *const *aaafSource,   //!< source image
+  Scalar const *const *const *aaafMask,     //!< ignore voxels where mask==0
+  const vector<Scalar>& blob_diameters,     //!< blob widths to try, ordered
+  // optional arguments:
+  vector<array<Scalar,3> > *pva_minima_crds = nullptr,  //!< if not nullptr, stores blob minima x,y,z coords here
+  vector<array<Scalar,3> > *pva_maxima_crds = nullptr,  //!< if not nullptr, stores blob maxima x,y,z coords here
+  vector<Scalar> *pv_minima_diameters = nullptr,  //!< if not nullptr, stores the corresponding width for that minima
+  vector<Scalar> *pv_maxima_diameters = nullptr,  //!< if not nullptr, stores the corresponding width for that maxima
+  vector<Scalar> *pv_minima_scores = nullptr,  //!< if not nullptr, stores the blob's score?
+  vector<Scalar> *pv_maxima_scores = nullptr,  //!< (score = intensity after filtering)
+  const Scalar aspect_ratio[3] = nullptr,  //!< multiply blob_sigma by different numbers in the X,Y,Z directions (default:1,1,1)
+  // the following optional parameters are usually left with default values
+  Scalar delta_sigma_over_sigma = 0.02,  //!< param for approximating LoG with DoG
+  Scalar truncate_ratio = 2.5,    //!< how many sigma before truncating?
+  Scalar minima_threshold = std::numeric_limits<Scalar>::infinity(),  //!< ignore minima with intensities greater than this
+  Scalar maxima_threshold = -std::numeric_limits<Scalar>::infinity(),  //!< ignore maxima with intensities less than this
+  bool    use_threshold_ratios = false,  //!< threshold=ratio*best_score?
+  ostream *pReportProgress = nullptr,  //!< report progress to the user?
+  Scalar ****aaaafI = nullptr  //!< optional: preallocated memory for filtered images
+) {
   vector<Scalar> minima_sigma;
   vector<Scalar> maxima_sigma;
   vector<Scalar> blob_sigma(blob_diameters.size());
@@ -522,8 +509,7 @@ BlobDogD(int const image_size[3], //!<source image size
     for (int i=0; i < maxima_sigma.size(); i++)
       (*pv_maxima_diameters)[i] = maxima_sigma[i] * 2.0 * sqrt(3);
   }
-
-} // BlobDogD()
+}  //  BlobDogD()
 
 
 
@@ -532,15 +518,15 @@ BlobDogD(int const image_size[3], //!<source image size
 
 template<typename Scalar1, typename Scalar2, typename Scalar3>
 void
-SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
-          vector<Scalar2>& blob_diameters,  //!< the width of each blob
-          vector<Scalar3>& blob_scores,  //!< the score for each blob
-          bool ascending_order = true,
-          bool ignore_score_sign = true,
-          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
-          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
-          )
-{ 
+SortBlobs(
+  vector<array<Scalar1, 3>>& blob_crds,  //!< x,y,z of each blob's center
+  vector<Scalar2>& blob_diameters,  //!< the width of each blob
+  vector<Scalar3>& blob_scores,  //!< the score for each blob
+  bool ascending_order = true,
+  bool ignore_score_sign = true,
+  vector<size_t> *pPermutation = nullptr,  //!< optional: return the new sorted order to the caller
+  ostream *pReportProgress = nullptr  //!< optional: report progress to the user?
+) {
   size_t n_blobs = blob_crds.size();
   assert(n_blobs == blob_diameters.size());
   assert(n_blobs == blob_scores.size());
@@ -552,17 +538,16 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
       score_index[i] = make_tuple(blob_scores[i], i);
   }
 
-  if (n_blobs == 0)
-    return;
+  if (n_blobs == 0) {return;}
 
-  if (pReportProgress)
+  if (pReportProgress) {
     *pReportProgress << "-- Sorting blobs according to their scores... ";
-  if (ascending_order)
-    sort(score_index.begin(),
-         score_index.end());
-  else
-    sort(score_index.rbegin(),
-         score_index.rend());
+  }
+  if (ascending_order) {
+    sort(score_index.begin(), score_index.end());
+  } else {
+    sort(score_index.rbegin(), score_index.rend());
+  }
 
   vector<size_t> permutation(n_blobs);
   for (size_t i = 0; i < score_index.size(); i++)
@@ -577,8 +562,7 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
   apply_permutation(permutation, blob_scores);
   if (pReportProgress)
     *pReportProgress << "done --" << endl;
-
-} //SortBlobs()
+}  // SortBlobs()
 
 
 
@@ -587,48 +571,49 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
 template<typename Scalar1, typename Scalar2, typename Scalar3>
 
 void
-SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
-          vector<Scalar2>& blob_diameters,  //!< the width of each blob
-          vector<Scalar3>& blob_scores,  //!< the score for each blob
-          SortCriteria sort_blob_criteria, //!< give priority to high or low scoring blobs?
-          bool ascending_order = true,
-          vector<size_t> *pPermutation = nullptr, //!< optional: return the new sorted order to the caller
-          ostream *pReportProgress = nullptr //!< optional: report progress to the user?
-          )
-{
-  if (sort_blob_criteria == SORT_DECREASING)
+SortBlobs(
+  vector<array<Scalar1, 3>>& blob_crds,  //!< x,y,z of each blob's center
+  vector<Scalar2>& blob_diameters,  //!< the width of each blob
+  vector<Scalar3>& blob_scores,  //!< the score for each blob
+  SortCriteria sort_blob_criteria,  //!< give priority to high or low scoring blobs?
+  bool ascending_order = true,
+  vector<size_t> *pPermutation = nullptr,  //!< optional: return the new sorted order to the caller
+  ostream *pReportProgress = nullptr  //!< optional: report progress to the user?
+) {
+  if (sort_blob_criteria == SORT_DECREASING) {
     SortBlobs(blob_crds,
-              blob_diameters, 
+              blob_diameters,
               blob_scores,
               ascending_order,
               false,
               pPermutation,
               pReportProgress);
-  else if (sort_blob_criteria == SORT_INCREASING)
+    } else if (sort_blob_criteria == SORT_INCREASING) {
     SortBlobs(blob_crds,
-              blob_diameters, 
+              blob_diameters,
               blob_scores,
-              ! ascending_order,
+              !ascending_order,
               false,
               pPermutation,
               pReportProgress);
-  else if (sort_blob_criteria == SORT_DECREASING_MAGNITUDE)
+  } else if (sort_blob_criteria == SORT_DECREASING_MAGNITUDE) {
     SortBlobs(blob_crds,
-              blob_diameters, 
+              blob_diameters,
               blob_scores,
               ascending_order,
               true,
               pPermutation,
               pReportProgress);
-  else if (sort_blob_criteria == SORT_INCREASING_MAGNITUDE)
+  } else if (sort_blob_criteria == SORT_INCREASING_MAGNITUDE) {
     SortBlobs(blob_crds,
-              blob_diameters, 
+              blob_diameters,
               blob_scores,
-              ! ascending_order,
+              !ascending_order,
               true,
               pPermutation,
               pReportProgress);
-} //SortBlobs()
+  }
+}  // SortBlobs()
 
 
 
@@ -658,25 +643,25 @@ SortBlobs(vector<array<Scalar1,3> >& blob_crds,//!< x,y,z of each blob's center
 template<typename Scalar>
 static void
 
-FindBlobScores(const vector<array<Scalar,3> >& in_training_crds, //!< locations of blob-like things in training set
-               const vector<bool>& in_training_accepted, //!< classify each blob-like thing as "accepted" (true) or "rejected" (false)
-               vector<array<Scalar,3> >& out_training_crds, //!< same as in_training_crds after discarding entries too far away from any existing blobs
-               vector<bool>& out_training_accepted, //!< same as in_training_accepted after discarding entries too far away from any existing blobs
-               vector<Scalar>& out_training_scores, //!< store the scores of the remaining blob-like things here
-               const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
-               const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
-               const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
-               SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
-               ostream *pReportProgress = nullptr //!< report progress back to the user?
-               )
-{
+FindBlobScores(
+  const vector<array<Scalar,3> >& in_training_crds,  //!< locations of blob-like things in training set
+  const vector<bool>& in_training_accepted,  //!< classify each blob-like thing as "accepted" (true) or "rejected" (false)
+  vector<array<Scalar,3> >& out_training_crds,  //!< same as in_training_crds after discarding entries too far away from any existing blobs
+  vector<bool>& out_training_accepted,  //!< same as in_training_accepted after discarding entries too far away from any existing blobs
+  vector<Scalar>& out_training_scores,  //!< store the scores of the remaining blob-like things here
+  const vector<array<Scalar,3> >& blob_crds,  //!< location of each blob (in voxels, sorted by score in increasing priority)
+  const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
+  const vector<Scalar>& blob_scores,  //!< priority of each blob (sorted by score in increasing priority)
+  SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
+  ostream *pReportProgress = nullptr  //!< report progress back to the user?
+) {
   // Figure out the score for each blob:
   //   in_training_crds[i] == position of ith training set data
   //   in_training_which_blob[i] == which blob contains this position?
   //   in_training_score[i] = score of this blob
 
-  vector<size_t> in_training_which_blob; // which blob (sphere) contains this position?
-  vector<Scalar> in_training_scores; // what is the score of that blob?
+  vector<size_t> in_training_which_blob;  // which blob (sphere) contains this position?
+  vector<Scalar> in_training_scores;  // what is the score of that blob?
 
   // The next function is defined in "feature_implementation.hpp"
   _FindBlobScores(in_training_crds,
@@ -709,8 +694,7 @@ FindBlobScores(const vector<array<Scalar,3> >& in_training_crds, //!< locations 
   size_t N = out_training_crds.size();
   assert(N == out_training_scores.size());
   assert(N == out_training_accepted.size());
-
-} //FindBlobScores()
+}  // FindBlobScores()
 
 
 
@@ -733,23 +717,21 @@ FindBlobScores(const vector<array<Scalar,3> >& in_training_crds, //!< locations 
 ///     SORT_INCREASING_MAGNITUDE
 ///   (As of 2021-7-07, "SortCriteria" is defined in "visfd_utils.hpp")
 
-#include <feature_implementation.hpp> // defines _FindExtrema()
-
 template<typename Scalar>
 
 void
-DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
-                        vector<Scalar>& blob_diameters,  //!< diameger of each blob
-                        vector<Scalar>& blob_scores, //!< priority of each blob
-                        Scalar min_radial_separation_ratio, //!< discard blobs if closer than this (ratio of sum of radii)
-                        Scalar max_volume_overlap_large=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the large blob (disabled by default; 1.0 would also do this)
-                        Scalar max_volume_overlap_small=std::numeric_limits<Scalar>::infinity(), //!< discard blobs which overlap too much with the small blob (disabled by default; 1.0 would also do this)
-                        SortCriteria sort_blob_criteria=SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs? (See explanation above)
-                        ostream *pReportProgress = nullptr, //!< report progress back to the user?
-                        int scale=6 //!<occupancy_table_size shrunk by this much
-                                    //!<relative to source (necessary to reduce memory usage)
-                        )
-{
+DiscardOverlappingBlobs(
+  vector<array<Scalar,3> >& blob_crds,  //!< location of each blob
+  vector<Scalar>& blob_diameters,  //!< diameger of each blob
+  vector<Scalar>& blob_scores,  //!< priority of each blob
+  Scalar min_radial_separation_ratio,  //!< discard blobs if closer than this (ratio of sum of radii)
+  Scalar max_volume_overlap_large=std::numeric_limits<Scalar>::infinity(),  //!< discard blobs which overlap too much with the large blob (disabled by default; 1.0 would also do this)
+  Scalar max_volume_overlap_small=std::numeric_limits<Scalar>::infinity(),  //!< discard blobs which overlap too much with the small blob (disabled by default; 1.0 would also do this)
+  SortCriteria sort_blob_criteria=SORT_DECREASING_MAGNITUDE,  //!< give priority to high or low scoring blobs? (See explanation above)
+  ostream *pReportProgress = nullptr,  //!< report progress back to the user?
+  int scale = 6  //!< occupancy_table_size shrunk by this much
+  //!< relative to source (necessary to reduce memory usage)
+) {
   assert(blob_crds.size() == blob_diameters.size());
   assert(blob_crds.size() == blob_scores.size());
 
@@ -761,7 +743,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   // 3) If there is an overlap, delete it from the list.
 
   SortBlobs(blob_crds,
-            blob_diameters, 
+            blob_diameters,
             blob_scores,
             sort_blob_criteria,
             false,
@@ -781,10 +763,10 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   int occupancy_table_size[3];
   int bounds_min[3] = {0, 0, 0};
   int bounds_max[3] = {-1, -1, -1};
-  
+
   for (int i=0; i < blob_crds.size(); i++) {
     for (int d=0; d < 3; d++) {
-      Scalar reff = ceil(blob_diameters[i]/2); //blob radii in units of voxels
+      Scalar reff = ceil(blob_diameters[i]/2);  // blob radii in units of voxels
       if ((blob_crds[i][d] - reff < bounds_min[d]) ||
           (bounds_min[d] > bounds_max[d]))
         bounds_min[d] = blob_crds[i][d] - reff;
@@ -800,39 +782,39 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
     occupancy_table_size[d] = (1 + bounds_max[d] - bounds_min[d]) / scale;
 
 
-  //vector<vector<vector<vector size_t> > > >  
-  //  vvvvOcc(occupancy_table_size[3],
-  //          vector<
-  //          vector<
-  //          <vector size_t>(0)
-  //          >(occupancy_table_size[1])
-  //          >(occupancy_table_size[2])
-  //          );
+  // vector<vector<vector<vector size_t> > > >
+  //   vvvvOcc(occupancy_table_size[3],
+  //           vector<
+  //           vector<
+  //           <vector size_t>(0)
+  //           >(occupancy_table_size[1])
+  //           >(occupancy_table_size[2])
+  //           );
   //
   // The nested for-loop below is less confusing, so I use this instead:
 
   vector<vector<vector<vector<size_t> > > > vvvvOcc(occupancy_table_size[2]);
-  for(int iz = 0; iz < occupancy_table_size[2]; iz++) {
+  for (int iz = 0; iz < occupancy_table_size[2]; ++iz) {
     vvvvOcc[iz] = vector<vector<vector<size_t> > >(occupancy_table_size[1]);
-    for(int iy = 0; iy < occupancy_table_size[1]; iy++) {
+    for (int iy = 0; iy < occupancy_table_size[1]; ++iy) {
       vvvvOcc[iz][iy] = vector<vector<size_t> >(occupancy_table_size[0]);
-      //for(int ix = 0; ix < occupancy_table_size[0]; ix++) {
-      //  vvvvOcc[iz][iy][ix] = vector<size_t>(0);
-      //}
+      // for (int ix = 0; ix < occupancy_table_size[0]; ++ix) {
+      //   vvvvOcc[iz][iy][ix] = vector<size_t>(0);
+      // }
     }
   }
 
   if (pReportProgress)
     *pReportProgress << "  allocating another blob list copy." << endl;
 
-  vector<array<Scalar,3> > blob_crds_cpy;
+  vector<array<Scalar, 3>> blob_crds_cpy;
   vector<Scalar> blob_diameters_cpy;
   vector<Scalar> blob_scores_cpy;
 
 
   if (pReportProgress)
     *pReportProgress
-      << "  detecting collisions between "<<blob_crds.size()<<" blobs... ";
+      << "  detecting collisions between " << blob_crds.size() << " blobs... ";
 
 
   // Loop through all of the blobs and fill the occupancy table.  If a given
@@ -840,29 +822,28 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
   // then we check to see how much they overlap before deciding whether to
   // discard the new blob.
 
-  for (size_t i = 0; i < blob_crds.size(); i++)
-  {
+  for (size_t i = 0; i < blob_crds.size(); i++) {
     size_t n_blobs = blob_crds.size();
     assert(n_blobs == blob_diameters.size());
     assert(n_blobs == blob_scores.size());
     bool discard = false;
-    Scalar reff_ = blob_diameters[i]/2; //blob radii in units of voxels
-    Scalar Reff_ = reff_ / scale; //blob radii expressed in "low rez" units
-    int Reff = ceil(Reff_) + 1; //round up (and add 1 for uncertainty in center)
+    Scalar reff_ = blob_diameters[i]/2;  // blob radii in units of voxels
+    Scalar Reff_ = reff_ / scale;  // blob radii expressed in "low rez" units
+    int Reff = ceil(Reff_) + 1;  // round up (and add 1 for uncertainty in center)
     int Reffsq = Reff*Reff;
-    Scalar ix = blob_crds[i][0];      //coordinates of the center of the blob
+    Scalar ix = blob_crds[i][0];      // coordinates of the center of the blob
     Scalar iy = blob_crds[i][1];
     Scalar iz = blob_crds[i][2];
-    int Ix = floor((ix - bounds_min[0]) / scale); //blob center coords (lowrez version)
+    int Ix = floor((ix - bounds_min[0]) / scale);  // blob center coords (lowrez version)
     int Iy = floor((iy - bounds_min[1]) / scale);
     int Iz = floor((iz - bounds_min[2]) / scale);
-    for(int Jz = -Reff; Jz <= Reff && (! discard); Jz++) {
-      for(int Jy = -Reff; Jy <= Reff && (! discard); Jy++) {
-        for(int Jx = -Reff; Jx <= Reff && (! discard); Jx++) {
+    for (int Jz = -Reff; Jz <= Reff && (!discard); Jz++) {
+      for (int Jy = -Reff; Jy <= Reff && (!discard); Jy++) {
+        for (int Jx = -Reff; Jx <= Reff && (!discard); Jx++) {
           int rsq = Jx*Jx + Jy*Jy + Jz*Jz;
-          if (! ((0 <= Ix+Jx) && (Ix+Jx < occupancy_table_size[0]) &&
-                 (0 <= Iy+Jy) && (Iy+Jy < occupancy_table_size[1]) &&
-                 (0 <= Iz+Jz) && (Iz+Jz < occupancy_table_size[2])))
+          if (!((0 <= Ix+Jx) && (Ix+Jx < occupancy_table_size[0]) &&
+                (0 <= Iy+Jy) && (Iy+Jy < occupancy_table_size[1]) &&
+                (0 <= Iz+Jz) && (Iz+Jz < occupancy_table_size[2])))
             continue;
           if (rsq > Reffsq)
             continue;
@@ -892,13 +873,6 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
             if ((vol_overlap / v_small > max_volume_overlap_small) ||
                 (vol_overlap / v_large > max_volume_overlap_large)) {
               discard = true;
-              // REMOVE THIS CRUFT:
-              //if (pReportProgress)
-              //  *pReportProgress << "discarding blob ("
-              //                   << ix << "," << iy << "," << iz
-              //                   << "): vover=" << vol_overlap
-              //                   << ", vsmall=" << v_small
-              //                   << ", vlarge=" << v_large << "\n";
             }
           }
         }
@@ -907,20 +881,19 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
     if (discard) {
       // then don't add an entry to the list of blobs
       continue;
-    }
-    else {
+    } else {
       // then add an entry to the list of blobs (stored in the following arrays)
       blob_crds_cpy.push_back(blob_crds[i]);
       blob_diameters_cpy.push_back(blob_diameters[i]);
       blob_scores_cpy.push_back(blob_scores[i]);
       // mark the pixels within blob i as occupied by blob i
-      for(int Jz = -Reff; Jz <= Reff && (! discard); Jz++) {
-        for(int Jy = -Reff; Jy <= Reff && (! discard); Jy++) {
-          for(int Jx = -Reff; Jx <= Reff && (! discard); Jx++) {
+      for (int Jz = -Reff; Jz <= Reff && (!discard); Jz++) {
+        for (int Jy = -Reff; Jy <= Reff && (!discard); Jy++) {
+          for (int Jx = -Reff; Jx <= Reff && (!discard); Jx++) {
             int rsq = Jx*Jx + Jy*Jy + Jz*Jz;
-            if (! ((0 <= Ix+Jx) && (Ix+Jx < occupancy_table_size[0]) &&
-                   (0 <= Iy+Jy) && (Iy+Jy < occupancy_table_size[1]) &&
-                   (0 <= Iz+Jz) && (Iz+Jz < occupancy_table_size[2])))
+            if (!((0 <= Ix+Jx) && (Ix+Jx < occupancy_table_size[0]) &&
+                  (0 <= Iy+Jy) && (Iy+Jy < occupancy_table_size[1]) &&
+                  (0 <= Iz+Jz) && (Iz+Jz < occupancy_table_size[2])))
               continue;
             if (rsq > Reffsq)
               continue;
@@ -928,9 +901,8 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
           }
         }
       }
-    } //else clause to "if (discard)"
-
-  } //for (size_t i = 0; i < blob_crds.size(); i++)
+    }  // else clause to "if (discard)"
+  }  // for (size_t i = 0; i < blob_crds.size(); i++)
 
   blob_crds = blob_crds_cpy;
   blob_diameters = blob_diameters_cpy;
@@ -938,7 +910,7 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
   if (pReportProgress)
     *pReportProgress << "done.\n";
-} //DiscardOverlappingBlobs()
+}  // DiscardOverlappingBlobs()
 
 
 
@@ -946,23 +918,23 @@ DiscardOverlappingBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of ea
 
 
 
-/// @brief  Discard blobs whose centers lie outside the 
+/// @brief  Discard blobs whose centers lie outside the
 ///         "masked" region defined by aaafMask.
 
 template<typename Scalar>
 void
-DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
-                   // optional arguments:
-                   vector<Scalar> &blob_diameters=nullptr,  //!< diameger of each blob
-                   vector<Scalar> &blob_scores=nullptr, //!< priority of each blob
-                   Scalar const *const *const *aaafMask = nullptr, //!< if not nullptr then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
-                   ostream *pReportProgress=nullptr)  //!< print progress to the user?
-
-{
+DiscardMaskedBlobs(
+  vector<array<Scalar, 3>>& blob_crds,  //!< location of each blob
+  // optional arguments:
+  vector<Scalar> &blob_diameters = nullptr,  //!< diameger of each blob
+  vector<Scalar> &blob_scores = nullptr,  //!< priority of each blob
+  Scalar const *const *const *aaafMask = nullptr,  //!< if not nullptr then discard blobs whose centers at (ix,iy,iz) satisfy aaafMask[iz][iy][ix] == 0.0
+  ostream *pReportProgress = nullptr  //!< print progress to the user?
+) {
   if (pReportProgress)
     *pReportProgress << "  allocating another blob list copy." << endl;
 
-  vector<array<Scalar,3> > blob_crds_cpy;
+  vector<array<Scalar, 3>> blob_crds_cpy;
   vector<Scalar> blob_diameters_cpy;
   vector<Scalar> blob_scores_cpy;
 
@@ -972,21 +944,19 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
       << blob_crds.size() << " blobs)." << endl;
 
   size_t n_discarded = 0;
-  for (size_t i = 0; i < blob_crds.size(); i++)
-  {
+  for (size_t i = 0; i < blob_crds.size(); i++) {
     int ix = floor(blob_crds[i][0] + 0.5);
     int iy = floor(blob_crds[i][1] + 0.5);
     int iz = floor(blob_crds[i][2] + 0.5);
     if ((aaafMask) && (aaafMask[iz][iy][ix] == 0.0)) {
       n_discarded++;
       continue;
-    }
-    else {
+    } else {
       blob_crds_cpy.push_back(blob_crds[i]);
       blob_diameters_cpy.push_back(blob_diameters[i]);
       blob_scores_cpy.push_back(blob_scores[i]);
-    } 
-  } //for (size_t i = 0; i < blob_crds.size(); i++)
+    }
+  }  // for (size_t i = 0; i < blob_crds.size(); i++)
 
   if (pReportProgress && (aaafMask != nullptr))
     *pReportProgress
@@ -996,14 +966,14 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
   blob_crds = blob_crds_cpy;
   blob_diameters = blob_diameters_cpy;
   blob_scores = blob_scores_cpy;
-} // DiscardMaskedBlobs()
+}  //  DiscardMaskedBlobs()
 
 
 
 
 /// @brief find either an upper or a lower bound for a list
 ///        of 1-D features (scores).
-///        (Although both upper and lower bounds are calculated, 
+///        (Although both upper and lower bounds are calculated,
 ///         only one of them should have a non-infinite value.
 ///         Otherwise your data is not one-sided.)
 ///
@@ -1018,17 +988,17 @@ DiscardMaskedBlobs(vector<array<Scalar,3> >& blob_crds, //!< location of each bl
 template<typename Scalar>
 void
 
-ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
-                          const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
-                          const vector<Scalar>& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
-                          const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
-                          const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
-                          Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
-                          Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
-                          SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
-                          ostream *pReportProgress = nullptr //!< report progress back to the user?
-                          )
-{
+ChooseBlobScoreThresholds(
+  const vector<array<Scalar, 3>>& blob_crds,  //!< location of each blob (in voxels, sorted by score in increasing priority)
+  const vector<Scalar>& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
+  const vector<Scalar>& blob_scores,  //!< priority of each blob (sorted by score in increasing priority)
+  const vector<array<Scalar, 3>>& training_set_pos,  //!< locations of blob-like things we are looking for
+  const vector<array<Scalar, 3>>& training_set_neg,  //!< locations of blob-like things we want to ignore
+  Scalar *pthreshold_lower_bound = nullptr,  //!< return threshold to the caller
+  Scalar *pthreshold_upper_bound = nullptr,  //!< return threshold to the caller
+  SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE,  //!< give priority to high or low scoring blobs?
+  ostream *pReportProgress = nullptr  //!< report progress back to the user?
+) {
   assert(blob_crds.size() == blob_diameters.size());
   assert(blob_crds.size() == blob_scores.size());
 
@@ -1041,17 +1011,17 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
   // (This is the score of the blob that is nearby, if applicable.)
 
   // Concatinate all of the training data together.
-  vector<array<Scalar,3> > training_set_crds = training_set_pos;
+  vector<array<Scalar, 3>> training_set_crds = training_set_pos;
   training_set_crds.insert(training_set_crds.end(),
                            training_set_neg.begin(),
                            training_set_neg.end());
 
-  // training_set_accepted = true or false depending on whether it is 
+  // training_set_accepted = true or false depending on whether it is
   //                      part of the positive (accepted) training set,
   //                      or the negative (rejected) training set
   vector<bool> training_set_accepted =  vector<bool>(Np + Nn, true);
   for (size_t i = Np; i < Np + Nn; i++)
-    training_set_accepted[i] = false;                              
+    training_set_accepted[i] = false;
 
   _ChooseBlobScoreThresholds(blob_crds,
                              blob_diameters,
@@ -1062,8 +1032,7 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
                              pthreshold_upper_bound,
                              sort_blob_criteria,
                              pReportProgress);
-
-} //ChooseBlobScoreThresholds()
+}  // ChooseBlobScoreThresholds()
 
 
 
@@ -1071,7 +1040,7 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
 
 /// @brief find either an upper or a lower bound for a list
 ///        of 1-D features (scores).
-///        (Although both upper and lower bounds are calculated, 
+///        (Although both upper and lower bounds are calculated,
 ///         only one of them should have a non-infinite value.
 ///         Otherwise your data is not one-sided.)
 ///
@@ -1093,29 +1062,28 @@ ChooseBlobScoreThresholds(const vector<array<Scalar,3> >& blob_crds, //!< locati
 
 template<typename Scalar>
 void
-ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_crds, //!< location of each blob (in voxels, sorted by score in increasing priority)
-                               const vector<vector<Scalar> >& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
-                               const vector<vector<Scalar> >& blob_scores, //!< priority of each blob (sorted by score in increasing priority)
-                               const vector<vector<array<Scalar,3> > >& training_set_pos, //!< locations of blob-like things 
-                               const vector<vector<array<Scalar,3> > >& training_set_neg, //!< locations of blob-like things
-                               Scalar *pthreshold_lower_bound = nullptr, //!< return threshold to the caller
-                               Scalar *pthreshold_upper_bound = nullptr, //!< return threshold to the caller
-                               SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
-                               ostream *pReportProgress = nullptr //!< report progress back to the user?
-                               )
-{
+ChooseBlobScoreThresholdsMulti(
+  const vector<vector<array<Scalar,3> > >& blob_crds,  //!< location of each blob (in voxels, sorted by score in increasing priority)
+  const vector<vector<Scalar> >& blob_diameters,  //!< diameger of each blob (sorted by score in increasing priority)
+  const vector<vector<Scalar> >& blob_scores,  //!< priority of each blob (sorted by score in increasing priority)
+  const vector<vector<array<Scalar,3> > >& training_set_pos,  //!< locations of blob-like things 
+  const vector<vector<array<Scalar,3> > >& training_set_neg,  //!< locations of blob-like things
+  Scalar *pthreshold_lower_bound = nullptr,  //!< return threshold to the caller
+  Scalar *pthreshold_upper_bound = nullptr,  //!< return threshold to the caller
+  SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE,  //!< give priority to high or low scoring blobs?
+  ostream *pReportProgress = nullptr  //!< report progress back to the user?
+) {
   int Nsets = training_set_pos.size();
   assert(Nsets == training_set_neg.size());
   assert(Nsets == blob_crds.size());
   assert(Nsets == blob_diameters.size());
   assert(Nsets == blob_scores.size());
 
-  vector<vector<array<Scalar,3> > > training_set_crds(Nsets);
+  vector<vector<array<Scalar, 3>>> training_set_crds(Nsets);
   vector<vector<bool> > training_set_accepted(Nsets);
 
   // Loop over all of the different training sets:
   for (int I = 0; I < Nsets; I++) {
-
     // Concatinate the positive and negative training data together.
     training_set_crds[I] = training_set_pos[I];
     training_set_crds[I].insert(training_set_crds[I].end(),
@@ -1123,7 +1091,7 @@ ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_crd
                                 training_set_neg[I].end());
     size_t Np = training_set_pos[I].size();
     size_t Nn = training_set_neg[I].size();
-    // training_set_accepted = true or false depending on whether it is 
+    // training_set_accepted = true or false depending on whether it is
     //                      part of the positive (accepted) training set,
     //                      or the negative (rejected) training set
     training_set_accepted[I] =  vector<bool>(Np + Nn, true);
@@ -1140,14 +1108,12 @@ ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_crd
                                   pthreshold_upper_bound,
                                   sort_blob_criteria,
                                   pReportProgress);
-
-} //ChooseBlobScoreThresholdsMulti()
-
+}  // ChooseBlobScoreThresholdsMulti()
 
 
 
 /// @brief  This function discards blobs according to their scores.
-///         It does this by comparing the scores of these blobs with 
+///         It does this by comparing the scores of these blobs with
 ///         the scores of blobs provided by the caller which were either
 ///         accepted or rejected (training_set_pos or training_set_neg).
 /// @note:  This function was intended to be used when it is possible to use
@@ -1157,17 +1123,17 @@ ChooseBlobScoreThresholdsMulti(const vector<vector<array<Scalar,3> > >& blob_crd
 
 template<typename Scalar>
 void
-DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location of each blob
-                              vector<Scalar>& blob_diameters,  //!< diameger of each blob
-                              vector<Scalar>& blob_scores, //!< priority of each blob
-                              const vector<array<Scalar,3> >& training_set_pos, //!< locations of blob-like things we are looking for
-                              const vector<array<Scalar,3> >& training_set_neg, //!< locations of blob-like things we want to ignore
-                              SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
-                              Scalar *pthreshold_lower_bound = nullptr, //!< optional: return threshold to the caller
-                              Scalar *pthreshold_upper_bound = nullptr, //!< optional: return threshold to the caller
-                              ostream *pReportProgress = nullptr //!< report progress back to the user?
-                              )
-{
+DiscardBlobsByScoreSupervised(
+  vector<array<Scalar, 3>>& blob_crds,  //!< location of each blob
+  vector<Scalar>& blob_diameters,  //!< diameger of each blob
+  vector<Scalar>& blob_scores,  //!< priority of each blob
+  const vector<array<Scalar, 3>>& training_set_pos,  //!< locations of blob-like things we are looking for
+  const vector<array<Scalar, 3>>& training_set_neg,  //!< locations of blob-like things we want to ignore
+  SortCriteria sort_blob_criteria = SORT_DECREASING_MAGNITUDE, //!< give priority to high or low scoring blobs?
+  Scalar *pthreshold_lower_bound = nullptr,  //!< optional: return threshold to the caller
+  Scalar *pthreshold_upper_bound = nullptr,  //!< optional: return threshold to the caller
+  ostream *pReportProgress = nullptr  //!< report progress back to the user?
+) {
   assert(blob_crds.size() == blob_diameters.size());
   assert(blob_crds.size() == blob_scores.size());
 
@@ -1182,8 +1148,8 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
                             blob_scores,
                             training_set_pos,
                             training_set_neg,
-                            &threshold_lower_bound, //<-store threshold here
-                            &threshold_upper_bound, //<-store threshold here
+                            &threshold_lower_bound,  // <-store threshold here
+                            &threshold_upper_bound,  // <-store threshold here
                             sort_blob_criteria,
                             pReportProgress);
 
@@ -1191,29 +1157,27 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
     *pthreshold_lower_bound = threshold_lower_bound;
   if (pthreshold_upper_bound)
     *pthreshold_upper_bound = threshold_upper_bound;
-  
+
   if (pReportProgress)
     *pReportProgress << "  allocating another blob list copy." << endl;
 
-  vector<array<Scalar,3> > blob_crds_cpy;
+  vector<array<Scalar, 3>> blob_crds_cpy;
   vector<Scalar> blob_diameters_cpy;
   vector<Scalar> blob_scores_cpy;
 
   for (int i = 0; i < blob_crds.size(); i++) {
     if ((blob_scores[i] >= threshold_lower_bound) &&
-        (blob_scores[i] <= threshold_upper_bound))
-    {
+        (blob_scores[i] <= threshold_upper_bound)) {
       blob_crds_cpy.push_back(blob_crds[i]);
       blob_diameters_cpy.push_back(blob_diameters[i]);
       blob_scores_cpy.push_back(blob_scores[i]);
-    }  
+    }
   }
 
   blob_crds = blob_crds_cpy;
   blob_diameters = blob_diameters_cpy;
   blob_scores = blob_scores_cpy;
-
-} //DiscardBlobsByScoreSupervised()
+}  // DiscardBlobsByScoreSupervised()
 
 
 
@@ -1236,22 +1200,26 @@ DiscardBlobsByScoreSupervised(vector<array<Scalar,3> >& blob_crds, //!< location
 ///         Each "VectorContainer" object is expected to behave like
 ///         a one-dimensional array of 3 scalars.
 
-template<typename Scalar, typename VectorContainer=Scalar*, typename TensorContainer=Scalar*>
+template<
+  typename Scalar,
+  typename VectorContainer = Scalar*,
+  typename TensorContainer = Scalar*
+>
 
 void
-CalcHessian(int const image_size[3], //!< source image size
-            Scalar const *const *const *aaafSource, //!< source image
-            VectorContainer ***aaaafGradient,  //!< save results here (if not nullptr)
-            TensorContainer ***aaaafHessian, //!< save results here (if not nullptr)
-            Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-            Scalar sigma,  //!< Gaussian width in x,y,z drections
-            Scalar truncate_ratio=2.5,  //!< how many sigma before truncating?
-            ostream *pReportProgress = nullptr  //!< print progress to the user?
-            )
-{
+CalcHessian(
+  int const image_size[3],  //!< source image size
+  Scalar const *const *const *aaafSource,  //!< source image
+  VectorContainer ***aaaafGradient,  //!< save results here (if not nullptr)
+  TensorContainer ***aaaafHessian,  //!< save results here (if not nullptr)
+  Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+  Scalar sigma,  //!< Gaussian width in x,y,z drections
+  Scalar truncate_ratio = 2.5,  //!< how many sigma before truncating?
+  ostream *pReportProgress = nullptr  //!< print progress to the user?
+) {
   assert(aaafSource);
   assert(aaaafHessian);
-  
+
   int truncate_halfwidth = floor(sigma * truncate_ratio);
 
   // Here we use the fast, sloppy way to compute gradients and Hessians:
@@ -1321,51 +1289,47 @@ CalcHessian(int const image_size[3], //!< source image size
           gradient[0] *= sigma;
           gradient[1] *= sigma;
           gradient[2] *= sigma;
-          
+
           aaaafGradient[iz][iy][ix][0] = gradient[0];
           aaaafGradient[iz][iy][ix][1] = gradient[1];
           aaaafGradient[iz][iy][ix][2] = gradient[2];
 
           #ifndef NDEBUG
-          if ((ix==image_size[0]/2) &&
-              (iy==image_size[1]/2) &&
-              (iz==image_size[2]/2))
-          {
+          if ((ix == image_size[0]/2) &&
+              (iy == image_size[1]/2) &&
+              (iz == image_size[2]/2)) {
             if (pReportProgress)
               *pReportProgress
-                 << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
+                 << "[iz][iy][ix]=[" << iz << "][" << iy << "][" << ix << "], "
                  << "gradient[0] = " << aaaafGradient[iz][iy][ix][0] << endl;
           }
-          #endif  //#ifndef NDEBUG
-
+          #endif  // #ifndef NDEBUG
         }
 
         if (aaaafHessian) {
-
           Scalar hessian[3][3];
           CalcHessianFiniteDifferences(aaafSmoothed,
                                        ix, iy, iz,
                                        hessian,
                                        image_size);
 
-          #ifndef NDEBUG
-          // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
-          if ((ix==image_size[0]/2) && //if ((ix==78) && 
-              (iy==image_size[1]/2) &&
-              (iz==image_size[2]/2))
-          {
-            if (pReportProgress)
-              *pReportProgress
-                << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"], "
-                << "hessian[0][0] = " << hessian[0][0] << endl;
-          }
-          #endif  //#ifndef NDEBUG
+          // #ifndef NDEBUG
+          // // DEBUG: REMOVE THE NEXT IF STATMENT AFTER DEBUGGING IS FINISHED
+          // if ((ix == image_size[0]/2) &&
+          //     (iy == image_size[1]/2) &&
+          //     (iz == image_size[2]/2)) {
+          //   if (pReportProgress)
+          //     *pReportProgress
+          //     << "[iz][iy][ix]=[" << iz << "][" << iy << "][" << ix << "], "
+          //     << "hessian[0][0] = " << hessian[0][0] << endl;
+          // }
+          // #endif  //#ifndef NDEBUG
 
 
           // Optional: Insure that the result is dimensionless:
           // (Lindeberg 1993 "On Scale Selection for Differential Operators")
-          for (int di=0; di < 3; di++)
-            for (int dj=0; dj < 3; dj++)
+          for (int di=0; di < 3; ++di)
+            for (int dj=0; dj < 3; ++dj)
               hessian[di][dj] *= sigma*sigma;
 
           // To reduce memory consumption,
@@ -1375,15 +1339,13 @@ CalcHessian(int const image_size[3], //!< source image size
             for (int dj = di; dj < 3; dj++)
               aaaafHessian[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
                 = hessian[di][dj];
-
-        } //if (aaaafHessian)
-      } //for (int ix = 1; ix < image_size[0]-1; ix++)
-    } //for (int iy = 1; iy < image_size[1]-1; iy++)
-  } //for (int iz = 1; iz < image_size[2]-1; iz++)
+        }  // if (aaaafHessian)
+      }  // for (int ix = 1; ix < image_size[0]-1; ix++)
+    }  // for (int iy = 1; iy < image_size[1]-1; iy++)
+  }  // for (int iz = 1; iz < image_size[2]-1; iz++)
 
   Dealloc3D(aaafSmoothed);
-
-} //CalcHessian()
+}  // CalcHessian()
 
 
 
@@ -1402,14 +1364,14 @@ CalcHessian(int const image_size[3], //!< source image size
 template<typename Scalar, typename TensorContainer>
 
 void
-DiagonalizeHessianImage(int const image_size[3], //!< source image size
-                        TensorContainer const *const *const *aaaafSource, //!< input tensor
-                        TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
-                        Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                        EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS, //!< Order of the eigenvalues/eivenvectors.  The default value is typically useful if you are seeking bright objects on a dark background.  Use DECREASING_EIVALS when seeking dark objects on a bright bacground.
-                        ostream *pReportProgress = nullptr  //!< print progress to the user?
-                        )
-{
+DiagonalizeHessianImage(
+  int const image_size[3],  //!< source image size
+  TensorContainer const *const *const *aaaafSource,  //!< input tensor
+  TensorContainer ***aaaafDest,  //!< output tensors stored here (can be the same as aaaafSource)
+  Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+  EigenOrderType eival_order = selfadjoint_eigen3::INCREASING_EIVALS,  //!< Order of the eigenvalues/eivenvectors.  The default value is typically useful if you are seeking bright objects on a dark background.  Use DECREASING_EIVALS when seeking dark objects on a bright bacground.
+  ostream *pReportProgress = nullptr  //!< print progress to the user?
+) {
   assert(aaaafSource);
   if (pReportProgress && aaaafSource)
     *pReportProgress << "\n"
@@ -1417,7 +1379,7 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
 
   for (int iz = 1; iz < image_size[2]-1; iz++) {
     if (pReportProgress)
-      *pReportProgress << "  z="<<iz+1<<" (of "<<image_size[2]<<")" << endl;
+      *pReportProgress << "  z=" << iz+1 << " (of " << image_size[2] << ")" << endl;
 
     #pragma omp parallel for collapse(2)
     for (int iy = 1; iy < image_size[1]-1; iy++) {
@@ -1426,55 +1388,49 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
           continue;
 
 
-        #ifndef NDEBUG
-        // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
-        if ((ix==image_size[0]/2) &&
-            (iy==image_size[1]/2) &&
-            (iz==image_size[2]/2))
-        {
-          Scalar hessian[3][3];
-          for (int di=0; di<3; di++)
-            for (int dj=0; dj<3; dj++)
-              hessian[di][dj] = aaaafSource[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ];
-          Scalar quat[4];
-
-          if (pReportProgress)
-            *pReportProgress
-              << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
-              << "hessian = \n"
-              << "    "<<hessian[0][0]<<","<<hessian[0][1]<<","<<hessian[0][2]<<"\n"
-              << "    "<<hessian[1][0]<<","<<hessian[1][1]<<","<<hessian[1][2]<<"\n"
-              << "    "<<hessian[2][0]<<","<<hessian[2][1]<<","<<hessian[2][2]<<"\n";
-
-          Scalar eivals[3];
-          Scalar eivects[3][3];
-          DiagonalizeSym3(hessian,
-                          eivals,
-                          eivects,
-                          eival_order);
-          if (Determinant3(eivects) < 0.0) {
-            for (int d=0; d<3; d++)
-              eivects[0][d] *= -1.0;
-          }
-          if (pReportProgress)
-            *pReportProgress
-              << "eivects = \n"
-              << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
-              << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
-              << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n";
-
-          // Note: Each eigenvector is a currently row-vector in eivects[3][3];
-          // It's optional, but I prefer to transpose this, because I think of
-          // each eigenvector as a column vector.  Either way should work.
-          Transpose3(eivects);
-          Matrix2Quaternion(eivects, quat); //convert to 3x3 matrix
-          if (pReportProgress)
-            *pReportProgress
-              << "quat = " << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n";
-        }
-        #endif  //#ifndef NDEBUG
-
-
+        // #ifndef NDEBUG
+        // // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
+        // if ((ix == image_size[0]/2) &&
+        //     (iy == image_size[1]/2) &&
+        //     (iz == image_size[2]/2)) {
+        //   Scalar hessian[3][3];
+        //   for (int di=0; di<3; ++di)
+        //     for (int dj=0; dj<3; ++dj)
+        //       hessian[di][dj] = aaaafSource[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ];
+        //   Scalar quat[4];  // quaternion
+        //   if (pReportProgress)
+        //     *pReportProgress
+        //       << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
+        //       << "hessian = \n"
+        //       << "    "<<hessian[0][0]<<","<<hessian[0][1]<<","<<hessian[0][2]<<"\n"
+        //       << "    "<<hessian[1][0]<<","<<hessian[1][1]<<","<<hessian[1][2]<<"\n"
+        //       << "    "<<hessian[2][0]<<","<<hessian[2][1]<<","<<hessian[2][2]<<"\n";
+        //   Scalar eivals[3];
+        //   Scalar eivects[3][3];
+        //   DiagonalizeSym3(hessian,
+        //                   eivals,
+        //                   eivects,
+        //                   eival_order);
+        //   if (Determinant3(eivects) < 0.0) {
+        //     for (int d=0; d<3; d++)
+        //       eivects[0][d] *= -1.0;
+        //   }
+        //   if (pReportProgress)
+        //     *pReportProgress
+        //       << "eivects = \n"
+        //       << "    "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
+        //       << "    "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
+        //       << "    "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n";
+        //   // Note: Each eigenvector is a currently row-vector in eivects[3][3];
+        //   // It's optional, but I prefer to transpose this, because I think of
+        //   // each eigenvector as a column vector.  Either way should work.
+        //   Transpose3(eivects);
+        //   Matrix2Quaternion(eivects, quat); //convert to 3x3 matrix
+        //   if (pReportProgress)
+        //     *pReportProgress
+        //       << "quat = " << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n";
+        // }
+        // #endif  //#ifndef NDEBUG
 
 
         DiagonalizeFlatSym3(aaaafSource[iz][iy][ix],
@@ -1482,32 +1438,32 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
                             eival_order);
 
 
-        #ifndef NDEBUG
-        // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
-        if ((ix==image_size[0]/2) &&
-            (iy==image_size[1]/2) &&
-            (iz==image_size[2]/2))
-        {
-          Scalar shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
-          shoemake[0]       = aaaafDest[iz][iy][ix][3];
-          shoemake[1]       = aaaafDest[iz][iy][ix][4];
-          shoemake[2]       = aaaafDest[iz][iy][ix][5];
-          Scalar quat[4];
-          Shoemake2Quaternion(shoemake, quat); //convert to quaternion
-          Scalar eivects[3][3];
-          Quaternion2Matrix(quat, eivects); //convert to 3x3 matrix
-          if (pReportProgress)
-            *pReportProgress
-              << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
-              << "quat2 = "
-              << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n"
-              << "eivects = \n"
-              <<" "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
-              <<" "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
-              <<" "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
-              << endl;
-        }
-        #endif  //#ifndef NDEBUG
+        // #ifndef NDEBUG
+        // // REMOVE THE NEXT IF STATEMENT AFTER YOU ARE THROUGH DEBUGGING:
+        // if ((ix==image_size[0]/2) &&
+        //     (iy==image_size[1]/2) &&
+        //     (iz==image_size[2]/2))
+        // {
+        //   Scalar shoemake[3]; // <- the eigenvectors stored in "Shoemake" format
+        //   shoemake[0]       = aaaafDest[iz][iy][ix][3];
+        //   shoemake[1]       = aaaafDest[iz][iy][ix][4];
+        //   shoemake[2]       = aaaafDest[iz][iy][ix][5];
+        //   Scalar quat[4];
+        //   Shoemake2Quaternion(shoemake, quat); //convert to quaternion
+        //   Scalar eivects[3][3];
+        //   Quaternion2Matrix(quat, eivects); //convert to 3x3 matrix
+        //   if (pReportProgress)
+        //     *pReportProgress
+        //       << "[iz][iy][ix]=["<<iz<<"]["<<iy<<"]["<<ix<<"]\n"
+        //       << "quat2 = "
+        //       << quat[0]<<","<<quat[1]<<","<<quat[2]<<","<<quat[2]<<"\n"
+        //       << "eivects = \n"
+        //       <<" "<<eivects[0][0]<<","<<eivects[0][1]<<","<<eivects[0][2]<<"\n"
+        //       <<" "<<eivects[1][0]<<","<<eivects[1][1]<<","<<eivects[1][2]<<"\n"
+        //       <<" "<<eivects[2][0]<<","<<eivects[2][1]<<","<<eivects[2][2]<<"\n"
+        //       << endl;
+        // }
+        // #endif  //#ifndef NDEBUG
 
       } //for (int ix = 1; ix < image_size[0]-1; ix++) {
     } //for (int iy = 1; iy < image_size[1]-1; iy++) {
@@ -1530,13 +1486,13 @@ DiagonalizeHessianImage(int const image_size[3], //!< source image size
 template<typename Scalar, typename TensorContainer>
 
 void
-UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
-                          TensorContainer const *const *const *aaaafSource, //!< input tensor
-                          TensorContainer ***aaaafDest, //!< output tensors stored here (can be the same as aaaafSource)
-                          Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
-                          ostream *pReportProgress = nullptr  //!< print progress to the user?
-                          )
-{
+UndiagonalizeHessianImage(
+  int const image_size[3],  //!< source image size
+  TensorContainer const *const *const *aaaafSource,  //!< input tensor
+  TensorContainer ***aaaafDest,  //!< output tensors stored here (can be the same as aaaafSource)
+  Scalar const *const *const *aaafMask,  //!< ignore voxels where mask==0
+  ostream *pReportProgress = nullptr  //!< print progress to the user?
+) {
   assert(aaaafSource);
 
   if (pReportProgress)
@@ -1550,14 +1506,12 @@ UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
       for (int ix = 1; ix < image_size[0]-1; ix++) {
         if (aaafMask && (aaafMask[iz][iy][ix] == 0.0))
           continue;
-
         UndiagonalizeFlatSym3(aaaafSource[iz][iy][ix],
                               aaaafDest[iz][iy][ix]);
-
-      } //for (int ix = 1; ix < image_size[0]-1; ix++) {
-    } //for (int iy = 1; iy < image_size[1]-1; iy++) {
-  } //for (int iz = 1; iz < image_size[2]-1; iz++) {
-} //UndiagonalizeHessianImage()
+      }
+    }
+  }
+}  // UndiagonalizeHessianImage()
 
 
 
@@ -1572,10 +1526,11 @@ UndiagonalizeHessianImage(int const image_size[3],  //!< source image size
 template<typename TensorContainer, typename VectorContainer>
 
 double
-ScoreHessianPlanar(TensorContainer diagonalizedHessian,
-                   VectorContainer gradient=nullptr)
-{
-  //typedef decltype(diagonalizedHessian[0]) Scalar;
+ScoreHessianPlanar(
+  TensorContainer diagonalizedHessian,
+  VectorContainer gradient = nullptr
+) {
+  // typedef decltype(diagonalizedHessian[0]) Scalar;
   double lambda1 = diagonalizedHessian[0];
   double lambda2 = diagonalizedHessian[1];
   double lambda3 = diagonalizedHessian[2];
@@ -1583,17 +1538,17 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
   // REMOVE THIS CRUFT
   // The "score_ratio" variable is the score function used in Eq(5) of
   // Martinez-Sanchez++Fernandez_JStructBiol2011.
-  //double score_ratio;
-  //score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
-  //               / SQR(gradient);
-  //score_ratio *= score_ratio;
+  // double score_ratio;
+  // score_ratio = ((abs(lambda1) - sqrt(abs(lambda2*lambda3)))
+  //                / SQR(gradient);
+  // score_ratio *= score_ratio;
 
   // REMOVE THIS CRUFT:
   // The following "linear" metric produces interesting results, but
   // the resulting membrane structures that are detected are not well
   // separated from the huge amount of background noise.
-  //Scalar Linear_norm = lambda1 - lambda2;
-  //score = Linear_norm / SQR(gradient);
+  // Scalar Linear_norm = lambda1 - lambda2;
+  // score = Linear_norm / SQR(gradient);
 
 
   // I decided to try the "Ngamma_norm" metric proposed on p.26 of
@@ -1603,41 +1558,40 @@ ScoreHessianPlanar(TensorContainer diagonalizedHessian,
   Nnorm *= Nnorm;
 
   return Nnorm;
-} // ScoreHessianPlanar()
+}  // ScoreHessianPlanar()
 
 
 /// @brief: Calculate how "curve"-like a feature along a ridge.
 ///         WARNING: THIS IS A GUESS. I HAVE NOT TESTED THIS (-Andrew 2021-6-18)
-///         This function assumes that "diagonalizedMatrix3x3" has been 
-///         diagonalized, and that its first 3 entries 
+///         This function assumes that "diagonalizedMatrix3x3" has been
+///         diagonalized, and that its first 3 entries
 ///         are the eigenvalues of the original hessian matrix.
-
 
 template<typename TensorContainer, typename VectorContainer>
 double
-ScoreHessianLinear(TensorContainer diagonalizedHessian,
-                   VectorContainer gradient=nullptr)
-{
+ScoreHessianLinear(
+  TensorContainer diagonalizedHessian,
+  VectorContainer gradient = nullptr
+) {
   double lambda1 = diagonalizedHessian[0];
   double lambda2 = diagonalizedHessian[1];
   double lambda3 = diagonalizedHessian[2];
-  //return 0.5*(lambda1 + lambda2) - lambda3;
+  // return 0.5*(lambda1 + lambda2) - lambda3;
   return lambda1*lambda2 - lambda3*lambda3;
-} // ScoreHessianLinear()
+}  //  ScoreHessianLinear()
 
 
 
 /// @brief: Calculate how "plane"-like a feature along a ridge is
 ///         from the tensor created by the process of tensor voting.
-///         This function assumes that "diagonalizedMatrix3x3" has been 
-///         diagonalized, and that its first 3 entries 
+///         This function assumes that "diagonalizedMatrix3x3" has been
+///         diagonalized, and that its first 3 entries
 ///         are the eigenvalues of the original hessian matrix.
 
 template<typename TensorContainer>
 double
-ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
-{
-  //return ScoreHessianPlanar(diagonalizedMatrix3, nullptr);
+ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3) {
+  // return ScoreHessianPlanar(diagonalizedMatrix3, nullptr);
   double lambda1 = diagonalizedMatrix3[0];
   double lambda2 = diagonalizedMatrix3[1];
   return lambda1 - lambda2;  // the "stickness" (See TensorVoting paper)
@@ -1647,20 +1601,19 @@ ScoreTensorPlanar(const TensorContainer diagonalizedMatrix3)
 /// @brief: Calculate how "curve"-like a feature along a ridge is
 ///         from the tensor created by the process of tensor voting.
 ///         WARNING: THIS IS A GUESS. I HAVE NOT TESTED THIS (-Andrew 2021-6-18)
-///         This function assumes that "diagonalizedMatrix3x3" has been 
-///         diagonalized, and that its first 3 entries 
+///         This function assumes that "diagonalizedMatrix3x3" has been
+///         diagonalized, and that its first 3 entries
 ///         are the eigenvalues of the original hessian matrix.
 
 template<typename TensorContainer>
 double
-ScoreTensorLinear(const TensorContainer diagonalizedMatrix3)
-{
+ScoreTensorLinear(const TensorContainer diagonalizedMatrix3) {
   return ScoreHessianLinear(diagonalizedMatrix3, nullptr);
 }
 
 
 /// @class  TV3D
-/// @brief  A class for performing simple tensor-voting image processing 
+/// @brief  A class for performing simple tensor-voting image processing
 ///         operations in 3D.  Currently only "stick" voting is supported.
 ///         (Other kinds of tensor voting, such as "plate" and "ball" are not.)
 ///         This can perform tensor voting for both types of
@@ -1668,12 +1621,15 @@ ScoreTensorLinear(const TensorContainer diagonalizedMatrix3)
 ///         (1) Stick-fields corresponding to 2D surface-like features,
 ///         (2) Stick-fields corresponding to 1D curve-like features.
 
-template<typename Scalar, typename Integer, typename VectorContainer, typename TensorContainer>
+template<
+  typename Scalar,
+  typename Integer,
+  typename VectorContainer,
+  typename TensorContainer
+>
 
 class TV3D {
-
-private:
-
+ private:
   Scalar sigma;
   Integer exponent;
   Integer halfwidth[3];
@@ -1681,15 +1637,14 @@ private:
   Filter3D<Scalar, Integer> radial_decay_lookup;
   array<Scalar, 3> ***aaaafDisplacement;
 
-public:
-
+ public:
   TV3D():radial_decay_lookup() {
     Init();
   }
 
   TV3D(Scalar set_sigma,
        Integer set_exponent,
-       Scalar filter_cutoff_ratio=2.5):radial_decay_lookup() {
+       Scalar filter_cutoff_ratio = 2.5):radial_decay_lookup() {
     Init();
     SetExponent(set_exponent);
     SetSigma(set_sigma, filter_cutoff_ratio);
@@ -1697,13 +1652,13 @@ public:
 
   TV3D(const Filter3D<Scalar, Integer>& source) {
     Resize(source.halfwidth);
-    for(Integer iz=-halfwidth[2]; iz<=halfwidth[2]; iz++)
-      for(Integer iy=-halfwidth[1]; iy<=halfwidth[1]; iy++)
-        for(Integer ix=-halfwidth[0]; ix<=halfwidth[0]; ix++)
+    for (Integer iz =- halfwidth[2]; iz <= halfwidth[2]; iz++)
+      for (Integer iy =- halfwidth[1]; iy <= halfwidth[1]; iy++)
+        for (Integer ix =- halfwidth[0]; ix <= halfwidth[0]; ix++)
           aaaafDisplacement[iz][iy][ix] = source.aaaafDisplacement[iz][iy][ix];
   }
 
-  ~TV3D() {
+  virtual ~TV3D() {
     DeallocDisplacement();
   }
 
@@ -1711,11 +1666,10 @@ public:
     exponent = set_exponent;
   }
 
-  void SetSigma(Scalar set_sigma, Scalar filter_cutoff_ratio=2.5)
-  {
+  void SetSigma(Scalar set_sigma, Scalar filter_cutoff_ratio = 2.5) {
     sigma = set_sigma;
     Integer halfwidth_single = floor(sigma * filter_cutoff_ratio);
-    for (int d=0; d<3; d++)
+    for (int d = 0; d < 3; d++)
       halfwidth[d] = halfwidth_single;
     Resize(halfwidth);
   }
@@ -1742,12 +1696,12 @@ public:
   ///         saliencies will be inferred from the magnitude of the vectors.
   ///         which are stored in the aaaafV array.
   ///         (Otherwise, the vectors are assumed to have been normalized.)
-  ///         
+  ///
   /// After this function is invoked, aaaafDest will store an array of
   /// tensors, one tensor for each voxel in the original image
   /// (unless aaafMaskDest!=nullptr and the corresponding entry there is 0).
   ///
-  /// @note:  The computation time for this algorithm is proportional to the 
+  /// @note:  The computation time for this algorithm is proportional to the
   ///         number of voxels with non-zero aaafSaliency[][][] values.
   ///         Hence, the speed can be dramatically increased by zeroing
   ///         voxels with low saliency.  For typical cryo-EM images of
@@ -1755,21 +1709,20 @@ public:
   ///         their saliencies to zero), with no effect on the output.
 
   void
-  TVDenseStick(Integer const image_size[3],  //!< source image size
-               Scalar const *const *const *aaafSaliency,  //!< optional saliency (score) of each voxel (usually based on Hessian eigenvalues)
-               VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
-               TensorContainer ***aaaafDest,  //!< votes will be collected here
-               Scalar const *const *const *aaafMaskSource=nullptr,  //!< ignore voxels in source where mask==0
-               Scalar const *const *const *aaafMaskDest=nullptr,  //!< don't cast votes wherever mask==0
-               bool detect_curves_not_surfaces=false, //!< do "sticks" represent curve tangents (instead of surface normals)?
-               //Scalar saliency_threshold = 0.0,
-               bool normalize=true, //!< normalize aaaafDest due to incomplete sums near boundaries?
-               bool diagonalize_dest=false, //!< diagonalize each tensor in aaaafDest?
-               ostream *pReportProgress=nullptr  //!< print progress to the user?
-               )
-  {
+  TVDenseStick(
+    Integer const image_size[3],  //!< source image size
+    Scalar const *const *const *aaafSaliency,  //!< optional saliency (score) of each voxel (usually based on Hessian eigenvalues)
+    VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+    TensorContainer ***aaaafDest,  //!< votes will be collected here
+    Scalar const *const *const *aaafMaskSource = nullptr,  //!< ignore voxels in source where mask==0
+    Scalar const *const *const *aaafMaskDest = nullptr,  //!< don't cast votes wherever mask==0
+    bool detect_curves_not_surfaces = false,  //!< do "sticks" represent curve tangents (instead of surface normals)?
+    // Scalar saliency_threshold = 0.0,
+    bool normalize = true,  //!< normalize aaaafDest due to incomplete sums near boundaries?
+    bool diagonalize_dest = false,  //!< diagonalize each tensor in aaaafDest?
+    ostream *pReportProgress = nullptr  //!< print progress to the user?
+) {
     assert(aaaafV);
-
     if (pReportProgress)
       *pReportProgress
         << " -- Attempting to allocate memory for one more image.\n"
@@ -1787,23 +1740,22 @@ public:
     Scalar const *const *const *saliency_array = aaafSaliency;
     Scalar ***_aaafSaliency = nullptr;
 
-    if (! aaafSaliency) {
+    if (!aaafSaliency) {
       // If the caller did not specify an aaafSaliency array, then
       // infer the saliency from the magnitude of aaaafV
       _aaafSaliency = Alloc3D<Scalar>(image_size);
 
-      for (Integer iz=0; iz<image_size[2]; iz++) {
+      for (Integer iz = 0; iz < image_size[2]; iz++) {
         #pragma omp parallel for collapse(2)
-        for (Integer iy=0; iy<image_size[1]; iy++) {
-          for (Integer ix=0; ix<image_size[0]; ix++) {
-            if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
-              continue;
+        for (Integer iy = 0; iy < image_size[1]; iy++) {
+          for (Integer ix = 0; ix < image_size[0]; ix++) {
+            if ((!aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0)) {continue;}
             _aaafSaliency[iz][iy][ix] = Length3(aaaafV[iz][iy][ix]);
           }
         }
       }
       saliency_array = _aaafSaliency;
-    } //if (! aaafSaliency)
+    }  // if (! aaafSaliency)
 
 
     TVDenseStick(image_size,
@@ -1813,7 +1765,7 @@ public:
                  aaafMaskSource,
                  aaafMaskDest,
                  detect_curves_not_surfaces,
-                 //saliency_threshold,
+                 // saliency_threshold,
                  aaafDenominator,
                  pReportProgress);
 
@@ -1823,7 +1775,7 @@ public:
       Dealloc3D(_aaafSaliency);
       _aaafSaliency = nullptr;
     }
-    
+
     // If any of the tensor voting sums were incomplete
     // (due to image boundaries, or mask boundaries).
     // then normalize the resulting magnitudes of the filter
@@ -1834,14 +1786,14 @@ public:
         *pReportProgress << "  Normalizing the result of tensor voting...";
 
       if (aaafMaskSource) {
-
         assert(aaafDenominator);
-        for (Integer iz=0; iz<image_size[2]; iz++) {
+        for (Integer iz = 0; iz < image_size[2]; iz++) {
           #pragma omp parallel for collapse(2)
-          for (Integer iy=0; iy<image_size[1]; iy++) {
-            for (Integer ix=0; ix<image_size[0]; ix++) {
-              if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+          for (Integer iy = 0; iy < image_size[1]; iy++) {
+            for (Integer ix = 0; ix < image_size[0]; ix++) {
+              if ((!aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0)) {
                 continue;
+              }
               if (aaafDenominator[iz][iy][ix] > 0.0) {
                 assert(aaaafDest[iz][iy][ix]);
                 for (int di = 0; di < 3; di++) {
@@ -1853,36 +1805,37 @@ public:
               }
             }
           }
-        } //for (Integer iz=0; iz<image_size[2]; iz++)
+        }  // for (Integer iz=0; iz<image_size[2]; iz++)
         Dealloc3D(aaafDenominator);
         aaafDenominator = nullptr;
 
-        if (pReportProgress)
+        if (pReportProgress) {
           *pReportProgress << "done." << endl;
+        }
 
-      } // if (aaafMask)
-      else {
+      } else {  // if (aaafMask)
+
         // THE UGLY CODE BELOW (THE NEXT ELSE-CLAUSE) IS UNNECESSARY,
         // BUT IT MAKES TENSOR-VOTING CODE ABOUT 10% FASTER.
         // IF YOU WANT TO MAKE THE CODE PRETTIER, DELETE THIS ELSE-CLAUSE
         // AND MAKE SURE "aaafDenominator" IS ALLWAYS ALLOCATED.
         assert(aaafDenominator == nullptr);
-      
-        // When no mask is supplied, 
+
+        // When no mask is supplied,
         // If there is no mask, but the user wants the result to be normalized,
         // then we convolve the filter with the rectangular box. This is cheaper
-        // because the convolution of a separable filter with a rectangular box 
-        // shaped function is the product of the convolution with three 1-D 
+        // because the convolution of a separable filter with a rectangular box
+        // shaped function is the product of the convolution with three 1-D
         // functions which are 1 from 0..image_size[d], and 0 everywhere else.
         Integer halfwidth_single = halfwidth[0];
         assert(halfwidth_single == halfwidth[1]);
         assert(halfwidth_single == halfwidth[2]);
-        Filter1D<Scalar, Integer> filter1d = 
+        Filter1D<Scalar, Integer> filter1d =
           GenFilterGauss1D(sigma, halfwidth_single);
         Scalar *aafDenom_precomputed[3];
-        for (int d=0; d<3; d++) {
-          Scalar *afAllOnes = new Scalar [image_size[d]];
-          aafDenom_precomputed[d] = new Scalar [image_size[d]];
+        for (int d = 0; d < 3; d++) {
+          Scalar *afAllOnes = new Scalar[image_size[d]];
+          aafDenom_precomputed[d] = new Scalar[image_size[d]];
           for (Integer i=0; i < image_size[d]; i++)
             afAllOnes[i] = 1.0;
           filter1d.Apply(image_size[d], afAllOnes, aafDenom_precomputed[d]);
@@ -1892,13 +1845,14 @@ public:
           #pragma omp parallel for collapse(2)
           for (Integer iy = 0; iy < image_size[1]; iy++) {
             for (Integer ix = 0; ix < image_size[0]; ix++) {
-              if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0))
+              if ((!aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0)) {
                 continue;
+              }
               Scalar denominator = (aafDenom_precomputed[0][ix] *
                                     aafDenom_precomputed[1][iy] *
                                     aafDenom_precomputed[2][iz]);
-              for (int di=0; di<3; di++) {
-                for (int dj=0; dj<3; dj++) {
+              for (int di = 0; di < 3; di++) {
+                for (int dj = 0; dj < 3; dj++) {
                   aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ]
                     /= denominator;
                 }
@@ -1907,52 +1861,50 @@ public:
           }
         }
         // delete the array we created for storing the precomputed denominator:
-        for (int d=0; d<3; d++)
+        for (int d = 0; d < 3; d++)
           delete [] aafDenom_precomputed[d];
-      } // else clause for "if (aaafMaskSource)"
-
-    } //if (normalize)
+      }  // else clause for "if (aaafMaskSource)"
+    }  // if (normalize)
 
 
     if (diagonalize_dest) {
-      if (pReportProgress)
-        *pReportProgress << "---- Diagonalizing Tensor Voting results ----" << endl;
+      if (pReportProgress) {
+        *pReportProgress
+        << "---- Diagonalizing Tensor Voting results ----" << endl;
+      }
 
       // Diagonalize the resulting tensor.
-      // The resulting eigenvalues and eigenvectors can be analyzed by the caller.
+      // The resulting eigenvalues and eigenvectors can be analyzed by caller.
       DiagonalizeHessianImage(image_size,
-                              aaaafDest, //<--undiagonalized tensors (input)
-                              aaaafDest, //<--diagonalized tensors (output)
+                              aaaafDest,  // <--undiagonalized tensors (input)
+                              aaaafDest,  // <--diagonalized tensors (output)
                               aaafMaskDest,
                               selfadjoint_eigen3::DECREASING_EIVALS,
                               pReportProgress);
 
       // DEBUG: assert that all eigenvalues are nonnegative
-      for (Integer iz=0; iz<image_size[2]; iz++) {
-        for (Integer iy=0; iy<image_size[1]; iy++) {
-          for (Integer ix=0; ix<image_size[0]; ix++) {
-            if ((! aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0.0))
+      for (Integer iz = 0; iz < image_size[2]; iz++) {
+        for (Integer iy = 0; iy < image_size[1]; iy++) {
+          for (Integer ix = 0; ix < image_size[0]; ix++) {
+            if ((!aaafMaskDest) || (aaafMaskDest[iz][iy][ix] == 0.0))
               continue;
-            // The eigenvalues are in the first 3 entries of aaaafDest[iz][iy][ix]
+            // Note: The eigenvalues are in the first
+            //       3 entries of aaaafDest[iz][iy][ix]
             Scalar *eivals = aaaafDest[iz][iy][ix];
             assert(eivals);
-            for (int d=0; d<3; d++)
+            for (int d = 0; d < 3; d++)
               assert(eivals[d] >= 0.0);
           }
         }
       }
-
-    } // if (diagonalize_dest)
-
-  } // TVDenseStick()
+    }  // if (diagonalize_dest)
+  }  // TVDenseStick()
 
 
 
 
 
-
-
-private:
+ private:
   /// @brief  Perform dense stick-voting, using every voxel in the image
   ///         as a source, and collecting votes at every voxel
   ///         in the aaaafDest array.
@@ -1960,34 +1912,34 @@ private:
   ///         manage the aaafDenominator array (used for normalization).
   ///         Most users should use the other version of this function.
   void
-  TVDenseStick(Integer const image_size[3],  //!< source image size
-               Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
-               VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
-               TensorContainer ***aaaafDest,  //!< votes will be collected here
-               Scalar const *const *const *aaafMaskSource=nullptr,  //!< ignore voxels in source where mask==0
-               Scalar const *const *const *aaafMaskDest=nullptr,  //!< don't cast votes wherever mask==0
-               bool detect_curves_not_surfaces=false,
-               //Scalar saliency_threshold = 0.0,
-               Scalar ***aaafDenominator=nullptr,
-               ostream *pReportProgress=nullptr  //!< print progress to the user?
-               )
-  {
+  TVDenseStick(
+    Integer const image_size[3],  //!< source image size
+    Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually based on Hessian eigenvalues)
+    VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+    TensorContainer ***aaaafDest,  //!< votes will be collected here
+    Scalar const *const *const *aaafMaskSource = nullptr,  //!< ignore voxels in source where mask==0
+    Scalar const *const *const *aaafMaskDest = nullptr,  //!< don't cast votes wherever mask==0
+    bool detect_curves_not_surfaces = false,
+    // Scalar saliency_threshold = 0.0,
+    Scalar ***aaafDenominator = nullptr,
+    ostream *pReportProgress = nullptr  //!< print progress to the user?
+) {
     assert(aaafSaliency);
     assert(aaaafV);
     assert(aaaafDest);
 
-    //optional: count the number of voxels which can
-    //          cast votes (useful for benchmarking)
+    // optional: count the number of voxels which can
+    //           cast votes (useful for benchmarking)
     if (pReportProgress) {
       size_t n_salient = 0;
       size_t n_all = 0;
-      for (Integer iz=0; iz<image_size[2]; iz++) {
-        for (Integer iy=0; iy<image_size[1]; iy++) {
-          for (Integer ix=0; ix<image_size[0]; ix++) {
+      for (Integer iz = 0; iz < image_size[2]; iz++) {
+        for (Integer iy = 0; iy < image_size[1]; iy++) {
+          for (Integer ix = 0; ix < image_size[0]; ix++) {
             if (aaafMaskSource && (aaafMaskSource[iz][iy][ix] == 0))
               continue;
             n_all++;
-            //if (aaafSaliency[iz][iy][ix] > saliency_threshold)
+            // if (aaafSaliency[iz][iy][ix] > saliency_threshold)
             if (aaafSaliency[iz][iy][ix] != 0.0)
               n_salient++;
           }
@@ -2002,114 +1954,112 @@ private:
 
 
     // First, initialize the arrays which will store the results with zeros.
-    for (Integer iz=0; iz<image_size[2]; iz++)
-      for (Integer iy=0; iy<image_size[1]; iy++)
-        for (Integer ix=0; ix<image_size[0]; ix++)
-          if (aaaafDest[iz][iy][ix])
-            for (int di=0; di<3; di++)
-              for (int dj=0; dj<3; dj++)
+    for (Integer iz = 0; iz < image_size[2]; iz++) {
+      for (Integer iy = 0; iy < image_size[1]; iy++) {
+        for (Integer ix = 0; ix < image_size[0]; ix++) {
+          if (aaaafDest[iz][iy][ix]) {
+            for (int di = 0; di < 3; di++) {
+              for (int dj = 0; dj < 3; dj++) {
                 aaaafDest[iz][iy][ix][ MapIndices_3x3_to_linear[di][dj] ] = 0.0;
+              }
+            }
+          }
+        }
+      }
+    }
 
     if (aaafDenominator) {
       // aaafDenominator[][][] keeps track of how much of the sum of
       // tensor-voting contributions was available at each voxel location.
-      // (If some voxels were unavailable or outside the boundaries of 
+      // (If some voxels were unavailable or outside the boundaries of
       //  the image, they cannot cast votes at this voxel location.)
       //  This array keeps track of that.)  We should initialize this array too.
-      for (Integer iz=0; iz<image_size[2]; iz++)
-        for (Integer iy=0; iy<image_size[1]; iy++)
-          for (Integer ix=0; ix<image_size[0]; ix++)
+      for (Integer iz = 0; iz < image_size[2]; iz++)
+        for (Integer iy = 0; iy < image_size[1]; iy++)
+          for (Integer ix = 0; ix < image_size[0]; ix++)
             aaafDenominator[iz][iy][ix] = 0.0;
     }
-
-    // REMOVE THIS CRUFT
-    //assert(pv);
-    //assert(pV->nchannels() == 3);
-    //pV->Resize(image_size, aaafMaskSource, pReportProgress);
 
     if (pReportProgress)
       *pReportProgress << "---- Begin Tensor Voting (dense, stick) ----\n"
                        << "  progress: processing plane#" << endl;
 
     // The mask should be 1 everywhere we want to consider, and 0 elsewhere.
-    // Multiplying the density in the tomogram by the mask removes some of 
+    // Multiplying the density in the tomogram by the mask removes some of
     // the voxels from consideration later on when we do the filtering.
     // (Later, we will adjust the weight of the average we compute when we
     //  apply the filter in order to account for the voxels we deleted now.)
 
-    for (Integer iz=0; iz<image_size[2]; iz++) {
-
-      if (pReportProgress)
+    for (Integer iz = 0; iz < image_size[2]; iz++) {
+      if (pReportProgress) {
         *pReportProgress << "  " << iz+1 << " / " << image_size[2] << "\n";
+      }
 
       #pragma omp parallel for collapse(2)
-      for (Integer iy=0; iy<image_size[1]; iy++) {
-
-        for (Integer ix=0; ix<image_size[0]; ix++) {
-
+      for (Integer iy = 0; iy < image_size[1]; iy++) {
+        for (Integer ix = 0; ix < image_size[0]; ix++) {
           // ------------ Uncomment whichever is faster: -----------
           // EITHER uncomment TVCastStickVotes() or TVReceiveStickVotes()
           // (VERSION1 OR VERSION2), BUT NOT BOTH
 
-          // VERSION1:
+          // VERSION1: works in serial only
           //           Have the voxel at ix,iy,iz cast votes at nearby voxels:
-
-          TVCastStickVotes(ix, iy, iz,
-                           image_size,
-                           aaafSaliency,
-                           aaaafV,
-                           aaaafDest,
-                           aaafMaskSource,
-                           aaafMaskDest,
-                           detect_curves_not_surfaces,
-                           //saliency_threshold,
-                           aaafDenominator);
+          //
+          // TVCastStickVotes(ix, iy, iz,
+          //                  image_size,
+          //                  aaafSaliency,
+          //                  aaaafV,
+          //                  aaaafDest,
+          //                  aaafMaskSource,
+          //                  aaafMaskDest,
+          //                  detect_curves_not_surfaces,
+          //                  // saliency_threshold,
+          //                  aaafDenominator);
 
           // VERSION 2: Have the voxel at ix,iy,iz receive votes
-          //            from nearby voxels
-          //
-          //TVReceiveStickVotes(ix, iy, iz,
-          //                    image_size,
-          //                    aaafSaliency,
-          //                    aaaafV,
-          //                    aaaafDest,
-          //                    aaafMaskSource,
-          //                    aaafMaskDest,
-          //                    detect_curves_not_surfaces,
-          //                    //saliency_threshold,
-          //                    (aaafDenominator
-          //                     ? &(aaafDenominator[iz][iy][ix])
-          //                     : nullptr));
+          //            from nearby voxels.  (works in parallel)
 
+          TVReceiveStickVotes(ix, iy, iz,
+                              image_size,
+                              aaafSaliency,
+                              aaaafV,
+                              aaaafDest,
+                              aaafMaskSource,
+                              aaafMaskDest,
+                              detect_curves_not_surfaces,
+                              // saliency_threshold,
+                              (aaafDenominator
+                               ? &(aaafDenominator[iz][iy][ix])
+                               : nullptr));
         }
       }
     }
-
-  } //TVDenseStick()
+  }  // TVDenseStick()
 
 
   /// @brief  Cast stick votes from one voxel to all nearby voxels
   void
-  TVCastStickVotes(Integer ix,  //!< coordinates of the voter
-                   Integer iy,  //!< coordinates of the voter
-                   Integer iz,  //!< coordinates of the voter
-                   Integer const image_size[3],
-                   Scalar const *const *const *aaafSaliency, //!< saliency (score) of each voxel (usually calculated from Hessian eigenvalues)
-                   VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
-                   TensorContainer ***aaaafDest,  //!< votes will be collected here
-                   Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
-                   Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
-                   bool detect_curves_not_surfaces = false,
-                   //Scalar saliency_threshold = 0.0,
-                   Scalar ***aaafDenominator = nullptr) const
-  {
+  TVCastStickVotes(
+    Integer ix,  //!< coordinates of the voter
+    Integer iy,  //!< coordinates of the voter
+    Integer iz,  //!< coordinates of the voter
+    Integer const image_size[3],
+    Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually calculated from Hessian eigenvalues)
+    VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+    TensorContainer ***aaaafDest,  //!< votes will be collected here
+    Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+    Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
+    bool detect_curves_not_surfaces = false,
+    // Scalar saliency_threshold = 0.0,
+    Scalar ***aaafDenominator = nullptr) const {
+
     assert(aaafSaliency);
     assert(aaaafV);
     assert(aaaafDest);
 
     Scalar saliency = aaafSaliency[iz][iy][ix];
+    // if (saliency <= saliency_threshold)
     if (saliency == 0.0)
-    //if (saliency <= saliency_threshold)
       return;
 
     Scalar mask_val = 1.0;
@@ -2119,32 +2069,31 @@ private:
         return;
     }
 
-    Scalar n[3]; // the direction of the stick tensor (see below)
-    for (int d=0; d<3; d++)
+    Scalar n[3];  // the direction of the stick tensor (see below)
+    for (int d = 0; d < 3; d++) {
       n[d] = aaaafV[iz][iy][ix][d];
+    }
 
-    //Note: The "filter_val" also is needed to calculate
-    //      the denominator used in normalization.
-    //      It is unusual to use a mask unless you intend
-    //      to normalize the result later, but I don't enforce this
+    // Note: The "filter_val" also is needed to calculate
+    //       the denominator used in normalization.
+    //       It is unusual to use a mask unless you intend
+    //       to normalize the result later, but I don't enforce this
 
-    for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
+    for (Integer jz = -halfwidth[2]; jz <= halfwidth[2]; jz++) {
       Integer iz_jz = iz+jz;
-      if ((iz_jz < 0) || (image_size[2] <= iz_jz))
-        continue;
+      if ((iz_jz < 0) || (image_size[2] <= iz_jz)) {continue;}
 
-      for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
+      for (Integer jy = -halfwidth[1]; jy <= halfwidth[1]; jy++) {
         Integer iy_jy = iy+jy;
-        if ((iy_jy < 0) || (image_size[1] <= iy_jy))
-          continue;
+        if ((iy_jy < 0) || (image_size[1] <= iy_jy)) {continue;}
 
-        for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
+        for (Integer jx = -halfwidth[0]; jx <= halfwidth[0]; jx++) {
           Integer ix_jx = ix+jx;
-          if ((ix_jx < 0) || (image_size[0] <= ix_jx))
-            continue;
+          if ((ix_jx < 0) || (image_size[0] <= ix_jx)) {continue;}
 
-          if ((aaafMaskDest) && (aaafMaskDest[iz_jz][iy_jy][ix_jx] == 0.0))
+          if ((aaafMaskDest) && (aaafMaskDest[iz_jz][iy_jy][ix_jx] == 0.0)) {
             continue;
+          }
           assert(aaaafDest[iz_jz][iy_jy][ix_jx]);
 
           // The function describing how the vote-strength falls off with
@@ -2156,12 +2105,12 @@ private:
             filter_val *= mask_val;
 
           Scalar decay_radial = filter_val;
-          if (decay_radial == 0.0)
-            continue;
+          if (decay_radial == 0.0) {continue;}
 
           Scalar r[3];
-          for (int d=0; d<3; d++)
+          for (int d = 0; d < 3; d++) {
             r[d] = aaaafDisplacement[jz][jy][jx][d];
+          }
 
           //
           //   .
@@ -2180,7 +2129,7 @@ private:
           //   |,,..--''
           //  0
           //
-          // "n" = the direction of the stick tensor.  If the object being 
+          // "n" = the direction of the stick tensor.  If the object being
           //       detected is a surface, n is perpendicular to that surface.
           //       If the object is a curve, then n points tangent to the curve.
           // "r" = the position of the vote receiver relative to the voter
@@ -2189,7 +2138,7 @@ private:
           //           (NOT the angle of r relative to n.  This is a confusing
           //            convention, but this is how it is normally defined.)
 
-          Scalar sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
+          Scalar sintheta = DotProduct3(r, n);  // (sin not cos, see diagram)
           Scalar sinx2 = sintheta * 2.0;
           Scalar sin2 = sintheta * sintheta;
           Scalar cos2 = 1.0 - sin2;
@@ -2197,7 +2146,7 @@ private:
           if (detect_curves_not_surfaces) {
             // If we are detecting 1-dimensional curves (polymers, etc...)
             // instead of 2-dimensional surfaces (membranes, ...)
-            // then the stick direction is assumed to be along the 
+            // then the stick direction is assumed to be along the
             // of the curve, (as opposed to perpendicular to the 2D surface).
             // Consequently:
             angle_dependence2 = sin2;
@@ -2205,7 +2154,7 @@ private:
 
           Scalar decay_angular;
 
-          switch(exponent) {
+          switch (exponent) {
           case 2:
             decay_angular = angle_dependence2;
             break;
@@ -2213,17 +2162,18 @@ private:
             decay_angular = angle_dependence2 * angle_dependence2;
             break;
           default:
-            //Scalar angle_dependence = sqrt(angle_dependence2);
+            // Scalar angle_dependence = sqrt(angle_dependence2);
             decay_angular = pow(angle_dependence2, 0.5*exponent);
             break;
           }
 
           Scalar n_rotated[3];
-          for (int d=0; d<3; d++) {
-            if (detect_curves_not_surfaces)
+          for (int d = 0; d < 3; d++) {
+            if (detect_curves_not_surfaces) {
               n_rotated[d] = n[d] - sinx2*r[d];
-            else
+            } else {
               n_rotated[d] = sinx2*r[d] - n[d];
+            }
           }
 
           Scalar tensor_vote[3][3];
@@ -2236,7 +2186,7 @@ private:
 
               // OLD CODE: I used to implement aaaafDest as a 5-D array.
               //
-              //aaaafDest[iz_jz][iy_jy][ix_jx][di][dj] += tensor_vote[di][dj];
+              // aaaafDest[iz_jz][iy_jy][ix_jx][di][dj] += tensor_vote[di][dj];
               //
               // NEW CODE:
               // The ix_jx,iy_jy,iz_jz'th entry in aaaafDest should be
@@ -2254,31 +2204,31 @@ private:
 
           if (aaafDenominator)
             aaafDenominator[iz_jz][iy_jy][ix_jx] += filter_val;
+        }  // for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++)
+      }  // for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++)
+    }  // for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++)
 
-        } // for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++)
-      } // for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++)
-    } // for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++)
-
-
-  } // TVCastStickVotes()
+  }  // TVCastStickVotes()
 
 
 
 
   /// @brief  Receive stick votes from all voxels near a chosen "receiver" voxel
   void
-  TVReceiveStickVotes(Integer ix,  //!< coordinates of the receiver voxel
-                      Integer iy,  //!< coordinates of the receiver voxel
-                      Integer iz,  //!< coordinates of the receiver voxel
-                      Integer const image_size[3],
-                      Scalar const *const *const *aaafSaliency, //!< saliency (score) of each voxel (usually calculated from Hessian eigenvalues)
-                      VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
-                      TensorContainer ***aaaafDest,  //!< votes will be collected here
-                      Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
-                      Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
-                      bool detect_curves_not_surfaces = false,
-                      //Scalar saliency_threshold = 0.0,
-                      Scalar *pDenominator = nullptr) const
+  TVReceiveStickVotes(
+    Integer ix,  //!< coordinates of the receiver voxel
+    Integer iy,  //!< coordinates of the receiver voxel
+    Integer iz,  //!< coordinates of the receiver voxel
+    Integer const image_size[3],
+    Scalar const *const *const *aaafSaliency,  //!< saliency (score) of each voxel (usually calculated from Hessian eigenvalues)
+    VectorContainer const *const *const *aaaafV,  //!< vector associated with each voxel
+    TensorContainer ***aaaafDest,  //!< votes will be collected here
+    Scalar const *const *const *aaafMaskSource,  //!< ignore voxels in source where mask==0
+    Scalar const *const *const *aaafMaskDest,  //!< ignore voxels in dest where mask==0
+    bool detect_curves_not_surfaces = false,
+    // Scalar saliency_threshold = 0.0,
+    Scalar *pDenominator = nullptr
+  ) const
   {
     assert(aaafSaliency);
     assert(aaaafV);
@@ -2289,20 +2239,18 @@ private:
 
     Scalar denominator = 0.0;
 
-    for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++) {
+    for (Integer jz = -halfwidth[2]; jz <= halfwidth[2]; jz++) {
       Integer iz_jz = iz-jz;
       if ((iz_jz < 0) || (image_size[2] <= iz_jz))
         continue;
 
-      for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++) {
+      for (Integer jy = -halfwidth[1]; jy <= halfwidth[1]; jy++) {
         Integer iy_jy = iy-jy;
-        if ((iy_jy < 0) || (image_size[1] <= iy_jy))
-          continue;
+        if ((iy_jy < 0) || (image_size[1] <= iy_jy)) {continue;}
 
         for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++) {
           Integer ix_jx = ix-jx;
-          if ((ix_jx < 0) || (image_size[0] <= ix_jx))
-            continue;
+          if ((ix_jx < 0) || (image_size[0] <= ix_jx)) {continue;}
 
           // The function describing how the vote-strength falls off with
           // distance has been precomputed and is stored in
@@ -2312,19 +2260,17 @@ private:
 
           if (aaafMaskSource) {
             Scalar mask_val = aaafMaskSource[iz_jz][iy_jy][ix_jx];
-            if (mask_val == 0.0)
-              continue;
+            if (mask_val == 0.0) {continue;}
             filter_val *= mask_val;
           }
-          //Note: The "filter_val" also is needed to calculate
-          //      the denominator used in normalization.
-          //      It is unusual to use a mask unless you intend
-          //      to normalize the result later, but I don't enforce this
+          // Note: The "filter_val" also is needed to calculate
+          //       the denominator used in normalization.
+          //       It is unusual to use a mask unless you intend
+          //       to normalize the result later, but I don't enforce this
 
           Scalar saliency = aaafSaliency[iz_jz][iy_jy][ix_jx];
-          //if (saliency <= saliency_threshold)
-          if (saliency == 0.0)
-            continue;
+          // if (saliency <= saliency_threshold)
+          if (saliency == 0.0) {continue;}
 
           Scalar decay_radial = filter_val;
           if (decay_radial == 0.0)
@@ -2332,7 +2278,7 @@ private:
 
           Scalar r[3];
           Scalar n[3];
-          for (int d=0; d<3; d++) {
+          for (int d = 0; d < 3; d++) {
             r[d] = aaaafDisplacement[jz][jy][jx][d];
             n[d] = aaaafV[iz_jz][iy_jy][ix_jx][d];
           }
@@ -2354,7 +2300,7 @@ private:
           //   |,,..--''
           //  0
           //
-          // "n" = the direction of the stick tensor.  If the object being 
+          // "n" = the direction of the stick tensor.  If the object being
           //       detected is a surface, n is perpendicular to that surface.
           //       If the object is a curve, then n points tangent to the curve.
           // "r" = the position of the vote receiver relative to the voter
@@ -2363,7 +2309,7 @@ private:
           //           (NOT the angle of r relative to n.  This is a confusing
           //            convention, but this is how it is normally defined.)
 
-          Scalar sintheta = DotProduct3(r, n); //(sin() not cos(), see diagram)
+          Scalar sintheta = DotProduct3(r, n);  // (sin not cos, see diagram)
           Scalar sinx2 = sintheta * 2.0;
           Scalar sin2 = sintheta * sintheta;
           Scalar cos2 = 1.0 - sin2;
@@ -2371,7 +2317,7 @@ private:
           if (detect_curves_not_surfaces) {
             // If we are detecting 1-dimensional curves (polymers, etc...)
             // instead of 2-dimensional surfaces (membranes, ...)
-            // then the stick direction is assumed to be along the 
+            // then the stick direction is assumed to be along the
             // of the curve, (as opposed to perpendicular to the 2D surface).
             // Consequently:
             angle_dependence2 = sin2;
@@ -2379,7 +2325,7 @@ private:
 
           Scalar decay_angular;
 
-          switch(exponent) {
+          switch (exponent) {
           case 2:
             decay_angular = angle_dependence2;
             break;
@@ -2387,17 +2333,18 @@ private:
             decay_angular = angle_dependence2 * angle_dependence2;
             break;
           default:
-            //Scalar angle_dependence = sqrt(angle_dependence2);
+            // Scalar angle_dependence = sqrt(angle_dependence2);
             decay_angular = pow(angle_dependence2, 0.5*exponent);
             break;
           }
 
           Scalar n_rotated[3];
-          for (int d=0; d<3; d++) {
-            if (detect_curves_not_surfaces)
+          for (int d = 0; d < 3; d++) {
+            if (detect_curves_not_surfaces) {
               n_rotated[d] = n[d] - sinx2*r[d];
-            else
+            } else {
               n_rotated[d] = sinx2*r[d] - n[d];
+            }
           }
 
           Scalar tensor_vote[3][3];
@@ -2410,7 +2357,7 @@ private:
 
               // OLD CODE: I used to implement aaaafDest as a 5-D array.
               //
-              //aaaafDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
+              // aaaafDest[iz][iy][ix][di][dj] += tensor_vote[di][dj];
               //
               // NEW CODE:
               // The ix,iy,iz'th entry in aaaafDest should be a 3x3 matrix.
@@ -2428,19 +2375,17 @@ private:
 
           if (pDenominator)
             denominator += filter_val;
-        } // for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++)
-      } // for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++)
-    } // for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++)
+        }  // for (Integer jx=-halfwidth[0]; jx<=halfwidth[0]; jx++)
+      }  // for (Integer jy=-halfwidth[1]; jy<=halfwidth[1]; jy++)
+    }  // for (Integer jz=-halfwidth[2]; jz<=halfwidth[2]; jz++)
 
     if (pDenominator)
       *pDenominator = denominator;
-
-  } // TVReceiveStickVotes()
-
+  }  // TVReceiveStickVotes()
 
 
-  void swap(TV3D<Scalar,Integer,VectorContainer,TensorContainer> &other)
-  {
+
+  void swap(TV3D<Scalar, Integer, VectorContainer, TensorContainer> &other) {
     std::swap(sigma, other.sigma);
     std::swap(exponent, other.exponent);
     std::swap(radial_decay_lookup, other.radial_decay_lookup);
@@ -2450,14 +2395,14 @@ private:
   }
 
 
-  TV3D<Scalar,Integer,VectorContainer,TensorContainer>&
-    operator = (TV3D<Scalar,Integer,VectorContainer,TensorContainer> source)
+  TV3D<Scalar, Integer, VectorContainer, TensorContainer>&
+    operator = (TV3D<Scalar, Integer, VectorContainer, TensorContainer> source)
   {
     this->swap(source);
     return *this;
   }
 
-private:
+ private:
 
   void Init() {
     sigma = 0.0;
@@ -2472,8 +2417,8 @@ private:
 
 
   void Resize(Integer set_halfwidth[3]) {
-    for (int d=0; d<3; d++) {
-      array_size[d] = 2*halfwidth[d] + 1;
+    for (int d = 0; d < 3; d++) {
+      array_size[d] = 2 * halfwidth[d] + 1;
     }
 
     Scalar sigmas[3] = {sigma, sigma, sigma};
@@ -2489,10 +2434,10 @@ private:
 
   void DeallocDisplacement() {
     if (aaaafDisplacement) {
-      for (int d=0; d<3; d++) {
-        array_size[d] = 2*halfwidth[d] + 1;
+      for (int d = 0; d < 3; d++) {
+        array_size[d] = 2 * halfwidth[d] + 1;
       }
-      //shift pointers back to normal
+      // shift pointers back to normal
       for (Integer iz = -halfwidth[2]; iz <= halfwidth[2]; iz++) {
         for (Integer iy = -halfwidth[1]; iy <= halfwidth[1]; iy++) {
           aaaafDisplacement[iz][iy] -= halfwidth[0];
@@ -2506,11 +2451,11 @@ private:
   }
 
   void AllocDisplacement() {
-    if (aaaafDisplacement)
+    if (aaaafDisplacement) {
       Dealloc3D(aaaafDisplacement);
+    }
     aaaafDisplacement = Alloc3D<array<Scalar, 3> >(array_size);
-            
-    //shift pointers to enable indexing from i = -halfwidth .. +halfwidth
+    // shift pointers to enable indexing from i = -halfwidth .. +halfwidth
     for (Integer iz = 0; iz < array_size[2]; iz++) {
       for (Integer iy = 0; iy < array_size[1]; iy++) {
         aaaafDisplacement[iz][iy] += halfwidth[0];
@@ -2535,11 +2480,11 @@ private:
       }
     }
   }
-}; // class TV3D
+};  // class TV3D
 
 
 
-} //namespace visfd
+}  // namespace visfd
 
 
 

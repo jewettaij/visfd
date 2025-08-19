@@ -6,6 +6,9 @@
 # text-editor temporary files:
 *~
 
+# VSCode
+.vscode
+
 # binary files (but not their directories which have matching names)
 
 combine_mrc

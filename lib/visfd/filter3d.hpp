@@ -227,7 +227,7 @@ public:
 
   // destructor, copy and move constructor, swap, and assignment operator
 
-  ~Filter3D() {
+  virtual ~Filter3D() {
     Dealloc();
   }
 
