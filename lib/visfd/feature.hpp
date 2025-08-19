@@ -1998,7 +1998,7 @@ class TV3D {
       #pragma omp parallel for collapse(2)
       for (Integer iy = 0; iy < image_size[1]; iy++) {
         for (Integer ix = 0; ix < image_size[0]; ix++) {
-          // ------------ Uncomment whichever is faster: -----------
+          // ------------ Choose One: -----------
           // EITHER uncomment TVCastStickVotes() or TVReceiveStickVotes()
           // (VERSION1 OR VERSION2), BUT NOT BOTH
 
